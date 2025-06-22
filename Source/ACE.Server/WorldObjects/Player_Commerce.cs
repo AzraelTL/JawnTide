@@ -26,12 +26,14 @@ namespace ACE.Server.WorldObjects
         {
             if (IsBusy)
             {
+                Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, Guid.Full));
                 SendUseDoneEvent(WeenieError.YoureTooBusy);
                 return;
             }
 
             if (IsTrading)
             {
+                Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, Guid.Full));
                 SendUseDoneEvent(WeenieError.CantDoThatTradeInProgress);
                 return;
             }
@@ -40,6 +42,7 @@ namespace ACE.Server.WorldObjects
 
             if (vendor == null)
             {
+                Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, Guid.Full));
                 SendUseDoneEvent(WeenieError.NoObject);
                 return;
             }
@@ -79,7 +82,8 @@ namespace ACE.Server.WorldObjects
             }
 
             // if this succeeds, it automatically calls player.FinalizeBuyTransaction()
-            vendor.BuyItems_ValidateTransaction(items, this);
+            if (!vendor.BuyItems_ValidateTransaction(items, this))
+                Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, Guid.Full));
 
             SendUseDoneEvent();
         }
@@ -160,6 +164,7 @@ namespace ACE.Server.WorldObjects
         {
             if (IsBusy)
             {
+                Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, Guid.Full));
                 SendUseDoneEvent(WeenieError.YoureTooBusy);
                 return;
             }
@@ -190,6 +195,7 @@ namespace ACE.Server.WorldObjects
 
             if (vendor == null)
             {
+                Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, Guid.Full));
                 SendUseDoneEvent(WeenieError.NoObject);
                 return;
             }            
