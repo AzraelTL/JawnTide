@@ -225,7 +225,7 @@ namespace ACE.Server.WorldObjects
         {
             // fellowship spell
             var spell = new Spell(spellId);
-            if ((spell.Flags & SpellFlags.FellowshipSpell) != 0)
+            if (spell.IsFellowshipSpell)
             {
                 target = this;
                 return TargetCategory.Fellowship;
@@ -926,7 +926,7 @@ namespace ACE.Server.WorldObjects
             {
                 case CastingPreCheckStatus.Success:
 
-                    if ((spell.Flags & SpellFlags.FellowshipSpell) == 0)
+                    if (!spell.IsFellowshipSpell)
                         CreatePlayerSpell(target, spell, isWeaponSpell);
                     else if (IsTinker)
                     {
