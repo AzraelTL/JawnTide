@@ -713,10 +713,10 @@ namespace ACE.Server.Managers
             //In 1v1, 2v2 and FFA, dieing eliminates you from the event
             if (victim != null &&
                 arenaLocation != null &&
-                (arenaLocation.ActiveEvent.EventType.Equals("1v1")) ||
-                (arenaLocation.ActiveEvent.EventType.Equals("1v1")) ||
-                (arenaLocation.ActiveEvent.EventType.Equals("ffa")) ||
-                (arenaLocation.ActiveEvent.EventType.Equals("group")))
+                (arenaLocation.ActiveEvent.EventType.Equals("1v1") ||
+                arenaLocation.ActiveEvent.EventType.Equals("2v2") ||
+                arenaLocation.ActiveEvent.EventType.Equals("ffa") ||
+                arenaLocation.ActiveEvent.EventType.Equals("group")))
             {
                 victim.IsEliminated = true;
                 victim.TotalDeaths++;
