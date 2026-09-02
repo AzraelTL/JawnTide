@@ -296,6 +296,20 @@ namespace ACE.Server.Network.Handlers
                 }
             }
 
+            // --- IP binding enforcement ---
+            if (PropertyManager.GetBool("enforce_account_ip_binding").Item)
+            {
+                var ipStr    = session.EndPointC2S.Address.ToString();
+                var isLocal  = ipStr == "127.0.0.1" || ipStr == "::1";
+                var isAdmin  = (AccessLevel)account.AccessLevel >= AccessLevel.Admin;
+
+                if (!isLocal && !isAdmin)
+                {
+                    if (!CheckIpBinding(account, ipStr, session))
+                        return;
+                }
+            }
+
             account.UpdateLastLogin(session.EndPointC2S.Address);
 
             session.SetAccount(account.AccountId, account.AccountName, (AccessLevel)account.AccessLevel);
@@ -309,6 +323,89 @@ namespace ACE.Server.Network.Handlers
             //{
             //    log.Error($"Exception in AuthenticationHandler.AccountSelectCallback logging account session start. Ex: {ex}");
             //}
+        }
+
+        /// <summary>
+        /// Enforces the per-IP account allowance (default 1 = one account per IP).
+        /// Returns true if login should proceed, false if the session has been terminated.
+        /// </summary>
+        private static bool CheckIpBinding(Account account, string ipStr, Session session)
+        {
+            try
+            {
+                // Case: IP is on the admin whitelist - skip all binding enforcement (unlimited accounts).
+                var ipWhitelist = PropertyManager.GetString("ip_binding_ip_whitelist").Item
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (ipWhitelist.Contains(ipStr))
+                {
+                    log.Info($"[IPBinding] Skipping binding check for account '{account.AccountName}' - IP {ipStr} is whitelisted.");
+                    return true;
+                }
+
+                // Distinct accounts already bound to this IP (may be more than one when an allowance is set).
+                var bindingsForIp    = DatabaseManager.Authentication.GetIpBindingsByIp(ipStr);
+                var distinctAccounts = bindingsForIp.Select(b => b.AccountId).Distinct().ToList();
+
+                // Case: this account is already bound to this IP - normal login.
+                if (distinctAccounts.Contains(account.AccountId))
+                    return true;
+
+                // Case: a new (account, IP) pairing. Enforce the per-IP allowance.
+                // Default allowance is 1, which reproduces one-account-per-IP behavior.
+                var allowance = GetIpAllowance(ipStr);
+                if (distinctAccounts.Count >= allowance)
+                {
+                    log.Warn($"[IPBinding] Conflict: account '{account.AccountName}' tried to log in from {ipStr}, which already has {distinctAccounts.Count} account(s) bound (allowance {allowance}).");
+                    var msg = "This IP address is already registered to another account. Contact an administrator if you believe this is an error.";
+                    session.Terminate(SessionTerminationReason.AccountBooted, new GameMessageBootAccount(" " + msg), null, msg);
+                    return false;
+                }
+
+                // Room remains under the allowance - bind this account to the IP.
+                var knownBindings = DatabaseManager.Authentication.GetIpBindings(account.AccountId);
+                var mostRecent = knownBindings.FirstOrDefault()?.IpAddress ?? "(none)";
+                DatabaseManager.Authentication.CreateIpBinding(account.AccountId, ipStr, "login");
+                DatabaseManager.Authentication.InsertIpChangeLog(account.AccountId, mostRecent, ipStr, autoBanned: false);
+                log.Info($"[IPBinding] New IP recorded for account '{account.AccountName}': {ipStr} (account {distinctAccounts.Count + 1} of {allowance} on this IP; most recent was {mostRecent}).");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[IPBinding] Exception during IP binding check for account '{account.AccountName}': {ex}");
+                // On error, fail open - don't block a legitimate login due to a DB issue.
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Resolves the maximum number of distinct accounts allowed to bind to the given IP.
+        /// Reads the "ip:count" overrides from the ip_binding_ip_allowance property; any IP not
+        /// listed (or any malformed entry) falls back to the default of 1 (one account per IP).
+        /// </summary>
+        public static int GetIpAllowance(string ipStr)
+        {
+            const int defaultAllowance = 1;
+
+            var raw = PropertyManager.GetString("ip_binding_ip_allowance").Item;
+            if (string.IsNullOrWhiteSpace(raw))
+                return defaultAllowance;
+
+            foreach (var entry in raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                // Entry format: "ip:count". Split on the last ':' so IPv6 addresses (which contain colons) parse correctly.
+                var sep = entry.LastIndexOf(':');
+                if (sep <= 0 || sep == entry.Length - 1)
+                    continue;
+
+                var ip = entry.Substring(0, sep).Trim();
+                if (!string.Equals(ip, ipStr, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (int.TryParse(entry.Substring(sep + 1).Trim(), out var count) && count >= 1)
+                    return count;
+            }
+
+            return defaultAllowance;
         }
 
         public static void HandleConnectResponse(Session session)

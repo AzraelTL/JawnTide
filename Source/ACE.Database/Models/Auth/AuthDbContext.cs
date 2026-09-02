@@ -20,6 +20,10 @@ public partial class AuthDbContext : DbContext
 
     public virtual DbSet<Account> Account { get; set; }
 
+    public virtual DbSet<AccountIpBinding> AccountIpBinding { get; set; }
+
+    public virtual DbSet<AccountIpChangeLog> AccountIpChangeLog { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
@@ -121,6 +125,61 @@ public partial class AuthDbContext : DbContext
                 .HasForeignKey(d => d.AccessLevel)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_accesslevel");
+        });
+
+        modelBuilder.Entity<AccountIpBinding>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("account_ip_binding");
+
+            entity.HasIndex(e => new { e.IpAddress, e.AccountId }, "uidx_ip_account").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AccountId).HasColumnName("account_id");
+            entity.Property(e => e.IpAddress)
+                .IsRequired()
+                .HasMaxLength(45)
+                .HasColumnName("ip_address");
+            entity.Property(e => e.BoundAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("datetime")
+                .HasColumnName("bound_at");
+            entity.Property(e => e.BoundBy)
+                .IsRequired()
+                .HasMaxLength(10)
+                .HasDefaultValue("login")
+                .HasColumnName("bound_by");
+        });
+
+        modelBuilder.Entity<AccountIpChangeLog>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("account_ip_change_log");
+
+            entity.HasIndex(e => new { e.AccountId, e.ChangedAt }, "idx_account_date");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AccountId).HasColumnName("account_id");
+            entity.Property(e => e.OldIp)
+                .IsRequired()
+                .HasMaxLength(45)
+                .HasColumnName("old_ip");
+            entity.Property(e => e.NewIp)
+                .IsRequired()
+                .HasMaxLength(45)
+                .HasColumnName("new_ip");
+            entity.Property(e => e.ChangedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("datetime")
+                .HasColumnName("changed_at");
+            entity.Property(e => e.AutoBanned)
+                .HasColumnType("tinyint(1)")
+                .HasColumnName("auto_banned");
+            entity.Property(e => e.AdminCleared)
+                .HasColumnType("tinyint(1)")
+                .HasColumnName("admin_cleared");
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -176,5 +176,99 @@ namespace ACE.Database
                 return result;
             }
         }
+
+        // -------------------------------------------------------------------------
+        // IP Binding
+        // -------------------------------------------------------------------------
+
+        /// <summary>Returns all IP addresses ever associated with an account, newest first.</summary>
+        public List<AccountIpBinding> GetIpBindings(uint accountId)
+        {
+            using (var context = new AuthDbContext())
+                return context.AccountIpBinding.AsNoTracking()
+                    .Where(r => r.AccountId == accountId)
+                    .OrderByDescending(r => r.BoundAt)
+                    .ToList();
+        }
+
+        /// <summary>Returns the first binding that owns the given IP address, or null if unclaimed.</summary>
+        public AccountIpBinding GetIpBindingByIp(string ip)
+        {
+            using (var context = new AuthDbContext())
+                return context.AccountIpBinding.AsNoTracking().FirstOrDefault(r => r.IpAddress == ip);
+        }
+
+        /// <summary>
+        /// Returns every binding row for the given IP address. An IP may be shared by more than one
+        /// account (up to the configured allowance), so use this to count distinct accounts on an IP.
+        /// </summary>
+        public List<AccountIpBinding> GetIpBindingsByIp(string ip)
+        {
+            using (var context = new AuthDbContext())
+                return context.AccountIpBinding.AsNoTracking()
+                    .Where(r => r.IpAddress == ip)
+                    .OrderBy(r => r.BoundAt)
+                    .ToList();
+        }
+
+        /// <summary>Adds an IP address to an account's known-IP set.</summary>
+        public void CreateIpBinding(uint accountId, string ip, string boundBy = "login")
+        {
+            using (var context = new AuthDbContext())
+            {
+                context.AccountIpBinding.Add(new AccountIpBinding
+                {
+                    AccountId = accountId,
+                    IpAddress = ip,
+                    BoundAt   = DateTime.UtcNow,
+                    BoundBy   = boundBy
+                });
+                context.SaveChanges();
+            }
+        }
+
+        /// <summary>Removes all IP bindings for an account (admin clear).</summary>
+        public void DeleteIpBinding(uint accountId)
+        {
+            using (var context = new AuthDbContext())
+            {
+                var bindings = context.AccountIpBinding.Where(r => r.AccountId == accountId).ToList();
+                if (bindings.Count > 0)
+                {
+                    context.AccountIpBinding.RemoveRange(bindings);
+                    context.SaveChanges();
+                }
+            }
+        }
+
+        /// <summary>Appends a record to the IP change audit log.</summary>
+        public void InsertIpChangeLog(uint accountId, string oldIp, string newIp, bool autoBanned)
+        {
+            using (var context = new AuthDbContext())
+            {
+                context.AccountIpChangeLog.Add(new AccountIpChangeLog
+                {
+                    AccountId    = accountId,
+                    OldIp        = oldIp,
+                    NewIp        = newIp,
+                    ChangedAt    = DateTime.UtcNow,
+                    AutoBanned   = autoBanned,
+                    AdminCleared = false
+                });
+                context.SaveChanges();
+            }
+        }
+
+        /// <summary>Returns recent IP change log entries for an account, newest first.</summary>
+        public List<AccountIpChangeLog> GetIpChangeLog(uint accountId, int limit = 10)
+        {
+            using (var context = new AuthDbContext())
+                return context.AccountIpChangeLog
+                    .AsNoTracking()
+                    .Where(r => r.AccountId == accountId)
+                    .OrderByDescending(r => r.ChangedAt)
+                    .Take(limit)
+                    .ToList();
+        }
     }
 }
