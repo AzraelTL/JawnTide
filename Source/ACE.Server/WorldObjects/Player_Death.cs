@@ -878,7 +878,7 @@ namespace ACE.Server.WorldObjects
                 {
                     log.Warn($"Player_Death: couldn't add item to {Name}'s corpse: {dropItem.Name}");
 
-                    if (!TryAddToInventory(dropItem))
+                    if (!TryCreateInInventoryWithNetworking(dropItem))
                         log.Warn($"Player_Death: couldn't re-add item to {Name}'s inventory: {dropItem.Name}");
                 }
             }
