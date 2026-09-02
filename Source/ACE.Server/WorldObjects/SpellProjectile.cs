@@ -404,6 +404,10 @@ namespace ACE.Server.WorldObjects
                 if (source == null || !target.IsAlive || target.Invincible)
                     return null;
 
+                // Tinker-flagged characters (dedicated crafters) cannot damage monsters (non-player targets)
+                if (sourcePlayer != null && sourcePlayer.IsTinker && targetPlayer == null)
+                    return null;
+
                 // check lifestone protection
                 if (targetPlayer != null && targetPlayer.UnderLifestoneProtection)
                 {
@@ -544,6 +548,13 @@ namespace ACE.Server.WorldObjects
 
                 //all spell projectiles now crit 100% against a logging out target
                 if (targetPlayer != null && (targetPlayer.IsLoggingOut || targetPlayer.PKLogout))
+                {
+                    criticalChance = 1.0f;
+                    criticalHit = true;
+                }
+
+                // Tinker-flagged characters always take critical spell damage when hit
+                if (targetPlayer != null && targetPlayer.IsTinker)
                 {
                     criticalChance = 1.0f;
                     criticalHit = true;

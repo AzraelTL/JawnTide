@@ -192,6 +192,7 @@ namespace ACE.Entity.Enum.Properties
         IsBountyCompleted = 9017,
         SplitArrows = 19017,
         IsSplitArrow = 19018,
-        IsBountyHighPriorityTarget = 19019
+        IsBountyHighPriorityTarget = 19019,
+        IsTinkerCharacter = 19020
     }
 }

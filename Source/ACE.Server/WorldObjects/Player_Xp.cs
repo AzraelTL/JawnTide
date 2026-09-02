@@ -230,6 +230,9 @@ namespace ACE.Server.WorldObjects
         {
             if (!HasAllegiance) return;
 
+            // Tinker-flagged characters never pass XP up the allegiance chain
+            if (IsTinker) return;
+
             AllegianceManager.PassXP(AllegianceNode, (ulong)amount, true);
         }
 

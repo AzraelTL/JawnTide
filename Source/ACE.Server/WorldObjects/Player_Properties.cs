@@ -1532,6 +1532,15 @@ namespace ACE.Server.WorldObjects
             set { if (!value) RemoveProperty(PropertyBool.IsArenaObserver); else SetProperty(PropertyBool.IsArenaObserver, value); }
         }
 
+        /// <summary>
+        /// A Tinker is a dedicated crafting character (see /flagtinker). Irreversible once set.
+        /// </summary>
+        public bool IsTinker
+        {
+            get => GetProperty(PropertyBool.IsTinkerCharacter) ?? false;
+            set { if (!value) RemoveProperty(PropertyBool.IsTinkerCharacter); else SetProperty(PropertyBool.IsTinkerCharacter, value); }
+        }
+
         public bool IsPendingArenaObserver
         {
             get => GetProperty(PropertyBool.IsPendingArenaObserver) ?? false;

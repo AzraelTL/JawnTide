@@ -1289,6 +1289,10 @@ namespace ACE.Server.WorldObjects
             if (targetCreature == null)
                 return null;
 
+            // Tinker-flagged characters (dedicated crafters) cannot engage other players
+            if (IsTinker && target is Player)
+                return new List<WeenieErrorWithString>() { WeenieErrorWithString.YouFailToAffect_YouAreNotPK, WeenieErrorWithString._FailsToAffectYou_TheyAreNotPK };
+
             if (PlayerKillerStatus == PlayerKillerStatus.Free || targetCreature.PlayerKillerStatus == PlayerKillerStatus.Free)
                 return null;
 

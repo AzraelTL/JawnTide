@@ -113,6 +113,12 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public bool HandleActionTrainSkill(Skill skill, int creditsSpent)
         {
+            if (IsTinker)
+            {
+                Session.Network.EnqueueSend(new GameMessageSystemChat("Tinker characters may not train or specialize new skills.", ChatMessageType.Broadcast));
+                return false;
+            }
+
             if (creditsSpent > AvailableSkillCredits)
             {
                 log.Error($"{Name}.HandleActionTrainSkill({skill}, {creditsSpent}) - not enough skill credits ({AvailableSkillCredits})");
@@ -216,6 +222,12 @@ namespace ACE.Server.WorldObjects
         /// <param name="resetSkill">only set to TRUE during character creation. set to FALSE during temple / asheron's castle</param>
         public bool SpecializeSkill(Skill skill, int creditsSpent, bool resetSkill = true)
         {
+            if (IsTinker && !resetSkill)
+            {
+                Session.Network.EnqueueSend(new GameMessageSystemChat("Tinker characters may not train or specialize new skills.", ChatMessageType.Broadcast));
+                return false;
+            }
+
             var creatureSkill = GetCreatureSkill(skill);
 
             if (creatureSkill.AdvancementClass != SkillAdvancementClass.Trained || creditsSpent > AvailableSkillCredits)

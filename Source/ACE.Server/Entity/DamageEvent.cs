@@ -174,7 +174,12 @@ namespace ACE.Server.Entity
             var playerDefender = defender as Player;
 
             var pkBattle = playerAttacker != null && playerDefender != null;
-            
+
+            // Tinker-flagged characters (dedicated crafters) cannot damage monsters (non-player targets).
+            // Tinker-vs-player is blocked earlier in CheckPKStatusVsTarget.
+            if (playerAttacker != null && playerAttacker.IsTinker && playerDefender == null)
+                return 0.0f;
+
             if (playerDefender == null)
             {
                 //If defender is town control boss and attacker is not a player in PK state, dmg is zero
@@ -355,6 +360,10 @@ namespace ACE.Server.Entity
             // (Note that spells do not share this behavior.) We hope this will stress the need to log off in a safe place.
 
             if (playerDefender != null && (playerDefender.IsLoggingOut || playerDefender.PKLogout))
+                CriticalChance = 1.0f;
+
+            // Tinker-flagged characters always take critical damage when hit
+            if (playerDefender != null && playerDefender.IsTinker)
                 CriticalChance = 1.0f;
 
             if (CriticalChance > ThreadSafeRandom.Next(0.0f, 1.0f))
@@ -860,6 +869,10 @@ namespace ACE.Server.Entity
             //var attackType = attacker.GetCombatType();
 
             EffectiveDefenseSkill = defender.GetEffectiveDefenseSkill(CombatType);
+
+            // Tinker-flagged characters can never evade melee or missile attacks
+            if (defender is Player tinkerDefender && tinkerDefender.IsTinker)
+                return 0.0f;
 
             var evadeChance = 1.0f - SkillCheck.GetSkillChance(EffectiveAttackSkill, EffectiveDefenseSkill);
             return (float)evadeChance;

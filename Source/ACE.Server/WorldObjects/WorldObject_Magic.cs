@@ -170,6 +170,10 @@ namespace ACE.Server.WorldObjects
             var player = this as Player;
             var targetPlayer = target as Player;
 
+            // Tinker-flagged characters can never resist spells (lifestone protection below still applies)
+            if (targetPlayer != null && targetPlayer.IsTinker)
+                resisted = false;
+
             if (target.Invincible)
             {
                 resisted = true;

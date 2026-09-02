@@ -67,6 +67,14 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            // Tinker-flagged characters may only heal themselves
+            if (healer.IsTinker && !healer.Equals(targetPlayer))
+            {
+                healer.Session.Network.EnqueueSend(new GameMessageSystemChat("As a Tinker, you cannot heal other players.", ChatMessageType.Broadcast));
+                healer.SendUseDoneEvent();
+                return;
+            }
+
             if (healer.IsJumping)
             {
                 healer.SendUseDoneEvent(WeenieError.YouCantDoThatWhileInTheAir);

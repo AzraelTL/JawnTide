@@ -312,7 +312,8 @@ namespace ACE.Server.WorldObjects
 
             // update vitae
             // players who died in a PKLite fight do not accrue vitae
-            if (!IsPKLiteDeath(topDamager))
+            // Tinker characters (dedicated crafters) never suffer a vitae penalty
+            if (!IsPKLiteDeath(topDamager) && !IsTinker)
                 InflictVitaePenalty();
 
             if (IsPKDeath(topDamager) || AugmentationSpellsRemainPastDeath == 0)

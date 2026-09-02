@@ -944,6 +944,12 @@ namespace ACE.Server.Command.Handlers
                 }
             }            
 
+            if (player.IsTinker)
+            {
+                isSuccess = false;
+                return "Tinker characters cannot join arena events.";
+            }
+
             var minLevel = PropertyManager.GetLong("arenas_min_level").Item;
             if (player.Level < minLevel)
             {
@@ -1051,6 +1057,41 @@ namespace ACE.Server.Command.Handlers
                 CommandHandlerHelper.WriteOutputInfo(session, $"Invalid parameters, please provide a player name for the player that needs to be logged off.");
                 return;
             }            
+        }
+
+        // flagtinker
+        [CommandHandler("flagtinker", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
+            "Permanently designates this character as a Tinker. " +
+            "Requirements: character must be level 1 and the account must not already have a Tinker character. " +
+            "All crafting skills will be auto-specialized and maxed. All offensive combat skills will be removed. " +
+            "Tinker characters cannot train or specialize new skills and do not suffer vitae on death. This is irreversible.")]
+        public static void HandleFlagTinker(Session session, params string[] parameters)
+        {
+            var player = session.Player;
+
+            // Already a Tinker
+            if (player.IsTinker)
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat("This character is already a Tinker.", ChatMessageType.Broadcast));
+                return;
+            }
+
+            // Must be level 1
+            if ((player.Level ?? 0) > 1)
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat("Only a level 1 character may be designated as a Tinker.", ChatMessageType.Broadcast));
+                return;
+            }
+
+            // One Tinker per account
+            var accountPlayers = PlayerManager.GetAccountPlayers(session.AccountId);
+            if (accountPlayers != null && accountPlayers.Values.Any(p => p.IsTinker))
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat("Your account already has a Tinker character. Only one Tinker is allowed per account.", ChatMessageType.Broadcast));
+                return;
+            }
+
+            player.FlagAsTinker();
         }
 
         private const int renameBaseCost = 200;

@@ -43,6 +43,8 @@ namespace ACE.Server.Entity
         public bool IsDeleted => DatabaseManager.Shard.BaseDatabase.GetCharacterStubByGuid(Guid.Full).IsDeleted;
         public bool IsPendingDeletion => DatabaseManager.Shard.BaseDatabase.GetCharacterStubByGuid(Guid.Full).DeleteTime > 0 && !IsDeleted;
 
+        public bool IsTinker => GetProperty(PropertyBool.IsTinkerCharacter) ?? false;
+
         public DateTime LastRequestedDatabaseSave { get; protected set; }
 
         public bool ChangesDetected { get; set; }

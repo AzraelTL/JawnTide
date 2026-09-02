@@ -54,6 +54,8 @@ namespace ACE.Server.Entity
         bool IsDeleted { get; }
         bool IsPendingDeletion { get; }
 
+        bool IsTinker { get; }
+
 
         uint? MonarchId { get; set; }
 
