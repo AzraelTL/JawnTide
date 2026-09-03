@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using ACE.Entity;
@@ -296,6 +297,71 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
+        /// Kicks a single DIRECT vassal off <paramref name="patron"/>, using the same behavior as the
+        /// allegiance boot command: the vassal is severed and becomes the monarch of its own sub-tree
+        /// (which stays intact), and the caches are refreshed via OnBreakAllegiance.
+        /// </summary>
+        private static void KickDirectVassal(IPlayer patron, IPlayer vassal)
+        {
+            var patronAllegiance = AllegianceManager.GetAllegiance(patron);
+            if (patronAllegiance == null || !patronAllegiance.Members.TryGetValue(vassal.Guid, out var vassalNode))
+                return;
+
+            vassal.PatronId = null;
+
+            var monarchId = vassalNode.HasVassals ? (uint?)vassal.Guid.Full : null;
+            vassal.UpdateProperty(PropertyInstanceId.Monarch, monarchId, true);
+
+            // walk the vassal's sub-tree, re-rooting their monarch ids onto the vassal
+            vassalNode.Walk((node) =>
+            {
+                node.Player.UpdateProperty(PropertyInstanceId.Monarch, vassal.Guid.Full, true);
+
+                node.Player.SaveBiotaToDatabase();
+
+            }, false);
+
+            vassal.SaveBiotaToDatabase();
+
+            AllegianceManager.OnBreakAllegiance(patron, vassal);
+        }
+
+        /// <summary>
+        /// One-level break-off used when a player leaves the allegiance (breaks, is kicked, or is booted).
+        /// Releases each of <paramref name="detached"/>'s DIRECT vassals into their own allegiance (each
+        /// becomes their own monarch, keeping their sub-tree), then severs the detached player from its
+        /// own patron, leaving it solo. Does NOT propagate deeper than one level.
+        /// </summary>
+        private static void DetachWithVassalRelease(IPlayer detached, IPlayer patron)
+        {
+            // Capture the detached player's direct vassals before mutating the tree.
+            var directVassals = new List<IPlayer>();
+            var detachedAllegiance = AllegianceManager.GetAllegiance(detached);
+            if (detachedAllegiance != null && detachedAllegiance.Members.TryGetValue(detached.Guid, out var detachedNode) && detachedNode.Vassals != null)
+                directVassals = detachedNode.Vassals.Values.Select(v => v.Player).Where(p => p != null).ToList();
+
+            // Release each direct vassal (same behavior as booting them), one level only.
+            foreach (var vassal in directVassals)
+            {
+                KickDirectVassal(detached, vassal);
+
+                var onlineVassal = PlayerManager.GetOnlinePlayer(vassal.Guid);
+                onlineVassal?.Session.Network.EnqueueSend(new GameMessageSystemChat(
+                    "Your patron has left the allegiance. You are now your own monarch.", ChatMessageType.Broadcast));
+
+                CheckAllegianceHouse(vassal.Guid);
+            }
+
+            // Sever the detached player from its own patron - it now has no vassals, so it goes solo.
+            if (patron != null)
+                KickDirectVassal(patron, detached);
+
+            CheckAllegianceHouse(detached.Guid);
+            if (patron != null)
+                CheckAllegianceHouse(patron.Guid);
+        }
+
+        /// <summary>
         /// Called when a player tries to break Allegiance to a target
         /// </summary>
         /// <param name="targetGuid">The target this player is attempting to break allegiance from</param>
@@ -310,49 +376,17 @@ namespace ACE.Server.WorldObjects
             log.DebugFormat("[ALLEGIANCE] {0} breaking allegiance to {1}", Name, target.Name);
 
             // target can be either patron or vassal
-            var isPatron = PatronId == target.Guid.Full;
             var isVassal = target.PatronId == Guid.Full;
 
-            // break ties
-            if (isVassal)
-            {
-                // patron breaking from vassal
-                target.PatronId = null;
+            // Determine who is DETACHED and who their patron is:
+            //  - a patron kicking a vassal     -> the vassal (target) is detached, this player is the patron
+            //  - a vassal breaking from patron -> this player is detached, target is the patron
+            var detached     = isVassal ? target : (IPlayer)this;
+            var detachPatron = isVassal ? (IPlayer)this : target;
 
-                Allegiance.Members.TryGetValue(target.Guid, out var targetNode);
-
-                var monarchId = targetNode.HasVassals ? (uint?)target.Guid.Full : null;
-
-                target.UpdateProperty(PropertyInstanceId.Monarch, monarchId, true);
-
-                // walk the allegiance tree from this node, update monarch ids
-                targetNode.Walk((node) =>
-                {
-                    node.Player.UpdateProperty(PropertyInstanceId.Monarch, target.Guid.Full, true);
-
-                    node.Player.SaveBiotaToDatabase();
-
-                }, false);
-
-                target.SaveBiotaToDatabase();
-            }
-            else
-            {
-                // vassal breaking from patron
-                PatronId = null;
-                UpdateProperty(PropertyInstanceId.Monarch, null, true);
-
-                // walk the allegiance tree from this node, update monarch ids
-                AllegianceNode.Walk((node) =>
-                {
-                    node.Player.UpdateProperty(PropertyInstanceId.Monarch, Guid.Full, true);
-
-                    node.Player.SaveBiotaToDatabase();
-
-                }, false);
-
-                SaveBiotaToDatabase();
-            }
+            // One-level break-off: release the detached player's direct vassals (each becomes their own
+            // monarch, keeping their sub-tree), then sever the detached player, leaving it solo.
+            DetachWithVassalRelease(detached, detachPatron);
 
             // send message to target if online
             if (targetIsOnline)
@@ -365,30 +399,7 @@ namespace ACE.Server.WorldObjects
             // send message to self
             Session.Network.EnqueueSend(new GameMessageSystemChat($"You have broken your Allegiance to {target.Name}!", ChatMessageType.Broadcast));
 
-            // rebuild allegiance tree structures
-            AllegianceManager.OnBreakAllegiance(this, target);
-
-            if (isVassal)
-            {
-                // patron broke from vassal
-                CheckAllegianceHouse(target.Guid);
-
-                var vassalAllegiance = AllegianceManager.GetAllegiance(target);
-                if (vassalAllegiance != null)
-                    vassalAllegiance.Monarch.Walk((node) => CheckAllegianceHouse(node.PlayerGuid), false);
-            }
-            else
-            {
-                // vassal broke from patron
-                CheckAllegianceHouse(Guid);
-
-                if (AllegianceNode != null)
-                    AllegianceNode.Walk((node) => CheckAllegianceHouse(node.PlayerGuid), false);
-            }
-
             // refresh ui panel
-
-            // move this to function below?
             Session.Network.EnqueueSend(new GameEventAllegianceUpdate(Session, Allegiance, AllegianceNode), new GameEventAllegianceAllegianceUpdateDone(Session));
         }
 
@@ -1626,27 +1637,9 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            player.PatronId = null;
-            player.UpdateProperty(PropertyInstanceId.Monarch, null, true);
-
-            // walk the allegiance tree from this node, update monarch ids
-            Allegiance.Members.TryGetValue(player.Guid, out var targetNode);
-
-            targetNode.Walk((node) =>
-            {
-                node.Player.UpdateProperty(PropertyInstanceId.Monarch, player.Guid.Full, true);
-
-                node.Player.SaveBiotaToDatabase();
-            });
-
-            // rebuild allegiance tree structures
-            AllegianceManager.OnBreakAllegiance(player, patron);
-
-            CheckAllegianceHouse(player.Guid);
-
-            var newAllegiance = AllegianceManager.GetAllegiance(player);
-            if (newAllegiance != null)
-                newAllegiance.Monarch.Walk((node) => CheckAllegianceHouse(node.PlayerGuid), false);
+            // One-level break-off: release the booted player's direct vassals (each becomes their own
+            // monarch, keeping their sub-tree), then sever the booted player, leaving them solo.
+            DetachWithVassalRelease(player, patron);
 
             // update allegiance ui panels?
 
