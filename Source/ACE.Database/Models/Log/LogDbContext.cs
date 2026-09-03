@@ -33,6 +33,12 @@ namespace ACE.Database.Models.Log
 
         public virtual DbSet<StuckCharacterLog> StuckCharacterLogs { get; set; }
 
+        public virtual DbSet<SeasonMilestone> SeasonMilestones { get; set; }
+
+        public virtual DbSet<SeasonMilestoneLeader> SeasonMilestoneLeaders { get; set; }
+
+        public virtual DbSet<SeasonChampionPoints> SeasonChampionPoints { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
@@ -412,6 +418,44 @@ namespace ACE.Database.Models.Log
 
                 entity.Property(e => e.CreatedAtUtc)
                     .HasColumnName("createdAtUtc");
+            });
+
+            modelBuilder.Entity<SeasonMilestone>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PRIMARY");
+                entity.ToTable("season_milestone");
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.WeekNumber).HasColumnName("week_number");
+                entity.Property(e => e.SnapshotDatetime).HasColumnName("snapshot_datetime");
+            });
+
+            modelBuilder.Entity<SeasonMilestoneLeader>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PRIMARY");
+                entity.ToTable("season_milestone_leader");
+                entity.HasIndex(e => new { e.MilestoneId, e.Category, e.Rank }, "idx_milestone_cat_rank");
+                entity.HasIndex(e => new { e.CharacterId, e.RewardClaimed }, "idx_char_claimed");
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.MilestoneId).HasColumnName("milestone_id");
+                entity.Property(e => e.WeekNumber).HasColumnName("week_number");
+                entity.Property(e => e.Category).HasColumnName("category").HasMaxLength(32);
+                entity.Property(e => e.Rank).HasColumnName("rank");
+                entity.Property(e => e.CharacterId).HasColumnName("character_id");
+                entity.Property(e => e.CharacterName).HasColumnName("character_name");
+                entity.Property(e => e.Score).HasColumnName("score");
+                entity.Property(e => e.RewardClaimed).HasColumnName("reward_claimed");
+                entity.Property(e => e.ClaimedDatetime).HasColumnName("claimed_datetime");
+            });
+
+            modelBuilder.Entity<SeasonChampionPoints>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PRIMARY");
+                entity.ToTable("season_champion_points");
+                entity.HasIndex(e => e.CharacterId, "uidx_character").IsUnique();
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.CharacterId).HasColumnName("character_id");
+                entity.Property(e => e.CharacterName).HasColumnName("character_name");
+                entity.Property(e => e.Points).HasColumnName("points");
             });
 
             OnModelCreatingPartial(modelBuilder);

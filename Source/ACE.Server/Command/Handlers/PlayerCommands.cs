@@ -1206,6 +1206,76 @@ namespace ACE.Server.Command.Handlers
             CommandHandlerHelper.WriteOutputInfo(session, sb.ToString(), ChatMessageType.Broadcast);
         }
 
+        // season
+        [CommandHandler("season", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
+            "Season leaderboards and Season Champion standings.",
+            "status | top [category] | champion | stats [name]")]
+        public static void HandleSeason(Session session, params string[] parameters)
+        {
+            var sub = parameters.Length > 0 ? parameters[0].ToLowerInvariant() : "status";
+
+            if (sub == "status")
+            {
+                HandleSeasonStatus(session, parameters);
+                return;
+            }
+
+            if (!CheckPlayerCommandRateLimit(session)) return;
+
+            if (!Managers.PropertyManager.GetBool("season_leaderboard_enabled").Item)
+            {
+                CommandHandlerHelper.WriteOutputInfo(session, "The season leaderboard is not enabled.");
+                return;
+            }
+
+            var sb = new System.Text.StringBuilder();
+
+            if (sub == "champion")
+            {
+                var board = Managers.SeasonLeaderboardManager.GetChampionLeaderboard(10);
+                sb.AppendLine("------- Season Champion -------");
+                if (board.Count == 0)
+                    sb.AppendLine("  (no points awarded yet - the first milestone runs Sunday)");
+                else
+                    for (int i = 0; i < board.Count; i++)
+                        sb.AppendLine($"  {i + 1,2}. {board[i].CharacterName,-24} {board[i].Points:N0} pts");
+                var mine = Managers.SeasonLeaderboardManager.GetChampionPointsFor(session.Player.Character.Id);
+                sb.AppendLine($"  You: {mine:N0} pts");
+            }
+            else if (sub == "stats")
+            {
+                var name = parameters.Length > 1 ? string.Join(" ", parameters.Skip(1)) : session.Player.Name;
+                var target = PlayerManager.FindByName(name);
+                if (target == null) { CommandHandlerHelper.WriteOutputInfo(session, $"Character '{name}' not found."); return; }
+                sb.AppendLine($"------- Season Standings: {target.Name} -------");
+                foreach (var cat in Managers.SeasonLeaderboardManager.AllCategories)
+                {
+                    bool weekly = Managers.SeasonLeaderboardManager.NonArenaCategories.Contains(cat);
+                    var top = Managers.SeasonLeaderboardManager.GetTop(cat, weekly, 100);
+                    var row = top.FirstOrDefault(r => r.CharacterId == target.Guid.Full);
+                    var label = Managers.SeasonLeaderboardManager.GetCategoryDisplayName(cat);
+                    sb.AppendLine(row != null ? $"  {label,-16} #{row.Rank} ({row.ScoreDisplay})" : $"  {label,-16} unranked");
+                }
+                sb.AppendLine($"  Season Champion   {Managers.SeasonLeaderboardManager.GetChampionPointsFor(target.Guid.Full):N0} pts");
+            }
+            else // "top" [category]
+            {
+                var catArg = parameters.Length > 1 ? Managers.SeasonLeaderboardManager.ResolveAlias(parameters[1]) : null;
+                var cats = catArg != null ? new[] { catArg } : Managers.SeasonLeaderboardManager.AllCategories;
+                foreach (var cat in cats)
+                {
+                    bool weekly = Managers.SeasonLeaderboardManager.NonArenaCategories.Contains(cat);
+                    var top = Managers.SeasonLeaderboardManager.GetTop(cat, weekly, 10);
+                    sb.AppendLine($"--- {Managers.SeasonLeaderboardManager.GetCategoryDisplayName(cat)}{(weekly ? " (this week)" : "")} ---");
+                    if (top.Count == 0) sb.AppendLine("  (no data)");
+                    foreach (var r in top)
+                        sb.AppendLine($"  {r.Rank,2}. {r.CharacterName,-24} {r.ScoreDisplay}");
+                }
+            }
+
+            CommandHandlerHelper.WriteOutputInfo(session, sb.ToString(), ChatMessageType.Broadcast);
+        }
+
         private const int renameBaseCost = 200;
         private const int renameMaxCost = 20000;
         // buyrename <Current Name> <New Name>

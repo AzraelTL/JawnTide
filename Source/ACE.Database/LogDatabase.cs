@@ -613,9 +613,233 @@ namespace ACE.Database
         //        var reader = command.ExecuteReader();
         //        while (reader.Read())
         //        {
-        //            
+        //
         //        }
         //    }
-        //}        
+        //}
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Season leaderboard
+        // ─────────────────────────────────────────────────────────────────────
+
+        /// <summary>All open-world PK kill rows (arena kills excluded) with kill_datetime in [start, end).</summary>
+        public List<PKKill> GetOpenWorldPkKillsInWindow(DateTime startUtc, DateTime endUtc)
+        {
+            try
+            {
+                using (var context = new LogDbContext())
+                    return context.PKKills.AsNoTracking()
+                        .Where(k => k.KillerArenaPlayerID == null && k.VictimArenaPlayerID == null
+                                    && k.KillDateTime >= startUtc && k.KillDateTime < endUtc)
+                        .ToList();
+            }
+            catch (Exception ex)
+            {
+                log.Error($"Error in GetOpenWorldPkKillsInWindow. ex:{ex}");
+                return new List<PKKill>();
+            }
+        }
+
+        /// <summary>Every ArenaCharacterStats row (one per character per event type). Season-cumulative.</summary>
+        public List<ArenaCharacterStats> GetAllArenaCharacterStats()
+        {
+            try
+            {
+                using (var context = new LogDbContext())
+                    return context.ArenaCharacterStats.AsNoTracking().ToList();
+            }
+            catch (Exception ex)
+            {
+                log.Error($"Error in GetAllArenaCharacterStats. ex:{ex}");
+                return new List<ArenaCharacterStats>();
+            }
+        }
+
+        /// <summary>Creates a milestone header row and returns its id (0 on failure).</summary>
+        public uint CaptureSeasonMilestone(int weekNumber)
+        {
+            try
+            {
+                using (var context = new LogDbContext())
+                {
+                    var m = new SeasonMilestone { WeekNumber = weekNumber, SnapshotDatetime = DateTime.UtcNow };
+                    context.SeasonMilestones.Add(m);
+                    context.SaveChanges();
+                    return m.Id;
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error($"Error in CaptureSeasonMilestone. ex:{ex}");
+                return 0;
+            }
+        }
+
+        /// <summary>Most recent milestone header, or null if none.</summary>
+        public SeasonMilestone GetLatestSeasonMilestone()
+        {
+            try
+            {
+                using (var context = new LogDbContext())
+                    return context.SeasonMilestones.AsNoTracking().OrderByDescending(m => m.SnapshotDatetime).FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+                log.Error($"Error in GetLatestSeasonMilestone. ex:{ex}");
+                return null;
+            }
+        }
+
+        public void SaveSeasonMilestoneLeaders(List<SeasonMilestoneLeader> leaders)
+        {
+            if (leaders == null || leaders.Count == 0) return;
+            try
+            {
+                using (var context = new LogDbContext())
+                {
+                    context.SeasonMilestoneLeaders.AddRange(leaders);
+                    context.SaveChanges();
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error($"Error in SaveSeasonMilestoneLeaders. ex:{ex}");
+            }
+        }
+
+        public List<SeasonMilestoneLeader> GetSeasonMilestoneLeaders(int weekNumber)
+        {
+            try
+            {
+                using (var context = new LogDbContext())
+                    return context.SeasonMilestoneLeaders.AsNoTracking()
+                        .Where(l => l.WeekNumber == weekNumber)
+                        .OrderBy(l => l.Category).ThenBy(l => l.Rank).ToList();
+            }
+            catch (Exception ex)
+            {
+                log.Error($"Error in GetSeasonMilestoneLeaders. ex:{ex}");
+                return new List<SeasonMilestoneLeader>();
+            }
+        }
+
+        /// <summary>Unclaimed weekly reward finishes for a character, newest week first.</summary>
+        public List<SeasonMilestoneLeader> GetUnclaimedSeasonRewards(uint characterId)
+        {
+            try
+            {
+                using (var context = new LogDbContext())
+                    return context.SeasonMilestoneLeaders.AsNoTracking()
+                        .Where(l => l.CharacterId == characterId && !l.RewardClaimed)
+                        .OrderByDescending(l => l.WeekNumber).ThenBy(l => l.Category).ToList();
+            }
+            catch (Exception ex)
+            {
+                log.Error($"Error in GetUnclaimedSeasonRewards. ex:{ex}");
+                return new List<SeasonMilestoneLeader>();
+            }
+        }
+
+        public void MarkSeasonRewardClaimed(uint leaderId)
+        {
+            try
+            {
+                using (var context = new LogDbContext())
+                {
+                    var row = context.SeasonMilestoneLeaders.FirstOrDefault(l => l.Id == leaderId);
+                    if (row != null && !row.RewardClaimed)
+                    {
+                        row.RewardClaimed = true;
+                        row.ClaimedDatetime = DateTime.UtcNow;
+                        context.SaveChanges();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error($"Error in MarkSeasonRewardClaimed. ex:{ex}");
+            }
+        }
+
+        /// <summary>Adds (increments) Season Champion points for a character, creating the row if needed.</summary>
+        public void AddSeasonChampionPoints(uint characterId, string characterName, long points)
+        {
+            if (points == 0) return;
+            try
+            {
+                using (var context = new LogDbContext())
+                {
+                    var row = context.SeasonChampionPoints.FirstOrDefault(p => p.CharacterId == characterId);
+                    if (row == null)
+                    {
+                        context.SeasonChampionPoints.Add(new SeasonChampionPoints
+                        {
+                            CharacterId = characterId,
+                            CharacterName = characterName,
+                            Points = points
+                        });
+                    }
+                    else
+                    {
+                        row.Points += points;
+                        row.CharacterName = characterName;
+                    }
+                    context.SaveChanges();
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error($"Error in AddSeasonChampionPoints. ex:{ex}");
+            }
+        }
+
+        public List<SeasonChampionPoints> GetSeasonChampionLeaderboard(int count = 10)
+        {
+            try
+            {
+                using (var context = new LogDbContext())
+                    return context.SeasonChampionPoints.AsNoTracking()
+                        .Where(p => p.Points > 0)
+                        .OrderByDescending(p => p.Points).Take(count).ToList();
+            }
+            catch (Exception ex)
+            {
+                log.Error($"Error in GetSeasonChampionLeaderboard. ex:{ex}");
+                return new List<SeasonChampionPoints>();
+            }
+        }
+
+        public long GetSeasonChampionPoints(uint characterId)
+        {
+            try
+            {
+                using (var context = new LogDbContext())
+                    return context.SeasonChampionPoints.AsNoTracking()
+                        .Where(p => p.CharacterId == characterId).Select(p => p.Points).FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+                log.Error($"Error in GetSeasonChampionPoints. ex:{ex}");
+                return 0;
+            }
+        }
+
+        /// <summary>Wipes all season leaderboard state (milestones, leaders, champion points). Admin / new-season use.</summary>
+        public void ResetSeasonLeaderboardData()
+        {
+            try
+            {
+                using (var context = new LogDbContext())
+                {
+                    context.Database.ExecuteSqlRaw("DELETE FROM season_milestone_leader");
+                    context.Database.ExecuteSqlRaw("DELETE FROM season_milestone");
+                    context.Database.ExecuteSqlRaw("DELETE FROM season_champion_points");
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error($"Error in ResetSeasonLeaderboardData. ex:{ex}");
+            }
+        }
     }
 }

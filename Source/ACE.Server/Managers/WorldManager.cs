@@ -498,6 +498,16 @@ namespace ACE.Server.Managers
                     log.Error($"Exception executing RollingLevelCapManager Tick. ex: {ex}");
                 }
 
+                ////Season leaderboard weekly milestone
+                try
+                {
+                    SeasonLeaderboardManager.Tick();
+                }
+                catch (Exception ex)
+                {
+                    log.Error($"Exception executing SeasonLeaderboardManager Tick. ex: {ex}");
+                }
+
                 ServerPerformanceMonitor.RestartEvent(ServerPerformanceMonitor.MonitorType.NetworkManager_InboundClientMessageQueueRun);
                 NetworkManager.InboundMessageQueue.RunActions();
                 ServerPerformanceMonitor.RegisterEventEnd(ServerPerformanceMonitor.MonitorType.NetworkManager_InboundClientMessageQueueRun);

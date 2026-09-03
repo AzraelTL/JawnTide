@@ -647,6 +647,9 @@ namespace ACE.Server.Managers
                 ("local_server", new Property<bool>(false, "Do not enable on live servers! Enable this to allow for server behavior to change as necessary for testing envrionments.")),
                 ("world_closed", new Property<bool>(false, "enable this to startup world as a closed to players world")),
 
+                // Season leaderboard
+                ("season_leaderboard_enabled", new Property<bool>(false, "master on/off for the season leaderboard + Season Champion weekly milestone snapshots")),
+
                 // Open-world PK economy
                 ("pk_xp_kill_reward_enabled", new Property<bool>(false, "award PvP XP (XpType.PvP) to the killer on an open-world PK kill of a different allegiance, scaled by level gap and subject to same-target diminishing returns")),
                 ("pk_xp_zerg_penalty_enabled", new Property<bool>(false, "reduce all XpType.PvP XP by the earner's allegiance online headcount (<=10 online = 100%, scaling down to 10% at 17+)")),
@@ -708,6 +711,9 @@ namespace ACE.Server.Managers
                 ("bounty_location_price_amount", new Property<long>(25, "the amount of bounty contract location finder currency it costs to use the location finder")),
                 ("town_control_allegiance_player_limit", new Property<long>(13, "the maximum total entries of players per allegiance")),
                 ("bounty_max_contracts", new Property<long>(3, "the maximum amount of contracts a player can have")),
+
+                // Season leaderboard
+                ("season_kd_min_kills", new Property<long>(10, "minimum kills (in the ranking window) required to appear on the K/D Ratio leaderboard")),
 
                 // Season rolling XP cap
                 ("rolling_level_cap_start_timestamp", new Property<long>(0, "Unix timestamp of season day 0 for the rolling XP cap. 0 = season not started.")),
@@ -884,6 +890,7 @@ namespace ACE.Server.Managers
                 ("turbine_chat_webhook", new Property<string>("", "Webhook to be used for turbine chat. This is for copying ingame general chat channels to a Discord channel.")),
                 ("turbine_chat_webhook_audit", new Property<string>("", "Webhook to be used for ingame audit log.")),
                 ("proxycheck_api_key", new Property<string>("", "API key for proxycheck.io service for VPN detection")),
+                ("season_leaderboard_webhook", new Property<string>("", "Discord webhook URL for the weekly season leaderboard milestone post")),
                 ("ip_binding_ip_whitelist", new Property<string>("", "Comma-separated list of IP addresses exempt from the one-account-per-IP binding rule (e.g. a LAN or staff office IP). Accounts logging in from these IPs bypass conflict checks entirely (unlimited accounts).")),
                 ("ip_binding_ip_allowance", new Property<string>("", "Comma-separated per-IP overrides for the number of distinct accounts allowed to bind to a single IP, formatted 'ip:count'. Example: '203.0.113.42:2, 198.51.100.7:2'. IPs not listed use the default allowance of 1 (one account per IP). Unlike ip_binding_ip_whitelist, this enforces a hard cap instead of unlimited.")),
                 ("town_control_alleglist", new Property<string>("", "A comma separated list of MonarchID values to whitelist allegiances for participation in town control events")),
