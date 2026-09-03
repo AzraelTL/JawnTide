@@ -647,6 +647,10 @@ namespace ACE.Server.Managers
                 ("local_server", new Property<bool>(false, "Do not enable on live servers! Enable this to allow for server behavior to change as necessary for testing envrionments.")),
                 ("world_closed", new Property<bool>(false, "enable this to startup world as a closed to players world")),
 
+                // Open-world PK economy
+                ("pk_xp_kill_reward_enabled", new Property<bool>(false, "award PvP XP (XpType.PvP) to the killer on an open-world PK kill of a different allegiance, scaled by level gap and subject to same-target diminishing returns")),
+                ("pk_xp_zerg_penalty_enabled", new Property<bool>(false, "reduce all XpType.PvP XP by the earner's allegiance online headcount (<=10 online = 100%, scaling down to 10% at 17+)")),
+
                 // Season rolling XP cap
                 ("rolling_level_cap_enabled", new Property<bool>(false, "master on/off for the server-wide rolling season XP cap")),
                 ("rolling_xp_modifier_enabled", new Property<bool>(false, "when true, RollingLevelCapManager drives the xp_modifier config along a season curve (0.25x at start up to rolling_xp_modifier_max)")),
@@ -847,6 +851,14 @@ namespace ACE.Server.Managers
                 ("bounty_weight_maxstack_scale", new Property<double>(0.2, "bounty weight max stack scale tuning this is used to apply an effective max stack")),
                 ("bounty_npc_use_cooldown_seconds", new Property<double>(3.0, "the cooldown in seconds between bounty npc usage")),
                 ("recent_teleport_threshold", new Property<double>(3.0, "the number of seconds after materializing that a player can teleport again")),
+
+                // Open-world PK economy
+                ("pk_xp_level_diff_decay", new Property<double>(0.85, "per-level exponential decay applied to open-world PK-kill XP when the victim is below the killer's level (0.85 => ~20% reward at 10 levels below)")),
+                ("pk_xp_kill_reward_min_pct", new Property<double>(0.05, "minimum open-world PK-kill XP reward as a fraction of the killer's XP-to-next-level")),
+                ("pk_xp_kill_reward_max_pct", new Property<double>(0.10, "maximum open-world PK-kill XP reward as a fraction of the killer's XP-to-next-level")),
+                ("pk_kill_window_hours", new Property<double>(1.0, "sliding-window length (hours) for same-target PK diminishing returns")),
+                ("pk_kill_diminish_threshold", new Property<double>(3.0, "number of kills against the same victim (per character AND per account) within the window before rewards are suppressed")),
+                ("pk_kill_diminish_hours", new Property<double>(3.0, "hours the diminishing-returns suppression lasts once the threshold is exceeded")),
 
                 // Season rolling XP cap
                 ("rolling_xp_modifier_max", new Property<double>(3.0, "end-of-ramp value for xp_modifier when rolling_xp_modifier_enabled is true; the modifier curves from 0.25x at season start up to this")),

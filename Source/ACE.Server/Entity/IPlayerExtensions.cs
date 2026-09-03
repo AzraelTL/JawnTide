@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity.TownControl;
 using ACE.Server.Managers;
@@ -55,6 +56,40 @@ namespace ACE.Server.Entity
             var playerBMonarch = playerB.MonarchId != null ? playerB.MonarchId : playerB.Guid.Full;
 
             return playerAMonarch == playerBMonarch;
+        }
+
+        /// <summary>
+        /// Returns true if a DIFFERENT character on this player's account belongs to the allegiance
+        /// led by <paramref name="monarchId"/>. The player's own character is excluded; the monarch
+        /// (whose own MonarchId may be null/self) is matched by guid. Uses verified allegiance
+        /// membership, matching the account-lock semantics.
+        /// </summary>
+        public static bool AccountHasAllegianceMember(this IPlayer player, uint monarchId)
+        {
+            if (monarchId == 0 || player?.Account == null)
+                return false;
+
+            var accountPlayers = PlayerManager.GetAccountPlayers(player.Account.AccountId);
+            if (accountPlayers == null)
+                return false;
+
+            return accountPlayers.Values.Any(p =>
+                p.Guid != player.Guid &&
+                ((AllegianceManager.GetVerifiedMonarchId(p) ?? p.Guid.Full) == monarchId));
+        }
+
+        /// <summary>
+        /// Anti-alt-farming rule: returns true when the victim is a throwaway parked on an
+        /// allegiance-mate's account - i.e. the victim's account holds another character sworn into
+        /// the KILLER's allegiance. Such kills earn no PK rewards. Solo killers never match.
+        /// </summary>
+        public static bool VictimIsAllegianceMateAlt(this IPlayer killer, IPlayer victim)
+        {
+            var killerMonarch = AllegianceManager.GetAllegiance(killer)?.MonarchId;
+            if (!killerMonarch.HasValue || victim == null)
+                return false;
+
+            return victim.AccountHasAllegianceMember(killerMonarch.Value);
         }
     }
 }

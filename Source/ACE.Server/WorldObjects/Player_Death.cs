@@ -31,6 +31,77 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public Dictionary<ObjectGuid, DateTime> LootPermission;
 
+        // ── Open-world PK: same-target diminishing returns ────────────────────────
+        // A sliding window of kill timestamps per victim; once it exceeds
+        // pk_kill_diminish_threshold within pk_kill_window_hours, rewards for that victim
+        // are suppressed for pk_kill_diminish_hours. Tracked per killer character AND per
+        // (killer account, victim account) pair so alts can't dodge it. Ephemeral.
+
+        private struct VictimKillRecord
+        {
+            public List<DateTime> WindowKills;
+            public DateTime? DiminishedUntil;
+        }
+
+        private readonly Dictionary<ulong, VictimKillRecord> _pkKillRecords = new Dictionary<ulong, VictimKillRecord>();
+
+        private static readonly Dictionary<ulong, VictimKillRecord> _pkKillRecordsByAccount = new Dictionary<ulong, VictimKillRecord>();
+        private static readonly object _pkKillRecordsByAccountLock = new object();
+
+        /// <summary>
+        /// Returns true when this kill should grant no PK rewards (diminishing returns). Evaluated
+        /// per victim character AND per account pair; if either window is over threshold the kill is
+        /// diminished. Advances both window states.
+        /// </summary>
+        private bool CheckPkKillDiminished(Player victim)
+        {
+            bool charDiminished = AdvanceKillWindow(_pkKillRecords, victim.Guid.Full);
+
+            bool acctDiminished = false;
+            var killerAccountId = Account?.AccountId;
+            var victimAccountId = victim.Account?.AccountId;
+            if (killerAccountId.HasValue && victimAccountId.HasValue)
+            {
+                var key = ((ulong)killerAccountId.Value << 32) | victimAccountId.Value;
+                lock (_pkKillRecordsByAccountLock)
+                    acctDiminished = AdvanceKillWindow(_pkKillRecordsByAccount, key);
+            }
+
+            return charDiminished || acctDiminished;
+        }
+
+        private static bool AdvanceKillWindow(Dictionary<ulong, VictimKillRecord> records, ulong key)
+        {
+            var windowHours   = PropertyManager.GetDouble("pk_kill_window_hours").Item;
+            var threshold     = (int)PropertyManager.GetDouble("pk_kill_diminish_threshold").Item;
+            var diminishHours = PropertyManager.GetDouble("pk_kill_diminish_hours").Item;
+            var now           = DateTime.UtcNow;
+            var windowStart   = now.AddHours(-windowHours);
+
+            if (!records.TryGetValue(key, out var rec))
+                rec = new VictimKillRecord { WindowKills = new List<DateTime>() };
+
+            if (rec.DiminishedUntil.HasValue && now < rec.DiminishedUntil.Value)
+            {
+                records[key] = rec;
+                return true;
+            }
+
+            rec.DiminishedUntil = null;
+            rec.WindowKills = rec.WindowKills.Where(t => t >= windowStart).ToList();
+
+            bool isDiminished = false;
+            if (rec.WindowKills.Count >= threshold)
+            {
+                rec.DiminishedUntil = now.AddHours(diminishHours);
+                isDiminished = true;
+            }
+
+            rec.WindowKills.Add(now);
+            records[key] = rec;
+            return isDiminished;
+        }
+
         /// <summary>
         /// Called when a player dies, in conjunction with Die()
         /// </summary>
@@ -109,7 +180,45 @@ namespace ACE.Server.WorldObjects
             if (IsPKDeath(topDamager))
             {
                 pkPlayer.PkTimestamp = Time.GetUnixTime();
-                pkPlayer.PlayerKillsPk++;
+
+                var killerIsFarmingVictim = pkPlayer.IsSameAllegiance(this) || pkPlayer.VictimIsAllegianceMateAlt(this);
+
+                // Same-allegiance and allegiance-mate-alt kills do not count toward the PK leaderboard.
+                if (!killerIsFarmingVictim)
+                    pkPlayer.PlayerKillsPk++;
+
+                // ── Open-world PvP XP on kill ────────────────────────────────────────
+                // Different allegiance (and not a mate's parked alt), scaled down per level the
+                // victim is below the killer, subject to same-target diminishing returns. Granted
+                // via GrantXP (not EarnXP) so it is a fixed reward, not scaled by the season rate.
+                bool killDiminished = false;
+                if (PropertyManager.GetBool("pk_xp_kill_reward_enabled").Item && !killerIsFarmingVictim)
+                {
+                    killDiminished = pkPlayer.CheckPkKillDiminished(this);
+
+                    if (!killDiminished)
+                    {
+                        var killerLevel = pkPlayer.Level ?? 1;
+                        var victimLevel = Level ?? 1;
+                        var levelDiff   = Math.Max(0, killerLevel - victimLevel);
+                        var modifier    = Math.Pow(PropertyManager.GetDouble("pk_xp_level_diff_decay").Item, levelDiff);
+
+                        var minPct = (float)PropertyManager.GetDouble("pk_xp_kill_reward_min_pct").Item;
+                        var maxPct = (float)PropertyManager.GetDouble("pk_xp_kill_reward_max_pct").Item;
+                        var randPct = maxPct > minPct ? ThreadSafeRandom.Next(minPct, maxPct) : minPct;
+
+                        var baseXp = (long)pkPlayer.GetXPBetweenLevels(killerLevel, killerLevel + 1);
+                        var pvpXp  = (long)Math.Round(baseXp * randPct * modifier);
+
+                        if (pvpXp > 0)
+                            pkPlayer.GrantXP(pvpXp, XpType.PvP, ShareType.None);
+                    }
+                    else
+                    {
+                        pkPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat(
+                            $"You have defeated {Name} too many times recently - no reward granted.", ChatMessageType.Broadcast));
+                    }
+                }
 
                 var globalPKDe = $"{lastDamager.Name} has defeated {Name}!";
 
@@ -134,6 +243,7 @@ namespace ACE.Server.WorldObjects
                     this.Allegiance.MonarchId.HasValue &&
                     TownControlAllegiances.IsAllowedAllegiance((int)this.Allegiance.MonarchId.Value) &&
                     this.Allegiance.MonarchId != pkPlayer.Allegiance.MonarchId &&
+                    !pkPlayer.VictimIsAllegianceMateAlt(this) &&
                     IsDifferentIPAddress(pkPlayer);
 
                 if (isPkQuestEligible)
