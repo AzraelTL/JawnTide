@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 
+using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
@@ -101,12 +102,54 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
+        /// Unix timestamp of the last PAID allegiance swear. Drives the swear cooldown. The free swears
+        /// (the first allegiance_free_swears) neither set nor are gated by this.
+        /// </summary>
+        public double? AllegianceSwearTimestamp
+        {
+            get => GetProperty(PropertyFloat.AllegianceSwearTimestamp);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.AllegianceSwearTimestamp); else SetProperty(PropertyFloat.AllegianceSwearTimestamp, value.Value); }
+        }
+
+        /// <summary>
+        /// Time remaining on this character's allegiance swear cooldown, or null if not on cooldown.
+        /// The cooldown only applies once trophy costs apply (swears past allegiance_free_swears); the
+        /// free swears are exempt, and allegiance_swear_cooldown_days = 0 disables it entirely.
+        /// </summary>
+        public TimeSpan? AllegianceSwearCooldownRemaining()
+        {
+            // Still within the free swears -> no cooldown.
+            if (CalculateAllegianceSwearCost(AllegianceSwearCount) <= 0)
+                return null;
+
+            if (!AllegianceSwearTimestamp.HasValue)
+                return null;
+
+            var cooldownDays = PropertyManager.GetDouble("allegiance_swear_cooldown_days").Item;
+            if (cooldownDays <= 0)
+                return null;
+
+            var expiry = Time.GetDateTimeFromTimestamp(AllegianceSwearTimestamp.Value).AddDays(cooldownDays);
+            var remaining = expiry - DateTime.UtcNow;
+            return remaining > TimeSpan.Zero ? remaining : (TimeSpan?)null;
+        }
+
+        /// <summary>
         /// Charges the PK-trophy cost for this swear (0 for the free swears) and increments the lifetime
         /// swear count. Returns false (with a message) if the player cannot afford it. Follows the
         /// verify-then-consume pattern used elsewhere for currency sinks.
         /// </summary>
         private bool TryChargeAllegianceSwearCost()
         {
+            var cooldown = AllegianceSwearCooldownRemaining();
+            if (cooldown.HasValue)
+            {
+                var days = (int)Math.Ceiling(cooldown.Value.TotalDays);
+                Session.Network.EnqueueSend(new GameMessageSystemChat(
+                    $"You must wait {days} more day{(days == 1 ? "" : "s")} before swearing allegiance again.", ChatMessageType.Broadcast));
+                return false;
+            }
+
             var cost = CalculateAllegianceSwearCost(AllegianceSwearCount);
             if (cost > 0)
             {
@@ -131,6 +174,9 @@ namespace ACE.Server.WorldObjects
                 Session.Network.EnqueueSend(new GameMessageSystemChat(
                     $"{cost} PK trophies have been removed from your inventory to swear allegiance.", ChatMessageType.Broadcast));
                 PlayerManager.BroadcastToAuditChannel(this, $"Player {Name} paid {cost} PK trophies to swear allegiance (swear #{AllegianceSwearCount + 1}).");
+
+                // This was a paid swear: start the swear cooldown.
+                AllegianceSwearTimestamp = Time.GetUnixTime();
             }
 
             AllegianceSwearCount++;
@@ -566,6 +612,16 @@ namespace ACE.Server.WorldObjects
                         ChatMessageType.Broadcast));
                     return false;
                 }
+            }
+
+            // Swear cooldown check for early feedback; also enforced in TryChargeAllegianceSwearCost.
+            var swearCooldown = AllegianceSwearCooldownRemaining();
+            if (swearCooldown.HasValue)
+            {
+                var days = (int)Math.Ceiling(swearCooldown.Value.TotalDays);
+                Session.Network.EnqueueSend(new GameMessageSystemChat(
+                    $"You must wait {days} more day{(days == 1 ? "" : "s")} before swearing allegiance again.", ChatMessageType.Broadcast));
+                return false;
             }
 
             // PK-trophy affordability check for early feedback; the actual charge is applied on the
