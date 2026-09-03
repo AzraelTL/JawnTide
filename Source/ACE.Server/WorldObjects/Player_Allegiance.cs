@@ -60,6 +60,83 @@ namespace ACE.Server.WorldObjects
             set { if (value) RemoveProperty(PropertyBool.ExistedBeforeAllegianceXpChanges); else SetProperty(PropertyBool.ExistedBeforeAllegianceXpChanges, value); }
         }
 
+        /// <summary>WCID of the PK Trophy currency item consumed by the allegiance swear cost.</summary>
+        private const uint PkTrophyWcid = 1000002;
+
+        /// <summary>
+        /// Lifetime count of how many times this character has sworn allegiance. Drives the PK-trophy
+        /// cost of swearing (the first allegiance_free_swears swears are free). Never reset.
+        /// </summary>
+        public int AllegianceSwearCount
+        {
+            get => GetProperty(PropertyInt.AllegianceSwearCount) ?? 0;
+            set { if (value < 1) RemoveProperty(PropertyInt.AllegianceSwearCount); else SetProperty(PropertyInt.AllegianceSwearCount, value); }
+        }
+
+        // Number of paid swears the cost ramps across (base -> max) before hitting the cap.
+        // With 12 paid steps and the default 3 free swears, the max cost is reached at the 15th swear.
+        private const int AllegianceSwearRampPaidSteps = 12;
+
+        /// <summary>
+        /// PK-trophy cost to swear allegiance, given how many times the character has already sworn.
+        /// The first allegiance_free_swears swears are free; after that the cost ramps exponentially
+        /// from allegiance_swear_base_cost to allegiance_swear_max_cost over AllegianceSwearRampPaidSteps
+        /// paid swears, then holds at the cap.
+        /// </summary>
+        public static int CalculateAllegianceSwearCost(int swearCount)
+        {
+            var freeSwears = PropertyManager.GetLong("allegiance_free_swears").Item;
+            if (swearCount < freeSwears)
+                return 0;
+
+            var baseCost = PropertyManager.GetLong("allegiance_swear_base_cost").Item;
+            var maxCost  = PropertyManager.GetLong("allegiance_swear_max_cost").Item;
+            if (maxCost <= baseCost)
+                return (int)maxCost;
+
+            // base * (max/base)^(paidIndex/(steps-1)) reaches max exactly at paidIndex = steps-1.
+            var paidIndex = swearCount - freeSwears; // 0-based
+            var ratio = Math.Pow((double)maxCost / baseCost, (double)paidIndex / (AllegianceSwearRampPaidSteps - 1));
+            return (int)Math.Min(baseCost * ratio, maxCost);
+        }
+
+        /// <summary>
+        /// Charges the PK-trophy cost for this swear (0 for the free swears) and increments the lifetime
+        /// swear count. Returns false (with a message) if the player cannot afford it. Follows the
+        /// verify-then-consume pattern used elsewhere for currency sinks.
+        /// </summary>
+        private bool TryChargeAllegianceSwearCost()
+        {
+            var cost = CalculateAllegianceSwearCost(AllegianceSwearCount);
+            if (cost > 0)
+            {
+                var owned = GetNumInventoryItemsOfWCID(PkTrophyWcid);
+                if (owned < cost)
+                {
+                    Session.Network.EnqueueSend(new GameMessageSystemChat(
+                        $"Swearing allegiance costs {cost} PK trophies (you have sworn {AllegianceSwearCount} time{(AllegianceSwearCount == 1 ? "" : "s")} before). You don't have enough PK trophies in your inventory.",
+                        ChatMessageType.Broadcast));
+                    return false;
+                }
+
+                if (!TryConsumeFromInventoryWithNetworking(PkTrophyWcid, cost))
+                {
+                    Session.Network.EnqueueSend(new GameMessageSystemChat(
+                        "Error: failed consuming PK trophies from your inventory. Please try again or contact an admin for support.",
+                        ChatMessageType.Broadcast));
+                    PlayerManager.BroadcastToAuditChannel(this, $"Error: player {Name} swore allegiance, was verified to have enough PK trophies, but failed to consume them.");
+                    return false;
+                }
+
+                Session.Network.EnqueueSend(new GameMessageSystemChat(
+                    $"{cost} PK trophies have been removed from your inventory to swear allegiance.", ChatMessageType.Broadcast));
+                PlayerManager.BroadcastToAuditChannel(this, $"Player {Name} paid {cost} PK trophies to swear allegiance (swear #{AllegianceSwearCount + 1}).");
+            }
+
+            AllegianceSwearCount++;
+            return true;
+        }
+
         /// <summary>
         /// Called when a player tries to Swear Allegiance to a target
         /// </summary>
@@ -95,6 +172,10 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            // Charge the PK-trophy cost (free for the first allegiance_free_swears swears) before committing.
+            if (!TryChargeAllegianceSwearCost())
+                return;
+
             log.DebugFormat("[ALLEGIANCE] {0} ({1}) swearing allegiance to {2} ({3})", Name, Level, patron.Name, patron.Level);
 
             PatronId = targetGuid;
@@ -121,6 +202,56 @@ namespace ACE.Server.WorldObjects
             // send message to vassal:
             // %patron% has accepted your oath of Allegiance!
             // Motion_Kneel
+            Session.Network.EnqueueSend(new GameMessageSystemChat($"{patron.Name} has accepted your oath of Allegiance!", ChatMessageType.Broadcast));
+
+            EnqueueBroadcastMotion(new Motion(MotionStance.NonCombat, MotionCommand.Kneel));
+
+            // rebuild allegiance tree structure
+            AllegianceManager.OnSwearAllegiance(this);
+
+            AllegianceXPGenerated = 0;
+            AllegianceOfficerRank = null;
+
+            // refresh ui panel
+            Session.Network.EnqueueSend(new GameEventAllegianceUpdate(Session, Allegiance, AllegianceNode), new GameEventAllegianceAllegianceUpdateDone(Session));
+
+            if (GetCharacterOption(CharacterOption.ListenToAllegianceChat) && Allegiance != null)
+                JoinTurbineChatChannel("Allegiance");
+        }
+
+        /// <summary>
+        /// Swears allegiance to an offline character (used by /OfflineSwear to organize characters on
+        /// the same account into a chain). Mirrors SwearAllegiance but skips the patron-confirmation
+        /// step and the patron-facing messages, since the patron is not online.
+        /// </summary>
+        public void OfflineSwearAllegiance(uint targetGuid)
+        {
+            var patron = PlayerManager.GetOfflinePlayer(targetGuid);
+            if (patron == null || patron.IsPendingDeletion || patron.IsDeleted)
+                return;
+
+            if (!IsPledgable(patron)) return;
+
+            // Charge the PK-trophy cost (free for the first allegiance_free_swears swears) before committing.
+            if (!TryChargeAllegianceSwearCost())
+                return;
+
+            log.Debug($"[ALLEGIANCE] {Name} ({Level}) swearing allegiance to {patron.Name} ({patron.Level})");
+
+            PatronId = targetGuid;
+
+            var monarchGuid = AllegianceManager.GetMonarch(patron).Guid.Full;
+
+            UpdateProperty(PropertyInstanceId.Monarch, monarchGuid, true);
+
+            ExistedBeforeAllegianceXpChanges = (patron.Level ?? 1) >= (Level ?? 1);
+
+            // handle special case: monarch swearing into another allegiance
+            if (Allegiance != null && Allegiance.MonarchId == Guid.Full)
+                HandleMonarchSwear();
+
+            SaveBiotaToDatabase();
+
             Session.Network.EnqueueSend(new GameMessageSystemChat($"{patron.Name} has accepted your oath of Allegiance!", ChatMessageType.Broadcast));
 
             EnqueueBroadcastMotion(new Motion(MotionStance.NonCombat, MotionCommand.Kneel));
@@ -294,7 +425,7 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Returns TRUE if this player can swear to the target guid
         /// </summary>
-        public bool IsPledgable(Player target)
+        public bool IsPledgable(IPlayer target)
         {
             // the client doesn't seem to display most of these werrors,
             // so we also send similar messages as text
@@ -307,19 +438,22 @@ namespace ACE.Server.WorldObjects
                 return false;
             }
 
-            if (target.IsOlthoiPlayer)
+            if (target is Player onlineTarget)
             {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"The Olthoi have loyalty only to their Olthoi Queen!", ChatMessageType.Broadcast));
-                SendWeenieError(WeenieError.None);
-                return false;
-            }
+                if (onlineTarget.IsOlthoiPlayer)
+                {
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"The Olthoi have loyalty only to their Olthoi Queen!", ChatMessageType.Broadcast));
+                    SendWeenieError(WeenieError.None);
+                    return false;
+                }
 
-            // check ignore allegiance requests
-            if (target.GetCharacterOption(CharacterOption.IgnoreAllegianceRequests))
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"Your offer of allegiance was ignored.", ChatMessageType.Broadcast));
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YourOfferOfAllegianceWasIgnored));
-                return false;
+                // check ignore allegiance requests
+                if (onlineTarget.GetCharacterOption(CharacterOption.IgnoreAllegianceRequests))
+                {
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"Your offer of allegiance was ignored.", ChatMessageType.Broadcast));
+                    Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YourOfferOfAllegianceWasIgnored));
+                    return false;
+                }
             }
 
             // player already sworn?
@@ -339,14 +473,20 @@ namespace ACE.Server.WorldObjects
                 return false;
             }
 
-            // patron must currently be greater or equal level
-            /*if (target.Level < Level)
+            // Swearing to a lower-level patron is retail behavior: it is allowed, and no allegiance XP
+            // passes up until the patron surpasses the vassal's level (handled via
+            // ExistedBeforeAllegianceXpChanges, set at swear time). Server operators can require
+            // patron >= vassal level by setting allow_swear_to_lower_level to false.
+            if (!PropertyManager.GetBool("allow_swear_to_lower_level").Item)
             {
-                //Console.WriteLine(Name + " tried to swear to a lower level character");
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot swear to a lower level character.", ChatMessageType.Broadcast));
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.AllegianceIllegalLevel));
-                return false;
-            }*/
+                if (target.Level < Level)
+                {
+                    //Console.WriteLine(Name + " tried to swear to a lower level character");
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot swear to a lower level character.", ChatMessageType.Broadcast));
+                    Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.AllegianceIllegalLevel));
+                    return false;
+                }
+            }
 
             var selfNode = AllegianceNode;
             var targetNode = target.AllegianceNode;
@@ -395,6 +535,47 @@ namespace ACE.Server.WorldObjects
                 //Console.WriteLine(Name + "monarch tried to pledge allegiance, already owns a mansion");
                 //Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot swear allegiance while owning a mansion.", ChatMessageType.Broadcast));
                 Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.CannotSwearAllegianceWhileOwningMansion));
+                return false;
+            }
+
+            // Account-wide allegiance lock: all characters on this account must share the same monarch.
+            // Use GetVerifiedMonarchId (not the raw Monarch property, nor a bare GetAllegiance lookup):
+            // a detached character whose Monarch was never cleared can still resolve to a live
+            // allegiance it is not a member of, which would otherwise wrongly block an unsworn account.
+            var targetMonarchId = AllegianceManager.GetVerifiedMonarchId(target) ?? target.Guid.Full;
+
+            var accountPlayers = PlayerManager.GetAccountPlayers(Account.AccountId);
+            foreach (var kvp in accountPlayers)
+            {
+                var sibling = kvp.Value;
+                if (sibling.Guid == Guid) continue;
+
+                var siblingMonarchId = AllegianceManager.GetVerifiedMonarchId(sibling);
+                if (siblingMonarchId == null) continue;  // sibling is not genuinely in an allegiance
+
+                // Skip siblings that belong to this player's own allegiance (their monarch is this
+                // player). If this player is a monarch swearing into another allegiance,
+                // HandleMonarchSwear cascades the entire sub-tree - including these account siblings -
+                // to the new monarch, so they will share the same monarch once the swear completes.
+                if (siblingMonarchId.Value == Guid.Full) continue;
+
+                if (siblingMonarchId.Value != targetMonarchId)
+                {
+                    Session.Network.EnqueueSend(new GameMessageSystemChat(
+                        "Another character on your account is sworn to a different allegiance. All characters on an account must belong to the same allegiance.",
+                        ChatMessageType.Broadcast));
+                    return false;
+                }
+            }
+
+            // PK-trophy affordability check for early feedback; the actual charge is applied on the
+            // successful swear (SwearAllegiance / OfflineSwearAllegiance).
+            var swearCost = CalculateAllegianceSwearCost(AllegianceSwearCount);
+            if (swearCost > 0 && GetNumInventoryItemsOfWCID(PkTrophyWcid) < swearCost)
+            {
+                Session.Network.EnqueueSend(new GameMessageSystemChat(
+                    $"Swearing allegiance costs {swearCost} PK trophies (you have sworn {AllegianceSwearCount} time{(AllegianceSwearCount == 1 ? "" : "s")} before). You don't have enough PK trophies in your inventory.",
+                    ChatMessageType.Broadcast));
                 return false;
             }
 

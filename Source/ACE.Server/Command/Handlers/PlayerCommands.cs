@@ -1094,6 +1094,42 @@ namespace ACE.Server.Command.Handlers
             player.FlagAsTinker();
         }
 
+        // OfflineSwear <PatronName>
+        [CommandHandler("OfflineSwear", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 1,
+            "Swear allegiance to an offline character on the same account.", "OfflineSwear <PatronName>")]
+        public static void HandleOfflineSwear(Session session, params string[] parameters)
+        {
+            var patronName = string.Join(" ", parameters);
+
+            var onlinePlayer = PlayerManager.GetOnlinePlayer(patronName);
+            var offlinePlayer = PlayerManager.GetOfflinePlayer(patronName);
+            if (onlinePlayer != null)
+            {
+                if (onlinePlayer.Account.AccountId != session.AccountId)
+                    CommandHandlerHelper.WriteOutputInfo(session, "The target character must be on the same account as this character!");
+                else
+                    CommandHandlerHelper.WriteOutputInfo(session, "That character is not offline!");
+                return;
+            }
+            else if (offlinePlayer == null)
+            {
+                CommandHandlerHelper.WriteOutputInfo(session, "Could not find a character with that name!");
+                return;
+            }
+            else if (offlinePlayer.Account.AccountId != session.AccountId)
+            {
+                CommandHandlerHelper.WriteOutputInfo(session, "The target character must be on the same account as this character!");
+                return;
+            }
+            else if (offlinePlayer.IsPendingDeletion || offlinePlayer.IsDeleted)
+            {
+                CommandHandlerHelper.WriteOutputInfo(session, "The target must not be a deleted character!");
+                return;
+            }
+
+            session.Player.OfflineSwearAllegiance(offlinePlayer.Guid.Full);
+        }
+
         private const int renameBaseCost = 200;
         private const int renameMaxCost = 20000;
         // buyrename <Current Name> <New Name>

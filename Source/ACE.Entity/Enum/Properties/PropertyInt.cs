@@ -659,6 +659,7 @@ namespace ACE.Entity.Enum.Properties
         PlayerKillStreak = 20009,
         BountyKillStreakCount = 20010,
         BountyContractStateRaw = 20011,
+        AllegianceSwearCount = 20012,  // Lifetime count of how many times this character has sworn allegiance (drives PK-trophy swear cost)
     }
 
     public static class PropertyIntExtensions

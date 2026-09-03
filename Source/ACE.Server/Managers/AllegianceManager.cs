@@ -94,6 +94,23 @@ namespace ACE.Server.Managers
         }
 
         /// <summary>
+        /// Returns the monarch GUID of the allegiance a player is genuinely a member of, or null if
+        /// they are not in one. Unlike reading the raw Monarch property (which can be stale on a
+        /// detached character) or a bare GetAllegiance lookup (which can resolve a stale pointer to a
+        /// live allegiance), this verifies the player is actually present in the allegiance's members.
+        /// </summary>
+        public static uint? GetVerifiedMonarchId(IPlayer player)
+        {
+            if (player == null) return null;
+
+            var allegiance = GetAllegiance(player);
+            if (allegiance?.Members == null || !allegiance.Members.ContainsKey(player.Guid))
+                return null;
+
+            return allegiance.MonarchId;
+        }
+
+        /// <summary>
         /// Returns the AllegianceNode for a Player
         /// </summary>
         public static AllegianceNode GetAllegianceNode(IPlayer player)
