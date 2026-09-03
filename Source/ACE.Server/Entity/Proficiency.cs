@@ -80,6 +80,16 @@ namespace ACE.Server.Entity
                 var maxLevel = Player.GetMaxLevel();
                 var remainingXP = player.GetRemainingXP(maxLevel).Value;
 
+                // Season rolling XP cap: proficiency is self-funding (it grants XP to the unassigned
+                // pool via GrantXP, then immediately spends it on the skill). XpType.Proficiency
+                // counts against the Monster category, so if that category is capped the grant would
+                // be throttled to 0 while the skill-raise still spends the player's banked unassigned
+                // XP - a silent drain. Fold the actual Monster-category headroom into the clamp so a
+                // capped player's proficiency award simply does nothing.
+                var capHeadroom = player.GetRollingCapXpHeadroom(XpType.Proficiency);
+                if (remainingXP > capHeadroom)
+                    remainingXP = capHeadroom;
+
                 if (totalXPGranted > remainingXP)
                 {
                     // checks and balances:

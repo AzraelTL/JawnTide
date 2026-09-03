@@ -1130,6 +1130,82 @@ namespace ACE.Server.Command.Handlers
             session.Player.OfflineSwearAllegiance(offlinePlayer.Guid.Full);
         }
 
+        // seasonstatus
+        [CommandHandler("seasonstatus", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
+            "Shows the current season day, XP cap, and your per-category XP budgets.")]
+        public static void HandleSeasonStatus(Session session, params string[] parameters)
+        {
+            if (!CheckPlayerCommandRateLimit(session)) return;
+
+            if (!PropertyManager.GetBool("rolling_level_cap_enabled").Item ||
+                PropertyManager.GetLong("rolling_level_cap_start_timestamp").Item <= 0)
+            {
+                CommandHandlerHelper.WriteOutputInfo(session, "The season has not started yet.");
+                return;
+            }
+
+            var player   = session.Player;
+            long xpCap   = RollingLevelCapManager.GetCurrentXpCap();
+            int  day     = RollingLevelCapManager.GetCurrentSeasonDay();
+            int  levelCap = RollingLevelCapManager.GetCurrentLevelCap(xpCap);
+            long totalXp = player.TotalExperience ?? 0;
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("------- Season Status -------");
+            sb.AppendLine($"  Day:          {day + 1}");
+            sb.AppendLine($"  Level Cap:    {levelCap}");
+            sb.AppendLine($"  XP Cap:       {xpCap:N0}");
+
+            if (xpCap > 0)
+            {
+                double capPct = Math.Min(100.0, totalXp * 100.0 / xpCap);
+                string capStatus = capPct >= 100.0 ? " [AT CAP]" : $" ({capPct:F1}%)";
+                sb.AppendLine($"  To Cap:       {totalXp:N0} / {xpCap:N0}{capStatus}");
+            }
+
+            var timeUntil = RollingLevelCapManager.GetTimeUntilNextCapIncrease();
+            if (timeUntil == TimeSpan.Zero)
+                sb.AppendLine("  Next Advance: season cap is frozen");
+            else
+            {
+                int totalMinutes = (int)Math.Round(timeUntil.TotalMinutes);
+                sb.AppendLine($"  Next Advance: {totalMinutes / 60}h {totalMinutes % 60}m");
+            }
+
+            sb.AppendLine($"  XP Rate:      {PropertyManager.GetDouble("xp_modifier").Item:F2}x");
+
+            if (PropertyManager.GetBool("catchup_xp_enabled").Item && xpCap > 0)
+            {
+                var catchUp = RollingLevelCapManager.GetCatchUpXpMultiplier(totalXp);
+                sb.AppendLine(catchUp > 1.0 ? $"  Catch-Up:     {catchUp:F2}x" : "  Catch-Up:     none");
+            }
+
+            // Per-category budgets. Project the post-reset budgets if the cap has advanced since the
+            // player's last XP award (the lazy reset in UpdateXpAndLevel hasn't fired yet).
+            if (xpCap > 0)
+            {
+                bool pendingReset = player.CapPreviousXpCap != xpCap;
+                long headroom = Math.Max(0L, xpCap - totalXp);
+
+                long monMax = pendingReset ? (long)(headroom * PropertyManager.GetDouble("daily_monster_xp_category_ratio").Item)
+                                           : (player.CapDailyMaxMonsterCat > 0 ? player.CapDailyMaxMonsterCat : (long)(xpCap * PropertyManager.GetDouble("daily_monster_xp_category_ratio").Item));
+                long qstMax = pendingReset ? (long)(headroom * PropertyManager.GetDouble("daily_quest_xp_category_ratio").Item)
+                                           : (player.CapDailyMaxQuestCat > 0 ? player.CapDailyMaxQuestCat : (long)(xpCap * PropertyManager.GetDouble("daily_quest_xp_category_ratio").Item));
+                long pvpMax = pendingReset ? (long)(headroom * PropertyManager.GetDouble("daily_pvp_xp_category_ratio").Item)
+                                           : (player.CapDailyMaxPvpCat > 0 ? player.CapDailyMaxPvpCat : (long)(xpCap * PropertyManager.GetDouble("daily_pvp_xp_category_ratio").Item));
+
+                long monUsed = pendingReset ? 0 : player.CapMonsterXp;
+                long qstUsed = pendingReset ? 0 : player.CapQuestXp;
+                long pvpUsed = pendingReset ? 0 : player.CapPvpXp;
+
+                sb.AppendLine($"  Monster:      {monUsed:N0} / {monMax:N0}{(monUsed >= monMax && monMax > 0 ? " [FULL]" : "")}");
+                sb.AppendLine($"  Quest:        {qstUsed:N0} / {qstMax:N0}{(qstUsed >= qstMax && qstMax > 0 ? " [FULL]" : "")}");
+                sb.AppendLine($"  PvP:          {pvpUsed:N0} / {pvpMax:N0}{(pvpUsed >= pvpMax && pvpMax > 0 ? " [FULL]" : "")}");
+            }
+
+            CommandHandlerHelper.WriteOutputInfo(session, sb.ToString(), ChatMessageType.Broadcast);
+        }
+
         private const int renameBaseCost = 200;
         private const int renameMaxCost = 20000;
         // buyrename <Current Name> <New Name>

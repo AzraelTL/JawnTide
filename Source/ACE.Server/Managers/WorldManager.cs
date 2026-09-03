@@ -488,6 +488,16 @@ namespace ACE.Server.Managers
                     log.Error($"Exception executing WorldBossManager Tick. ex: {ex}");
                 }
 
+                ////Season rolling XP cap
+                try
+                {
+                    RollingLevelCapManager.Tick();
+                }
+                catch (Exception ex)
+                {
+                    log.Error($"Exception executing RollingLevelCapManager Tick. ex: {ex}");
+                }
+
                 ServerPerformanceMonitor.RestartEvent(ServerPerformanceMonitor.MonitorType.NetworkManager_InboundClientMessageQueueRun);
                 NetworkManager.InboundMessageQueue.RunActions();
                 ServerPerformanceMonitor.RegisterEventEnd(ServerPerformanceMonitor.MonitorType.NetworkManager_InboundClientMessageQueueRun);

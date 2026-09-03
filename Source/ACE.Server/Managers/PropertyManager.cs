@@ -645,7 +645,12 @@ namespace ACE.Server.Managers
                 ("recent_teleport_prevention", new Property<bool>(true, "enable this to prevent players from teleporting too frequently")),
                 ("town_control_ip_restricted", new Property<bool>(false, "enable this to restrict unique Ip access to Town Control Events")),
                 ("local_server", new Property<bool>(false, "Do not enable on live servers! Enable this to allow for server behavior to change as necessary for testing envrionments.")),
-                ("world_closed", new Property<bool>(false, "enable this to startup world as a closed to players world"))
+                ("world_closed", new Property<bool>(false, "enable this to startup world as a closed to players world")),
+
+                // Season rolling XP cap
+                ("rolling_level_cap_enabled", new Property<bool>(false, "master on/off for the server-wide rolling season XP cap")),
+                ("rolling_xp_modifier_enabled", new Property<bool>(false, "when true, RollingLevelCapManager drives the xp_modifier config along a season curve (0.25x at start up to rolling_xp_modifier_max)")),
+                ("catchup_xp_enabled", new Property<bool>(false, "when true, characters whose total XP is below catchup_xp_threshold of the season cap earn boosted XP"))
                 );
 
         public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties =
@@ -698,7 +703,14 @@ namespace ACE.Server.Managers
                 ("bounty_location_currency_wcid", new Property<long>(1000002, "the WCID for the type of item used for the bounty contract location finder (DEFAULT: is PK Trophy)")),
                 ("bounty_location_price_amount", new Property<long>(25, "the amount of bounty contract location finder currency it costs to use the location finder")),
                 ("town_control_allegiance_player_limit", new Property<long>(13, "the maximum total entries of players per allegiance")),
-                ("bounty_max_contracts", new Property<long>(3, "the maximum amount of contracts a player can have"))
+                ("bounty_max_contracts", new Property<long>(3, "the maximum amount of contracts a player can have")),
+
+                // Season rolling XP cap
+                ("rolling_level_cap_start_timestamp", new Property<long>(0, "Unix timestamp of season day 0 for the rolling XP cap. 0 = season not started.")),
+                ("rolling_level_cap_season_days", new Property<long>(90, "number of days over which the rolling XP cap rises linearly from rolling_level_cap_start_xp to the level-275 XP requirement, after which it freezes")),
+                ("rolling_level_cap_start_xp", new Property<long>(0, "total-XP value of the rolling cap on season day 0")),
+                ("rolling_xp_cap", new Property<long>(0, "current computed rolling XP cap (managed automatically by RollingLevelCapManager)")),
+                ("rolling_xp_cap_timestamp", new Property<long>(0, "last time rolling_xp_cap was recomputed (managed automatically)"))
 
                 );
 
@@ -834,7 +846,16 @@ namespace ACE.Server.Managers
                 ("bounty_weight_multiplier", new Property<double>(50.0, "bounty weight multiplier tuning, use in conjunction with bounty_weight_exponent")),
                 ("bounty_weight_maxstack_scale", new Property<double>(0.2, "bounty weight max stack scale tuning this is used to apply an effective max stack")),
                 ("bounty_npc_use_cooldown_seconds", new Property<double>(3.0, "the cooldown in seconds between bounty npc usage")),
-                ("recent_teleport_threshold", new Property<double>(3.0, "the number of seconds after materializing that a player can teleport again"))
+                ("recent_teleport_threshold", new Property<double>(3.0, "the number of seconds after materializing that a player can teleport again")),
+
+                // Season rolling XP cap
+                ("rolling_xp_modifier_max", new Property<double>(3.0, "end-of-ramp value for xp_modifier when rolling_xp_modifier_enabled is true; the modifier curves from 0.25x at season start up to this")),
+                ("catchup_xp_threshold", new Property<double>(0.70, "characters below this fraction of the current season XP cap earn boosted XP; at or above it they earn normally")),
+                ("catchup_xp_max_multiplier", new Property<double>(5.0, "catch-up XP multiplier for a character at 0 XP")),
+                ("catchup_xp_min_multiplier", new Property<double>(2.0, "catch-up XP multiplier for a character just below catchup_xp_threshold of the cap")),
+                ("daily_monster_xp_category_ratio", new Property<double>(0.60, "fraction of the player's remaining season-cap headroom that can be filled from Monster-category XP (creature kills, fellowship, allegiance passup, proficiency) per cap window")),
+                ("daily_quest_xp_category_ratio", new Property<double>(0.60, "fraction of the player's remaining season-cap headroom that can be filled from Quest-category XP (quests, exploration, emotes) per cap window")),
+                ("daily_pvp_xp_category_ratio", new Property<double>(1.0, "fraction of the player's remaining season-cap headroom that can be filled from PvP-category XP per cap window"))
                 
                 );
 

@@ -786,9 +786,17 @@ namespace ACE.Server.Command.Handlers
         // Experience
         // ==================================
 
-        [CommandHandler("grantxp", AccessLevel.Developer, CommandHandlerFlag.RequiresWorld, 1, "Give XP to yourself (or the specified character).", "ulong\n" + "@grantxp [name] 191226310247 is max level 275")]
+        [CommandHandler("grantxp", AccessLevel.Developer, CommandHandlerFlag.RequiresWorld, 1, "Give XP to yourself (or the specified character).", "ulong\n" + "@grantxp [name] 191226310247 is max level 275\nappend 'force' to bypass the season rolling XP cap")]
         public static void HandleGrantXp(Session session, params string[] parameters)
         {
+            // "force" as the final token bypasses the season rolling XP cap.
+            bool bypassSeasonCap = false;
+            if (parameters?.Length > 0 && string.Equals(parameters[parameters.Length - 1], "force", StringComparison.OrdinalIgnoreCase))
+            {
+                bypassSeasonCap = true;
+                parameters = parameters.Take(parameters.Length - 1).ToArray();
+            }
+
             if (parameters?.Length > 0)
             {
                 List<CommandParameterHelpers.ACECommandParameter> aceParams = new List<CommandParameterHelpers.ACECommandParameter>()
@@ -810,7 +818,7 @@ namespace ACE.Server.Command.Handlers
                     try
                     {
                         var amount = aceParams[1].AsLong;
-                        aceParams[0].AsPlayer.GrantXP(amount, XpType.Admin, ShareType.None);
+                        aceParams[0].AsPlayer.GrantXP(amount, XpType.Admin, ShareType.None, bypassSeasonCap: bypassSeasonCap);
 
                         session.Network.EnqueueSend(new GameMessageSystemChat($"{amount:N0} experience granted.", ChatMessageType.Advancement));
 

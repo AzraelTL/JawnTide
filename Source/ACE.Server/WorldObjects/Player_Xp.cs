@@ -14,6 +14,19 @@ namespace ACE.Server.WorldObjects
 {
     partial class Player
     {
+        // ── Season rolling XP cap: per-player per-category bucket state ─────────────
+        // Cap*Xp track how much XP of each category the player has earned in the current
+        // cap window; CapDailyMax*Cat are the budgets; CapPreviousXpCap is the cap value
+        // the buckets were last reset against (they reset lazily when the cap advances).
+
+        public long CapMonsterXp          { get => GetProperty(PropertyInt64.CapMonsterXp) ?? 0;          set { if (value == 0) RemoveProperty(PropertyInt64.CapMonsterXp);          else SetProperty(PropertyInt64.CapMonsterXp, value); } }
+        public long CapQuestXp            { get => GetProperty(PropertyInt64.CapQuestXp) ?? 0;            set { if (value == 0) RemoveProperty(PropertyInt64.CapQuestXp);            else SetProperty(PropertyInt64.CapQuestXp, value); } }
+        public long CapPvpXp              { get => GetProperty(PropertyInt64.CapPvpXp) ?? 0;              set { if (value == 0) RemoveProperty(PropertyInt64.CapPvpXp);              else SetProperty(PropertyInt64.CapPvpXp, value); } }
+        public long CapDailyMaxMonsterCat { get => GetProperty(PropertyInt64.CapDailyMaxMonsterCat) ?? 0; set { if (value == 0) RemoveProperty(PropertyInt64.CapDailyMaxMonsterCat); else SetProperty(PropertyInt64.CapDailyMaxMonsterCat, value); } }
+        public long CapDailyMaxQuestCat   { get => GetProperty(PropertyInt64.CapDailyMaxQuestCat) ?? 0;   set { if (value == 0) RemoveProperty(PropertyInt64.CapDailyMaxQuestCat);   else SetProperty(PropertyInt64.CapDailyMaxQuestCat, value); } }
+        public long CapDailyMaxPvpCat     { get => GetProperty(PropertyInt64.CapDailyMaxPvpCat) ?? 0;     set { if (value == 0) RemoveProperty(PropertyInt64.CapDailyMaxPvpCat);     else SetProperty(PropertyInt64.CapDailyMaxPvpCat, value); } }
+        public long CapPreviousXpCap      { get => GetProperty(PropertyInt64.CapPreviousXpCap) ?? 0;      set { if (value == 0) RemoveProperty(PropertyInt64.CapPreviousXpCap);      else SetProperty(PropertyInt64.CapPreviousXpCap, value); } }
+
         /// <summary>
         /// A player earns XP through natural progression, ie. kills and quests completed
         /// </summary>
@@ -33,7 +46,12 @@ namespace ACE.Server.WorldObjects
             // should this be passed upstream to fellowship / allegiance?
             var enchantment = GetXPAndLuminanceModifier(xpType);
 
-            var m_amount = (long)Math.Round(amount * enchantment * modifier);
+            // Season catch-up boost: characters whose lifetime total XP sits well below the current
+            // season XP cap earn multiplied XP, scaled by how far behind the cap they are. 1.0 when
+            // disabled, when no season cap is active, or once the character has caught up.
+            var catchUpMultiplier = RollingLevelCapManager.GetCatchUpXpMultiplier(TotalExperience ?? 0);
+
+            var m_amount = (long)Math.Round(amount * enchantment * modifier * catchUpMultiplier);
 
             if (m_amount < 0)
             {
@@ -51,7 +69,7 @@ namespace ACE.Server.WorldObjects
         /// <param name="amount">The amount of XP to grant to the player</param>
         /// <param name="xpType">The source of the XP being granted</param>
         /// <param name="shareable">If TRUE, this XP can be shared with fellowship members</param>
-        public void GrantXP(long amount, XpType xpType, ShareType shareType = ShareType.All, bool isArena = false, bool bypassEnlightenmentPenalty = false)
+        public void GrantXP(long amount, XpType xpType, ShareType shareType = ShareType.All, bool isArena = false, bool bypassEnlightenmentPenalty = false, bool bypassSeasonCap = false)
         {
             if (IsOlthoiPlayer)
             {
@@ -175,7 +193,7 @@ namespace ACE.Server.WorldObjects
             }
 
             // Make sure UpdateXpAndLevel is done on this players thread
-            EnqueueAction(new ActionEventDelegate(() => UpdateXpAndLevel(amount, xpType)));
+            EnqueueAction(new ActionEventDelegate(() => UpdateXpAndLevel(amount, xpType, bypassSeasonCap)));
 
             // for passing XP up the allegiance chain,
             // this function is only called at the very beginning, to start the process.
@@ -190,7 +208,7 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Adds XP to a player's total XP, handles triggers (vitae, level up)
         /// </summary>
-        private void UpdateXpAndLevel(long amount, XpType xpType)
+        private void UpdateXpAndLevel(long amount, XpType xpType, bool bypassSeasonCap = false)
         {
             // until we are max level we must make sure that we send
             var xpTable = DatManager.PortalDat.XpTable;
@@ -205,6 +223,12 @@ namespace ACE.Server.WorldObjects
                 var amountLeftToEnd = (long)maxLevelXp - TotalExperience ?? 0;
                 if (amount > amountLeftToEnd)
                     addAmount = amountLeftToEnd;
+
+                // Season rolling XP cap: server-wide total-XP ceiling that rises daily. What is
+                // clamped here is only the XP that raises the character; vitae reduction and gear
+                // leveling below still receive the raw amount, matching end-of-retail max-level.
+                if (!bypassSeasonCap)
+                    addAmount = ApplyRollingXpCap(addAmount, xpType);
 
                 AvailableExperience += addAmount;
                 TotalExperience += addAmount;
@@ -221,6 +245,151 @@ namespace ACE.Server.WorldObjects
 
             if (HasVitae && xpType != XpType.Allegiance)
                 UpdateXpVitae(amount);
+        }
+
+        /// <summary>
+        /// Season rolling XP cap enforcement. Given the XP that would otherwise be added to
+        /// Total/Available, returns how much is actually allowed under the current cap and this
+        /// player's per-category daily budget, and updates the per-category earned counters.
+        /// Returns <paramref name="addAmount"/> unchanged when no rolling cap is active.
+        ///
+        /// Category mapping: Quest/Emote/Exploration -> Quest budget; Kill/Fellowship/Allegiance/
+        /// Proficiency -> Monster budget; PvP -> PvP budget; Admin -> global remaining only.
+        /// Buckets reset lazily whenever the cap value advances.
+        /// </summary>
+        private long ApplyRollingXpCap(long addAmount, XpType xpType)
+        {
+            var rollingCapXp = RollingLevelCapManager.GetCurrentXpCap();
+            if (rollingCapXp <= 0)
+                return addAmount;
+
+            // Lazy reset: when the cap has advanced since our buckets were last reset, clear the
+            // earned counters and recompute the per-category budgets from the remaining headroom.
+            if (rollingCapXp != CapPreviousXpCap)
+            {
+                CapQuestXp = CapMonsterXp = CapPvpXp = 0;
+                var headroomAtReset = Math.Max(0L, rollingCapXp - (TotalExperience ?? 0));
+                CapDailyMaxQuestCat   = (long)(headroomAtReset * PropertyManager.GetDouble("daily_quest_xp_category_ratio").Item);
+                CapDailyMaxMonsterCat = (long)(headroomAtReset * PropertyManager.GetDouble("daily_monster_xp_category_ratio").Item);
+                CapDailyMaxPvpCat     = (long)(headroomAtReset * PropertyManager.GetDouble("daily_pvp_xp_category_ratio").Item);
+                CapPreviousXpCap      = rollingCapXp;
+            }
+
+            var xpRemainingGlobal = rollingCapXp - (TotalExperience ?? 0);
+            if (xpRemainingGlobal <= 0)
+                return 0;
+
+            // First-award fallback budgets (before a reset has fired for this cap value).
+            var dailyMaxQuestCat   = CapDailyMaxQuestCat   > 0 ? CapDailyMaxQuestCat   : (long)(rollingCapXp * PropertyManager.GetDouble("daily_quest_xp_category_ratio").Item);
+            var dailyMaxMonsterCat = CapDailyMaxMonsterCat > 0 ? CapDailyMaxMonsterCat : (long)(rollingCapXp * PropertyManager.GetDouble("daily_monster_xp_category_ratio").Item);
+            var dailyMaxPvpCat     = CapDailyMaxPvpCat     > 0 ? CapDailyMaxPvpCat     : (long)(rollingCapXp * PropertyManager.GetDouble("daily_pvp_xp_category_ratio").Item);
+
+            long xpToAdd = 0;
+            switch (xpType)
+            {
+                case XpType.Quest:
+                case XpType.Emote:
+                case XpType.Exploration:
+                    var questRemaining = Math.Max(0L, dailyMaxQuestCat - CapQuestXp);
+                    xpToAdd = Math.Min(addAmount, Math.Min(xpRemainingGlobal, questRemaining));
+                    CapQuestXp += xpToAdd;
+                    break;
+
+                case XpType.Kill:
+                case XpType.Fellowship:
+                case XpType.Allegiance:
+                case XpType.Proficiency:
+                    var monsterRemaining = Math.Max(0L, dailyMaxMonsterCat - CapMonsterXp);
+                    xpToAdd = Math.Min(addAmount, Math.Min(xpRemainingGlobal, monsterRemaining));
+                    CapMonsterXp += xpToAdd;
+                    break;
+
+                case XpType.PvP:
+                    var pvpRemaining = Math.Max(0L, dailyMaxPvpCat - CapPvpXp);
+                    xpToAdd = Math.Min(addAmount, Math.Min(xpRemainingGlobal, pvpRemaining));
+                    CapPvpXp += xpToAdd;
+                    break;
+
+                case XpType.Admin:
+                    // Admin XP bypasses per-category limits; only bounded by the global remaining.
+                    xpToAdd = Math.Min(addAmount, xpRemainingGlobal);
+                    break;
+            }
+
+            if (xpToAdd > 0 && xpToAdd >= xpRemainingGlobal)
+                Session.Network.EnqueueSend(new GameMessageSystemChat(
+                    $"You have reached the current experience cap ({RollingLevelCapManager.GetCapDescription(rollingCapXp)}). The cap increases as the season progresses.",
+                    ChatMessageType.Broadcast));
+
+            return xpToAdd;
+        }
+
+        /// <summary>
+        /// Side-effect-free projection of how much additional XP of <paramref name="xpType"/> the
+        /// rolling cap will actually let this player gain right now (global + per-category). Returns
+        /// <see cref="long.MaxValue"/> when no rolling cap is active. Kept in sync with
+        /// <see cref="ApplyRollingXpCap"/>; used by self-funding sources (e.g. Proficiency) to avoid
+        /// draining banked unassigned XP when the category grant would be throttled to 0.
+        /// </summary>
+        public long GetRollingCapXpHeadroom(XpType xpType)
+        {
+            var rollingCapXp = RollingLevelCapManager.GetCurrentXpCap();
+            if (rollingCapXp <= 0)
+                return long.MaxValue;
+
+            var xpRemainingGlobal = rollingCapXp - (TotalExperience ?? 0);
+            if (xpRemainingGlobal <= 0)
+                return 0;
+
+            double questRatio   = PropertyManager.GetDouble("daily_quest_xp_category_ratio").Item;
+            double monsterRatio = PropertyManager.GetDouble("daily_monster_xp_category_ratio").Item;
+            double pvpRatio     = PropertyManager.GetDouble("daily_pvp_xp_category_ratio").Item;
+
+            long dailyMaxMonsterCat, dailyMaxQuestCat, dailyMaxPvpCat;
+            long spentMonster, spentQuest, spentPvp;
+            if (rollingCapXp != CapPreviousXpCap)
+            {
+                var headroomAtReset = Math.Max(0L, rollingCapXp - (TotalExperience ?? 0));
+                dailyMaxQuestCat   = (long)(headroomAtReset * questRatio);
+                dailyMaxMonsterCat = (long)(headroomAtReset * monsterRatio);
+                dailyMaxPvpCat     = (long)(headroomAtReset * pvpRatio);
+                spentQuest = spentMonster = spentPvp = 0;
+            }
+            else
+            {
+                dailyMaxQuestCat   = CapDailyMaxQuestCat   > 0 ? CapDailyMaxQuestCat   : (long)(rollingCapXp * questRatio);
+                dailyMaxMonsterCat = CapDailyMaxMonsterCat > 0 ? CapDailyMaxMonsterCat : (long)(rollingCapXp * monsterRatio);
+                dailyMaxPvpCat     = CapDailyMaxPvpCat     > 0 ? CapDailyMaxPvpCat     : (long)(rollingCapXp * pvpRatio);
+                spentQuest   = CapQuestXp;
+                spentMonster = CapMonsterXp;
+                spentPvp     = CapPvpXp;
+            }
+
+            long categoryRemaining;
+            switch (xpType)
+            {
+                case XpType.Quest:
+                case XpType.Emote:
+                case XpType.Exploration:
+                    categoryRemaining = Math.Max(0L, dailyMaxQuestCat - spentQuest);
+                    break;
+                case XpType.Kill:
+                case XpType.Fellowship:
+                case XpType.Allegiance:
+                case XpType.Proficiency:
+                    categoryRemaining = Math.Max(0L, dailyMaxMonsterCat - spentMonster);
+                    break;
+                case XpType.PvP:
+                    categoryRemaining = Math.Max(0L, dailyMaxPvpCat - spentPvp);
+                    break;
+                case XpType.Admin:
+                    return xpRemainingGlobal;
+                default:
+                    categoryRemaining = 0;
+                    break;
+            }
+
+            return Math.Min(xpRemainingGlobal, categoryRemaining);
         }
 
         /// <summary>
