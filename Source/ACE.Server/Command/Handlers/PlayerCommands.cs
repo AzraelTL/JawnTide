@@ -161,8 +161,6 @@ namespace ACE.Server.Command.Handlers
             actionChain.AddDelaySeconds(3.0f);  // wait for slumlord inventory biotas above to save
             actionChain.AddAction(session.Player, session.Player.HandleActionQueryHouse);
             actionChain.EnqueueChain();
-
-            Console.WriteLine("OK");
         }
 
         [CommandHandler("debugcast", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, "Shows debug information about the current magic casting state")]
@@ -508,7 +506,7 @@ namespace ACE.Server.Command.Handlers
             for (var i = 1; i < parameters.Length; i++)
                 description += parameters[i] + " ";
 
-            description.Trim();
+            description = description.Trim();
 
             switch (category.ToLower())
             {
@@ -543,7 +541,7 @@ namespace ACE.Server.Command.Handlers
             var w = "";
             var g = "";
 
-            if (cg == "creature" || cg == "npc"|| cg == "item" || cg == "item")
+            if (cg == "creature" || cg == "npc" || cg == "item")
             {
                 var objectId = new ObjectGuid();
                 if (session.Player.HealthQueryTarget.HasValue || session.Player.ManaQueryTarget.HasValue || session.Player.CurrentAppraisalTarget.HasValue)
