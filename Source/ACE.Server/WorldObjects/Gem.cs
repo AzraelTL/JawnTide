@@ -260,7 +260,7 @@ namespace ACE.Server.WorldObjects
                 }
                 else
                 {
-                    var yaraqTCLoc = new Position(0x81640006, 0.576489f, 143.601151f, 0.699269f, 0f, 0f, -0.714859f, 0.697868f);
+                    var yaraqTCLoc = new Position(0x81640006, 0.576489f, 143.601151f, 0.699269f, 0f, 0f, -0.716226f, 0.697868f);
                     player.Teleport(yaraqTCLoc, force: false);
                     var playerMsg = $"The {this.Name} has teleported you to the Yaraq Outpost.";
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat(playerMsg, ChatMessageType.Broadcast));
