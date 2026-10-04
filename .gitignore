@@ -302,3 +302,20 @@ docker-compose.arm64
 .claude/settings.json
 Source/.claude/settings.local.json
 Source/CLAUDE.md
+# ---- Added for the JawnTide workflow ----
+# Machine-specific config (database passwords live here)
+Config.js
+
+# Game client data files
+*.dat
+
+# Log files
+Logs/
+ACE_Log.txt
+ACE_Log.txt.*
+
+# Archives and database dumps (never commit these)
+*.zip
+export/
+*_backup.sql
+*.bak
