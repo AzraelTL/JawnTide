@@ -432,8 +432,16 @@ namespace ACE.Server.WorldObjects
                         {
                             //Don't allow the owning clan to damage the town control bosses
                             bool playerOwnsTown = false;
-                            var boss = TownControlBosses.TownControlBossMap[target.WeenieClassId];
+                            if (!TownControlBosses.TownControlBossMap.TryGetValue(target.WeenieClassId, out var boss))
+                                return 0.0f;
+
                             var town = TownControl.GetTownById(boss.TownID);
+                            if (town == null)
+                            {
+                                log.Error($"SpellProjectile - no town for TownID {boss.TownID} (wcid {target.WeenieClassId})");
+                                return 0.0f;
+                            }
+
                             var playerAlleg = AllegianceManager.GetAllegiance(sourcePlayer);
                             if (playerAlleg != null)
                             {

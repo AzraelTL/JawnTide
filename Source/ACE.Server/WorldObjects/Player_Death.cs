@@ -945,7 +945,7 @@ namespace ACE.Server.WorldObjects
                     if (townId.HasValue)
                     {
                         var town = TownControl.GetTownById(townId.Value);
-                        if (town.IsInConflict)
+                        if (town != null && town.IsInConflict)
                         {
                             var pkTrophy = WorldObjectFactory.CreateNewWorldObject(1000002);
                             pkTrophy.SetStackSize(1);

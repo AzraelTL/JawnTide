@@ -194,13 +194,23 @@ namespace ACE.Server.Entity
                     {
                         //Don't allow the owning clan to damage the town control bosses
                         bool playerOwnsTown = false;
-                        var boss = TownControlBosses.TownControlBossMap[defender.WeenieClassId];
+                        if (!TownControlBosses.TownControlBossMap.TryGetValue(defender.WeenieClassId, out var boss))
+                        {
+                            log.Error($"DamageEvent - wcid {defender.WeenieClassId} is flagged IsTownControlBoss but is not in TownControlBossMap");
+                            return 0.0f;
+                        }
+
                         var town = TownControl.TownControl.GetTownById(boss.TownID);
+                        if (town == null)
+                        {
+                            log.Error($"DamageEvent - no town for TownID {boss.TownID} (wcid {defender.WeenieClassId})");
+                            return 0.0f;
+                        }
+
                         var playerAlleg = AllegianceManager.GetAllegiance(playerAttacker);
                         if (playerAlleg != null)
                         {
                             var playerMonarchId = playerAlleg.MonarchId;
-                            var playerAllegName = playerAlleg.Monarch.Player.Name;
 
                             if (town.CurrentOwnerID.HasValue && town.CurrentOwnerID.Value == playerMonarchId)
                             {

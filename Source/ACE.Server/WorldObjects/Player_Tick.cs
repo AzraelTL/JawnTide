@@ -786,7 +786,7 @@ namespace ACE.Server.WorldObjects
                     {
                         //Console.WriteLine($"{inLandblock}");
                         var town = TownControl.GetTownById(townId.Value);                        
-                        if (!town.IsInConflict)
+                        if (town == null || !town.IsInConflict)
                             return;
 
                         //Check that an active event exists and isn't past its expiration

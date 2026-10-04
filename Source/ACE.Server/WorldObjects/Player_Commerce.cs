@@ -58,7 +58,6 @@ namespace ACE.Server.WorldObjects
                     if (playerAlleg != null)
                     {
                         var playerMonarchId = playerAlleg.MonarchId;
-                        var playerAllegName = playerAlleg.Monarch.Player.Name;
 
                         if (town.CurrentOwnerID.HasValue && town.CurrentOwnerID.Value == playerMonarchId)
                         {

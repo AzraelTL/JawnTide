@@ -12,7 +12,8 @@ namespace ACE.Server.Entity.TownControl
 {
     public static class TownControl
     {
-        private static Dictionary<uint, Town> _towns = null;        
+        private static volatile Dictionary<uint, Town> _towns = null;
+        private static readonly object _townsLock = new object();
 
         public static Dictionary<uint, Town> TownsMap
         {
@@ -20,11 +21,16 @@ namespace ACE.Server.Entity.TownControl
             {
                 if (_towns == null)
                 {
-                    _towns = new Dictionary<uint, Town>();
-                    var townDbRecs = DatabaseManager.TownControl.GetAllTowns();
-                    foreach(var townDb in townDbRecs)
+                    lock (_townsLock)
                     {
-                        _towns.Add(townDb.TownId, townDb);
+                        if (_towns == null)
+                        {
+                            var dict = new Dictionary<uint, Town>();
+                            foreach (var townDb in DatabaseManager.TownControl.GetAllTowns())
+                                dict[townDb.TownId] = townDb;
+
+                            _towns = dict;   // published only after a successful, complete load
+                        }
                     }
                 }
 
@@ -42,7 +48,7 @@ namespace ACE.Server.Entity.TownControl
 
         public static Town GetTownById(uint id)
         {
-            return TownsMap.ContainsKey(id) ? TownsMap[id] : null;
+            return TownsMap.TryGetValue(id, out var town) ? town : null;
         }
 
         public static void UpdateTown(Town town)
@@ -54,21 +60,31 @@ namespace ACE.Server.Entity.TownControl
             }            
         }
 
-        private static Dictionary<uint, TownControlEvent> _latestEventsByTown = null;
+        private static readonly object _eventCacheLock = new object();
+
+        private static volatile Dictionary<uint, TownControlEvent> _latestEventsByTown = null;
 
         public static Dictionary<uint, TownControlEvent> LatestEventsByTown
         {
             get
             {
-                if(_latestEventsByTown == null)
+                if (_latestEventsByTown == null)
                 {
-                    _latestEventsByTown = new Dictionary<uint, TownControlEvent>();
-                    foreach(var town in Towns)
+                    lock (_eventCacheLock)
                     {
-                        var latestEvent = DatabaseManager.TownControl.GetLatestTownControlEventByTownId(town.TownId);
-                        if(latestEvent != null)
+                        if (_latestEventsByTown == null)
                         {
-                            _latestEventsByTown[town.TownId] = latestEvent;
+                            var dict = new Dictionary<uint, TownControlEvent>();
+                            foreach (var town in Towns)
+                            {
+                                var latestEvent = DatabaseManager.TownControl.GetLatestTownControlEventByTownId(town.TownId);
+                                if (latestEvent != null)
+                                {
+                                    dict[town.TownId] = latestEvent;
+                                }
+                            }
+
+                            _latestEventsByTown = dict;   // published only after a complete load
                         }
                     }
                 }
@@ -77,13 +93,16 @@ namespace ACE.Server.Entity.TownControl
             }
         }
 
+        /// <summary>
+        /// Returns the latest event for the town, or null if the town has never had an event
+        /// </summary>
         public static TownControlEvent GetLatestTownControlEventByTownId(uint townId)
         {
-            return LatestEventsByTown[townId];
+            return LatestEventsByTown.TryGetValue(townId, out var tcEvent) ? tcEvent : null;
         }
 
 
-        private static Dictionary<uint, List<TownControlEvent>> _latestEventsByMonarch = null;
+        private static volatile Dictionary<uint, List<TownControlEvent>> _latestEventsByMonarch = null;
 
         public static Dictionary<uint, List<TownControlEvent>> LatestEventsByMonarch
         {
@@ -91,23 +110,31 @@ namespace ACE.Server.Entity.TownControl
             {
                 if (_latestEventsByMonarch == null)
                 {
-                    _latestEventsByMonarch = new Dictionary<uint, List<TownControlEvent>>();
-                    var monarchIds = TownControlAllegiances.AllowedAllegianceList;
-                    foreach (var monarchId in monarchIds)
+                    lock (_eventCacheLock)
                     {
-                        var events = new List<TownControlEvent>();
-                        foreach (var town in Towns)
+                        if (_latestEventsByMonarch == null)
                         {
-                            var latestEvent = DatabaseManager.TownControl.GetLatestTownControlEventByAttackingMonarchId((uint)monarchId, town.TownId);
-                            if (latestEvent != null)
+                            var dict = new Dictionary<uint, List<TownControlEvent>>();
+                            var monarchIds = TownControlAllegiances.AllowedAllegianceList;
+                            foreach (var monarchId in monarchIds)
                             {
-                                events.Add(latestEvent);
-                            }
-                        }
+                                var events = new List<TownControlEvent>();
+                                foreach (var town in Towns)
+                                {
+                                    var latestEvent = DatabaseManager.TownControl.GetLatestTownControlEventByAttackingMonarchId((uint)monarchId, town.TownId);
+                                    if (latestEvent != null)
+                                    {
+                                        events.Add(latestEvent);
+                                    }
+                                }
 
-                        if (events.Count > 0)
-                        {
-                            _latestEventsByMonarch.Add((uint)monarchId, events);
+                                if (events.Count > 0)
+                                {
+                                    dict[(uint)monarchId] = events;
+                                }
+                            }
+
+                            _latestEventsByMonarch = dict;   // published only after a complete load
                         }
                     }
                 }
@@ -134,8 +161,16 @@ namespace ACE.Server.Entity.TownControl
             {
                 LatestEventsByTown[townId] = tcEvent;
 
-                LatestEventsByMonarch[attackingClanId]?.RemoveAll(x => x.TownId == townId);
-                LatestEventsByMonarch[attackingClanId].Add(tcEvent);                
+                // A clan that has never attacked before has no entry yet, so create one instead of throwing
+                if (LatestEventsByMonarch.TryGetValue(attackingClanId, out var clanEvents) && clanEvents != null)
+                {
+                    clanEvents.RemoveAll(x => x.TownId == townId);
+                    clanEvents.Add(tcEvent);
+                }
+                else
+                {
+                    LatestEventsByMonarch[attackingClanId] = new List<TownControlEvent> { tcEvent };
+                }
             }
 
             return tcEvent;
@@ -162,3 +197,4 @@ namespace ACE.Server.Entity.TownControl
         }
     }
 }
+
