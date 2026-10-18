@@ -7,6 +7,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Factories;
+using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Physics;
@@ -221,7 +222,9 @@ namespace ACE.Server.WorldObjects
                 else
                 {
                     var islandLoc = new Position(0xF76B0036, 148.463013f, 138.334213f, 0.00500f, 0f, 0f, -0.530781f, -0.847509f);
-                    player.Teleport(islandLoc, force: false);
+                    // Teleport through the world queue, not inline: when a PK uses an animated gem, UseGem runs inside the
+                    // physics update, and an inline Teleport there never moves the player to the new landblock (can't attack anything).
+                    WorldManager.ThreadSafeTeleport(player, islandLoc, force: false);
                     var playerMsg = $"The {this.Name} has teleported you to Peddler's Outpost.";
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat(playerMsg, ChatMessageType.Broadcast));
                 }
@@ -241,7 +244,9 @@ namespace ACE.Server.WorldObjects
                 else
                 {
                     var shoushiTCLoc = new Position(0xDE510016, 48.076149f, 121.470108f, 16.005001f, 0f, 0f, -0.999995f, 0.003087f);
-                    player.Teleport(shoushiTCLoc, force: false);
+                    // Teleport through the world queue, not inline: when a PK uses an animated gem, UseGem runs inside the
+                    // physics update, and an inline Teleport there never moves the player to the new landblock (can't attack anything).
+                    WorldManager.ThreadSafeTeleport(player, shoushiTCLoc, force: false);
                     var playerMsg = $"The {this.Name} has teleported you to the Shoushi Outpost.";
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat(playerMsg, ChatMessageType.Broadcast));
                 }
@@ -261,7 +266,9 @@ namespace ACE.Server.WorldObjects
                 else
                 {
                     var yaraqTCLoc = new Position(0x81640006, 0.576489f, 143.601151f, 0.699269f, 0f, 0f, -0.716226f, 0.697868f);
-                    player.Teleport(yaraqTCLoc, force: false);
+                    // Teleport through the world queue, not inline: when a PK uses an animated gem, UseGem runs inside the
+                    // physics update, and an inline Teleport there never moves the player to the new landblock (can't attack anything).
+                    WorldManager.ThreadSafeTeleport(player, yaraqTCLoc, force: false);
                     var playerMsg = $"The {this.Name} has teleported you to the Yaraq Outpost.";
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat(playerMsg, ChatMessageType.Broadcast));
                 }
@@ -281,7 +288,9 @@ namespace ACE.Server.WorldObjects
                 else
                 {
                     var holtburgTCLoc = new Position(0xA5B4003B, 176.617722f, 71.680115f, 46.005001f, 0f, 0f, 0.716226f, 0.697868f);
-                    player.Teleport(holtburgTCLoc, force: false);
+                    // Teleport through the world queue, not inline: when a PK uses an animated gem, UseGem runs inside the
+                    // physics update, and an inline Teleport there never moves the player to the new landblock (can't attack anything).
+                    WorldManager.ThreadSafeTeleport(player, holtburgTCLoc, force: false);
                     var playerMsg = $"The {this.Name} has teleported you to the Holtburg Outpost.";
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat(playerMsg, ChatMessageType.Broadcast));
                 }
