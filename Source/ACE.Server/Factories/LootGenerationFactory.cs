@@ -35,8 +35,53 @@ namespace ACE.Server.Factories
             InitClothingColors();
         }
 
+        /// <summary>
+        /// JawnTide: caps random loot at the tier set by the loot_max_tier server property (0 = no cap).
+        /// Returns a capped copy, so the cached treasure profile itself is never changed.
+        /// </summary>
+        private static TreasureDeath ApplyLootTierCap(TreasureDeath profile)
+        {
+            if (profile == null)
+                return profile;
+
+            var maxTier = (int)PropertyManager.GetLong("loot_max_tier").Item;
+
+            if (maxTier <= 0 || profile.Tier <= maxTier)
+                return profile;
+
+            return new TreasureDeath
+            {
+                Id = profile.Id,
+                TreasureType = profile.TreasureType,
+                Tier = maxTier,
+                LootQualityMod = profile.LootQualityMod,
+                UnknownChances = profile.UnknownChances,
+                ItemChance = profile.ItemChance,
+                ItemMinAmount = profile.ItemMinAmount,
+                ItemMaxAmount = profile.ItemMaxAmount,
+                ItemTreasureTypeSelectionChances = profile.ItemTreasureTypeSelectionChances,
+                MagicItemChance = profile.MagicItemChance,
+                MagicItemMinAmount = profile.MagicItemMinAmount,
+                MagicItemMaxAmount = profile.MagicItemMaxAmount,
+                MagicItemTreasureTypeSelectionChances = profile.MagicItemTreasureTypeSelectionChances,
+                MundaneItemChance = profile.MundaneItemChance,
+                MundaneItemMinAmount = profile.MundaneItemMinAmount,
+                MundaneItemMaxAmount = profile.MundaneItemMaxAmount,
+                MundaneItemTypeSelectionChances = profile.MundaneItemTypeSelectionChances,
+                LastModified = profile.LastModified,
+                DisableRatings = profile.DisableRatings,
+                DisableSets = profile.DisableSets,
+                DisableLegendaryCantrips = profile.DisableLegendaryCantrips,
+                DisableEpicCantrips = profile.DisableEpicCantrips,
+                DisableAetheria = profile.DisableAetheria,
+                DisableHighLevelAetheria = profile.DisableHighLevelAetheria,
+            };
+        }
+
         public static List<WorldObject> CreateRandomLootObjects(TreasureDeath profile)
         {
+            profile = ApplyLootTierCap(profile);
+
             if (!PropertyManager.GetBool("legacy_loot_system").Item)
                 return CreateRandomLootObjects_New(profile);
 
