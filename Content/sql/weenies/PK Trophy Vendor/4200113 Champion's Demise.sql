@@ -42,7 +42,7 @@ VALUES (4200113,   5,  -0.033) /* ManaRate */
 
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
 VALUES (4200113,   1, 'Champion''s Demise') /* Name */
-     , (4200113,  16, 'You''re a piece of shit.') /* LongDesc */;
+     , (4200113,  16, 'A fitting end for any champion.') /* LongDesc */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
 VALUES (4200113,   1, 0x02001357) /* Setup */

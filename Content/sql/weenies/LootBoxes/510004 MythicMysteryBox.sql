@@ -25,7 +25,7 @@ VALUES (510004,  39,    0.38) /* DefaultScale */;
 
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
 VALUES (510004,   1, 'Mythic Mystery Box') /* Name */
-     , (510004,  14, 'It''s a fuckin mythic looking box probably with some mythic shit inside!!!') /* Use */
+     , (510004,  14, 'It''s a mythic looking box, probably with some mythic loot inside!!!') /* Use */
      , (510004,  16, '...') /* LongDesc */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)

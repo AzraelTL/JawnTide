@@ -25,7 +25,7 @@ VALUES (510003,  39,    0.38) /* DefaultScale */;
 
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
 VALUES (510003,   1, 'Rare Mystery Box') /* Name */
-     , (510003,  14, 'Ooh this box looks kinda rare and mysterious. I bet it has rare and mysterious shit inside.') /* Use */
+     , (510003,  14, 'Ooh this box looks kinda rare and mysterious. I bet it has rare and mysterious things inside.') /* Use */
      , (510003,  16, '...') /* LongDesc */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)

@@ -25,7 +25,7 @@ VALUES (510002,  39,    0.38) /* DefaultScale */;
 
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
 VALUES (510002,   1, 'Common Mystery Box') /* Name */
-     , (510002,  14, 'It''s a box of the common variety. Probably just commmon ass shit inside.') /* Use */
+     , (510002,  14, 'It''s a box of the common variety. Probably just common stuff inside.') /* Use */
      , (510002,  16, '...') /* LongDesc */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)

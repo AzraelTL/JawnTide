@@ -187,23 +187,23 @@ VALUES (42128708, 2, 22015,  0, 21, 0.9, False) /* Create Pwyll's Guard (22015) 
 	 , (42128708, 4, 4200021,  0, 0, 0, False) /* Create Town Control Trinket of Experience (4200017) for Shop */
 	 , (42128708, 4, 4200017,  0, 0, 0, False) /* Create Town Control Trinket of Experience (4200017) for Shop */
 	 , (42128708, 4, 4200020,  0, 0, 0, False) /* Create Town Control Trinket of Experience (4200017) for Shop */
-	 , (42128708, 4, 480000,  0, 0, 0, False) /* Create A Fuckin' Bang (4200019) for Shop */
-	 , (42128708, 4, 480001,  0, 0, 0, False) /* Create A Fuckin' Bang (4200019) for Shop */
-	 , (42128708, 4, 480631,  0, 0, 0, False) /* Create A Fuckin' Bang (4200019) for Shop */
+	 , (42128708, 4, 480000,  0, 0, 0, False) /* Create item for Shop */
+	 , (42128708, 4, 480001,  0, 0, 0, False) /* Create item for Shop */
+	 , (42128708, 4, 480631,  0, 0, 0, False) /* Create item for Shop */
 	 , (42128708, 4, 490017,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
 	, (42128708, 4, 490018,  0, 0, 0, False) /* Create Asteliary Orb (450754) for Shop */
 	, (42128708, 4, 490019,  0, 0, 0, False) /* Create Asteliary Orb (450754) for Shop */
 	, (42128708, 4, 490024,  0, 0, 0, False) /* Create Asteliary Orb (450754) for Shop */
 	 , (42128708, 4, 490026,  0, 0, 0, False) /* Create Asteliary Orb (450754) for Shop */
   , (42128708, 4, 490031,  0, 0, 0, False) /* Create Asteliary Orb (450754) for Shop */
-	 , (42128708, 4, 2031668,  0, 0, 0, False) /* Create A Fuckin' Bang (4200019) for Shop */
-	 , (42128708, 4, 480008,  0, 0, 0, False) /* Create A Fuckin' Bang (4200019) for Shop */
-	, (42128708, 4, 480009,  0, 0, 0, False) /* Create A Fuckin' Bang (4200019) for Shop */
-	, (42128708, 4, 480010,  0, 0, 0, False) /* Create A Fuckin' Bang (4200019) for Shop */
-	, (42128708, 4, 480011,  0, 0, 0, False) /* Create A Fuckin' Bang (4200019) for Shop */
-	 , (42128708, 4, 480014,  0, 0, 0, False) /* Create A Fuckin' Bang (4200019) for Shop */
-	 , (42128708, 4, 490354,  0, 0, 0, False) /* Create A Fuckin' Bang (4200019) for Shop */
-	, (42128708, 4, 490355,  0, 0, 0, False) /* Create A Fuckin' Bang (4200019) for Shop */
+	 , (42128708, 4, 2031668,  0, 0, 0, False) /* Create item for Shop */
+	 , (42128708, 4, 480008,  0, 0, 0, False) /* Create item for Shop */
+	, (42128708, 4, 480009,  0, 0, 0, False) /* Create item for Shop */
+	, (42128708, 4, 480010,  0, 0, 0, False) /* Create item for Shop */
+	, (42128708, 4, 480011,  0, 0, 0, False) /* Create item for Shop */
+	 , (42128708, 4, 480014,  0, 0, 0, False) /* Create item for Shop */
+	 , (42128708, 4, 490354,  0, 0, 0, False) /* Create item for Shop */
+	, (42128708, 4, 490355,  0, 0, 0, False) /* Create item for Shop */
 	, (42128708, 4, 4200141,  0, 0, 0, False) /* Create Town Control Trinket of Experience (4200017) for Shop */
 	, (42128708, 4, 480600,  0, 0, 0, False) /* Create Asteliary Orb (450754) for Shop */
 	, (42128708, 4, 8037,  0, 0, 0, False) /* Create Town Control Trinket of Experience (4200017) for Shop */
