@@ -58,7 +58,11 @@ INSERT IGNORE INTO `town`
   `is_in_conflict`,
   `last_conflict_start_time`,
   `conflict_length`,
-  `conflict_respite_length`
+  `conflict_respite_length`,
+  `attacker_awards_individual`,
+  `attacker_awards_total`,
+  `defender_awards_individual`,
+  `defender_awards_total`
 ) 
 VALUES 
 ( 
@@ -67,8 +71,12 @@ VALUES
   NULL,
   0,
   NULL,
-  1800,/*30 mins*/
-  129600 /*36 hrs*/
+  1800,  /* conflict length: 30 mins */
+  25200, /* respite: 7 hrs */
+  10,    /* max trophies per attacker */
+  100,   /* total trophies split among attackers */
+  10,    /* max trophies per defender */
+  100    /* total trophies split among defenders */
 );
 
 INSERT IGNORE INTO `town`
@@ -79,7 +87,11 @@ INSERT IGNORE INTO `town`
   `is_in_conflict`,
   `last_conflict_start_time`,
   `conflict_length`,
-  `conflict_respite_length`
+  `conflict_respite_length`,
+  `attacker_awards_individual`,
+  `attacker_awards_total`,
+  `defender_awards_individual`,
+  `defender_awards_total`
 ) 
 VALUES 
 ( 
@@ -88,8 +100,12 @@ VALUES
   NULL,
   0,
   NULL,
-  1800,/*30 mins*/
-  129600 /*36 hrs*/
+  1800,  /* conflict length: 30 mins */
+  25200, /* respite: 7 hrs */
+  10,    /* max trophies per attacker */
+  100,   /* total trophies split among attackers */
+  10,    /* max trophies per defender */
+  100    /* total trophies split among defenders */
 );
 
 INSERT IGNORE INTO `town`
@@ -100,7 +116,11 @@ INSERT IGNORE INTO `town`
   `is_in_conflict`,
   `last_conflict_start_time`,
   `conflict_length`,
-  `conflict_respite_length`
+  `conflict_respite_length`,
+  `attacker_awards_individual`,
+  `attacker_awards_total`,
+  `defender_awards_individual`,
+  `defender_awards_total`
 ) 
 VALUES 
 ( 
@@ -109,8 +129,12 @@ VALUES
   NULL,
   0,
   NULL,
-  1800,/*30 mins*/
-  129600 /*36 hrs*/
+  1800,  /* conflict length: 30 mins */
+  25200, /* respite: 7 hrs */
+  10,    /* max trophies per attacker */
+  100,   /* total trophies split among attackers */
+  10,    /* max trophies per defender */
+  100    /* total trophies split among defenders */
 );
 
 
@@ -166,6 +190,8 @@ ALTER TABLE `town`
   ADD COLUMN IF NOT EXISTS `defender_awards_individual` INT UNSIGNED NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS `defender_awards_total`      INT UNSIGNED NOT NULL DEFAULT 0;
 
--- Reward amounts default to 0 (no trophies). Set real values per town, for example:
--- UPDATE `town` SET attacker_awards_individual = 10, attacker_awards_total = 100,
+-- A fresh install gets the reward amounts and respite from the INSERTs above.
+-- To change them on an existing database (with the server stopped), for example:
+-- UPDATE `town` SET conflict_respite_length = 25200,
+--                   attacker_awards_individual = 10, attacker_awards_total = 100,
 --                   defender_awards_individual = 10, defender_awards_total = 100;
