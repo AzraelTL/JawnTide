@@ -13,7 +13,7 @@ namespace LootEditor
 
         private static readonly Regex GenerateCommentRegex = new Regex(@"Generate\s+(.+?)\s+\((\d+)\)");
 
-        public void Build(string contentSqlFolder, Action<string> foundChest)
+        public void Build(string contentSqlFolder, Action<string> foundChest, Action<string, List<string>> foundRewardTables)
         {
             names.Clear();
             var weeniesFolder = Path.Combine(contentSqlFolder, "weenies");
@@ -42,6 +42,10 @@ namespace LootEditor
 
                 if (ChestFile.IsChestWithGenerator(text))
                     foundChest(file);
+
+                var tables = EmoteRewardFile.FindRewardTables(text);
+                if (tables.Count > 0)
+                    foundRewardTables(file, tables);
             }
         }
 

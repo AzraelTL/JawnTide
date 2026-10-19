@@ -4,6 +4,14 @@ namespace LootEditor
 {
     public class MainForm : Form
     {
+        private class Entry
+        {
+            public string Path;
+            public string TableName;   // null for a chest
+            public string Label;
+            public bool IsChest => TableName == null;
+        }
+
         private const string LiveTarget = "Content (current stage)";
 
         private readonly TextBox repoBox = new TextBox { Dock = DockStyle.Fill };
@@ -15,6 +23,9 @@ namespace LootEditor
         private readonly ListBox chestList = new ListBox { Dock = DockStyle.Fill, IntegralHeight = false };
         private readonly Label chestInfo = new Label { Dock = DockStyle.Top, AutoSize = false, Height = 54 };
         private readonly ListBox alwaysList = new ListBox { Dock = DockStyle.Top, Height = 70, IntegralHeight = false };
+        private readonly DataGridView fixedGrid = new DataGridView { Dock = DockStyle.Top, Height = 150 };
+        private readonly Label alwaysLabel = new Label { Text = "Always generated (not editable here)", Dock = DockStyle.Top, Height = 20 };
+        private readonly Label gridLabel = new Label { Dock = DockStyle.Top, Height = 20 };
         private readonly DataGridView grid = new DataGridView { Dock = DockStyle.Fill };
         private readonly Label totalLabel = new Label { AutoSize = true, Padding = new Padding(0, 7, 12, 0) };
         private readonly Button addButton = new Button { Text = "Add item", AutoSize = true };
@@ -22,8 +33,9 @@ namespace LootEditor
         private readonly Button saveButton = new Button { Text = "Save", AutoSize = true };
 
         private readonly WeenieIndex index = new WeenieIndex();
-        private readonly List<string> chestPaths = new List<string>();
+        private readonly List<Entry> entries = new List<Entry>();
         private ChestFile current;
+        private EmoteRewardFile currentRewards;
         private bool dirty;
         private bool loadingGrid;
         private int lastChestIndex = -1;
@@ -39,13 +51,14 @@ namespace LootEditor
 
         public MainForm()
         {
-            Text = "JawnTide Loot Editor - Chests";
+            Text = "JawnTide Loot Editor - Chests and Rewards";
             Width = 1150;
             Height = 720;
             StartPosition = FormStartPosition.CenterScreen;
 
             BuildLayout();
             BuildGrid();
+            BuildFixedGrid();
 
             browseButton.Click += (s, e) => BrowseRepo();
             reloadButton.Click += (s, e) => LoadRepo();
@@ -86,7 +99,7 @@ namespace LootEditor
 
             split = new SplitContainer { Dock = DockStyle.Fill };
             Load += (s, e) => split.SplitterDistance = 300;
-            var leftLabel = new Label { Text = "Chests", Dock = DockStyle.Top, Height = 20, Font = new Font(Font, FontStyle.Bold) };
+            var leftLabel = new Label { Text = "Chests and NPC reward tables", Dock = DockStyle.Top, Height = 20, Font = new Font(Font, FontStyle.Bold) };
             split.Panel1.Controls.Add(chestList);
             split.Panel1.Controls.Add(leftLabel);
             split.Panel1.Padding = new Padding(6);
@@ -97,13 +110,14 @@ namespace LootEditor
             bottom.Controls.Add(removeButton);
             bottom.Controls.Add(saveButton);
 
-            var gridLabel = new Label { Text = "Random pick items (one pick = one roll; the chest makes several picks)", Dock = DockStyle.Top, Height = 20, Font = new Font(Font, FontStyle.Bold) };
-            var alwaysLabel = new Label { Text = "Always generated (not editable here)", Dock = DockStyle.Top, Height = 20, Font = new Font(Font, FontStyle.Bold) };
+            gridLabel.Font = new Font(Font, FontStyle.Bold);
+            alwaysLabel.Font = new Font(Font, FontStyle.Bold);
 
             split.Panel2.Padding = new Padding(6);
             split.Panel2.Controls.Add(grid);
             split.Panel2.Controls.Add(gridLabel);
             split.Panel2.Controls.Add(alwaysList);
+            split.Panel2.Controls.Add(fixedGrid);
             split.Panel2.Controls.Add(alwaysLabel);
             split.Panel2.Controls.Add(chestInfo);
             split.Panel2.Controls.Add(bottom);
@@ -126,6 +140,37 @@ namespace LootEditor
             grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Percent", HeaderText = "Chance per pick %", FillWeight = 20 });
 
             grid.CellEndEdit += (s, e) => OnCellEdited(e.RowIndex, e.ColumnIndex);
+        }
+
+        private void BuildFixedGrid()
+        {
+            fixedGrid.AllowUserToAddRows = false;
+            fixedGrid.AllowUserToDeleteRows = false;
+            fixedGrid.RowHeadersVisible = false;
+            fixedGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            fixedGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            fixedGrid.Visible = false;
+
+            fixedGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Situation", HeaderText = "When (emote)", FillWeight = 30, ReadOnly = true });
+            fixedGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Wcid", HeaderText = "WCID", FillWeight = 15 });
+            fixedGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "ItemName", HeaderText = "Item", FillWeight = 40, ReadOnly = true });
+            fixedGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Stack", HeaderText = "Stack (-1 = default)", FillWeight = 15 });
+
+            fixedGrid.CellEndEdit += (s, e) =>
+            {
+                if (loadingGrid || e.RowIndex < 0)
+                    return;
+                dirty = true;
+                var row = fixedGrid.Rows[e.RowIndex];
+                if (fixedGrid.Columns[e.ColumnIndex].Name == "Wcid")
+                {
+                    var text = (row.Cells["Wcid"].Value ?? "").ToString().Trim();
+                    row.Cells["ItemName"].Value = uint.TryParse(text, out var wcid)
+                        ? index.GetName(wcid) ?? "(not found in Content - check the WCID)"
+                        : "(invalid WCID)";
+                }
+                UpdateTotal();
+            };
         }
 
         // ---------- repo / settings ----------
@@ -186,25 +231,28 @@ namespace LootEditor
             Cursor = Cursors.WaitCursor;
             try
             {
-                chestPaths.Clear();
-                index.Build(ContentSql, path => chestPaths.Add(path));
+                var found = new List<Entry>();
+                index.Build(ContentSql,
+                    path => found.Add(new Entry { Path = path }),
+                    (path, tables) => found.AddRange(tables.Select(tb => new Entry { Path = path, TableName = tb })));
 
-                var chests = new List<(string path, string label)>();
-                foreach (var path in chestPaths)
+                foreach (var entry in found)
                 {
-                    var text = File.ReadAllText(path);
+                    var text = File.ReadAllText(entry.Path);
                     var header = ChestFile.ReadWeenieHeader(text);
-                    var name = ChestFile.ReadName(text) ?? Path.GetFileNameWithoutExtension(path);
-                    chests.Add((path, $"{name}  ({header?.wcid})"));
+                    var name = ChestFile.ReadName(text) ?? Path.GetFileNameWithoutExtension(entry.Path);
+                    entry.Label = entry.IsChest
+                        ? $"[Chest] {name}  ({header?.wcid})"
+                        : $"[NPC] {name} - {entry.TableName}  ({header?.wcid})";
                 }
-                chests.Sort((a, b) => string.Compare(a.label, b.label, StringComparison.OrdinalIgnoreCase));
+                found.Sort((a, b) => string.Compare(a.Label, b.Label, StringComparison.OrdinalIgnoreCase));
 
-                chestPaths.Clear();
+                entries.Clear();
                 chestList.Items.Clear();
-                foreach (var c in chests)
+                foreach (var entry in found)
                 {
-                    chestPaths.Add(c.path);
-                    chestList.Items.Add(c.label);
+                    entries.Add(entry);
+                    chestList.Items.Add(entry.Label);
                 }
 
                 RefreshTargets(LiveTarget);
@@ -288,20 +336,37 @@ namespace LootEditor
                 return;
             }
 
-            var contentPath = chestPaths[chestList.SelectedIndex];
+            var entry = entries[chestList.SelectedIndex];
+            var contentPath = entry.Path;
             var targetPath = TargetPathFor(contentPath);
             var loadPath = File.Exists(targetPath) ? targetPath : contentPath;
 
             try
             {
-                current = ChestFile.Load(loadPath, index);
+                current = null;
+                currentRewards = null;
+                if (entry.IsChest)
+                    current = ChestFile.Load(loadPath, index);
+                else
+                    currentRewards = EmoteRewardFile.Load(loadPath, entry.TableName, index);
             }
             catch (Exception ex)
             {
                 ClearChest();
-                MessageBox.Show(this, "Couldn't read this chest:\n" + ex.Message, "Loot Editor");
+                MessageBox.Show(this, "Couldn't read this file:\n" + ex.Message, "Loot Editor");
                 return;
             }
+
+            if (currentRewards != null)
+            {
+                ShowRewards(loadPath, targetPath);
+                return;
+            }
+
+            fixedGrid.Visible = false;
+            alwaysList.Visible = true;
+            alwaysLabel.Text = "Always generated (not editable here)";
+            gridLabel.Text = "Random pick items (one pick = one roll; the chest makes several picks)";
 
             var target = targetBox.SelectedItem as string ?? LiveTarget;
             var source = loadPath == targetPath
@@ -335,15 +400,51 @@ namespace LootEditor
             UpdateTotal();
         }
 
+        private string SourceText(string loadPath, string targetPath)
+        {
+            var target = targetBox.SelectedItem as string ?? LiveTarget;
+            return loadPath == targetPath
+                ? (target == LiveTarget ? "Content" : "stage " + target)
+                : "Content (no " + target + " version yet; saving creates one)";
+        }
+
+        private void ShowRewards(string loadPath, string targetPath)
+        {
+            chestInfo.Text = $"{currentRewards.Name}  (WCID {currentRewards.Wcid})   -   random reward table \"{currentRewards.TableName}\" (one roll each time it runs)\nLoaded from: {SourceText(loadPath, targetPath)}\n{loadPath}";
+
+            alwaysList.Visible = false;
+            fixedGrid.Visible = true;
+            alwaysLabel.Text = "Fixed rewards elsewhere in this NPC's script (always given; edit WCID or stack)";
+            gridLabel.Text = "Random reward table (one roll; chances must add up to 100%)";
+
+            loadingGrid = true;
+            fixedGrid.Rows.Clear();
+            foreach (var give in currentRewards.FixedGives)
+            {
+                var i = fixedGrid.Rows.Add(give.Situation, give.Wcid.ToString(), give.Name, give.StackSize.ToString());
+                fixedGrid.Rows[i].Tag = give;
+            }
+
+            grid.Rows.Clear();
+            foreach (var pick in currentRewards.Picks)
+                grid.Rows.Add(pick.Wcid.ToString(), pick.Name, pick.StackSize.ToString(), pick.Percent.ToString("0.###", CultureInfo.InvariantCulture));
+            loadingGrid = false;
+
+            dirty = false;
+            UpdateTotal();
+        }
+
         private void ClearChest()
         {
             current = null;
+            currentRewards = null;
             dirty = false;
             lastChestIndex = chestList.SelectedIndex;
             chestInfo.Text = "Select a chest on the left.";
             alwaysList.Items.Clear();
             loadingGrid = true;
             grid.Rows.Clear();
+            fixedGrid.Rows.Clear();
             loadingGrid = false;
             UpdateTotal();
         }
@@ -369,9 +470,11 @@ namespace LootEditor
             UpdateTotal();
         }
 
+        private bool HasOpenFile => current != null || currentRewards != null;
+
         private void AddItem()
         {
-            if (current == null)
+            if (!HasOpenFile)
                 return;
             var i = grid.Rows.Add("", "(type a WCID)", "-1", "0");
             grid.Rows[i].Tag = null;
@@ -383,7 +486,7 @@ namespace LootEditor
 
         private void RemoveSelected()
         {
-            if (current == null)
+            if (!HasOpenFile)
                 return;
             foreach (var row in grid.SelectedRows.Cast<DataGridViewRow>().ToList())
                 grid.Rows.Remove(row);
@@ -404,7 +507,7 @@ namespace LootEditor
 
         private void UpdateTotal()
         {
-            if (current == null)
+            if (!HasOpenFile)
             {
                 totalLabel.Text = "";
                 return;
@@ -417,10 +520,11 @@ namespace LootEditor
 
         private void Save()
         {
-            if (current == null)
+            if (!HasOpenFile)
                 return;
 
             grid.EndEdit();
+            fixedGrid.EndEdit();
             var picks = new List<PickItem>();
             foreach (DataGridViewRow row in grid.Rows)
             {
@@ -460,10 +564,44 @@ namespace LootEditor
                 return;
             }
 
-            var targetPath = TargetPathFor(chestPaths[chestList.SelectedIndex]);
+            var targetPath = TargetPathFor(entries[chestList.SelectedIndex].Path);
+
+            var fixedGives = new List<FixedGive>();
+            foreach (DataGridViewRow row in fixedGrid.Rows)
+            {
+                var give = row.Tag as FixedGive;
+                if (give == null)
+                    continue;
+                var wcidText = (row.Cells["Wcid"].Value ?? "").ToString().Trim();
+                var stackText = (row.Cells["Stack"].Value ?? "").ToString().Trim();
+                if (!uint.TryParse(wcidText, out var wcid) || wcid == 0)
+                {
+                    MessageBox.Show(this, $"Fixed reward row {row.Index + 1}: the WCID \"{wcidText}\" isn't a valid number.", "Loot Editor");
+                    return;
+                }
+                if (!int.TryParse(stackText, out var stack) || stack == 0 || stack < -1)
+                {
+                    MessageBox.Show(this, $"Fixed reward row {row.Index + 1}: stack must be -1 (default) or a number of 1 or more.", "Loot Editor");
+                    return;
+                }
+                give.Wcid = wcid;
+                give.StackSize = stack;
+                give.Name = index.GetName(wcid) ?? (row.Cells["ItemName"].Value ?? "").ToString();
+                fixedGives.Add(give);
+            }
+
+            if (currentRewards != null && picks.Count == 0)
+            {
+                MessageBox.Show(this, "A reward table needs at least one item.", "Loot Editor");
+                return;
+            }
+
             try
             {
-                current.Save(targetPath, picks);
+                if (current != null)
+                    current.Save(targetPath, picks);
+                else
+                    currentRewards.Save(targetPath, picks, fixedGives);
             }
             catch (Exception ex)
             {

@@ -1,4 +1,4 @@
-# JawnTide Loot Editor (version 1: chests)
+# JawnTide Loot Editor (chests and NPC reward tables)
 
 A small Windows app for editing the random item lists inside chests
 (Darkbeat's Storage Locker, Empyrean Cache, the Casino chests and so on).
@@ -6,6 +6,12 @@ A small Windows app for editing the random item lists inside chests
 It edits the chest SQL files in `Content/sql/weenies`. It never touches the database.
 The server picks up the changes the usual way (import the file, or a restart with
 AutoApplyWorldCustomizations on).
+
+It also edits **NPC random reward tables**: a group of emotes that share one name, where the NPC rolls
+once and gives one item (for example Aidoneus's `WorldBoss_random_reward`, the Casino gamesmasters, Hera).
+Those show in the list as `[NPC] Name - table`. For them the editor also lists the NPC's **fixed rewards**
+(Give actions that always happen, such as Aidoneus's PK Trophies and Trade Notes) where you can change the
+WCID or stack size. Adding or removing fixed rewards, and other NPC actions (XP, luminance), are not edited here.
 
 ## Build and run (Windows)
 
