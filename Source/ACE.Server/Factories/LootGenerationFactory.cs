@@ -36,8 +36,9 @@ namespace ACE.Server.Factories
         }
 
         /// <summary>
-        /// JawnTide: caps random loot at the tier set by the loot_max_tier server property (0 = no cap).
-        /// Returns a capped copy, so the cached treasure profile itself is never changed.
+        /// JawnTide loot stages: caps random loot at the tier set by the loot_max_tier server property (0 = no cap),
+        /// and removes gear ratings when loot_disable_ratings is TRUE.
+        /// Returns an adjusted copy, so the cached treasure profile itself is never changed.
         /// </summary>
         private static TreasureDeath ApplyLootTierCap(TreasureDeath profile)
         {
@@ -45,15 +46,19 @@ namespace ACE.Server.Factories
                 return profile;
 
             var maxTier = (int)PropertyManager.GetLong("loot_max_tier").Item;
+            var disableRatings = PropertyManager.GetBool("loot_disable_ratings").Item;
 
-            if (maxTier <= 0 || profile.Tier <= maxTier)
+            var capTier = maxTier > 0 && profile.Tier > maxTier;
+            var removeRatings = disableRatings && !profile.DisableRatings;
+
+            if (!capTier && !removeRatings)
                 return profile;
 
             return new TreasureDeath
             {
                 Id = profile.Id,
                 TreasureType = profile.TreasureType,
-                Tier = maxTier,
+                Tier = capTier ? maxTier : profile.Tier,
                 LootQualityMod = profile.LootQualityMod,
                 UnknownChances = profile.UnknownChances,
                 ItemChance = profile.ItemChance,
@@ -69,7 +74,7 @@ namespace ACE.Server.Factories
                 MundaneItemMaxAmount = profile.MundaneItemMaxAmount,
                 MundaneItemTypeSelectionChances = profile.MundaneItemTypeSelectionChances,
                 LastModified = profile.LastModified,
-                DisableRatings = profile.DisableRatings,
+                DisableRatings = profile.DisableRatings || disableRatings,
                 DisableSets = profile.DisableSets,
                 DisableLegendaryCantrips = profile.DisableLegendaryCantrips,
                 DisableEpicCantrips = profile.DisableEpicCantrips,
