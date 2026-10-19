@@ -1005,17 +1005,17 @@ namespace ACE.Server.WorldObjects
             recentJumps.Add(Time.GetUnixTime()); // Add current time to recent run jumps
             // Remove jumps that are outside the bounds of the tracking
             recentJumps.RemoveAll(recentJump => recentJump + PropertyManager.GetLong("jump_second_timer").Item < Time.GetUnixTime());
-            var shouldGetFucked = false;
+            var applyJumpPenalty = false;
             if (nerfJumpRun || recentJumps.Count >= PropertyManager.GetLong("jump_limit").Item)
             {
-                shouldGetFucked = true;
+                applyJumpPenalty = true;
                 if (JumpTimer == null)
                     SetProperty(PropertyFloat.JumpTimer, Time.GetFutureUnixTime(PropertyManager.GetLong("jump_penalty_length").Item));
             }
 
             // calculate stamina cost for this jump
             var extent = Math.Clamp(jump.Extent, 0.0f, 1.0f);
-            var staminaCost = MovementSystem.JumpStaminaCost(extent, burden, PKTimerActive || shouldGetFucked);
+            var staminaCost = MovementSystem.JumpStaminaCost(extent, burden, PKTimerActive || applyJumpPenalty);
 
             //Console.WriteLine($"Strength: {strength}, Capacity: {capacity}, Encumbrance: {EncumbranceVal ?? 0}, Burden: {burden}, StaminaCost: {staminaCost}");
 

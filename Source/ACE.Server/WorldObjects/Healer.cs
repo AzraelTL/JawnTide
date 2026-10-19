@@ -189,7 +189,7 @@ namespace ACE.Server.WorldObjects
 
             if (healer == target && target.IsJumping)
             {
-                healer.Session.Network.EnqueueSend(new GameMessageSystemChat("Your can't heal while in the air you peace of shit!", ChatMessageType.Broadcast));
+                healer.Session.Network.EnqueueSend(new GameMessageSystemChat("You can't heal while in the air!", ChatMessageType.Broadcast));
                 return;
             }
 

@@ -939,7 +939,7 @@ namespace ACE.Server.Command.Handlers
                     if (uint.TryParse(charIdString, out uint charId) && (player.Character.Id == charId || monarchId == charId))
                     {
                         isSuccess = false;
-                        return "You are blacklisted from joining Arena events, probably because you're a cunt who tried to abuse it or some shit.  Fuck yourself.  Or ask forgiveness from Doc Z.  Whatever, I don't care.";
+                        return "You are blacklisted from joining Arena events.  Contact an admin if you believe this is a mistake.";
                     }
                 }
             }            

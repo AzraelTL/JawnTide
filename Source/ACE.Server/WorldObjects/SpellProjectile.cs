@@ -332,7 +332,7 @@ namespace ACE.Server.WorldObjects
                 {
                     if(player != null && targetPlayer != null && IsWeaponSpell)
                     {
-                        //Fuck you wand monkey
+                        // weapon spells do no damage to other players
                         damage = 0;
                     }
 

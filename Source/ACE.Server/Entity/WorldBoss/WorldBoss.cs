@@ -191,7 +191,7 @@ namespace ACE.Server.Entity.WorldBoss
                     var tq = new WorldBoss();
                     tq.WeenieID = 49009300;
                     tq.Name = "Tusker Queen";
-                    tq.SpawnMsg = "A piercing roar rings out, filled with terrifying rage. The great Queen of the Tuskers has emerged from her slumber, and she's fucking pissed. Seek the Idol of Brutality only if you seek death.";
+                    tq.SpawnMsg = "A piercing roar rings out, filled with terrifying rage. The great Queen of the Tuskers has emerged from her slumber, and she is furious. Seek the Idol of Brutality only if you seek death.";
                     tq.SpawnLocations = new Dictionary<uint, Position>();
                     tq.SpawnLocations.Add(0xF782, new Position(0xF7820003, 4.750887f, 59.361496f, 58.005001f, 0f, 0f, 0.703107f, 0.711085f)); //0xF7820003 [4.750887 59.361496 58.005001] 0.711085 0.000000 0.000000 0.703107
                     tq.MaxAllegianceEntries = 9;

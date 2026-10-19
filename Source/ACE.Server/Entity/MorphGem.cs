@@ -468,7 +468,7 @@ namespace ACE.Server.Entity
                     //    }
                     //    else if (alChange == 0)
                     //    {
-                    //        playerMsg = $"As your hands run softly along the contours of your armor, you quiver with anticipation.  With a timid yet determined thrust you attempt to apply the Morph Gem.  But luck being the cunt she is, the Morph Gem shatters on impact and your armor remains unchanged.";
+                    //        playerMsg = $"As your hands run softly along the contours of your armor, you quiver with anticipation.  With a timid yet determined thrust you attempt to apply the Morph Gem.  But luck is not on your side, and the Morph Gem shatters on impact and your armor remains unchanged.";
                     //    }
                     //    else
                     //    {
@@ -528,7 +528,7 @@ namespace ACE.Server.Entity
 
                         if (valueChange > 0)
                         {
-                            playerMsg = $"Bad luck cunt. The Morph Gem fucked you. Your item's value has increased by {valueChange}";
+                            playerMsg = $"Bad luck. The Morph Gem worked against you. Your item's value has increased by {valueChange}";
                         }
                         else if (valueChange == 0)
                         {
@@ -849,22 +849,22 @@ namespace ACE.Server.Entity
                         if (originalSetId.HasValue && setRollResult)
                         {
                             //Randomized existing set
-                            resultMsg = "You and I, we aren't so different.  We are nothing alike yet we are... nothing.  None of it matters.  You, especially, don't matter.  You will die.  I will die.  Will we then be the same?  Will we be at all?  Will you shut the fuck up?  Your armor has a different Set on it now, congrats.";
+                            resultMsg = "You and I, we aren't so different.  We are nothing alike yet we are... nothing.  None of it matters.  You, especially, don't matter.  You will die.  I will die.  Will we then be the same?  Will we be at all?  Your armor has a different Set on it now, congrats.";
                         }
                         else if (!originalSetId.HasValue && setRollResult)
                         {
                             //Added new set
-                            resultMsg = "If you get caught with drugs and they ask you who you got them from, it was the naked Indian.  Also, your item that didn't have a Set, well, now it has a Set.  Take a look and see.  Hopefully it's what you wanted.";
+                            resultMsg = "Fortune smiles on you.  Your item that didn't have a Set, well, now it has a Set.  Take a look and see.  Hopefully it's what you wanted.";
                         }
                         else if (originalSetId.HasValue && !setRollResult)
                         {
                             //Remove existing set
-                            resultMsg = "Bad luck cunt, your armor that had a Set on it, well now it doesn't have a Set on it.  Also, you're ugly and smell bad, and those are your best qualities.";
+                            resultMsg = "Bad luck.  Your armor that had a Set on it, well, now it doesn't have a Set on it.";
                         }
                         else
                         {
                             //No existing set, failed to add a set
-                            resultMsg = "I once had a dream that I was peeing on a tree in the woods.  When I woke up, I had pissed all over myself.  I hope that makes you feel slightly better about the fact that your item which didn't previously have a Set on it still doesn't have a Set on it.  Better luck next time cunt.";
+                            resultMsg = "No luck this time.  Your item which didn't previously have a Set on it still doesn't have a Set on it.  Better luck next time.";
                         }
 
                         player.Session.Network.EnqueueSend(new GameMessageSystemChat(resultMsg, ChatMessageType.Broadcast));

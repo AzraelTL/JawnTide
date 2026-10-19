@@ -960,7 +960,7 @@ namespace ACE.Server.WorldObjects
                         //TODO - Send a global, or local message?
                         //TODO - manually respawn the initiation boss?
                         //PlayerManager.BroadcastToAll(new GameMessageSystemChat("DEBUG - Init boss killer is from allegiance who owns the town, conflict event will not be started", ChatMessageType.Broadcast));
-                        this.CurrentLandblock?.EnqueueBroadcast(null, true, null, null, new GameMessageSystemChat($"{deadBossName} has been killed by a member of the allegiance who owns {town.TownName}.  You worthless dickbag, your name is now on the terrorist list and Im fucking coming for you.", ChatMessageType.Broadcast));
+                        this.CurrentLandblock?.EnqueueBroadcast(null, true, null, null, new GameMessageSystemChat($"{deadBossName} has been killed by a member of the allegiance who owns {town.TownName}.  A town's owners cannot start a conflict against their own town.", ChatMessageType.Broadcast));
                         log.DebugFormat("Town Control - {0} Init boss killer is from clan that owns the town.  Conflict event not started", town.TownName);
 
                         validationFailed = true;
@@ -1070,7 +1070,7 @@ namespace ACE.Server.WorldObjects
 
                         //PlayerManager.BroadcastToAll(new GameMessageSystemChat("DEBUG - conflict boss killed but no active conflict event found", ChatMessageType.Broadcast));
 
-                        this.CurrentLandblock?.EnqueueBroadcast(null, true, null, null, new GameMessageSystemChat($"{deadBossName} has been killed but there is no active conflict event found for {town.TownName}.  {deadBossName} fucks off.", ChatMessageType.Broadcast));
+                        this.CurrentLandblock?.EnqueueBroadcast(null, true, null, null, new GameMessageSystemChat($"{deadBossName} has been killed, but there is no active conflict event for {town.TownName}.", ChatMessageType.Broadcast));
                         log.DebugFormat("Town Control - {0} conflict boss killed but no active conflict event found.", town.TownName);
                         return;
                     }
