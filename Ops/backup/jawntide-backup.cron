@@ -1,0 +1,4 @@
+# JawnTide nightly database backup at 04:30 (installed as /etc/cron.d/jawntide-backup)
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+30 4 * * * root /usr/local/bin/jawntide-backup.sh >> /var/log/jawntide-backup.log 2>&1
