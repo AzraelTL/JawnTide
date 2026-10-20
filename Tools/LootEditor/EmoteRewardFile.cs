@@ -294,7 +294,7 @@ namespace LootEditor
         }
 
         /// <summary>Reads "(...), (...), ... ;" tuples, respecting quotes and /* comments */.</summary>
-        private static List<(int start, int end, List<string> tokens)> ReadTuples(string text, ref int pos)
+        internal static List<(int start, int end, List<string> tokens)> ReadTuples(string text, ref int pos)
         {
             var result = new List<(int, int, List<string>)>();
             while (pos < text.Length)

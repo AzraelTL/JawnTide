@@ -1,4 +1,4 @@
-# JawnTide Loot Editor (chests and NPC reward tables)
+# JawnTide Loot Editor (chests, NPC reward tables, loot profiles)
 
 A small Windows app for editing the random item lists inside chests
 (Darkbeat's Storage Locker, Empyrean Cache, the Casino chests and so on).
@@ -12,6 +12,12 @@ once and gives one item (for example Aidoneus's `WorldBoss_random_reward`, the C
 Those show in the list as `[NPC] Name - table`. For them the editor also lists the NPC's **fixed rewards**
 (Give actions that always happen, such as Aidoneus's PK Trophies and Trade Notes) where you can change the
 WCID or stack size. Adding or removing fixed rewards, and other NPC actions (XP, luminance), are not edited here.
+
+It also edits **loot profiles** (`treasure_death` files in `Content/sql`, shown as `[Loot profile] N`):
+the tier, quality modifier, and how many magic / non-magic / mundane items drop, for monsters that use the
+profile (DeathTreasureType) and containers that roll it. The "Used by" list shows which monsters and containers
+in Content use it. Stock profiles that aren't in Content aren't listed. The server's `loot_max_tier` setting still
+caps the tier at runtime, whatever the profile says.
 
 ## Build and run (Windows)
 

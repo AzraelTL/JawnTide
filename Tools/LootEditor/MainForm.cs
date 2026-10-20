@@ -7,9 +7,10 @@ namespace LootEditor
         private class Entry
         {
             public string Path;
-            public string TableName;   // null for a chest
+            public string TableName;   // set for an NPC reward table
+            public bool IsProfile;     // a loot profile (treasure_death) file
             public string Label;
-            public bool IsChest => TableName == null;
+            public bool IsChest => TableName == null && !IsProfile;
         }
 
         private const string LiveTarget = "Content (current stage)";
@@ -36,6 +37,8 @@ namespace LootEditor
         private readonly List<Entry> entries = new List<Entry>();
         private ChestFile current;
         private EmoteRewardFile currentRewards;
+        private LootProfileFile currentProfile;
+        private readonly DataGridView profileGrid = new DataGridView { Dock = DockStyle.Fill, Visible = false };
         private bool dirty;
         private bool loadingGrid;
         private int lastChestIndex = -1;
@@ -51,7 +54,7 @@ namespace LootEditor
 
         public MainForm()
         {
-            Text = "JawnTide Loot Editor - Chests and Rewards";
+            Text = "JawnTide Loot Editor - Chests, Rewards and Loot Profiles";
             Width = 1150;
             Height = 720;
             StartPosition = FormStartPosition.CenterScreen;
@@ -59,6 +62,7 @@ namespace LootEditor
             BuildLayout();
             BuildGrid();
             BuildFixedGrid();
+            BuildProfileGrid();
 
             browseButton.Click += (s, e) => BrowseRepo();
             reloadButton.Click += (s, e) => LoadRepo();
@@ -99,7 +103,7 @@ namespace LootEditor
 
             split = new SplitContainer { Dock = DockStyle.Fill };
             Load += (s, e) => split.SplitterDistance = 300;
-            var leftLabel = new Label { Text = "Chests and NPC reward tables", Dock = DockStyle.Top, Height = 20, Font = new Font(Font, FontStyle.Bold) };
+            var leftLabel = new Label { Text = "Chests, NPC reward tables and loot profiles", Dock = DockStyle.Top, Height = 20, Font = new Font(Font, FontStyle.Bold) };
             split.Panel1.Controls.Add(chestList);
             split.Panel1.Controls.Add(leftLabel);
             split.Panel1.Padding = new Padding(6);
@@ -114,6 +118,7 @@ namespace LootEditor
             alwaysLabel.Font = new Font(Font, FontStyle.Bold);
 
             split.Panel2.Padding = new Padding(6);
+            split.Panel2.Controls.Add(profileGrid);
             split.Panel2.Controls.Add(grid);
             split.Panel2.Controls.Add(gridLabel);
             split.Panel2.Controls.Add(alwaysList);
@@ -169,6 +174,24 @@ namespace LootEditor
                         ? index.GetName(wcid) ?? "(not found in Content - check the WCID)"
                         : "(invalid WCID)";
                 }
+                UpdateTotal();
+            };
+        }
+
+        private void BuildProfileGrid()
+        {
+            profileGrid.AllowUserToAddRows = false;
+            profileGrid.AllowUserToDeleteRows = false;
+            profileGrid.RowHeadersVisible = false;
+            profileGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            profileGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Setting", HeaderText = "Setting", FillWeight = 25, ReadOnly = true });
+            profileGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Value", HeaderText = "Value", FillWeight = 12 });
+            profileGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Help", HeaderText = "What it does", FillWeight = 63, ReadOnly = true });
+            profileGrid.CellEndEdit += (s, e) =>
+            {
+                if (loadingGrid)
+                    return;
+                dirty = true;
                 UpdateTotal();
             };
         }
@@ -234,10 +257,18 @@ namespace LootEditor
                 var found = new List<Entry>();
                 index.Build(ContentSql,
                     path => found.Add(new Entry { Path = path }),
-                    (path, tables) => found.AddRange(tables.Select(tb => new Entry { Path = path, TableName = tb })));
+                    (path, tables) => found.AddRange(tables.Select(tb => new Entry { Path = path, TableName = tb })),
+                    path => found.Add(new Entry { Path = path, IsProfile = true }));
 
                 foreach (var entry in found)
                 {
+                    if (entry.IsProfile)
+                    {
+                        var tt = LootProfileFile.ReadTreasureType(File.ReadAllText(entry.Path));
+                        entry.Label = $"[Loot profile] {tt}  {Path.GetFileNameWithoutExtension(entry.Path)}";
+                        continue;
+                    }
+
                     var text = File.ReadAllText(entry.Path);
                     var header = ChestFile.ReadWeenieHeader(text);
                     var name = ChestFile.ReadName(text) ?? Path.GetFileNameWithoutExtension(entry.Path);
@@ -345,7 +376,10 @@ namespace LootEditor
             {
                 current = null;
                 currentRewards = null;
-                if (entry.IsChest)
+                currentProfile = null;
+                if (entry.IsProfile)
+                    currentProfile = LootProfileFile.Load(loadPath);
+                else if (entry.IsChest)
                     current = ChestFile.Load(loadPath, index);
                 else
                     currentRewards = EmoteRewardFile.Load(loadPath, entry.TableName, index);
@@ -354,6 +388,14 @@ namespace LootEditor
             {
                 ClearChest();
                 MessageBox.Show(this, "Couldn't read this file:\n" + ex.Message, "Loot Editor");
+                return;
+            }
+
+            SetProfileMode(currentProfile != null);
+
+            if (currentProfile != null)
+            {
+                ShowProfile(loadPath, targetPath);
                 return;
             }
 
@@ -408,6 +450,44 @@ namespace LootEditor
                 : "Content (no " + target + " version yet; saving creates one)";
         }
 
+        /// <summary>Loot profiles use their own settings grid; chests and NPC tables use the item grids.</summary>
+        private void SetProfileMode(bool profile)
+        {
+            profileGrid.Visible = profile;
+            grid.Visible = !profile;
+            addButton.Enabled = !profile;
+            removeButton.Enabled = !profile;
+            if (profile)
+                fixedGrid.Visible = false;
+        }
+
+        private void ShowProfile(string loadPath, string targetPath)
+        {
+            var users = index.GetProfileUsers(currentProfile.TreasureType);
+            chestInfo.Text = $"Loot profile {currentProfile.TreasureType}   -   used by {users.Count} monster(s)/container(s) in Content\nLoaded from: {SourceText(loadPath, targetPath)}\n{loadPath}";
+
+            alwaysLabel.Text = "Used by (monsters and containers in Content that roll this profile)";
+            gridLabel.Text = "Loot profile settings (random loot only; loot_max_tier still caps the tier on the server)";
+            alwaysList.Visible = true;
+            alwaysList.Items.Clear();
+            foreach (var user in users)
+                alwaysList.Items.Add(user);
+            if (users.Count == 0)
+                alwaysList.Items.Add("(nothing in Content uses it - stock monsters may still use it)");
+
+            loadingGrid = true;
+            profileGrid.Rows.Clear();
+            foreach (var field in currentProfile.Fields)
+            {
+                var i = profileGrid.Rows.Add(field.Label, field.Value, field.Help);
+                profileGrid.Rows[i].Tag = field;
+            }
+            loadingGrid = false;
+
+            dirty = false;
+            UpdateTotal();
+        }
+
         private void ShowRewards(string loadPath, string targetPath)
         {
             chestInfo.Text = $"{currentRewards.Name}  (WCID {currentRewards.Wcid})   -   random reward table \"{currentRewards.TableName}\" (one roll each time it runs)\nLoaded from: {SourceText(loadPath, targetPath)}\n{loadPath}";
@@ -438,6 +518,8 @@ namespace LootEditor
         {
             current = null;
             currentRewards = null;
+            currentProfile = null;
+            SetProfileMode(false);
             dirty = false;
             lastChestIndex = chestList.SelectedIndex;
             chestInfo.Text = "Select a chest on the left.";
@@ -445,6 +527,7 @@ namespace LootEditor
             loadingGrid = true;
             grid.Rows.Clear();
             fixedGrid.Rows.Clear();
+            profileGrid.Rows.Clear();
             loadingGrid = false;
             UpdateTotal();
         }
@@ -470,7 +553,7 @@ namespace LootEditor
             UpdateTotal();
         }
 
-        private bool HasOpenFile => current != null || currentRewards != null;
+        private bool HasOpenFile => current != null || currentRewards != null || currentProfile != null;
 
         private void AddItem()
         {
@@ -512,6 +595,12 @@ namespace LootEditor
                 totalLabel.Text = "";
                 return;
             }
+            if (currentProfile != null)
+            {
+                totalLabel.Text = dirty ? "* unsaved" : "";
+                totalLabel.ForeColor = SystemColors.ControlText;
+                return;
+            }
             var total = TotalPercent();
             var ok = grid.Rows.Count == 0 || Math.Abs(total - 100) < 0.01;
             totalLabel.Text = $"Total: {total.ToString("0.###", CultureInfo.InvariantCulture)}%" + (ok ? "" : "  (must be 100%)") + (dirty ? "   * unsaved" : "");
@@ -525,6 +614,13 @@ namespace LootEditor
 
             grid.EndEdit();
             fixedGrid.EndEdit();
+            profileGrid.EndEdit();
+
+            if (currentProfile != null)
+            {
+                SaveProfile();
+                return;
+            }
             var picks = new List<PickItem>();
             foreach (DataGridViewRow row in grid.Rows)
             {
@@ -602,6 +698,47 @@ namespace LootEditor
                     current.Save(targetPath, picks);
                 else
                     currentRewards.Save(targetPath, picks, fixedGives);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Save failed:\n" + ex.Message, "Loot Editor");
+                return;
+            }
+
+            dirty = false;
+            LoadSelectedChest();
+            MessageBox.Show(this, "Saved to:\n" + targetPath, "Loot Editor");
+        }
+
+        private void SaveProfile()
+        {
+            var fields = new List<ProfileField>();
+            foreach (DataGridViewRow row in profileGrid.Rows)
+            {
+                var field = row.Tag as ProfileField;
+                if (field == null)
+                    continue;
+                fields.Add(new ProfileField
+                {
+                    Column = field.Column,
+                    Label = field.Label,
+                    Help = field.Help,
+                    IsInteger = field.IsInteger,
+                    Value = (row.Cells["Value"].Value ?? "").ToString().Trim(),
+                });
+            }
+
+            var error = LootProfileFile.Validate(fields);
+            if (error != null)
+            {
+                MessageBox.Show(this, error, "Loot Editor");
+                return;
+            }
+
+            var targetPath = TargetPathFor(entries[chestList.SelectedIndex].Path);
+            try
+            {
+                currentProfile.Save(targetPath, fields);
             }
             catch (Exception ex)
             {
