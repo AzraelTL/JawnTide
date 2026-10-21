@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -29,33 +30,9 @@ namespace ACE.Server.Network.Handlers
 
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private static readonly ILog packetLog = LogManager.GetLogger(System.Reflection.Assembly.GetEntryAssembly(), "Packets");
-        private static List<string> _VpnBlockedIPs = null;
-        public static List<string> VpnBlockedIPs
-        {
-            get
-            {
-                if (_VpnBlockedIPs == null)
-                {
-                    _VpnBlockedIPs = new List<string>();
-                }
-
-                return _VpnBlockedIPs;
-            }
-        }
-
-        private static List<string> _vpnApprovedIPs = null;
-        public static List<string> VpnApprovedIPs
-        {
-            get
-            {
-                if (_vpnApprovedIPs == null)
-                {
-                    _vpnApprovedIPs = new List<string>();
-                }
-
-                return _vpnApprovedIPs;
-            }
-        }
+        // VPN check results per IP (true = VPN/proxy), kept for VpnCacheDuration so each IP costs one proxycheck.io query.
+        private static readonly ConcurrentDictionary<string, (bool IsVpn, DateTime CheckedAt)> vpnCheckCache = new ConcurrentDictionary<string, (bool IsVpn, DateTime CheckedAt)>();
+        private static readonly TimeSpan VpnCacheDuration = TimeSpan.FromHours(24);
 
         public static void HandleLoginRequest(ClientPacket packet, Session session)
         {
@@ -207,47 +184,19 @@ namespace ACE.Server.Network.Handlers
                     return;
                 }
 
-                //Disallow VPN connections
-                //if (PropertyManager.GetBool("block_vpn_connections").Item)
-                //{
-                //    try
-                //    {
-                //        var currIp = session.EndPointC2S?.Address?.ToString();
-                //        bool isVpn = false;
-                //        if (!VpnApprovedIPs.Contains(currIp))
-                //        {
-                //            if (VpnBlockedIPs.Contains(currIp))
-                //            {
-                //                isVpn = true;
-                //            }
-                //            else
-                //            {
-                //                //The IP isn't on the block list or on the cleared list, so check against API to see if its a VPN
-                //                isVpn = CheckForVpn(currIp);
-                //                if (isVpn)
-                //                {
-                //                    VpnBlockedIPs.Add(currIp);
-                //                }
-                //                else
-                //                {
-                //                    VpnApprovedIPs.Add(currIp);
-                //                }
-                //            }
-                //        }
-
-                //        if (isVpn)
-                //        {
-                //            log.Info($"Blocked login attempt for account {session.Account} from IP {currIp} due to VPN detection");
-                //            string bootMsg = " Connections from VPN / proxy disallowed by server policy";
-                //            session.Terminate(SessionTerminationReason.AccountBooted, new GameMessageBootAccount(bootMsg), null, bootMsg);
-                //            return;
-                //        }
-                //    }
-                //    catch (Exception ex)
-                //    {
-                //        log.Error($"Exception during VPN detection check for account = {session.Account}.  Ex: {ex}");
-                //    }
-                //}
+                // Block VPN / proxy connections (block_vpn_connections). Admin accounts, LAN addresses and IPs in
+                // vpn_check_ip_whitelist are never checked. If proxycheck.io can't be reached, the login is allowed.
+                if (PropertyManager.GetBool("block_vpn_connections").Item && (AccessLevel)account.AccessLevel < AccessLevel.Admin)
+                {
+                    var clientAddress = session.EndPointC2S?.Address;
+                    if (clientAddress != null && IsVpnOrProxy(clientAddress))
+                    {
+                        log.Info($"Blocked login for account {account.AccountName} from {clientAddress}: VPN/proxy detected");
+                        var bootMsg = " Connections from a VPN or proxy are not allowed on this server";
+                        session.Terminate(SessionTerminationReason.AccountBooted, new GameMessageBootAccount(bootMsg), null, bootMsg);
+                        return;
+                    }
+                }
 
                 if (PropertyManager.GetBool("account_login_boots_in_use").Item)
                 {
@@ -438,49 +387,68 @@ namespace ACE.Server.Network.Handlers
             session.Network.EnqueueSend(dddInterrogation);
         }
 
-        private static bool CheckForVpn(string ip)
+        /// <summary>
+        /// True if the address is a VPN or proxy according to proxycheck.io (cached for VpnCacheDuration).
+        /// Returns false for LAN/loopback addresses, whitelisted IPs, and when the check can't be completed.
+        /// </summary>
+        private static bool IsVpnOrProxy(System.Net.IPAddress address)
         {
-            if (ip.Equals("127.0.0.1"))
-            {
+            if (address.IsIPv4MappedToIPv6)
+                address = address.MapToIPv4();
+
+            if (IsPrivateAddress(address))
                 return false;
-            }
 
-            bool isVpn = false;
-            //Console.WriteLine("In AuthenticationHandler.CheckForVpn");            
+            var ip = address.ToString();
 
-            try
-            {
-                var task = VPNDetection.CheckVPN(ip.ToString());
-                task.Wait();
-                var ispInfo = task.Result;
+            var whitelist = PropertyManager.GetString("vpn_check_ip_whitelist").Item
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (whitelist.Contains(ip))
+                return false;
 
-                if (ispInfo != null && !String.IsNullOrEmpty(ispInfo.Proxy) && ispInfo.Proxy.Equals("yes"))
-                {
-                    Console.WriteLine($"ISPInfo = {(ispInfo == null ? "NULL" : ispInfo.ToString())}");
-                    log.Warn($"VPN detected with ISPInfo = {ispInfo.ToString()}");
-                    isVpn = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                log.Error($"Exception in AuthenticationHandler.CheckForVPN. Ex: {ex}");
-            }
+            if (vpnCheckCache.TryGetValue(ip, out var cached) && DateTime.UtcNow - cached.CheckedAt < VpnCacheDuration)
+                return cached.IsVpn;
 
-            //Console.WriteLine($"AuthenticationHandler.CheckForVpn returning isVpn = {isVpn}");
+            var info = VPNDetection.CheckVPN(ip);
+            if (info == null)
+                return false; // not cached, so the next login from this IP tries again
+
+            var isVpn = string.Equals(info.Proxy, "yes", StringComparison.OrdinalIgnoreCase);
+            vpnCheckCache[ip] = (isVpn, DateTime.UtcNow);
+
+            if (isVpn)
+                log.Warn($"VPN/proxy detected for {ip}: {info}");
+
             return isVpn;
         }
 
-        public static void ClearVpnBlockedIPs()
+        private static bool IsPrivateAddress(System.Net.IPAddress address)
         {
-            VpnBlockedIPs.Clear();
+            if (System.Net.IPAddress.IsLoopback(address))
+                return true;
+
+            if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+            {
+                var b = address.GetAddressBytes();
+                return b[0] == 10
+                    || (b[0] == 172 && b[1] >= 16 && b[1] <= 31)
+                    || (b[0] == 192 && b[1] == 168)
+                    || (b[0] == 169 && b[1] == 254);
+            }
+
+            return address.IsIPv6LinkLocal || address.IsIPv6SiteLocal || address.IsIPv6UniqueLocal;
         }
 
+        /// <summary>Forgets every cached VPN result, so each IP is checked again on its next login.</summary>
+        public static void ClearVpnBlockedIPs()
+        {
+            vpnCheckCache.Clear();
+        }
+
+        /// <summary>Forgets the cached VPN result for one IP, so it is checked again on its next login.</summary>
         public static void RemoveIpFromVpnBlockList(string ip)
         {
-            if (VpnBlockedIPs.Contains(ip))
-            {
-                VpnBlockedIPs.Remove(ip);
-            }
+            vpnCheckCache.TryRemove(ip?.Trim() ?? string.Empty, out _);
         }
     }
 }

@@ -1,13 +1,11 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Net;
-using System.IO;
-using System.Threading.Tasks;
+using System.Globalization;
+using System.Net.Http;
 using System.Text.Json;
-using ACE.Server.Managers;
+
 using log4net;
-using ACE.Adapter.GDLE.Models;
+
+using ACE.Server.Managers;
 
 namespace ACE.Server.Network
 {
@@ -32,67 +30,98 @@ namespace ACE.Server.Network
         }
     }
 
+    /// <summary>
+    /// Asks proxycheck.io (v2 API) whether an IP address is a VPN or proxy.
+    /// </summary>
     public static class VPNDetection
     {
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        public static string ApiKey { get; set; } = PropertyManager.GetString("proxycheck_api_key").Item;
+        // One shared client; a slow or unreachable proxycheck.io never holds a login for more than 3 seconds.
+        private static readonly HttpClient httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
 
-        public static async Task<ISPInfo> CheckVPN(string ip)
+        /// <summary>
+        /// Returns the proxycheck.io result for the IP, or null if the check could not be completed
+        /// (timeout, network error, quota exceeded, unexpected answer). Callers treat null as "allow".
+        /// The API key is read from the proxycheck_api_key server setting on every call.
+        /// </summary>
+        public static ISPInfo CheckVPN(string ip)
         {
-            //Console.WriteLine("In VPNDetection.CheckVPN");
-            if (string.IsNullOrEmpty(ip) || ip.Equals("127.0.0.1"))
+            if (string.IsNullOrEmpty(ip))
+                return null;
+
+            var url = $"https://proxycheck.io/v2/{Uri.EscapeDataString(ip)}?vpn=1&asn=1";
+            var apiKey = PropertyManager.GetString("proxycheck_api_key").Item;
+            if (!string.IsNullOrWhiteSpace(apiKey))
+                url += "&key=" + Uri.EscapeDataString(apiKey.Trim());
+
+            try
             {
+                var json = httpClient.GetStringAsync(url).GetAwaiter().GetResult();
+
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                var status = GetString(root, "status");
+                if (status != "ok" && status != "warning")
+                {
+                    log.Warn($"VPNDetection: proxycheck.io answered status '{status}' for {ip}: {GetString(root, "message")}");
+                    return null;
+                }
+
+                if (status == "warning")
+                    log.Warn($"VPNDetection: proxycheck.io warning: {GetString(root, "message")}");
+
+                if (!root.TryGetProperty(ip, out var d) || d.ValueKind != JsonValueKind.Object)
+                {
+                    log.Warn($"VPNDetection: proxycheck.io answer had no entry for {ip}");
+                    return null;
+                }
+
+                return new ISPInfo
+                {
+                    ASN = GetString(d, "asn"),
+                    Provider = GetString(d, "provider"),
+                    Continent = GetString(d, "continent"),
+                    Country = GetString(d, "country"),
+                    IsoCode = GetString(d, "isocode"),
+                    Region = GetString(d, "region"),
+                    RegionCode = GetString(d, "regioncode"),
+                    City = GetString(d, "city"),
+                    Latitude = GetFloat(d, "latitude"),
+                    Longitude = GetFloat(d, "longitude"),
+                    Proxy = GetString(d, "proxy"),
+                    Type = GetString(d, "type")
+                };
+            }
+            catch (Exception ex)
+            {
+                // Never log the URL: it contains the API key.
+                log.Warn($"VPNDetection: check for {ip} could not be completed ({ex.GetType().Name}: {ex.Message}); allowing the login");
                 return null;
             }
+        }
 
-            var url = $"https://proxycheck.io/v2/{ip}?vpn=1&asn=1&key={ApiKey}";
-            if (!string.IsNullOrWhiteSpace(ApiKey))
-                url += "&key=" + ApiKey;
-            var req = WebRequest.Create(url);
-            var task = req.GetResponseAsync();
-            if (!(await Task.WhenAny(task, Task.Delay(3000)) == task))
-            {
-                log.Warn($"VPNDetection.CheckVPN task timed out for ip = {ip}");
-                return null; //timed out
-            }
-            var resp = task.Result;
-            using (var stream = resp.GetResponseStream())
-            {
-                using (var sr = new StreamReader(stream))
-                {
-                    var data = sr.ReadToEnd();
-                    var options = new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true,
-                    };
+        private static string GetString(JsonElement element, string name)
+        {
+            if (!element.TryGetProperty(name, out var value))
+                return null;
 
-                    var d1 = JsonSerializer.Deserialize<dynamic>(data);
-                    var d = d1[ip];
-                    var ispinfo = new ISPInfo()
-                    {
-                        ASN = d["asn"],
-                        Provider = d["provider"],
-                        City = d["city"],
-                        Continent = d["continent"],
-                        Country = d["country"],
-                        IsoCode = d["isocode"],
-                        Latitude = d["latitude"],
-                        Longitude = d["longitude"],
-                        Proxy = d["proxy"],
-                        Region = d["region"],
-                        RegionCode = d["regioncode"],
-                        Type = d["type"]
-                    };
+            return value.ValueKind == JsonValueKind.String ? value.GetString() : value.ToString();
+        }
 
-                    if (!string.IsNullOrEmpty(ispinfo.Proxy) && ispinfo.Proxy.ToLower().Equals("yes"))
-                    {
-                        log.Debug($"VPN detected for ip = {ip} with ISPInfo = {ispinfo.ToString()}");
-                    }
-                    //Console.WriteLine($"VPNDetection.CheckVPN returning ISPInfo = {ispinfo.ToString()}");
-                    return ispinfo;
-                }
-            }
+        private static float GetFloat(JsonElement element, string name)
+        {
+            if (!element.TryGetProperty(name, out var value))
+                return 0;
+
+            if (value.ValueKind == JsonValueKind.Number && value.TryGetSingle(out var number))
+                return number;
+
+            if (value.ValueKind == JsonValueKind.String && float.TryParse(value.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out number))
+                return number;
+
+            return 0;
         }
     }
 }

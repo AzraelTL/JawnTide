@@ -893,6 +893,7 @@ namespace ACE.Server.Managers
                 ("turbine_chat_webhook", new Property<string>("", "Webhook to be used for turbine chat. This is for copying ingame general chat channels to a Discord channel.")),
                 ("turbine_chat_webhook_audit", new Property<string>("", "Webhook to be used for ingame audit log.")),
                 ("proxycheck_api_key", new Property<string>("", "API key for proxycheck.io service for VPN detection")),
+                ("vpn_check_ip_whitelist", new Property<string>("", "JawnTide: comma-separated IP addresses that are never VPN-checked (for a player wrongly flagged as a VPN)")),
                 ("season_leaderboard_webhook", new Property<string>("", "Discord webhook URL for the weekly season leaderboard milestone post")),
                 ("ip_binding_ip_whitelist", new Property<string>("", "Comma-separated list of IP addresses exempt from the one-account-per-IP binding rule (e.g. a LAN or staff office IP). Accounts logging in from these IPs bypass conflict checks entirely (unlimited accounts).")),
                 ("ip_binding_ip_allowance", new Property<string>("", "Comma-separated per-IP overrides for the number of distinct accounts allowed to bind to a single IP, formatted 'ip:count'. Example: '203.0.113.42:2, 198.51.100.7:2'. IPs not listed use the default allowance of 1 (one account per IP). Unlike ip_binding_ip_whitelist, this enforces a hard cap instead of unlimited.")),
