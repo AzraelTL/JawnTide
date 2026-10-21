@@ -47,7 +47,8 @@
 
   <root>
     <level value="ALL" />
-    <appender-ref ref="asyncForwarder" />
+    <appender-ref ref="Console" />
+    <appender-ref ref="RollingFileAppender" />
   </root>
 
 </log4net>
