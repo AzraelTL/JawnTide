@@ -4933,6 +4933,27 @@ namespace ACE.Server.Command.Handlers
             AuthenticationHandler.RemoveIpFromVpnBlockList(parameters[0]);
         }
 
+        [CommandHandler("vpncheck", AccessLevel.Sentinel, CommandHandlerFlag.None, 1,
+            "Asks proxycheck.io whether an IP address is a VPN or proxy (does not use or change the login cache)",
+            "<ip address>")]
+        public static void HandleVpnCheck(Session session, params string[] parameters)
+        {
+            var ip = parameters[0].Trim();
+
+            if (!IPAddress.TryParse(ip, out _))
+            {
+                CommandHandlerHelper.WriteOutputInfo(session, $"{ip} is not a valid IP address.");
+                return;
+            }
+
+            var info = VPNDetection.CheckVPN(ip);
+
+            if (info == null)
+                CommandHandlerHelper.WriteOutputInfo(session, $"VPN check for {ip} could not be completed (see the server log for the reason).");
+            else
+                CommandHandlerHelper.WriteOutputInfo(session, $"{ip}: proxy = {info.Proxy}, type = {info.Type}, provider = {info.Provider}, country = {info.Country}");
+        }
+
         /* Arenas */
         [CommandHandler("arenadebug", AccessLevel.Sentinel, CommandHandlerFlag.None, 0,
             "Displays debug info about arenas")]
