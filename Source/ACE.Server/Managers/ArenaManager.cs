@@ -311,15 +311,15 @@ namespace ACE.Server.Managers
                 //log.Info($"ArenaManager.MatchMake() - First Player = {firstArenaPlayer.CharacterName}, EventType = {firstArenaPlayer.EventType}");
 
                 //See if there's enough other players waiting for the same event type to create a match
-                //If you're lvl 150+, you can fight anyone up to lvl 275 and down to the greater of lvl 130 or 75 levels lower than you.
+                //If you're lvl 150+, you can fight anyone at any higher level and down to the greater of lvl 130 or 75 levels lower than you.
                 //If you're between levels 80 and 149, you can fight anyone up to 40 levels higher, or the greater of lvl 60 or 40 levels lower than you
                 //If you're below level 80, you can fight anyone that's +/ -20 levels from you
 
-                uint maxMatchLevel = 275;
+                uint maxMatchLevel = uint.MaxValue;
                 uint minMatchLevel = 1;
                 if(firstArenaPlayer.CharacterLevel >= 150)
                 {
-                    maxMatchLevel = 275;
+                    maxMatchLevel = uint.MaxValue;
                     minMatchLevel = Math.Max(firstArenaPlayer.CharacterLevel - 75, 130);
                 }
                 else if(firstArenaPlayer.CharacterLevel >= 80)
