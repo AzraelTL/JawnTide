@@ -161,7 +161,7 @@ namespace ACE.Server
                 }
             }
             else
-                content_folder = @".\Content";
+                content_folder = Path.Combine(".", "Content");
 
             sqlReader.Close();
             sqlCommand.Connection.Close();
