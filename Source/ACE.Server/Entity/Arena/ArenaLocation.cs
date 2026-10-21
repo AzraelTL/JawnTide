@@ -800,7 +800,7 @@ namespace ACE.Server.Entity
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Congratulations, you've won the {ActiveEvent.EventTypeDisplay} arena event against {loserList}!\nIf you're still in {ArenaName} you have a short period before you're teleported to your Lifestone so hurry up and loot.", ChatMessageType.System));
 
                     //Reward the winners
-                    var shouldReward = IsPlayerRewardEligible(player, winner, ActiveEvent.Players) && !underageViolation;
+                    var shouldReward = IsPlayerRewardEligible(player, winner, ActiveEvent.Players) && !underageViolation && !PropertyManager.GetBool("arenas_disable_rewards").Item;
 
                     if (shouldReward)
                     {
@@ -1091,7 +1091,7 @@ namespace ACE.Server.Entity
                         player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The {loser.EventTypeDisplay} arena match in {ArenaName} has finished and you placed {loser.FinishPlaceDisplay}\nIf you're still in the {ArenaName} arena you have a short period before you're teleported to your lifestone.", ChatMessageType.System));
                     }
 
-                    var shouldReward = IsPlayerRewardEligible(player, loser, ActiveEvent.Players) && !underageViolation;
+                    var shouldReward = IsPlayerRewardEligible(player, loser, ActiveEvent.Players) && !underageViolation && !PropertyManager.GetBool("arenas_disable_rewards").Item;
 
                     if (shouldReward)
                     {
@@ -1576,7 +1576,7 @@ namespace ACE.Server.Entity
                 {
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your {ActiveEvent.EventTypeDisplay} arena event has ended in a draw.  If you are still in the arena you can recall now or have a short period before you are teleported to your lifestone.", ChatMessageType.System));
 
-                    var shouldReward = IsPlayerRewardEligible(player, arenaPlayer, ActiveEvent.Players) && !underageViolation;
+                    var shouldReward = IsPlayerRewardEligible(player, arenaPlayer, ActiveEvent.Players) && !underageViolation && !PropertyManager.GetBool("arenas_disable_rewards").Item;
 
                     if (shouldReward)
                     {

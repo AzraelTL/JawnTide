@@ -626,6 +626,7 @@ namespace ACE.Server.Managers
                 ("disable_arenas", new Property<bool>(false, "set to true to disable arena events")),
                 ("arena_allow_same_ip_match", new Property<bool>(false, "enable this allow two characters connected from the same IP to be matched in an arena event")),
                 ("arena_allow_observers", new Property<bool>(true, "enable this to allow players to watch arena matches as invisible observers")),
+                ("arenas_disable_rewards", new Property<bool>(false, "JawnTide: if TRUE, arena events grant no rewards (no XP, luminance or items) to winners, losers or draws. Stats and rankings are still recorded")),
                 ("tinker_lotto_enabled", new Property<bool>(false, "enables the tinkering lotto feature")),
                 ("force_logout_materialization", new Property<bool>(true, "forces players to materialize on logut")),
                 ("force_teleport_materialization", new Property<bool>(true, "forces players to materialize on teleport")),
