@@ -1,0 +1,44 @@
+# JawnTide live server (Linux, Docker). Copy to ~/jawntide-server/compose.yml.
+# Expects the repo clone at ~/JawnTide and, in ~/jawntide-server: .env (DB_ROOT_PASSWORD,
+# DB_ACE_PASSWORD), Config/Config.js, Config/log4net.config, Dats/, Logs/, db-data/.
+# See Ops/docker/README.md.
+services:
+  ace-db:
+    image: mariadb:11.8
+    container_name: ace-db
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      TZ: America/New_York
+    volumes:
+      - ./db-data:/var/lib/mysql
+      - ../JawnTide/Ops/database:/ops:ro
+    ports:
+      - "127.0.0.1:3306:3306"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  ace-server:
+    build:
+      context: ../JawnTide
+      dockerfile: Dockerfile
+    image: jawntide:local
+    container_name: ace-server
+    depends_on:
+      ace-db:
+        condition: service_healthy
+    environment:
+      TZ: America/New_York
+    volumes:
+      - ./Config:/ace/Config
+      - ./Dats:/ace/Dats
+      - ./Logs:/ace/Logs
+      - ../JawnTide/Content:/ace/Content
+      - ../JawnTide/Mods:/ace/Mods
+    ports:
+      - "9000-9001:9000-9001/udp"
+    stdin_open: true
+    restart: unless-stopped

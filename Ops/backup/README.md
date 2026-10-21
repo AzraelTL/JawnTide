@@ -12,6 +12,16 @@
 
 The cron file must be installed WITHOUT a file extension: cron ignores files in /etc/cron.d whose names contain a dot.
 
+## Install when MariaDB runs in Docker (live server)
+
+    cd ~/JawnTide && git pull --ff-only origin master
+    sudo install -m 700 Ops/backup/jawntide-backup-docker.sh /usr/local/bin/jawntide-backup.sh
+    sudo install -m 644 Ops/backup/jawntide-backup.cron /etc/cron.d/jawntide-backup
+
+Restore with Docker (game server stopped: `docker compose stop ace-server`):
+
+    sudo bash -c 'gunzip -c /var/backups/jawntide/jawntide-DATE.sql.gz' | docker compose -f ~/jawntide-server/compose.yml exec -T ace-db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD"'
+
 ## Run one by hand / check
 
     sudo /usr/local/bin/jawntide-backup.sh

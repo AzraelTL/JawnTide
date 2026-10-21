@@ -6,7 +6,8 @@ This folder holds the operations files for the JawnTide server. It lives in the 
 | What | Where |
 |---|---|
 | How code moves between machines (Windows -> GitHub -> Linux) | `WORKFLOW.md` |
-| Build and swap on the Linux server | `deploy.sh` |
+| Run the live server on Docker (current setup) | `docker/README.md` |
+| Build and swap on the Linux server (native install, no longer used) | `deploy.sh` |
 | Create all 5 databases from scratch (MariaDB) | `database/` (start with `database/README.md`, run `install_all.sql`) |
 | Capture live data (world, server settings) from the Linux server | `database/export_live_data.sh` |
 | One-off admin SQL scripts | `sql-snippets/` |
