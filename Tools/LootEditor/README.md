@@ -1,4 +1,4 @@
-# JawnTide Loot Editor (chests, NPC reward tables, boxes, loot profiles, vendors)
+# JawnTide Loot Editor (chests, NPC reward tables, boxes, loot profiles, vendors, items)
 
 A small Windows app for editing the random item lists inside chests
 (Darkbeat's Storage Locker, Empyrean Cache, the Casino chests and so on).
@@ -71,3 +71,18 @@ world data). Select one to see what it sells; **Copy into Content to edit** copi
 where it moves to the JawnTide vendors tab and can be edited; from then on that file overrides the stock vendor
 when Content is imported. Stock vendors that already have a file in Content are marked "in Content".
 Stages work the same as for chests: pick a stage in Edit to save a copy there.
+
+## Vendor prices
+
+ACE has no price per vendor per item. A shop item costs **ceil(sell rate x item Value - 0.1)**, at least 1, in
+pyreals or in the vendor's alternate currency (Promissory Notes always use 1.15); a vendor pays
+**floor(buy rate x Value + 0.1)**. The vendor grid shows each item's Value and its Price at that vendor.
+Above the grid you can change the vendor's sell rate, buy rate and currency (an item WCID, blank = pyreals).
+An item's **Value** can be changed in the grid only for items with a file in Content; Save asks first, because
+the Value is the item's own: it changes its price at every vendor and what vendors pay for it.
+
+## Items
+
+The **Items** tab lists every item that could go on a vendor: Content's items plus the server's items from
+`Ops/item-catalog.tsv` (see `Ops/item-catalog-README.md` to refresh it). Search by name or WCID, filter by
+type, and add the selected items (or double-click one) to the vendor that is open on the Vendors tab.

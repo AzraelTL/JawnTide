@@ -54,6 +54,23 @@ namespace LootEditor
         private readonly Button vendorAddButton = new Button { Text = "Add item", AutoSize = true };
         private readonly Button vendorRemoveButton = new Button { Text = "Remove selected", AutoSize = true };
         private readonly Button vendorSaveButton = new Button { Text = "Save", AutoSize = true };
+        private readonly TextBox sellRateBox = new TextBox { Width = 70 };
+        private readonly TextBox buyRateBox = new TextBox { Width = 70 };
+        private readonly TextBox currencyBox = new TextBox { Width = 90 };
+        private readonly Label currencyNameLabel = new Label { AutoSize = true, Padding = new Padding(0, 6, 12, 0) };
+        private readonly Label vendorStatus = new Label { AutoSize = true, Padding = new Padding(12, 7, 0, 0), ForeColor = Color.DarkRed };
+
+        // Items tab
+        private readonly ItemCatalog catalog = new ItemCatalog();
+        private readonly TextBox itemSearchBox = new TextBox { Width = 260 };
+        private readonly ComboBox itemTypeBox = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 160 };
+        private readonly Label itemInfo = new Label { AutoSize = true, Padding = new Padding(8, 6, 0, 0) };
+        private readonly DataGridView itemsGrid = new DataGridView { Dock = DockStyle.Fill };
+        private readonly Button addToVendorButton = new Button { Text = "Add selected to the open vendor", AutoSize = true };
+        private readonly Label itemsTarget = new Label { AutoSize = true, Padding = new Padding(8, 7, 0, 0) };
+        private readonly System.Windows.Forms.Timer searchTimer = new System.Windows.Forms.Timer { Interval = 300 };
+        private const int MaxItemRows = 1000;
+
         private VendorFile currentVendor;
         private VendorEntry selectedVendor;
         private bool vendorDirty;
@@ -104,6 +121,7 @@ namespace LootEditor
             BuildFixedGrid();
             BuildProfileGrid();
             BuildVendorGrid();
+            BuildItemsGrid();
 
             browseButton.Click += (s, e) => BrowseRepo();
             reloadButton.Click += (s, e) => LoadRepo();
@@ -117,6 +135,14 @@ namespace LootEditor
             vendorList.SelectedIndexChanged += (s, e) => OnVendorSelected(vendorList);
             stockVendorList.SelectedIndexChanged += (s, e) => OnVendorSelected(stockVendorList);
             copyStockButton.Click += (s, e) => CopyStockVendor();
+            foreach (var box in new[] { sellRateBox, buyRateBox, currencyBox })
+                box.TextChanged += (s, e) => OnVendorPriceSettingChanged();
+            itemSearchBox.TextChanged += (s, e) => { searchTimer.Stop(); searchTimer.Start(); };
+            itemTypeBox.SelectedIndexChanged += (s, e) => RefreshItems();
+            searchTimer.Tick += (s, e) => { searchTimer.Stop(); RefreshItems(); };
+            addToVendorButton.Click += (s, e) => AddCatalogItemsToVendor();
+            itemsGrid.CellDoubleClick += (s, e) => { if (e.RowIndex >= 0) AddCatalogItemsToVendor(); };
+            mainTabs.SelectedIndexChanged += (s, e) => UpdateItemsTarget();
             vendorAddButton.Click += (s, e) => AddVendorItem();
             vendorRemoveButton.Click += (s, e) => RemoveVendorItems();
             vendorSaveButton.Click += (s, e) => SaveVendor();
@@ -192,6 +218,9 @@ namespace LootEditor
             var vendorPage = new TabPage("Vendors");
             vendorPage.Controls.Add(BuildVendorLayout());
             mainTabs.TabPages.Add(vendorPage);
+            var itemsPage = new TabPage("Items");
+            itemsPage.Controls.Add(BuildItemsLayout());
+            mainTabs.TabPages.Add(itemsPage);
 
             Controls.Add(mainTabs);
             Controls.Add(top);
@@ -215,11 +244,22 @@ namespace LootEditor
             bottom.Controls.Add(vendorRemoveButton);
             bottom.Controls.Add(vendorSaveButton);
             bottom.Controls.Add(copyStockButton);
+            bottom.Controls.Add(vendorStatus);
 
-            var gridTitle = new Label { Text = "Items for sale", Dock = DockStyle.Top, Height = 20, Font = new Font(Font, FontStyle.Bold) };
+            var rates = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 32, WrapContents = false };
+            rates.Controls.Add(new Label { Text = "Sell rate (price = Value x rate):", AutoSize = true, Padding = new Padding(0, 6, 0, 0) });
+            rates.Controls.Add(sellRateBox);
+            rates.Controls.Add(new Label { Text = "  Buy rate (what it pays):", AutoSize = true, Padding = new Padding(0, 6, 0, 0) });
+            rates.Controls.Add(buyRateBox);
+            rates.Controls.Add(new Label { Text = "  Currency WCID (blank = pyreals):", AutoSize = true, Padding = new Padding(0, 6, 0, 0) });
+            rates.Controls.Add(currencyBox);
+            rates.Controls.Add(currencyNameLabel);
+
+            var gridTitle = new Label { Text = "Items for sale (Value is the item's own Value: changing it changes its price at every vendor and what vendors pay for it)", Dock = DockStyle.Top, Height = 20, Font = new Font(Font, FontStyle.Bold) };
             vendorSplit.Panel2.Padding = new Padding(6);
             vendorSplit.Panel2.Controls.Add(vendorGrid);
             vendorSplit.Panel2.Controls.Add(gridTitle);
+            vendorSplit.Panel2.Controls.Add(rates);
             vendorSplit.Panel2.Controls.Add(vendorInfo);
             vendorSplit.Panel2.Controls.Add(bottom);
             vendorInfo.Text = "Select a vendor on the left.";
@@ -233,22 +273,39 @@ namespace LootEditor
             vendorGrid.RowHeadersVisible = false;
             vendorGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             vendorGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            vendorGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Wcid", HeaderText = "WCID", FillWeight = 15 });
-            vendorGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "ItemName", HeaderText = "Item", FillWeight = 60, ReadOnly = true });
-            vendorGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Stack", HeaderText = "Supply (-1 = unlimited)", FillWeight = 25 });
+            vendorGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Wcid", HeaderText = "WCID", FillWeight = 12 });
+            vendorGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "ItemName", HeaderText = "Item", FillWeight = 44, ReadOnly = true });
+            vendorGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Stack", HeaderText = "Supply (-1 = unlimited)", FillWeight = 14 });
+            vendorGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "ItemValue", HeaderText = "Value", FillWeight = 10 });
+            vendorGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Price", HeaderText = "Price", FillWeight = 20, ReadOnly = true });
+            vendorGrid.CellBeginEdit += (s, e) =>
+            {
+                if (vendorGrid.Columns[e.ColumnIndex].Name != "ItemValue")
+                    return;
+                var row = vendorGrid.Rows[e.RowIndex];
+                var item = uint.TryParse((row.Cells["Wcid"].Value ?? "").ToString().Trim(), out var wcid) ? catalog.Get(wcid) : null;
+                if (item == null || !item.InContent)
+                {
+                    e.Cancel = true;
+                    vendorStatus.Text = "Only items with a file in Content can have their Value changed here (stock items can't).";
+                }
+            };
             vendorGrid.CellEndEdit += (s, e) =>
             {
                 if (vendorLoading || e.RowIndex < 0)
                     return;
                 vendorDirty = true;
+                vendorStatus.Text = "";
                 var row = vendorGrid.Rows[e.RowIndex];
                 if (vendorGrid.Columns[e.ColumnIndex].Name == "Wcid")
                 {
                     var text = (row.Cells["Wcid"].Value ?? "").ToString().Trim();
-                    row.Cells["ItemName"].Value = uint.TryParse(text, out var wcid)
-                        ? index.GetName(wcid) ?? "(not found in Content - check the WCID)"
-                        : "(invalid WCID)";
+                    uint.TryParse(text, out var wcid);
+                    var item = catalog.Get(wcid);
+                    row.Cells["ItemName"].Value = wcid == 0 ? "(invalid WCID)" : index.GetName(wcid) ?? item?.Name ?? "(not found - check the WCID)";
+                    SetValueCell(row, item);
                 }
+                UpdatePrices();
                 UpdateVendorCount();
             };
         }
@@ -491,6 +548,7 @@ namespace LootEditor
                 vendorTabs.TabPages[1].Text = $"Stock vendors ({stock.Count})";
                 mainTabs.TabPages[1].Text = $"Vendors ({vendors.Count} + {stock.Count} stock)";
 
+                LoadCatalog();
                 selectedEntry = null;
                 selectedVendor = null;
                 RefreshTargets(LiveTarget);
@@ -1169,15 +1227,25 @@ namespace LootEditor
             copyStockButton.Visible = isStock;
             copyStockButton.Enabled = isStock && !selectedVendor.InContent;
             vendorLoading = true;
+            sellRateBox.Text = (currentVendor.SellRate ?? 1).ToString("0.######", CultureInfo.InvariantCulture);
+            buyRateBox.Text = (currentVendor.BuyRate ?? 1).ToString("0.######", CultureInfo.InvariantCulture);
+            currencyBox.Text = currentVendor.AlternateCurrency?.ToString(CultureInfo.InvariantCulture) ?? "";
+            foreach (var box in new[] { sellRateBox, buyRateBox, currencyBox })
+                box.ReadOnly = isStock;
             vendorGrid.Rows.Clear();
             foreach (var item in currentVendor.Items)
             {
                 var i = vendorGrid.Rows.Add(item.Wcid.ToString(), item.Name, item.StackSize.ToString(CultureInfo.InvariantCulture));
                 vendorGrid.Rows[i].Tag = item;
+                SetValueCell(vendorGrid.Rows[i], catalog.Get(item.Wcid));
             }
             vendorLoading = false;
             vendorDirty = false;
+            vendorStatus.Text = "";
+            UpdateCurrencyName();
+            UpdatePrices();
             UpdateVendorCount();
+            UpdateItemsTarget();
         }
 
         private void ClearVendor()
@@ -1192,8 +1260,12 @@ namespace LootEditor
             copyStockButton.Visible = false;
             vendorLoading = true;
             vendorGrid.Rows.Clear();
+            sellRateBox.Text = buyRateBox.Text = currencyBox.Text = "";
+            currencyNameLabel.Text = "";
+            vendorStatus.Text = "";
             vendorLoading = false;
             UpdateVendorCount();
+            UpdateItemsTarget();
         }
 
         private void UpdateVendorCount()
@@ -1205,7 +1277,7 @@ namespace LootEditor
         {
             if (currentVendor == null || selectedVendor == null || selectedVendor.IsStock)
                 return;
-            var i = vendorGrid.Rows.Add("", "(type a WCID)", "-1");
+            var i = vendorGrid.Rows.Add("", "(type a WCID)", "-1", "", "");
             vendorGrid.Rows[i].Tag = null;
             vendorGrid.CurrentCell = vendorGrid.Rows[i].Cells["Wcid"];
             vendorGrid.BeginEdit(true);
@@ -1255,10 +1327,58 @@ namespace LootEditor
                 });
             }
 
+            if (!TryReadRates(out var sellRate, out var buyRate, out var currency, out var rateError))
+            {
+                MessageBox.Show(this, rateError, "Loot Editor");
+                return;
+            }
+
+            // item Values that were changed (only items with a file in Content)
+            var valueChanges = new Dictionary<uint, (int oldValue, int newValue, CatalogItem item)>();
+            foreach (DataGridViewRow row in vendorGrid.Rows)
+            {
+                uint.TryParse((row.Cells["Wcid"].Value ?? "").ToString().Trim(), out var wcid);
+                var item = catalog.Get(wcid);
+                if (item == null || !item.InContent || !(row.Cells["ItemValue"].Tag is int oldValue))
+                    continue;
+                var valueText = (row.Cells["ItemValue"].Value ?? "").ToString().Trim();
+                if (!int.TryParse(valueText, out var newValue) || newValue < 0)
+                {
+                    MessageBox.Show(this, $"Row {row.Index + 1}: Value must be a whole number of 0 or more.", "Loot Editor");
+                    return;
+                }
+                if (newValue != oldValue)
+                    valueChanges[wcid] = (oldValue, newValue, item);
+            }
+            if (valueChanges.Count > 0)
+            {
+                var list = string.Join("\n", valueChanges.Values.Select(c => $"  {c.item.Name} ({c.item.Wcid}): {c.oldValue} -> {c.newValue}"));
+                var answer = MessageBox.Show(this,
+                    "These items' Values will change everywhere, not only at this vendor:\n\n" + list +
+                    "\n\nThat sets their price at every vendor that sells them and what vendors pay players for them. Continue?",
+                    "Loot Editor", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (answer != DialogResult.Yes)
+                    return;
+            }
+
             var targetPath = TargetPathFor(selectedVendor.Path);
+            var saved = new List<string> { targetPath };
             try
             {
-                currentVendor.Save(targetPath, items);
+                currentVendor.Save(targetPath, items, sellRate, buyRate, currency, currency.HasValue ? CurrencyName(currency.Value) : null);
+                foreach (var change in valueChanges.Values)
+                {
+                    var itemTarget = TargetPathFor(change.item.Path);
+                    if (!File.Exists(itemTarget))
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(itemTarget));
+                        File.Copy(change.item.Path, itemTarget);
+                    }
+                    VendorFile.SetItemValue(itemTarget, change.newValue);
+                    if (itemTarget == change.item.Path)
+                        change.item.Value = change.newValue;
+                    saved.Add(itemTarget);
+                }
             }
             catch (Exception ex)
             {
@@ -1268,7 +1388,195 @@ namespace LootEditor
 
             vendorDirty = false;
             LoadSelectedVendor();
-            MessageBox.Show(this, "Saved to:\n" + targetPath, "Loot Editor");
+            MessageBox.Show(this, "Saved to:\n" + string.Join("\n", saved), "Loot Editor");
+        }
+
+        private void SetValueCell(DataGridViewRow row, CatalogItem item)
+        {
+            var cell = row.Cells["ItemValue"];
+            cell.Value = item != null ? item.Value.ToString(CultureInfo.InvariantCulture) : "?";
+            cell.Tag = item != null ? (object)item.Value : null;   // the Value as loaded, to detect changes
+            cell.ReadOnly = item == null || !item.InContent;
+            cell.Style.ForeColor = cell.ReadOnly ? SystemColors.GrayText : SystemColors.ControlText;
+        }
+
+        private bool TryReadRates(out double sellRate, out double buyRate, out uint? currency, out string error)
+        {
+            sellRate = buyRate = 0;
+            currency = null;
+            error = null;
+            if (!double.TryParse(sellRateBox.Text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out sellRate) || sellRate <= 0)
+            {
+                error = "Sell rate must be a number above 0 (use a dot for decimals, like 1.5).";
+                return false;
+            }
+            if (!double.TryParse(buyRateBox.Text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out buyRate) || buyRate < 0)
+            {
+                error = "Buy rate must be a number of 0 or more (use a dot for decimals, like 0.5).";
+                return false;
+            }
+            var currencyText = currencyBox.Text.Trim();
+            if (currencyText.Length > 0)
+            {
+                if (!uint.TryParse(currencyText, out var wcid) || wcid == 0)
+                {
+                    error = "Currency must be an item WCID, or blank for pyreals.";
+                    return false;
+                }
+                currency = wcid;
+            }
+            return true;
+        }
+
+        private string CurrencyName(uint wcid) => index.GetName(wcid) ?? catalog.Get(wcid)?.Name ?? $"WCID {wcid}";
+
+        private void OnVendorPriceSettingChanged()
+        {
+            if (vendorLoading || currentVendor == null)
+                return;
+            vendorDirty = true;
+            UpdateCurrencyName();
+            UpdatePrices();
+            UpdateVendorCount();
+        }
+
+        private void UpdateCurrencyName()
+        {
+            var text = currencyBox.Text.Trim();
+            currencyNameLabel.Text = text.Length == 0 ? "pyreals"
+                : uint.TryParse(text, out var wcid) && wcid > 0 ? CurrencyName(wcid) : "(invalid WCID)";
+        }
+
+        private void UpdatePrices()
+        {
+            if (currentVendor == null)
+                return;
+            var rateOk = double.TryParse(sellRateBox.Text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var sellRate) && sellRate > 0;
+            var unit = currencyNameLabel.Text;
+            foreach (DataGridViewRow row in vendorGrid.Rows)
+            {
+                uint.TryParse((row.Cells["Wcid"].Value ?? "").ToString().Trim(), out var wcid);
+                var item = catalog.Get(wcid);
+                if (!rateOk || item == null || !int.TryParse((row.Cells["ItemValue"].Value ?? "").ToString().Trim(), out var value))
+                {
+                    row.Cells["Price"].Value = "?";
+                    continue;
+                }
+                row.Cells["Price"].Value = $"{VendorFile.SellCost(sellRate, value, item.ItemType):N0} {unit}";
+            }
+        }
+
+        // ---------- items tab ----------
+
+        private Control BuildItemsLayout()
+        {
+            var panel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(6) };
+            var top = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 32, WrapContents = false };
+            top.Controls.Add(new Label { Text = "Search (name or WCID):", AutoSize = true, Padding = new Padding(0, 6, 0, 0) });
+            top.Controls.Add(itemSearchBox);
+            top.Controls.Add(new Label { Text = "  Type:", AutoSize = true, Padding = new Padding(0, 6, 0, 0) });
+            top.Controls.Add(itemTypeBox);
+            top.Controls.Add(itemInfo);
+
+            var bottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 38, Padding = new Padding(0, 4, 0, 0) };
+            bottom.Controls.Add(addToVendorButton);
+            bottom.Controls.Add(itemsTarget);
+
+            panel.Controls.Add(itemsGrid);
+            panel.Controls.Add(top);
+            panel.Controls.Add(bottom);
+            return panel;
+        }
+
+        private void BuildItemsGrid()
+        {
+            itemsGrid.AllowUserToAddRows = false;
+            itemsGrid.AllowUserToDeleteRows = false;
+            itemsGrid.ReadOnly = true;
+            itemsGrid.RowHeadersVisible = false;
+            itemsGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            itemsGrid.MultiSelect = true;
+            itemsGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            itemsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Wcid", HeaderText = "WCID", FillWeight = 12 });
+            itemsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "ItemName", HeaderText = "Item", FillWeight = 50 });
+            itemsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Type", HeaderText = "Type", FillWeight = 16 });
+            itemsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "ItemValue", HeaderText = "Value", FillWeight = 10 });
+            itemsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Source", HeaderText = "Source", FillWeight = 12 });
+        }
+
+        private void LoadCatalog()
+        {
+            catalog.Load(Path.Combine(RepoRoot, "Ops", ItemCatalog.FileName), index);
+            var selected = itemTypeBox.SelectedItem as string;
+            itemTypeBox.Items.Clear();
+            itemTypeBox.Items.Add("All types");
+            foreach (var type in catalog.Items.Select(i => i.TypeName).Distinct().OrderBy(t => t))
+                itemTypeBox.Items.Add(type);
+            itemTypeBox.SelectedItem = selected != null && itemTypeBox.Items.Contains(selected) ? selected : "All types";
+            mainTabs.TabPages[2].Text = $"Items ({catalog.Count:N0})";
+            RefreshItems();
+        }
+
+        private void RefreshItems()
+        {
+            var search = itemSearchBox.Text.Trim();
+            var type = itemTypeBox.SelectedItem as string;
+            IEnumerable<CatalogItem> query = catalog.Items;
+            if (!string.IsNullOrEmpty(type) && type != "All types")
+                query = query.Where(i => i.TypeName == type);
+            if (search.Length > 0)
+                query = query.Where(i => i.Wcid.ToString(CultureInfo.InvariantCulture).StartsWith(search, StringComparison.Ordinal)
+                                         || (i.Name ?? "").IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0);
+            var matches = query.OrderBy(i => i.Name, StringComparer.OrdinalIgnoreCase).ThenBy(i => i.Wcid).ToList();
+
+            itemsGrid.SuspendLayout();
+            itemsGrid.Rows.Clear();
+            foreach (var item in matches.Take(MaxItemRows))
+            {
+                var i = itemsGrid.Rows.Add(item.Wcid.ToString(CultureInfo.InvariantCulture), item.Name, item.TypeName, item.Value.ToString(CultureInfo.InvariantCulture), item.InContent ? "Content" : "Server");
+                itemsGrid.Rows[i].Tag = item;
+            }
+            itemsGrid.ResumeLayout();
+
+            var shown = matches.Count > MaxItemRows ? $"showing the first {MaxItemRows:N0} of {matches.Count:N0} matches - search to narrow it down" : $"{matches.Count:N0} matches";
+            itemInfo.Text = catalog.HasExport
+                ? $"{shown}   ({catalog.ExportCount:N0} server items + Content)"
+                : $"{shown}   (Content items only: the server's item list isn't exported yet, see Ops/item-catalog-README.md)";
+            UpdateItemsTarget();
+        }
+
+        private void UpdateItemsTarget()
+        {
+            var ok = currentVendor != null && selectedVendor != null && !selectedVendor.IsStock;
+            addToVendorButton.Enabled = ok;
+            itemsTarget.Text = ok
+                ? $"Adds to: {currentVendor.Name} (then Save on the Vendors tab). Double-click a row to add it."
+                : "Open a JawnTide vendor on the Vendors tab first.";
+        }
+
+        private void AddCatalogItemsToVendor()
+        {
+            if (currentVendor == null || selectedVendor == null || selectedVendor.IsStock)
+            {
+                MessageBox.Show(this, "Open a JawnTide vendor on the Vendors tab first.", "Loot Editor");
+                return;
+            }
+            var added = 0;
+            foreach (DataGridViewRow row in itemsGrid.SelectedRows.Cast<DataGridViewRow>().OrderBy(r => r.Index))
+            {
+                if (!(row.Tag is CatalogItem item))
+                    continue;
+                var i = vendorGrid.Rows.Add(item.Wcid.ToString(CultureInfo.InvariantCulture), index.GetName(item.Wcid) ?? item.Name, "-1", "", "");
+                vendorGrid.Rows[i].Tag = null;
+                SetValueCell(vendorGrid.Rows[i], item);
+                added++;
+            }
+            if (added == 0)
+                return;
+            vendorDirty = true;
+            UpdatePrices();
+            UpdateVendorCount();
+            itemsTarget.Text = $"Added {added} item(s) to {currentVendor.Name}: they're at the bottom of its list, unsaved. Save on the Vendors tab.";
         }
 
         private bool ConfirmVendorDiscard()

@@ -11,6 +11,19 @@ namespace LootEditor
     {
         private readonly Dictionary<uint, string> names = new Dictionary<uint, string>();
         private readonly Dictionary<uint, List<string>> profileUsers = new Dictionary<uint, List<string>>();
+        private readonly Dictionary<uint, ContentWeenie> weenies = new Dictionary<uint, ContentWeenie>();
+
+        /// <summary>A weenie that has a file in Content: where it is and the values the vendor tab needs.</summary>
+        public class ContentWeenie
+        {
+            public uint Wcid;
+            public string Path;
+            public int WeenieType;
+            public uint ItemType;      // 0 = not set
+            public int? Value;         // null = not set (counts as 0)
+        }
+
+        private static readonly Regex IntRowRegex = new Regex(@"\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(-?\d+)\s*\)");
 
         private static readonly Regex DeathTreasureRegex = new Regex(@"\(\s*\d+\s*,\s*35\s*,\s*(\d+)\s*\)");
         private static readonly Regex TreasureGeneratorRegex = new Regex(@"\(\s*\d+\s*,\s*-?[\d.]+\s*,\s*(\d+)\s*,(?:[^,()]*,){4}\s*72\s*,");
@@ -22,6 +35,7 @@ namespace LootEditor
         {
             names.Clear();
             profileUsers.Clear();
+            weenies.Clear();
             if (!Directory.Exists(contentSqlFolder))
                 return;
 
@@ -39,6 +53,7 @@ namespace LootEditor
                     continue;
 
                 RecordProfileUsers(text, ChestFile.ReadName(text) ?? ("WCID " + header.Value.wcid), header.Value.wcid);
+                RecordWeenie(text, file, header.Value.wcid, header.Value.type);
 
                 var name = ChestFile.ReadName(text);
                 if (name != null)
@@ -74,6 +89,30 @@ namespace LootEditor
         }
 
         public string GetName(uint wcid) => names.TryGetValue(wcid, out var name) ? name : null;
+
+        public ContentWeenie GetWeenie(uint wcid) => weenies.TryGetValue(wcid, out var w) ? w : null;
+
+        public IEnumerable<ContentWeenie> AllWeenies => weenies.Values;
+
+        private void RecordWeenie(string text, string file, uint wcid, int weenieType)
+        {
+            var weenie = new ContentWeenie { Wcid = wcid, Path = file, WeenieType = weenieType };
+            var ints = Section(text, "weenie_properties_int");
+            if (ints != null)
+            {
+                foreach (Match m in IntRowRegex.Matches(ints))
+                {
+                    if (m.Groups[1].Value != wcid.ToString())
+                        continue;
+                    var type = m.Groups[2].Value;
+                    if (type == "1" && long.TryParse(m.Groups[3].Value, out var itemType))
+                        weenie.ItemType = unchecked((uint)itemType);
+                    else if (type == "19" && int.TryParse(m.Groups[3].Value, out var value))
+                        weenie.Value = value;
+                }
+            }
+            weenies[wcid] = weenie;
+        }
 
         /// <summary>Monsters (DeathTreasureType) and chests (random-loot rows) in Content that use a loot profile.</summary>
         public List<string> GetProfileUsers(uint treasureType) =>
