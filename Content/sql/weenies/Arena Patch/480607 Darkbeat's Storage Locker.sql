@@ -49,9 +49,9 @@ VALUES (480607,   1, 0x02000F7A) /* Setup */
 
 INSERT INTO `weenie_properties_generator` (`object_Id`, `probability`, `weenie_Class_Id`, `delay`, `init_Create`, `max_Create`, `when_Create`, `where_Create`, `stack_Size`, `palette_Id`, `shade`, `obj_Cell_Id`, `origin_X`, `origin_Y`, `origin_Z`, `angles_W`, `angles_X`, `angles_Y`, `angles_Z`)
 VALUES (480607, -1, 10000, 1, 1, 1, 2, 72, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate RANDOMLY GENERATED TREASURE from Loot Tier 8 from Death Treasure Table id: 10000 (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: ContainTreasure */
-     , (480607, 0.15, 38726, 1, 1, 5, 2, 8, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Black Market Gem of Dispelling (38726) (x5) - 15% per pick - Location to (re)Generate: Contain */
-     , (480607, 0.65, 20630, 1, 1, 25, 2, 8, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Trade Note (250,000) (20630) (x1) - 50% per pick - Location to (re)Generate: Contain */
-     , (480607, 0.7, 490364, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Hera's Vault Key (490364) (x1) - 5% per pick - Location to (re)Generate: Contain */
-     , (480607, 0.88, 1000002, 1, 1, 20, 2, 8, 20, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate PK Trophy (1000002) (x20) - 18% per pick - Location to (re)Generate: Contain */
-     , (480607, 0.93, 1000003, 1, 1, 2, 2, 8, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Phial of Bloody Tears (1000003) (x1) - 5% per pick - Location to (re)Generate: Contain */
-     , (480607, 1, 480612, 1, 1, 1, 1, 8, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Darkbeat's Drawing (480612) (x1) - 7% per pick - Location to (re)Generate: Contain */;
+     , (480607, 0.15957, 38726, 1, 1, 5, 2, 8, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Black Market Gem of Dispelling (38726) (x5) - 15.957% per pick - Location to (re)Generate: Contain */
+     , (480607, 0.69149, 20630, 1, 1, 25, 2, 8, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Trade Note (250,000) (20630) (x1) - 53.192% per pick - Location to (re)Generate: Contain */
+     , (480607, 0.74468, 490364, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Hera's Vault Key (490364) (x1) - 5.319% per pick - Location to (re)Generate: Contain */
+     , (480607, 0.93617, 1000002, 1, 1, 20, 2, 8, 20, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate PK Trophy (1000002) (x20) - 19.149% per pick - Location to (re)Generate: Contain */
+     , (480607, 0.98936, 1000003, 1, 1, 2, 2, 8, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Phial of Bloody Tears (1000003) (x1) - 5.319% per pick - Location to (re)Generate: Contain */
+     , (480607, 1, 480612, 1, 1, 1, 1, 8, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Darkbeat's Drawing (480612) (x1) - 1.064% per pick - Location to (re)Generate: Contain */;
