@@ -19,6 +19,9 @@ namespace LootEditor
         {
             public string Path;
             public string Label;
+            public uint Wcid;
+            public bool IsStock;          // a read-only file in Ops/stock-vendors
+            public bool InContent;        // a stock vendor that already has a file in Content
             public override string ToString() => Label;
         }
 
@@ -42,6 +45,9 @@ namespace LootEditor
 
         // Vendors tab
         private readonly ListBox vendorList = new ListBox { Dock = DockStyle.Fill, IntegralHeight = false };
+        private readonly ListBox stockVendorList = new ListBox { Dock = DockStyle.Fill, IntegralHeight = false };
+        private readonly TabControl vendorTabs = new TabControl { Dock = DockStyle.Fill };
+        private readonly Button copyStockButton = new Button { Text = "Copy into Content to edit", AutoSize = true, Visible = false };
         private readonly Label vendorInfo = new Label { Dock = DockStyle.Top, AutoSize = false, Height = 54 };
         private readonly DataGridView vendorGrid = new DataGridView { Dock = DockStyle.Fill };
         private readonly Label vendorCountLabel = new Label { AutoSize = true, Padding = new Padding(0, 7, 12, 0) };
@@ -83,6 +89,8 @@ namespace LootEditor
         private string RepoRoot => repoBox.Text.Trim();
         private string ContentSql => Path.Combine(RepoRoot, "Content", "sql");
         private string StagesRoot => Path.Combine(RepoRoot, "Ops", "loot-stages");
+        private string StockVendorsRoot => Path.Combine(RepoRoot, "Ops", "stock-vendors");
+        private string StockVendorsTarget => Path.Combine(ContentSql, "weenies", "Stock Vendors");
 
         public MainForm()
         {
@@ -106,7 +114,9 @@ namespace LootEditor
                 var lb = list;
                 lb.SelectedIndexChanged += (s, e) => OnListSelected(lb);
             }
-            vendorList.SelectedIndexChanged += (s, e) => OnVendorSelected();
+            vendorList.SelectedIndexChanged += (s, e) => OnVendorSelected(vendorList);
+            stockVendorList.SelectedIndexChanged += (s, e) => OnVendorSelected(stockVendorList);
+            copyStockButton.Click += (s, e) => CopyStockVendor();
             vendorAddButton.Click += (s, e) => AddVendorItem();
             vendorRemoveButton.Click += (s, e) => RemoveVendorItems();
             vendorSaveButton.Click += (s, e) => SaveVendor();
@@ -190,9 +200,13 @@ namespace LootEditor
         private Control BuildVendorLayout()
         {
             vendorSplit = new SplitContainer { Dock = DockStyle.Fill };
-            var leftLabel = new Label { Text = "Vendors in Content (stock vendors aren't in Content and can't be edited here)", Dock = DockStyle.Top, Height = 34, Font = new Font(Font, FontStyle.Bold) };
-            vendorSplit.Panel1.Controls.Add(vendorList);
-            vendorSplit.Panel1.Controls.Add(leftLabel);
+            var ownPage = new TabPage("JawnTide vendors") { Padding = new Padding(3) };
+            ownPage.Controls.Add(vendorList);
+            var stockPage = new TabPage("Stock vendors") { Padding = new Padding(3) };
+            stockPage.Controls.Add(stockVendorList);
+            vendorTabs.TabPages.Add(ownPage);
+            vendorTabs.TabPages.Add(stockPage);
+            vendorSplit.Panel1.Controls.Add(vendorTabs);
             vendorSplit.Panel1.Padding = new Padding(6);
 
             var bottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 38, FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(0, 4, 0, 0) };
@@ -200,6 +214,7 @@ namespace LootEditor
             bottom.Controls.Add(vendorAddButton);
             bottom.Controls.Add(vendorRemoveButton);
             bottom.Controls.Add(vendorSaveButton);
+            bottom.Controls.Add(copyStockButton);
 
             var gridTitle = new Label { Text = "Items for sale", Dock = DockStyle.Top, Height = 20, Font = new Font(Font, FontStyle.Bold) };
             vendorSplit.Panel2.Padding = new Padding(6);
@@ -435,13 +450,46 @@ namespace LootEditor
                 {
                     var text = File.ReadAllText(vendor.Path);
                     var header = ChestFile.ReadWeenieHeader(text);
+                    vendor.Wcid = header?.wcid ?? 0;
                     vendor.Label = $"{ChestFile.ReadName(text) ?? Path.GetFileNameWithoutExtension(vendor.Path)}  ({header?.wcid})";
                 }
                 vendors.Sort((a, b) => string.Compare(a.Label, b.Label, StringComparison.OrdinalIgnoreCase));
+
+                // stock vendors (read-only reference copies in Ops/stock-vendors)
+                var stock = new List<VendorEntry>();
+                if (Directory.Exists(StockVendorsRoot))
+                {
+                    var contentWcids = new HashSet<uint>(vendors.Select(v => v.Wcid));
+                    foreach (var file in Directory.GetFiles(StockVendorsRoot, "*.sql"))
+                    {
+                        var text = File.ReadAllText(file);
+                        var header = ChestFile.ReadWeenieHeader(text);
+                        if (header == null || !VendorFile.IsVendor(text))
+                            continue;
+                        var inContent = contentWcids.Contains(header.Value.wcid);
+                        stock.Add(new VendorEntry
+                        {
+                            Path = file,
+                            Wcid = header.Value.wcid,
+                            IsStock = true,
+                            InContent = inContent,
+                            Label = $"{ChestFile.ReadName(text) ?? Path.GetFileNameWithoutExtension(file)}  ({header.Value.wcid})" + (inContent ? "  - in Content" : ""),
+                        });
+                    }
+                    stock.Sort((a, b) => string.Compare(a.Label, b.Label, StringComparison.OrdinalIgnoreCase));
+                }
+
+                suppressSelect = true;
                 vendorList.Items.Clear();
                 foreach (var vendor in vendors)
                     vendorList.Items.Add(vendor);
-                mainTabs.TabPages[1].Text = $"Vendors ({vendors.Count})";
+                stockVendorList.Items.Clear();
+                foreach (var vendor in stock)
+                    stockVendorList.Items.Add(vendor);
+                suppressSelect = false;
+                vendorTabs.TabPages[0].Text = $"JawnTide vendors ({vendors.Count})";
+                vendorTabs.TabPages[1].Text = $"Stock vendors ({stock.Count})";
+                mainTabs.TabPages[1].Text = $"Vendors ({vendors.Count} + {stock.Count} stock)";
 
                 selectedEntry = null;
                 selectedVendor = null;
@@ -1012,22 +1060,80 @@ namespace LootEditor
 
         // ---------- vendors ----------
 
-        private void OnVendorSelected()
+        private void OnVendorSelected(ListBox list)
         {
-            if (suppressSelect || vendorList.SelectedIndex < 0)
+            if (suppressSelect || list.SelectedIndex < 0)
                 return;
-            var vendor = (VendorEntry)vendorList.SelectedItem;
+            var vendor = (VendorEntry)list.SelectedItem;
             if (vendor == selectedVendor)
                 return;
-            if (!ConfirmVendorDiscard())
+
+            suppressSelect = true;
+            try
             {
-                suppressSelect = true;
-                vendorList.SelectedItem = selectedVendor;
-                suppressSelect = false;
-                return;
+                if (!ConfirmVendorDiscard())
+                {
+                    list.ClearSelected();
+                    if (selectedVendor != null && list.Items.Contains(selectedVendor))
+                        list.SelectedItem = selectedVendor;
+                    return;
+                }
+                var other = list == vendorList ? stockVendorList : vendorList;
+                other.ClearSelected();
             }
+            finally
+            {
+                suppressSelect = false;
+            }
+
             selectedVendor = vendor;
             LoadSelectedVendor();
+        }
+
+        /// <summary>Copies the selected stock vendor into Content/sql/weenies/Stock Vendors so it can be edited.</summary>
+        private void CopyStockVendor()
+        {
+            var stock = selectedVendor;
+            if (stock == null || !stock.IsStock)
+                return;
+            if (stock.InContent)
+            {
+                MessageBox.Show(this, "This vendor already has a file in Content. Edit it on the JawnTide vendors tab.", "Loot Editor");
+                return;
+            }
+
+            var target = Path.Combine(StockVendorsTarget, Path.GetFileName(stock.Path));
+            var answer = MessageBox.Show(this,
+                $"Copy {stock.Label} into Content so it can be edited?\n\n{target}\n\n" +
+                "From then on this file overrides the stock vendor when Content is imported. " +
+                "Commit it, test on JawnTest and merge it like any other Content change.",
+                "Loot Editor", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (answer != DialogResult.Yes)
+                return;
+
+            try
+            {
+                Directory.CreateDirectory(StockVendorsTarget);
+                File.Copy(stock.Path, target, false);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Copy failed:\n" + ex.Message, "Loot Editor");
+                return;
+            }
+
+            // rescan, then open the new copy on the JawnTide vendors tab
+            LoadRepo();
+            foreach (VendorEntry vendor in vendorList.Items)
+            {
+                if (string.Equals(Path.GetFullPath(vendor.Path), Path.GetFullPath(target), StringComparison.OrdinalIgnoreCase))
+                {
+                    mainTabs.SelectedIndex = 1;
+                    vendorTabs.SelectedIndex = 0;
+                    vendorList.SelectedItem = vendor;
+                    break;
+                }
+            }
         }
 
         private void LoadSelectedVendor()
@@ -1038,7 +1144,8 @@ namespace LootEditor
                 return;
             }
 
-            var targetPath = TargetPathFor(selectedVendor.Path);
+            var isStock = selectedVendor.IsStock;
+            var targetPath = isStock ? selectedVendor.Path : TargetPathFor(selectedVendor.Path);
             var loadPath = File.Exists(targetPath) ? targetPath : selectedVendor.Path;
             try
             {
@@ -1051,7 +1158,16 @@ namespace LootEditor
                 return;
             }
 
-            vendorInfo.Text = $"{currentVendor.Name}  (WCID {currentVendor.Wcid})   -   {currentVendor.Items.Count} items for sale\nLoaded from: {SourceText(loadPath, targetPath)}\n{loadPath}";
+            vendorInfo.Text = isStock
+                ? $"{currentVendor.Name}  (WCID {currentVendor.Wcid})   -   {currentVendor.Items.Count} items for sale   -   STOCK (read-only)" +
+                  (selectedVendor.InContent ? "\nThis vendor already has a file in Content: edit it on the JawnTide vendors tab." : "\nTo change it, use \"Copy into Content to edit\".") + $"\n{loadPath}"
+                : $"{currentVendor.Name}  (WCID {currentVendor.Wcid})   -   {currentVendor.Items.Count} items for sale\nLoaded from: {SourceText(loadPath, targetPath)}\n{loadPath}";
+            vendorGrid.ReadOnly = isStock;
+            vendorAddButton.Enabled = !isStock;
+            vendorRemoveButton.Enabled = !isStock;
+            vendorSaveButton.Enabled = !isStock;
+            copyStockButton.Visible = isStock;
+            copyStockButton.Enabled = isStock && !selectedVendor.InContent;
             vendorLoading = true;
             vendorGrid.Rows.Clear();
             foreach (var item in currentVendor.Items)
@@ -1069,6 +1185,11 @@ namespace LootEditor
             currentVendor = null;
             vendorDirty = false;
             vendorInfo.Text = "Select a vendor on the left.";
+            vendorGrid.ReadOnly = false;
+            vendorAddButton.Enabled = true;
+            vendorRemoveButton.Enabled = true;
+            vendorSaveButton.Enabled = true;
+            copyStockButton.Visible = false;
             vendorLoading = true;
             vendorGrid.Rows.Clear();
             vendorLoading = false;
@@ -1082,7 +1203,7 @@ namespace LootEditor
 
         private void AddVendorItem()
         {
-            if (currentVendor == null)
+            if (currentVendor == null || selectedVendor == null || selectedVendor.IsStock)
                 return;
             var i = vendorGrid.Rows.Add("", "(type a WCID)", "-1");
             vendorGrid.Rows[i].Tag = null;
@@ -1094,7 +1215,7 @@ namespace LootEditor
 
         private void RemoveVendorItems()
         {
-            if (currentVendor == null)
+            if (currentVendor == null || selectedVendor == null || selectedVendor.IsStock)
                 return;
             foreach (var row in vendorGrid.SelectedRows.Cast<DataGridViewRow>().ToList())
                 vendorGrid.Rows.Remove(row);
@@ -1104,7 +1225,7 @@ namespace LootEditor
 
         private void SaveVendor()
         {
-            if (currentVendor == null || selectedVendor == null)
+            if (currentVendor == null || selectedVendor == null || selectedVendor.IsStock)
                 return;
             vendorGrid.EndEdit();
 

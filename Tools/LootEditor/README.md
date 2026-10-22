@@ -57,8 +57,8 @@ Commit saved files on a branch like any other change.
 ## Layout
 
 Two main tabs. **Loot** has one tab per kind of thing (Chests, NPC rewards, Boxes, Loot profiles), each with
-its count; one item is open at a time on the right. **Vendors** lists every vendor in Content that sells
-something and edits what it sells.
+its count; one item is open at a time on the right. **Vendors** has two tabs: **JawnTide vendors** (every vendor in
+Content that sells something; editable) and **Stock vendors** (the stock game's vendors; read-only until copied into Content).
 
 ## Vendors
 
@@ -66,4 +66,8 @@ A vendor's stock is its `weenie_properties_create_list` rows with destination Sh
 WCID, item and supply (-1 = unlimited, 0 = normal). Add item, Remove selected and changing a WCID or supply
 rewrite only the Shop rows; what the vendor wears or carries, and its comments, stay as they are. Prices
 come from each item's value and the vendor's buy/sell rates, which aren't edited here. Stock vendors that
-aren't in Content aren't listed. Stages work the same as for chests: pick a stage in Edit to save a copy there.
+aren't in Content are on the **Stock vendors** tab (read-only reference copies in `Ops/stock-vendors`, from ACE's
+world data). Select one to see what it sells; **Copy into Content to edit** copies it to `Content/sql/weenies/Stock Vendors/`,
+where it moves to the JawnTide vendors tab and can be edited; from then on that file overrides the stock vendor
+when Content is imported. Stock vendors that already have a file in Content are marked "in Content".
+Stages work the same as for chests: pick a stage in Edit to save a copy there.
