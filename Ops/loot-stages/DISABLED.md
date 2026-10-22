@@ -35,10 +35,19 @@ folder that reopens it, rather than the whole file.
 | What | Setting now | Bring back by |
 |---|---|---|
 | Arena rewards (XP, luminance, items for wins, losses, draws) | `arenas_disable_rewards true` | Loot Editor [Arena] tab first, then `modifybool arenas_disable_rewards false` |
+| Dungeon Control (Shreth Caverns, Ancient Temple, Mite Hole, Halls of Metos, Black Spawn Den) and its reward chest, the Empyrean Cache (514108532) | Switched off in code by the previous dev, not by a setting: `OwnableDungeonMap` in `Source/ACE.Server/Entity/DungeonControl/DungeonControl.cs` and `IsOwnableDungeon` in `Source/ACE.Server/Entity/Landblock.cs` return early | Planned to return after a redesign, not just switched back on (see "Dungeon Control: why it needs a redesign" below). Turning it on is a code change removing both early returns, tested on JawnTest; captures also need the allegiance on the Town Control whitelist. Review the Empyrean Cache contents in the Loot Editor before it returns |
+
+## Dungeon Control: why it needs a redesign
+
+What players found wrong with the old version: an allegiance would capture a dungeon and nobody
+challenged it, and allegiances ended up taking turns capturing to collect the rewards (the Empyrean
+Cache every few minutes for 8 hours, plus the XP and luminance bonus). There was no real contest,
+and players found it boring. A redesign has to make holding a dungeon contested rather than a
+rotation of free rewards.
 
 ## Open decisions
 
-- Shimmering Skeleton Key (30258) still drops from the Empyrean Cache (0.1%) and the Rare/Mythic Mystery Boxes, but has no use while the Empyrean Storage Vault is closed. Hold it back or leave it?
+- Shimmering Skeleton Key (30258) has no use while the Empyrean Storage Vault is closed. Its Empyrean Cache source (0.1%) is already off with Dungeon Control; it still comes from the Rare/Mythic Mystery Boxes. Hold it back there or leave it?
 
 ## Brought back
 
