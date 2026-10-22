@@ -49,34 +49,9 @@ VALUES (480607,   1, 0x02000F7A) /* Setup */
 
 INSERT INTO `weenie_properties_generator` (`object_Id`, `probability`, `weenie_Class_Id`, `delay`, `init_Create`, `max_Create`, `when_Create`, `where_Create`, `stack_Size`, `palette_Id`, `shade`, `obj_Cell_Id`, `origin_X`, `origin_Y`, `origin_Z`, `angles_W`, `angles_X`, `angles_Y`, `angles_Z`)
 VALUES (480607, -1, 10000, 1, 1, 1, 2, 72, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate RANDOMLY GENERATED TREASURE from Loot Tier 8 from Death Treasure Table id: 10000 (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: ContainTreasure */
-     , (480607, 0.0025, 36619, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Aquamarine Foolproof (36619) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (480607, 0.005, 36620, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Black Garnet Foolproof (36620) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (480607, 0.0075, 36622, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Emerald Foolproof (36622) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (480607, 0.01, 36624, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Imperial Topaz Foolproof (36624) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (480607, 0.0125, 36625, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Jet Foolproof (36625) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (480607, 0.015, 36634, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Peridot Foolproof (36634) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (480607, 0.0175, 36626, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Red Garnet Foolproof (36626) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (480607, 0.02, 36628, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate White Sapphire Foolproof (36628) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (480607, 0.04, 36635, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Yellow Topaz Foolproof (36635) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (480607, 0.06, 36634, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Peridot Foolproof (36634) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (480607, 0.08, 36636, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Zircon Foolproof (36636) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (480607, 0.1, 36621, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Black Opal Foolproof (36621) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (480607, 0.12, 36623, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Fire Opal Foolproof (36623) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (480607, 0.14, 36627, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Sunstone Foolproof (36627) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (480607, 0.17, 490326, 1, 1, 2, 2, 8, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Essence of Power (490326) (x1 up to max of 5) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (480607, 0.20, 52797, 1, 1, 1, 2, 8, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Gauntlet Coin (52797) (x1 up to max of 5) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (480607, 0.24, 38726, 1, 1, 5, 2, 8, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Black Market Gem of Dispelling (38726) (x1 up to max of 5) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (480607, 0.25, 510000, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate A box (510000) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (480607, 0.3, 52968, 1, 1, 100, 2, 8, 100, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Infused Amber Shard - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (480607, 0.325, 52969, 1, 1, 20, 2, 8, 20, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Corrupted Amber Shard (52969) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (480607, 0.375, 20630, 1, 1, 25, 2, 8, 25, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Trade Note (250,000) (20630) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (480607, 0.40, 490321, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Luminance Exchange Token (490321) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (480607, 0.425, 480634, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Duped Gem of Greater Luminance (480634) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (480607, 0.45, 53450, 1, 1, 5, 2, 8, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Viridian Rise Deru Portal Sending Gem (53450) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (480607, 0.47, 490364, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Hera Vault Key (490364) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (480607, 0.60, 1000002, 1, 1, 20, 2, 8, 20, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate PK Trophy (1000002) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (480607, 0.80, 43901, 1, 1, 50, 2, 8, 50, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Promissory Note (43901) (x1 up to max of 5) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (480607, 0.85, 1000003, 1, 1, 2, 2, 8, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Phial of Bloody Tears (1000003) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (480607, 0.90, 480611, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Experience Certificate (480611) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (480607, 0.95, 490070, 1, 1, 2, 2, 8, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Water of Enlightenment (490070) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (480607, 1, 480612, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Darkbeat's Golem Drawing (480612) (x1 up to max of 1) - Regenerate upon Destruction - Location to (re)Generate: Contain */;
+     , (480607, 0.15, 38726, 1, 1, 5, 2, 8, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Black Market Gem of Dispelling (38726) (x5) - 15% per pick - Location to (re)Generate: Contain */
+     , (480607, 0.65, 20630, 1, 1, 25, 2, 8, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Trade Note (250,000) (20630) (x1) - 50% per pick - Location to (re)Generate: Contain */
+     , (480607, 0.7, 490364, 1, 1, 1, 2, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Hera's Vault Key (490364) (x1) - 5% per pick - Location to (re)Generate: Contain */
+     , (480607, 0.88, 1000002, 1, 1, 20, 2, 8, 20, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate PK Trophy (1000002) (x20) - 18% per pick - Location to (re)Generate: Contain */
+     , (480607, 0.93, 1000003, 1, 1, 2, 2, 8, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Phial of Bloody Tears (1000003) (x1) - 5% per pick - Location to (re)Generate: Contain */
+     , (480607, 1, 480612, 1, 1, 1, 1, 8, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Darkbeat's Drawing (480612) (x1) - 7% per pick - Location to (re)Generate: Contain */;
