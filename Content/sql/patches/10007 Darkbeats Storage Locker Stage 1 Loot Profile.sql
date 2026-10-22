@@ -4,40 +4,21 @@
 DELETE FROM treasure_death WHERE treasure_Type = 10007;
 
 INSERT INTO treasure_death
-(
-  treasure_Type,
-  tier,
-  loot_Quality_Mod,
-  unknown_Chances,
-  item_Chance,
-  item_Min_Amount,
-  item_Max_Amount,
-  item_Treasure_Type_Selection_Chances,
-  magic_Item_Chance,
-  magic_Item_Min_Amount,
-  magic_Item_Max_Amount,
-  magic_Item_Treasure_Type_Selection_Chances,
-  mundane_Item_Chance,
-  mundane_Item_Min_Amount,
-  mundane_Item_Max_Amount,
-  mundane_Item_Type_Selection_Chances
-)
-VALUES
-(  
-  10007,
-  8,
-  0.95875,
-  19,
-  0,
-  0,
-  1,
-  11,
-  100,
-  25,
-  35,
-  22,
-  0,
-  0,
-  1,
-  7
-);
+SET
+  treasure_Type = 10007,
+  tier = 8,
+  loot_Quality_Mod = 0.43111,
+  unknown_Chances = 19,
+  item_Chance = 0,
+  item_Min_Amount = 0,
+  item_Max_Amount = 1,
+  item_Treasure_Type_Selection_Chances = 11,
+  magic_Item_Chance = 100,
+  magic_Item_Min_Amount = 15,
+  magic_Item_Max_Amount = 25,
+  magic_Item_Treasure_Type_Selection_Chances = 22,
+  mundane_Item_Chance = 0,
+  mundane_Item_Min_Amount = 0,
+  mundane_Item_Max_Amount = 1,
+  mundane_Item_Type_Selection_Chances = 7
+;
