@@ -205,7 +205,6 @@ VALUES (42128708, 2, 22015,  0, 21, 0.9, False) /* Create Pwyll's Guard (22015) 
 	 , (42128708, 4, 490354,  0, 0, 0, False) /* Create item for Shop */
 	, (42128708, 4, 490355,  0, 0, 0, False) /* Create item for Shop */
 	, (42128708, 4, 4200141,  0, 0, 0, False) /* Create Town Control Trinket of Experience (4200017) for Shop */
-	, (42128708, 4, 480600,  0, 0, 0, False) /* Create Asteliary Orb (450754) for Shop */
 	, (42128708, 4, 8037,  0, 0, 0, False) /* Create Town Control Trinket of Experience (4200017) for Shop */
 	, (42128708, 4, 8039,  0, 0, 0, False) /* Create Serial Killer's Satchel (524470) for Shop */
 	, (42128708, 4, 8041,  0, 0, 0, False) /* Create Serial Killer's Satchel (524470) for Shop */
@@ -239,7 +238,6 @@ VALUES (42128708, 2, 22015,  0, 21, 0.9, False) /* Create Pwyll's Guard (22015) 
 	, (42128708, 4, 480502,  0, 0, 0, False) /* Create Asteliary Orb (450754) for Shop */
 	 , (42128708, 4, 480503,  0, 0, 0, False) /* Create Asteliary Orb (450754) for Shop */
 	 , (42128708, 4, 490027,  0, 0, 0, False) /* Create Asteliary Orb (450754) for Shop */
-	 , (42128708, 4, 53450,  0, 0, 0, False) /* Create Asteliary Orb (450754) for Shop */
     , (42128708, 4, 490353,  0, 0, 0, False) /* Create Asteliary Orb (450754) for Shop */
     , (42128708, 4, 480608,  0, 0, 0, False) /* Create Asteliary Orb (450754) for Shop */;
 	

@@ -40,6 +40,20 @@ folder that reopens it, rather than the whole file.
 |---|---|---|---|
 | Darkbeat (480480) | Boxed Imbue Swap Coin, Boxed Quest Weapon Token, Boxed Essence of Power, Sharpening Stone, Empyrean Forging Hammer, Empyrean Tuning Fork, Tier IV, V and VI Rare Exchange Tokens, Red, Green, Purple and Blue Society Bands, Brown and Yellow Society Lockets (15 items; 79 left). His shop also lists 490366, which has no weenie in Content or in the stock data, so it can't actually be sold | `stage2/weenies/Arena Patch/480480 Darkbeat.sql` (his full 94-item shop, after the Stage 1 Bounty closures) | A later stage |
 
+## VRContent patch (Viridian Rise, applied on its own)
+
+Held back as one patch, independent of the stages: everything is in `Ops/loot-stages/VRContent/` (see its README).
+
+| What | How it is closed |
+|---|---|
+| Brellegia (53280), Doriathazaar (53272), Summercrown (53451), Aangesilus (53281), Dridge (53306), Kervim'telek (53271), Swift (53283), Temple of the Font (53477) | Removed from the stock landblock B54A via a Content copy of it |
+| Ancient Statues of the Viridian Rise (30) | Removed from stock landblocks B349, B34A, B44B, B549, B54B, B649, B64A, B64B via Content copies |
+| Viridian Rise Deru Portal Sending Gem (53450, casts Great Tree Recall) | Out of the Holtburg, Shoushi and Yaraq Town Treasurers' shops; the drops on Wind Fury, NightBrier, Norshuntyr and Zerzelikyr set to nothing |
+| Temple of the Font Sending Gem (480600) | Out of the three Town Treasurers' shops |
+| Scrolls of Viridian Rise Recall (53302) and Viridian Rise Tree Recall (72003) | Only came from Kervim'telek, who is removed |
+
+Viridian Rise itself can still be reached on foot if its stock entrance portals are active; this patch removes its NPCs, statues and shortcuts.
+
 ## Systems switched off by setting
 
 | What | Setting now | Bring back by |

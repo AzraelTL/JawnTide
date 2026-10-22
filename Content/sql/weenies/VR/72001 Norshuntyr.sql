@@ -171,15 +171,15 @@ VALUES (72001, 9, 53362,  0, 0, 1, False) /* Create Essence of Norshuntyr (53362
      , (72001, 9,     0,  0, 0, 0.8, False) /* Create nothing for ContainTreasure */
      , (72001, 9, 52968,  1, 0, 0.2, False) /* Create Infused Amber Shard (52968) for ContainTreasure */
      , (72001, 9,     0,  0, 0, 0.8, False) /* Create nothing for ContainTreasure */
-     , (72001, 9, 53450,  1, 0, 0.2, False) /* Create Viridian Rise Deru Portal Sending Gem (53450) for ContainTreasure */
+     , (72001, 9,     0,  0, 0, 0.2, False) /* Create nothing for ContainTreasure (was Viridian Rise Deru Portal Sending Gem, held back for VRContent) */
      , (72001, 9,     0,  0, 0, 0.8, False) /* Create nothing for ContainTreasure */
-     , (72001, 9, 53450,  1, 0, 0.2, False) /* Create Viridian Rise Deru Portal Sending Gem (53450) for ContainTreasure */
+     , (72001, 9,     0,  0, 0, 0.2, False) /* Create nothing for ContainTreasure (was Viridian Rise Deru Portal Sending Gem, held back for VRContent) */
      , (72001, 9,     0,  0, 0, 0.8, False) /* Create nothing for ContainTreasure */
-     , (72001, 9, 53450,  1, 0, 0.2, False) /* Create Viridian Rise Deru Portal Sending Gem (53450) for ContainTreasure */
+     , (72001, 9,     0,  0, 0, 0.2, False) /* Create nothing for ContainTreasure (was Viridian Rise Deru Portal Sending Gem, held back for VRContent) */
      , (72001, 9,     0,  0, 0, 0.8, False) /* Create nothing for ContainTreasure */
-     , (72001, 9, 53450,  1, 0, 0.2, False) /* Create Viridian Rise Deru Portal Sending Gem (53450) for ContainTreasure */
+     , (72001, 9,     0,  0, 0, 0.2, False) /* Create nothing for ContainTreasure (was Viridian Rise Deru Portal Sending Gem, held back for VRContent) */
      , (72001, 9,     0,  0, 0, 0.8, False) /* Create nothing for ContainTreasure */
-     , (72001, 9, 53450,  1, 0, 0.2, False) /* Create Viridian Rise Deru Portal Sending Gem (53450) for ContainTreasure */
+     , (72001, 9,     0,  0, 0, 0.2, False) /* Create nothing for ContainTreasure (was Viridian Rise Deru Portal Sending Gem, held back for VRContent) */
      , (72001, 9,     0,  0, 0, 0.8, False) /* Create nothing for ContainTreasure */
      , (72001, 9, 48908,  1, 0, 0.2, False) /* Create Shattered Legendary Key (48908) for ContainTreasure */
      , (72001, 9,     0,  0, 0, 0.8, False) /* Create nothing for ContainTreasure */
