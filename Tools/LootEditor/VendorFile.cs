@@ -148,18 +148,20 @@ namespace LootEditor
             else
                 edits.Replace(createList.ValuesStart, createList.End, SqlStatement.BuildValues(rows, newline));
 
-            // prices: BuyPrice / SellPrice floats
+            // prices: BuyPrice / SellPrice floats (left exactly as written when unchanged)
             var floats = SqlStatement.Find(text, FloatTable);
+            var ratesChanged = BuyRate != buyRate || SellRate != sellRate;
             var floatRows = floats?.Rows.ToList() ?? new List<SqlRow>();
             SetRow(floatRows, FloatBuyPrice, Format(buyRate), "/* BuyPrice */");
             SetRow(floatRows, FloatSellPrice, Format(sellRate), "/* SellPrice */");
-            if (floats != null)
+            if (floats != null && ratesChanged)
                 edits.Replace(floats.ValuesStart, floats.End, SqlStatement.BuildValues(floatRows, newline));
-            else
+            else if (floats == null)
                 edits.Replace(createList.Start, createList.Start, NewStatement(FloatTable, floatRows));
 
-            // currency: AlternateCurrency DID (none = pyreals)
+            // currency: AlternateCurrency DID (none = pyreals), left exactly as written when unchanged
             var dids = SqlStatement.Find(text, DidTable);
+            var currencyChanged = AlternateCurrency != alternateCurrency;
             var didRows = dids?.Rows.ToList() ?? new List<SqlRow>();
             didRows.RemoveAll(r => SqlStatement.TypeOf(r) == DidAlternateCurrency);
             if (alternateCurrency.HasValue)
@@ -170,7 +172,11 @@ namespace LootEditor
                 row.Comment = "/* AlternateCurrency" + (string.IsNullOrWhiteSpace(currencyName) ? "" : " - " + currencyName.Replace("*/", "* /")) + " */";
                 didRows.Add(row);
             }
-            if (dids != null)
+            if (!currencyChanged)
+            {
+                // nothing to do
+            }
+            else if (dids != null)
             {
                 if (didRows.Count == 0)
                     edits.Replace(dids.Start, EndOfLine(text, dids.End), "");

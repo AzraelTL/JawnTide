@@ -34,6 +34,12 @@ folder that reopens it, rather than the whole file.
 | World-boss jewelry Band of Thought (490001), Ring of the Heart (490003), Bracelet of Dexterity (490048), from the Mythic Mystery Box and Aidoneus: their two Legendary cantrips each replaced with the Major version (Band: Legendary Focus/Willpower to Major; Ring: Legendary Strength/Endurance to Major; Bracelet: Legendary Quickness/Coordination to Major). Items made during Stage 1 keep their Majors | Spell book edited in place (same WCIDs) | `stage2/weenies/World Bosses/` (Legendary versions) | Stage 2 or later, with Legendaries in loot |
 | Random loot above Tier 6 (Epics, Legendaries, armor ratings, custom T9) | Server settings `loot_max_tier 6`, `loot_disable_ratings false` | Settings, not files | Stages 2 to 4 and later (see README) |
 
+## Vendor stock held back
+
+| Vendor | Removed for Stage 1 | Original | Planned return |
+|---|---|---|---|
+| Darkbeat (480480) | Boxed Imbue Swap Coin, Boxed Quest Weapon Token, Boxed Essence of Power, Sharpening Stone, Empyrean Forging Hammer, Empyrean Tuning Fork, Tier IV, V and VI Rare Exchange Tokens, Red, Green, Purple and Blue Society Bands, Brown and Yellow Society Lockets (15 items; 79 left). His shop also lists 490366, which has no weenie in Content or in the stock data, so it can't actually be sold | `stage2/weenies/Arena Patch/480480 Darkbeat.sql` (his full 94-item shop, after the Stage 1 Bounty closures) | A later stage |
+
 ## Systems switched off by setting
 
 | What | Setting now | Bring back by |
@@ -54,6 +60,7 @@ rotation of free rewards.
 | What | Change | Original |
 |---|---|---|
 | Shimmering Skeleton Key (30258) | Only drops as a stock Tier 3 rare from the loot system (`LootGenerationFactory_Rare.cs`). Removed from the Rare Mystery Box (510003, was 5%) and the Mythic Mystery Box (510004, two entries, was 8%); their other rewards keep the same share of each other. Its Empyrean Cache source is off with Dungeon Control and should be removed before Dungeon Control returns | `originals/weenies/LootBoxes/510003 RareMysteryBox.sql`, `originals/weenies/LootBoxes/510004 MythicMysteryBox.sql` |
+| Algos (4200009) | Never place in game. He sells the Armor Level, Armor Workmanship and Epic Randomizer Morph Gems and the Abandoned Mines Portal Sending Gem, which nothing else gives. The old dev had him privately (probably in his mansion basement); he isn't in the world since the fresh start | his file stays in `Content/sql/weenies/Town Control/` unchanged |
 
 ## Open decisions
 

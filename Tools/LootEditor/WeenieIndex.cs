@@ -29,7 +29,7 @@ namespace LootEditor
         private static readonly Regex TreasureGeneratorRegex = new Regex(@"\(\s*\d+\s*,\s*-?[\d.]+\s*,\s*(\d+)\s*,(?:[^,()]*,){4}\s*72\s*,");
 
         private static readonly Regex GenerateCommentRegex = new Regex(@"Generate\s+(.+?)\s+\((\d+)\)");
-        private static readonly Regex CreateCommentRegex = new Regex(@"\(\s*\d+\s*,\s*\d+\s*,\s*(\d+)\s*,[^)]*\)\s*/\*\s*Create\s+(.+?)\s+\(\d+\)");
+        private static readonly Regex CreateCommentRegex = new Regex(@"\(\s*\d+\s*,\s*\d+\s*,\s*(\d+)\s*,[^)]*\)\s*/\*\s*Create\s+(.+?)\s+\((\d+)\)");
 
         public void Build(string contentSqlFolder, Action<string> foundChest, Action<string, List<string>> foundRewardTables, Action<string> foundProfile, Action<string> foundVendor = null)
         {
@@ -70,7 +70,8 @@ namespace LootEditor
                 {
                     foreach (Match m in CreateCommentRegex.Matches(text))
                     {
-                        if (uint.TryParse(m.Groups[1].Value, out var wcid) && !names.ContainsKey(wcid))
+                        // only trust the comment when its number is the row's WCID (copy-pasted comments are common)
+                        if (m.Groups[1].Value == m.Groups[3].Value && uint.TryParse(m.Groups[1].Value, out var wcid) && !names.ContainsKey(wcid))
                             names[wcid] = m.Groups[2].Value.Trim();
                     }
                     if (foundVendor != null && VendorFile.IsVendor(text))
