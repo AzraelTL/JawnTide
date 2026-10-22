@@ -55,8 +55,8 @@ VALUES (490048,   1, 0x020000FB) /* Setup */
      , (490048,  52, 0x06005B0C) /* IconUnderlay */;
 
 INSERT INTO `weenie_properties_spell_book` (`object_Id`, `spell`, `probability`)
-VALUES (490048,  6106,      2)  /* Legendary Bludge Ward */
-     , (490048,  6103,      2)  /* Legendary Flame Ward */
+VALUES (490048,  2575,      2)  /* Major Quickness (Stage 1; Legendary 6106 in stage2) */
+     , (490048,  2572,      2)  /* Major Coordination (Stage 1; Legendary 6103 in stage2) */
 	 , (490048,  3849,      2)  /* Legendary Flame Ward */
 	 , (490048,  4297,      2)  /* Legendary Flame Ward */
 	 , (490048,  4319,      2)  /* Legendary Flame Ward */

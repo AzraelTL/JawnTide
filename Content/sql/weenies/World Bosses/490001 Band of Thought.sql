@@ -57,8 +57,8 @@ VALUES (490001,   1, 0x020000FB) /* Setup */
      , (490001,  52, 0x06005B0C) /* IconUnderlay */;
 
 INSERT INTO `weenie_properties_spell_book` (`object_Id`, `spell`, `probability`)
-VALUES (490001,  6105,      2)  /* Epic Focus */
-     , (490001,  6101,      2)  /* Epic Willpower */
+VALUES (490001,  2574,      2)  /* Major Focus (Stage 1; Legendary 6105 in stage2) */
+     , (490001,  2577,      2)  /* Major Willpower (Stage 1; Legendary 6101 in stage2) */
      , (490001,  4305,      2)  /* Incantation of Focus Self */
      , (490001,  4329,      2)  /* Incantation of Willpower Self */
 	 , (490001,  2979,      2)  /* Incantation of Willpower Self */
