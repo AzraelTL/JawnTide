@@ -27,7 +27,7 @@ folder that reopens it, rather than the whole file.
 
 | What | Where | Original | Planned return |
 |---|---|---|---|
-| Darkbeat's Storage Locker (480607) non-currency picks: all 14 Foolproof rows, Essence of Power, Luminance Exchange Token, Duped Gem of Greater Luminance, Viridian Rise Deru Portal Sending Gem, Hera's Vault Key, Experience Certificate, Water of Enlightenment, Darkbeat's Drawing | Removed from the locker's pick list (in progress on `loot-stage1`) | Full list: `stage2/weenies/Arena Patch/480607 Darkbeat's Storage Locker.sql` | Stage 2 |
+| Darkbeat's Storage Locker (480607): Stage 1 keeps only Black Market Gem of Dispelling x5 (15%), Trade Note 250,000 x1 (50%), PK Trophy x20 (18%), Darkbeat's Drawing x1 (7%), Hera's Vault Key (5%), Phial of Bloody Tears x1 (5%). Held back: all 14 Foolproof rows, Promissory Note, Infused Amber Shard, Corrupted Amber Shard, Gauntlet Coin, A Box, Essence of Power, Luminance Exchange Token, Duped Gem of Greater Luminance, Viridian Rise Deru Portal Sending Gem, Experience Certificate, Water of Enlightenment | Pick list cut and re-weighted (on `loot-stage1`) | Full pre-launch list: `stage2/weenies/Arena Patch/480607 Darkbeat's Storage Locker.sql`. Copying it over Content restores the original chances and stacks too (Trade Note x25 at 5%, PK Trophy 13%, Black Market Gem 4%, and so on), so adjust in the Loot Editor first if Stage 2 should differ | Stage 2 |
 | Random loot above Tier 6 (Epics, Legendaries, armor ratings, custom T9) | Server settings `loot_max_tier 6`, `loot_disable_ratings false` | Settings, not files | Stages 2 to 4 and later (see README) |
 
 ## Systems switched off by setting
