@@ -32,6 +32,8 @@ namespace LootEditor
         private readonly Button addButton = new Button { Text = "Add item", AutoSize = true };
         private readonly Button removeButton = new Button { Text = "Remove selected", AutoSize = true };
         private readonly Button saveButton = new Button { Text = "Save", AutoSize = true };
+        private readonly Button scaleButton = new Button { Text = "Scale to 100%", AutoSize = true };
+        private TextBox percentEditBox;
 
         private readonly WeenieIndex index = new WeenieIndex();
         private readonly List<Entry> entries = new List<Entry>();
@@ -72,6 +74,7 @@ namespace LootEditor
             addButton.Click += (s, e) => AddItem();
             removeButton.Click += (s, e) => RemoveSelected();
             saveButton.Click += (s, e) => Save();
+            scaleButton.Click += (s, e) => ScaleTo100();
             FormClosing += (s, e) => { if (!ConfirmDiscard()) e.Cancel = true; };
 
             repoBox.Text = LoadSavedRepo() ?? FindRepoFromExe() ?? "";
@@ -112,6 +115,7 @@ namespace LootEditor
             bottom.Controls.Add(totalLabel);
             bottom.Controls.Add(addButton);
             bottom.Controls.Add(removeButton);
+            bottom.Controls.Add(scaleButton);
             bottom.Controls.Add(saveButton);
 
             gridLabel.Font = new Font(Font, FontStyle.Bold);
@@ -144,7 +148,35 @@ namespace LootEditor
             grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Stack", HeaderText = "Stack (-1 = default)", FillWeight = 15 });
             grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Percent", HeaderText = "Chance per pick %", FillWeight = 20 });
 
-            grid.CellEndEdit += (s, e) => OnCellEdited(e.RowIndex, e.ColumnIndex);
+            grid.CellEndEdit += (s, e) =>
+            {
+                DetachPercentEditBox();
+                OnCellEdited(e.RowIndex, e.ColumnIndex);
+            };
+
+            // Keep the total up to date while a chance is being typed, not only after Enter.
+            grid.EditingControlShowing += (s, e) =>
+            {
+                DetachPercentEditBox();
+                if (grid.CurrentCell != null && grid.Columns[grid.CurrentCell.ColumnIndex].Name == "Percent" && e.Control is TextBox box)
+                {
+                    percentEditBox = box;
+                    percentEditBox.TextChanged += OnPercentTyping;
+                }
+            };
+        }
+
+        private void DetachPercentEditBox()
+        {
+            if (percentEditBox != null)
+                percentEditBox.TextChanged -= OnPercentTyping;
+            percentEditBox = null;
+        }
+
+        private void OnPercentTyping(object sender, EventArgs e)
+        {
+            if (!loadingGrid)
+                UpdateTotal();
         }
 
         private void BuildFixedGrid()
@@ -457,6 +489,7 @@ namespace LootEditor
             grid.Visible = !profile;
             addButton.Enabled = !profile;
             removeButton.Enabled = !profile;
+            scaleButton.Enabled = !profile;
             if (profile)
                 fixedGrid.Visible = false;
         }
@@ -582,10 +615,60 @@ namespace LootEditor
             double total = 0;
             foreach (DataGridViewRow row in grid.Rows)
             {
-                if (double.TryParse((row.Cells["Percent"].Value ?? "").ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var p))
+                // While a chance is being typed, count what is in the edit box rather than the old value.
+                var text = percentEditBox != null && grid.IsCurrentCellInEditMode && grid.CurrentCell != null
+                           && grid.CurrentCell.RowIndex == row.Index && grid.Columns[grid.CurrentCell.ColumnIndex].Name == "Percent"
+                    ? percentEditBox.Text
+                    : (row.Cells["Percent"].Value ?? "").ToString();
+                if (double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var p))
                     total += p;
             }
             return total;
+        }
+
+        /// <summary>
+        /// Multiplies every chance by the same factor so the list adds up to exactly 100%,
+        /// keeping the items' chances in the same proportion to each other.
+        /// </summary>
+        private void ScaleTo100()
+        {
+            if (!HasOpenFile || currentProfile != null || grid.Rows.Count == 0)
+                return;
+            grid.EndEdit();
+
+            var values = new List<(DataGridViewRow row, double pct)>();
+            foreach (DataGridViewRow row in grid.Rows)
+            {
+                if (!double.TryParse((row.Cells["Percent"].Value ?? "").ToString().Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var p) || p <= 0)
+                {
+                    MessageBox.Show(this, $"Row {row.Index + 1}: the chance must be a number above 0 before scaling.", "Loot Editor");
+                    return;
+                }
+                values.Add((row, p));
+            }
+
+            var total = values.Sum(v => v.pct);
+            if (Math.Abs(total - 100) < 0.0005)
+                return;
+
+            var answer = MessageBox.Show(this,
+                $"The chances add up to {total.ToString("0.###", CultureInfo.InvariantCulture)}%.\n\n" +
+                $"Multiply every chance by {(100 / total).ToString("0.###", CultureInfo.InvariantCulture)} so they add up to 100%?\n" +
+                "Every item keeps the same share of the total.",
+                "Loot Editor", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (answer != DialogResult.Yes)
+                return;
+
+            // Round to 3 decimals; the largest row absorbs the rounding so the sum is exactly 100.
+            var scaled = values.Select(v => Math.Round(v.pct * 100 / total, 3)).ToArray();
+            var largest = Array.IndexOf(scaled, scaled.Max());
+            scaled[largest] = Math.Round(scaled[largest] + (100 - scaled.Sum()), 3);
+
+            for (var i = 0; i < values.Count; i++)
+                values[i].row.Cells["Percent"].Value = scaled[i].ToString("0.###", CultureInfo.InvariantCulture);
+
+            dirty = true;
+            UpdateTotal();
         }
 
         private void UpdateTotal()
@@ -603,7 +686,11 @@ namespace LootEditor
             }
             var total = TotalPercent();
             var ok = grid.Rows.Count == 0 || Math.Abs(total - 100) < 0.01;
-            totalLabel.Text = $"Total: {total.ToString("0.###", CultureInfo.InvariantCulture)}%" + (ok ? "" : "  (must be 100%)") + (dirty ? "   * unsaved" : "");
+            var gap = 100 - total;
+            var hint = ok ? ""
+                : gap > 0 ? $"  (must be 100%: add {gap.ToString("0.###", CultureInfo.InvariantCulture)}%)"
+                : $"  (must be 100%: remove {(-gap).ToString("0.###", CultureInfo.InvariantCulture)}%)";
+            totalLabel.Text = $"Total: {total.ToString("0.###", CultureInfo.InvariantCulture)}%" + hint + (dirty ? "   * unsaved" : "");
             totalLabel.ForeColor = ok ? SystemColors.ControlText : Color.Firebrick;
         }
 

@@ -34,6 +34,9 @@ caps the tier at runtime, whatever the profile says.
 - **Random pick items** (grid): each row is one possible item. "Chance per pick %" is a plain percentage;
   the chest rolls once per pick and makes several picks when it fills. The chances must add up to 100%.
   The editor converts these to the cumulative numbers the server expects when it saves.
+- **Total** (bottom left) updates while you type. When it isn't 100% it turns red and says how much to
+  add or remove. **Scale to 100%** multiplies every chance by the same factor so the list adds up to exactly
+  100% and each item keeps the same share (for example after removing items).
 - **Stack**: -1 means the item's default stack size.
 - **Add item**: type the WCID; the name is looked up from `Content/sql`. Stock items that aren't in
   Content (for example Foolproofs) show "not found" unless another chest already names them; they still work.
