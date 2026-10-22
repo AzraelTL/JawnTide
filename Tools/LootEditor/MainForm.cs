@@ -306,7 +306,9 @@ namespace LootEditor
                     var name = ChestFile.ReadName(text) ?? Path.GetFileNameWithoutExtension(entry.Path);
                     entry.Label = entry.IsChest
                         ? $"[Chest] {name}  ({header?.wcid})"
-                        : $"[NPC] {name} - {entry.TableName}  ({header?.wcid})";
+                        : entry.TableName == EmoteRewardFile.UseTableName
+                            ? $"[Box] {name}  ({header?.wcid})"
+                            : $"[NPC] {name} - {entry.TableName}  ({header?.wcid})";
                 }
                 found.Sort((a, b) => string.Compare(a.Label, b.Label, StringComparison.OrdinalIgnoreCase));
 
@@ -523,12 +525,18 @@ namespace LootEditor
 
         private void ShowRewards(string loadPath, string targetPath)
         {
-            chestInfo.Text = $"{currentRewards.Name}  (WCID {currentRewards.Wcid})   -   random reward table \"{currentRewards.TableName}\" (one roll each time it runs)\nLoaded from: {SourceText(loadPath, targetPath)}\n{loadPath}";
+            chestInfo.Text = currentRewards.IsUseTable
+                ? $"{currentRewards.Name}  (WCID {currentRewards.Wcid})   -   gives one of these when used (one roll). The \"You found ...\" message is rewritten for new items and changed stacks.\nLoaded from: {SourceText(loadPath, targetPath)}\n{loadPath}"
+                : $"{currentRewards.Name}  (WCID {currentRewards.Wcid})   -   random reward table \"{currentRewards.TableName}\" (one roll each time it runs)\nLoaded from: {SourceText(loadPath, targetPath)}\n{loadPath}";
 
             alwaysList.Visible = false;
             fixedGrid.Visible = true;
-            alwaysLabel.Text = "Fixed rewards elsewhere in this NPC's script (always given; edit WCID or stack)";
-            gridLabel.Text = "Random reward table (one roll; chances must add up to 100%)";
+            alwaysLabel.Text = currentRewards.IsUseTable
+                ? "Fixed rewards elsewhere in this item's script (always given; edit WCID or stack)"
+                : "Fixed rewards elsewhere in this NPC's script (always given; edit WCID or stack)";
+            gridLabel.Text = currentRewards.IsUseTable
+                ? "Contents (one roll each time it is used; chances must add up to 100%)"
+                : "Random reward table (one roll; chances must add up to 100%)";
 
             loadingGrid = true;
             fixedGrid.Rows.Clear();
@@ -540,7 +548,10 @@ namespace LootEditor
 
             grid.Rows.Clear();
             foreach (var pick in currentRewards.Picks)
-                grid.Rows.Add(pick.Wcid.ToString(), pick.Name, pick.StackSize.ToString(), pick.Percent.ToString("0.###", CultureInfo.InvariantCulture));
+            {
+                var i = grid.Rows.Add(pick.Wcid.ToString(), pick.Name, pick.StackSize.ToString(), pick.Percent.ToString("0.###", CultureInfo.InvariantCulture));
+                grid.Rows[i].Tag = pick;   // remembers which set the row came from (cleared when its WCID changes)
+            }
             loadingGrid = false;
 
             dirty = false;
@@ -738,6 +749,8 @@ namespace LootEditor
                     StackSize = stack,
                     Percent = pct,
                     Original = row.Tag as GeneratorRow,
+                    SourceBlock = (row.Tag as PickItem)?.SourceBlock ?? -1,
+                    SourceStack = (row.Tag as PickItem)?.SourceStack ?? -1,
                 });
             }
 

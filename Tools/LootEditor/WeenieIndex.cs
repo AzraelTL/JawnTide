@@ -53,6 +53,8 @@ namespace LootEditor
                     foundChest(file);
 
                 var tables = EmoteRewardFile.FindRewardTables(text);
+                if (EmoteRewardFile.HasUseTable(text))
+                    tables.Add(EmoteRewardFile.UseTableName);
                 if (tables.Count > 0)
                     foundRewardTables(file, tables);
             }

@@ -19,7 +19,9 @@ namespace LootEditor
 
     /// <summary>
     /// An NPC (or item) weenie SQL file with a random reward table: a group of GotoSet emotes that share
-    /// one name and each give exactly one item, like Aidoneus's "WorldBoss_random_reward".
+    /// one name and each give exactly one item, like Aidoneus's "WorldBoss_random_reward",
+    /// or an item's "on use" table: a run of Use emotes that each give exactly one item, like the
+    /// Mystery Boxes (each Use set may also show a message and delete the box).
     /// Also exposes the fixed Give rewards found in the file's other emotes.
     /// </summary>
     public class EmoteRewardFile
@@ -28,7 +30,15 @@ namespace LootEditor
         private const string ActionMarker = "INSERT INTO `weenie_properties_emote_action`";
 
         private const int CategoryGotoSet = 32;
+        private const int CategoryUse = 7;
         private const int ActionGive = 3;
+        private const int ActionDirectBroadcast = 18;
+        private const int ActionMessageIndex = 6;
+
+        /// <summary>Table name used for an item's Use emotes (Mystery Boxes and similar).</summary>
+        public const string UseTableName = "on use";
+
+        public bool IsUseTable => TableName == UseTableName;
         private const int ActionWcidIndex = 27;
         private const int ActionStackIndex = 28;
 
@@ -50,6 +60,7 @@ namespace LootEditor
         private List<string> emoteTemplate;
         private string actionHeader;
         private List<string> actionTemplate;
+        private List<EmoteBlock> useBlocks;   // the Use table's blocks as read, in roll order
 
         private class EmoteBlock
         {
@@ -84,6 +95,33 @@ namespace LootEditor
             return result;
         }
 
+        /// <summary>True when a file has an "on use" table (Mystery Boxes and similar).</summary>
+        public static bool HasUseTable(string fileText)
+        {
+            if (!fileText.Contains("/* Use */"))
+                return false;
+            try { return IsEditableUseTable(ParseBlocks(fileText)); }
+            catch { return false; }
+        }
+
+        private static bool IsEditableUseTable(List<EmoteBlock> blocks)
+        {
+            var indexes = blocks.Select((b, i) => (b: b, i: i)).Where(x => x.b.Category == CategoryUse).Select(x => x.i).ToList();
+            if (indexes.Count < 2)
+                return false;
+
+            // one contiguous run, rising probabilities ending at 1, each set giving exactly one item
+            for (var k = 1; k < indexes.Count; k++)
+                if (indexes[k] != indexes[k - 1] + 1 || blocks[indexes[k]].Probability <= blocks[indexes[k - 1]].Probability)
+                    return false;
+            if (blocks[indexes.Last()].Probability < 0.999)
+                return false;
+
+            return indexes.All(i => blocks[i].Actions.Count(a => ActionType(a.tokens) == ActionGive) == 1);
+        }
+
+        private static int GiveIndex(EmoteBlock block) => block.Actions.FindIndex(a => ActionType(a.tokens) == ActionGive);
+
         private static bool IsEditableTable(List<EmoteBlock> blocks, string quest)
         {
             var indexes = blocks.Select((b, i) => (b: b, i: i)).Where(x => x.b.Category == CategoryGotoSet && x.b.Quest == quest).Select(x => x.i).ToList();
@@ -115,6 +153,8 @@ namespace LootEditor
             file.Name = ChestFile.ReadName(file.text) ?? "(no name)";
 
             var blocks = ParseBlocks(file.text);
+            if (tableName == UseTableName)
+                return LoadUseTable(file, blocks, index);
             if (!IsEditableTable(blocks, tableName))
                 throw new InvalidDataException($"The reward table '{tableName}' isn't in a format this editor can change.");
 
@@ -142,8 +182,46 @@ namespace LootEditor
                 last = block.Probability;
             }
 
-            // fixed Give rewards everywhere else in the file
-            foreach (var block in blocks.Where(b => !(b.Category == CategoryGotoSet && b.Quest == tableName)))
+            file.AddFixedGives(blocks.Where(b => !(b.Category == CategoryGotoSet && b.Quest == tableName)), index);
+            return file;
+        }
+
+        private static EmoteRewardFile LoadUseTable(EmoteRewardFile file, List<EmoteBlock> blocks, WeenieIndex index)
+        {
+            if (!IsEditableUseTable(blocks))
+                throw new InvalidDataException("This item's Use script isn't in a format this editor can change.");
+
+            var table = blocks.Where(b => b.Category == CategoryUse).ToList();
+            file.useBlocks = table;
+            file.tableStart = table.First().Start;
+            file.tableEnd = table.Last().End;
+
+            double last = 0;
+            for (var i = 0; i < table.Count; i++)
+            {
+                var tokens = table[i].Actions[GiveIndex(table[i])].tokens;
+                var wcid = ParseUInt(tokens[ActionWcidIndex]);
+                var stack = ParseStack(tokens[ActionStackIndex]);
+                file.Picks.Add(new PickItem
+                {
+                    Wcid = wcid,
+                    Name = index.GetName(wcid) ?? CommentOf(tokens[ActionWcidIndex]) ?? "(unknown)",
+                    StackSize = stack,
+                    Percent = Math.Max(0, table[i].Probability - last) * 100.0,
+                    SourceBlock = i,
+                    SourceStack = stack,
+                });
+                last = table[i].Probability;
+            }
+
+            file.AddFixedGives(blocks.Where(b => b.Category != CategoryUse), index);
+            return file;
+        }
+
+        private void AddFixedGives(IEnumerable<EmoteBlock> otherBlocks, WeenieIndex index)
+        {
+            var file = this;
+            foreach (var block in otherBlocks)
             {
                 foreach (var action in block.Actions)
                 {
@@ -164,8 +242,6 @@ namespace LootEditor
                     });
                 }
             }
-
-            return file;
         }
 
         // ---------- saving ----------
@@ -183,7 +259,14 @@ namespace LootEditor
                 edits.Add((give.TupleStart, give.TupleEnd, "(" + string.Join(", ", tokens) + ")"));
             }
 
-            // random table: regenerate the whole run of GotoSet blocks
+            // random table: regenerate the whole run of GotoSet (or Use) blocks
+            if (IsUseTable)
+            {
+                edits.Add((tableStart, tableEnd, BuildUseTable(picks)));
+                ApplyAndWrite(targetPath, edits);
+                return;
+            }
+
             var sb = new StringBuilder();
             double cumulative = 0;
             for (var i = 0; i < picks.Count; i++)
@@ -206,7 +289,65 @@ namespace LootEditor
                   .Append("VALUES (").Append(string.Join(", ", action)).Append(");").Append(newline).Append(newline);
             }
             edits.Add((tableStart, tableEnd, sb.ToString()));
+            ApplyAndWrite(targetPath, edits);
+        }
 
+        /// <summary>
+        /// Rewrites the Use table. Each kept row keeps its own set (message, delete-the-box action and so on);
+        /// a new row, or one whose WCID was changed, copies the first set. The "You found ..." message is
+        /// rewritten whenever the item or its stack differs from what the set was read with.
+        /// </summary>
+        private string BuildUseTable(List<PickItem> picks)
+        {
+            var sb = new StringBuilder();
+            double cumulative = 0;
+            for (var i = 0; i < picks.Count; i++)
+            {
+                var pick = picks[i];
+                cumulative += pick.Percent / 100.0;
+                var probability = i == picks.Count - 1 ? 1.0 : Math.Round(cumulative, 6);
+
+                var source = pick.SourceBlock >= 0 && pick.SourceBlock < useBlocks.Count ? useBlocks[pick.SourceBlock] : null;
+                var block = source ?? useBlocks[0];
+                var rewriteMessage = source == null || pick.StackSize != pick.SourceStack;
+
+                var emote = new List<string>(block.EmoteTokens);
+                emote[2] = probability.ToString("0.######", CultureInfo.InvariantCulture);
+
+                var giveIndex = GiveIndex(block);
+                var rows = new List<string>();
+                for (var a = 0; a < block.Actions.Count; a++)
+                {
+                    var action = new List<string>(block.Actions[a].tokens);
+                    if (a == giveIndex)
+                    {
+                        action[ActionWcidIndex] = WcidToken(pick.Wcid, pick.Name);
+                        action[ActionStackIndex] = pick.StackSize <= 0 ? "NULL" : pick.StackSize.ToString(CultureInfo.InvariantCulture);
+                    }
+                    else if (rewriteMessage && ActionType(action) == ActionDirectBroadcast && StripComment(action[ActionMessageIndex]) != "NULL")
+                    {
+                        action[ActionMessageIndex] = "'" + FoundMessage(pick).Replace("'", "''") + "'";
+                    }
+                    rows.Add("(" + string.Join(", ", action) + ")");
+                }
+
+                sb.Append(block.EmoteHeader).Append(newline)
+                  .Append("VALUES (").Append(string.Join(", ", emote)).Append(");").Append(newline).Append(newline)
+                  .Append("SET @parent_id = LAST_INSERT_ID();").Append(newline).Append(newline)
+                  .Append(block.ActionHeader).Append(newline)
+                  .Append("VALUES ").Append(string.Join(newline + "     , ", rows)).Append(";").Append(newline).Append(newline);
+            }
+            return sb.ToString();
+        }
+
+        private static string FoundMessage(PickItem pick)
+        {
+            var name = string.IsNullOrWhiteSpace(pick.Name) || pick.Name.StartsWith("(") ? "an item" : pick.Name;
+            return pick.StackSize > 1 ? $"You found {pick.StackSize} {name}!" : $"You found {name}!";
+        }
+
+        private void ApplyAndWrite(string targetPath, List<(int start, int end, string replacement)> edits)
+        {
             var newText = text;
             foreach (var edit in edits.OrderByDescending(e => e.start))
                 newText = newText.Substring(0, edit.start) + edit.replacement + newText.Substring(edit.end);
@@ -287,7 +428,8 @@ namespace LootEditor
                 var i = text.IndexOf("INSERT INTO `", pos, StringComparison.Ordinal);
                 if (i < 0)
                     return -1;
-                if (!text.Substring(i).StartsWith(EmoteMarker) && !text.Substring(i).StartsWith(ActionMarker))
+                if (string.CompareOrdinal(text, i, EmoteMarker, 0, EmoteMarker.Length) != 0
+                    && string.CompareOrdinal(text, i, ActionMarker, 0, ActionMarker.Length) != 0)
                     return i;
                 pos = i + 1;
             }

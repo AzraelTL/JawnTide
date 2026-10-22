@@ -35,6 +35,10 @@ namespace LootEditor
         public int StackSize;
         public double Percent;
         public GeneratorRow Original;   // null for newly added items
+
+        // reward tables: which emote block this row was read from (-1 = new or WCID changed) and its stack then
+        public int SourceBlock = -1;
+        public int SourceStack = -1;
     }
 
     /// <summary>
