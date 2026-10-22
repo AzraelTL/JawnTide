@@ -1,6 +1,9 @@
 # Loot stages
 
-Prepared chest files for future loot stages. One folder per stage (stage2, stage3, ...),
+Prepared chest files for future loot stages. **The full list of everything disabled for launch,
+and how to bring each back, is in [DISABLED.md](DISABLED.md).**
+
+One folder per stage (stage2, stage3, ...),
 with the same layout as `Content/sql` (for example `stage2/weenies/Arena Patch/480607 Darkbeat's Storage Locker.sql`).
 
 These folders are **not** imported by the server. `Content/sql` always holds the current stage.
