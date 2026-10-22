@@ -204,4 +204,4 @@ VALUES (@parent_id,  0,   5 /* Motion */, 0, 1, 268435537 /* Twitch1 */, NULL, N
 
 INSERT INTO `weenie_properties_create_list` (`object_Id`, `destination_Type`, `weenie_Class_Id`, `stack_Size`, `palette`, `shade`, `try_To_Bond`)
 VALUES (490255, 9,     0,  0, 0, 0.90, False) /* Create nothing for ContainTreasure */
-	 , (490255, 9,     0,  0, 0, 0.95, False)    /* Create nothing for ContainTreasure */
+	 , (490255, 9,     0,  0, 0, 0.95, False)    /* Create nothing for ContainTreasure */;

@@ -29,4 +29,4 @@ VALUES (4200077,   1, 0x020001B3) /* Setup */
      , (4200077,   8, 0x0600106B) /* Icon */;
 
 INSERT INTO `weenie_properties_position` (`object_Id`, `position_Type`, `obj_Cell_Id`, `origin_X`, `origin_Y`, `origin_Z`, `angles_W`, `angles_X`, `angles_Y`, `angles_Z`)
-VALUES (4200077, 2, 0x2B120019, 89.80003, 6.2, 73, -0.923880, 0, 0, -0.382684) /* Destination */
+VALUES (4200077, 2, 0x2B120019, 89.80003, 6.2, 73, -0.923880, 0, 0, -0.382684) /* Destination */;

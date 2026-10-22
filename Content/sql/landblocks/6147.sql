@@ -538,4 +538,4 @@ VALUES (0x7614706B,  3951, 0x61470163, 296.158, -144.143, 0.055, 0.998467, 0, 0,
 /* @teleloc 0x61470163 [296.157990 -144.143005 0.055000] 0.998467 0.000000 0.000000 -0.055356 */
 
 INSERT INTO `landblock_instance_link` (`parent_GUID`, `child_GUID`, `last_Modified`)
-VALUES (0x7614706B, 0x7614706A, '2005-02-09 10:00:00') /* Commander Dickus */
+VALUES (0x7614706B, 0x7614706A, '2005-02-09 10:00:00') /* Commander Dickus */;

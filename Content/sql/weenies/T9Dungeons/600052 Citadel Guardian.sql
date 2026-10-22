@@ -173,4 +173,4 @@ VALUES (@parent_id,  0,  74 /* TakeItems */, 0, 1, NULL, NULL, NULL, NULL, NULL,
 
 INSERT INTO `weenie_properties_create_list` (`object_Id`, `destination_Type`, `weenie_Class_Id`, `stack_Size`, `palette`, `shade`, `try_To_Bond`)
 VALUES  (600052, 2,   15863, 0, 93, 1.1, False) /* Bronze Large Kite Shield (15863) for Wield */
-     , (600052, 2,   15877, 0, 93, 1.1, False) /* Bronze Morning Star (15877) for Wield */
+     , (600052, 2,   15877, 0, 93, 1.1, False) /* Bronze Morning Star (15877) for Wield */;

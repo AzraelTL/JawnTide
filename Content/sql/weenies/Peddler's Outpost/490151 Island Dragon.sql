@@ -146,4 +146,4 @@ VALUES (490151, 9, 490235,  0, 0, 1, False) /* Create 490235 Island Dragon Hide 
 	 , (490151, 9, 490235,  0, 0, 1, False) /* Create 490235 Island Dragon Hide */
 	 , (490151, 9, 490235,  0, 0, 1, False) /* Create 490235 Island Dragon Hide */
 	 , (490151, 9, 490235,  0, 0, 1, False) /* Create 490235 Island Dragon Hide */
-	 , (490151, 9, 490235,  0, 0, 1, False) /* Create 490235 Island Dragon Hide */
+	 , (490151, 9, 490235,  0, 0, 1, False) /* Create 490235 Island Dragon Hide */;

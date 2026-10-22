@@ -45,5 +45,4 @@ VALUES (4200107,   1, 0x02000AD5) /* Setup */
      , (4200107,   6, 0x04000BEF) /* PaletteBase */
      , (4200107,   7, 0x100002E7) /* ClothingBase */
      , (4200107,   8, 0x06002103) /* Icon */
-     , (4200107,  22, 0x3400002B) /* PhysicsEffectTable */
-
+     , (4200107,  22, 0x3400002B) /* PhysicsEffectTable */;

@@ -160,4 +160,4 @@ VALUES (43781, 9, 43792,  0, 0, 1, False) /* Create Energy Infused Rock (43792) 
      , (43781, 9, 43792,  0, 0, 1, False) /* Create Energy Infused Rock (43792) for ContainTreasure */
      , (43781, 9, 43792,  0, 0, 1, False) /* Create Energy Infused Rock (43792) for ContainTreasure */
      , (43781, 9, 43792,  0, 0, 1, False) /* Create Energy Infused Rock (43792) for ContainTreasure */
-     , (43781, 9, 43792,  0, 0, 1, False) /* Create Energy Infused Rock (43792) for ContainTreasure */
+     , (43781, 9, 43792,  0, 0, 1, False) /* Create Energy Infused Rock (43792) for ContainTreasure */;

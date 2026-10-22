@@ -35,5 +35,4 @@ VALUES (450233,   1, 0x02001BA5) /* Setup */
      , (450233,   3, 0x20000014) /* SoundTable */
      , (450233,   6, 0x04000BEF) /* PaletteBase */
      , (450233,   8, 0x060073EA) /* Icon */
-     , (450233,  22, 0x3400002B) /* PhysicsEffectTable */
-
+     , (450233,  22, 0x3400002B) /* PhysicsEffectTable */;

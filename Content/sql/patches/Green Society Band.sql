@@ -9,4 +9,4 @@ AND id NOT IN
   SELECT object_id 
   FROM ace_shard.biota_properties_spell_book 
   WHERE spell = 6073
-)
+);

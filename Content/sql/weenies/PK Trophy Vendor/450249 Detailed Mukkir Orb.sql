@@ -34,5 +34,4 @@ INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
 VALUES (450249,   1, 0x020014D1) /* Setup */
      , (450249,   3, 0x20000014) /* SoundTable */
      , (450249,   8, 0x0600621C) /* Icon */
-     , (450249,  22, 0x3400002B) /* PhysicsEffectTable */
-
+     , (450249,  22, 0x3400002B) /* PhysicsEffectTable */;
