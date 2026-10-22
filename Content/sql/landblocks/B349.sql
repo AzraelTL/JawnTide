@@ -49,13 +49,5 @@ VALUES (0x7B34904C, 53147, 0xB3490024, 102.4, 76.5, 70.6, -0.707107, 0, 0, -0.70
 /* @teleloc 0xB3490024 [102.400002 76.500000 70.599998] -0.707107 0.000000 0.000000 -0.707107 */
 
 INSERT INTO `landblock_instance` (`guid`, `weenie_Class_Id`, `obj_Cell_Id`, `origin_X`, `origin_Y`, `origin_Z`, `angles_W`, `angles_X`, `angles_Y`, `angles_Z`, `is_Link_Child`, `last_Modified`)
-VALUES (0x7B349077, 53486, 0xB349003C, 171.7, 82, 112.1, 1, 0, 0, 0, False, '2021-11-01 00:00:00'); /* Brellegia's Marker */
-/* @teleloc 0xB349003C [171.699997 82.000000 112.099998] 1.000000 0.000000 0.000000 0.000000 */
-
-INSERT INTO `landblock_instance` (`guid`, `weenie_Class_Id`, `obj_Cell_Id`, `origin_X`, `origin_Y`, `origin_Z`, `angles_W`, `angles_X`, `angles_Y`, `angles_Z`, `is_Link_Child`, `last_Modified`)
-VALUES (0x7B34907A, 53488, 0xB3490035, 151, 110.1, 112.1, 0.707107, 0, 0, -0.707107, False, '2021-11-01 00:00:00'); /* Aangesilus' Marker */
-/* @teleloc 0xB3490035 [151.000000 110.099998 112.099998] 0.707107 0.000000 0.000000 -0.707107 */
-
-INSERT INTO `landblock_instance` (`guid`, `weenie_Class_Id`, `obj_Cell_Id`, `origin_X`, `origin_Y`, `origin_Z`, `angles_W`, `angles_X`, `angles_Y`, `angles_Z`, `is_Link_Child`, `last_Modified`)
 VALUES (0x7B34907B, 70834, 0xB349001C, 81.1206, 75.916, 62.6615, 1, 0, 0, 0, False, '2021-11-01 00:00:00'); /* Viridian Entrance Portal Gen */
 /* @teleloc 0xB349001C [81.120598 75.916000 62.661499] 1.000000 0.000000 0.000000 0.000000 */

@@ -46,13 +46,14 @@ Held back as one patch, independent of the stages: everything is in `Ops/loot-st
 
 | What | How it is closed |
 |---|---|
-| Brellegia (53280), Doriathazaar (53272), Summercrown (53451), Aangesilus (53281), Dridge (53306), Kervim'telek (53271), Swift (53283), Temple of the Font (53477) | Removed from the stock landblock B54A via a Content copy of it |
-| Ancient Statues of the Viridian Rise (30) | Removed from stock landblocks B349, B34A, B44B, B549, B54B, B649, B64A, B64B via Content copies |
+| Brellegia (53280), Doriathazaar (53272) and Doriathazaar's Horde (9), Summercrown (53451), Aangesilus (53281), Dridge (53306), Kervim'telek (53271), Swift (53283), Temple of the Font (53477) | Removed from the stock landblock B54A via a Content copy of it |
+| Ancient Statues of the Viridian Rise (30), Brellegia's and Aangesilus' Markers | Removed from stock landblocks B349, B34A, B44B, B549, B54B, B649, B64A, B64B via Content copies |
+| Ancient Statues of the Viridian Root (16) | Removed from stock landblocks 5966 (the Viridian Root dungeon) and B449 via Content copies |
 | Viridian Rise Deru Portal Sending Gem (53450, casts Great Tree Recall) | Out of the Holtburg, Shoushi and Yaraq Town Treasurers' shops; the drops on Wind Fury, NightBrier, Norshuntyr and Zerzelikyr set to nothing |
 | Temple of the Font Sending Gem (480600) | Out of the three Town Treasurers' shops |
 | Scrolls of Viridian Rise Recall (53302) and Viridian Rise Tree Recall (72003) | Only came from Kervim'telek, who is removed |
 
-Viridian Rise itself can still be reached on foot if its stock entrance portals are active; this patch removes its NPCs, statues and shortcuts.
+Viridian Rise itself can still be reached on foot if its stock entrance portals are active; this patch removes its NPCs, statues, markers and shortcuts.
 
 ## Systems switched off by setting
 
