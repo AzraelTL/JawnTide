@@ -1,4 +1,4 @@
-# JawnTide Loot Editor (chests, NPC reward tables, boxes, loot profiles)
+# JawnTide Loot Editor (chests, NPC reward tables, boxes, loot profiles, vendors)
 
 A small Windows app for editing the random item lists inside chests
 (Darkbeat's Storage Locker, Empyrean Cache, the Casino chests and so on).
@@ -9,16 +9,16 @@ AutoApplyWorldCustomizations on).
 
 It also edits **NPC random reward tables**: a group of emotes that share one name, where the NPC rolls
 once and gives one item (for example Aidoneus's `WorldBoss_random_reward`, the Casino gamesmasters, Hera).
-Those show in the list as `[NPC] Name - table`. For them the editor also lists the NPC's **fixed rewards**
+Those show on the NPC rewards tab as `Name - table`. For them the editor also lists the NPC's **fixed rewards**
 (Give actions that always happen, such as Aidoneus's PK Trophies and Trade Notes) where you can change the
 WCID or stack size. Adding or removing fixed rewards, and other NPC actions (XP, luminance), are not edited here.
 
 It also edits **boxes**: items that give one random reward when used, such as A Box and the Common, Rare and
-Mythic Mystery Boxes (a run of Use emotes, each giving one item). They show in the list as `[Box] Name`.
+Mythic Mystery Boxes (a run of Use emotes, each giving one item). They show on the Boxes tab.
 Each row keeps its own message and actions; a row with a new or changed WCID copies the first row's actions.
 The "You found ..." message is rewritten for new items and changed stacks, and kept as it was otherwise.
 
-It also edits **loot profiles** (`treasure_death` files in `Content/sql`, shown as `[Loot profile] N`):
+It also edits **loot profiles** (`treasure_death` files in `Content/sql`, on the Loot profiles tab):
 the tier, quality modifier, and how many magic / non-magic / mundane items drop, for monsters that use the
 profile (DeathTreasureType) and containers that roll it. The "Used by" list shows which monsters and containers
 in Content use it. Stock profiles that aren't in Content aren't listed. The server's `loot_max_tier` setting still
@@ -53,3 +53,17 @@ caps the tier at runtime, whatever the profile says.
 
 Only the generator list in the file is rewritten; everything else in the file is left exactly as it was.
 Commit saved files on a branch like any other change.
+
+## Layout
+
+Two main tabs. **Loot** has one tab per kind of thing (Chests, NPC rewards, Boxes, Loot profiles), each with
+its count; one item is open at a time on the right. **Vendors** lists every vendor in Content that sells
+something and edits what it sells.
+
+## Vendors
+
+A vendor's stock is its `weenie_properties_create_list` rows with destination Shop (4). The grid shows
+WCID, item and supply (-1 = unlimited, 0 = normal). Add item, Remove selected and changing a WCID or supply
+rewrite only the Shop rows; what the vendor wears or carries, and its comments, stay as they are. Prices
+come from each item's value and the vendor's buy/sell rates, which aren't edited here. Stock vendors that
+aren't in Content aren't listed. Stages work the same as for chests: pick a stage in Edit to save a copy there.

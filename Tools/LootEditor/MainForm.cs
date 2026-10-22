@@ -11,6 +11,15 @@ namespace LootEditor
             public bool IsProfile;     // a loot profile (treasure_death) file
             public string Label;
             public bool IsChest => TableName == null && !IsProfile;
+            public bool IsBox => TableName == EmoteRewardFile.UseTableName;
+            public override string ToString() => Label;
+        }
+
+        private class VendorEntry
+        {
+            public string Path;
+            public string Label;
+            public override string ToString() => Label;
         }
 
         private const string LiveTarget = "Content (current stage)";
@@ -21,7 +30,29 @@ namespace LootEditor
         private readonly ComboBox targetBox = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 220 };
         private readonly Button newStageButton = new Button { Text = "New stage...", AutoSize = true };
 
+        // Loot tab: one list per kind of thing, each on its own tab
         private readonly ListBox chestList = new ListBox { Dock = DockStyle.Fill, IntegralHeight = false };
+        private readonly ListBox npcList = new ListBox { Dock = DockStyle.Fill, IntegralHeight = false };
+        private readonly ListBox boxList = new ListBox { Dock = DockStyle.Fill, IntegralHeight = false };
+        private readonly ListBox profileList = new ListBox { Dock = DockStyle.Fill, IntegralHeight = false };
+        private readonly TabControl lootTabs = new TabControl { Dock = DockStyle.Fill };
+        private readonly TabControl mainTabs = new TabControl { Dock = DockStyle.Fill };
+        private Entry selectedEntry;
+        private bool suppressSelect;
+
+        // Vendors tab
+        private readonly ListBox vendorList = new ListBox { Dock = DockStyle.Fill, IntegralHeight = false };
+        private readonly Label vendorInfo = new Label { Dock = DockStyle.Top, AutoSize = false, Height = 54 };
+        private readonly DataGridView vendorGrid = new DataGridView { Dock = DockStyle.Fill };
+        private readonly Label vendorCountLabel = new Label { AutoSize = true, Padding = new Padding(0, 7, 12, 0) };
+        private readonly Button vendorAddButton = new Button { Text = "Add item", AutoSize = true };
+        private readonly Button vendorRemoveButton = new Button { Text = "Remove selected", AutoSize = true };
+        private readonly Button vendorSaveButton = new Button { Text = "Save", AutoSize = true };
+        private VendorFile currentVendor;
+        private VendorEntry selectedVendor;
+        private bool vendorDirty;
+        private bool vendorLoading;
+        private SplitContainer vendorSplit;
         private readonly Label chestInfo = new Label { Dock = DockStyle.Top, AutoSize = false, Height = 54 };
         private readonly ListBox alwaysList = new ListBox { Dock = DockStyle.Top, Height = 70, IntegralHeight = false };
         private readonly DataGridView fixedGrid = new DataGridView { Dock = DockStyle.Top, Height = 150 };
@@ -43,7 +74,6 @@ namespace LootEditor
         private readonly DataGridView profileGrid = new DataGridView { Dock = DockStyle.Fill, Visible = false };
         private bool dirty;
         private bool loadingGrid;
-        private int lastChestIndex = -1;
         private object lastTarget;
         private SplitContainer split;
 
@@ -56,7 +86,7 @@ namespace LootEditor
 
         public MainForm()
         {
-            Text = "JawnTide Loot Editor - Chests, Rewards and Loot Profiles";
+            Text = "JawnTide Loot Editor - Loot and Vendors";
             Width = 1150;
             Height = 720;
             StartPosition = FormStartPosition.CenterScreen;
@@ -65,17 +95,26 @@ namespace LootEditor
             BuildGrid();
             BuildFixedGrid();
             BuildProfileGrid();
+            BuildVendorGrid();
 
             browseButton.Click += (s, e) => BrowseRepo();
             reloadButton.Click += (s, e) => LoadRepo();
             newStageButton.Click += (s, e) => CreateStage();
             targetBox.SelectedIndexChanged += (s, e) => OnTargetChanged();
-            chestList.SelectedIndexChanged += (s, e) => OnChestSelected();
+            foreach (var list in new[] { chestList, npcList, boxList, profileList })
+            {
+                var lb = list;
+                lb.SelectedIndexChanged += (s, e) => OnListSelected(lb);
+            }
+            vendorList.SelectedIndexChanged += (s, e) => OnVendorSelected();
+            vendorAddButton.Click += (s, e) => AddVendorItem();
+            vendorRemoveButton.Click += (s, e) => RemoveVendorItems();
+            vendorSaveButton.Click += (s, e) => SaveVendor();
             addButton.Click += (s, e) => AddItem();
             removeButton.Click += (s, e) => RemoveSelected();
             saveButton.Click += (s, e) => Save();
             scaleButton.Click += (s, e) => ScaleTo100();
-            FormClosing += (s, e) => { if (!ConfirmDiscard()) e.Cancel = true; };
+            FormClosing += (s, e) => { if (!ConfirmDiscard() || !ConfirmVendorDiscard()) e.Cancel = true; };
 
             repoBox.Text = LoadSavedRepo() ?? FindRepoFromExe() ?? "";
             if (Directory.Exists(ContentSql))
@@ -105,10 +144,16 @@ namespace LootEditor
             top.Controls.Add(newStageButton, 5, 0);
 
             split = new SplitContainer { Dock = DockStyle.Fill };
-            Load += (s, e) => split.SplitterDistance = 300;
-            var leftLabel = new Label { Text = "Chests, NPC reward tables and loot profiles", Dock = DockStyle.Top, Height = 20, Font = new Font(Font, FontStyle.Bold) };
-            split.Panel1.Controls.Add(chestList);
-            split.Panel1.Controls.Add(leftLabel);
+            Load += (s, e) => { split.SplitterDistance = 340; vendorSplit.SplitterDistance = 340; };
+            var titles = new[] { "Chests", "NPC rewards", "Boxes", "Loot profiles" };
+            var lists = new[] { chestList, npcList, boxList, profileList };
+            for (var t = 0; t < lists.Length; t++)
+            {
+                var page = new TabPage(titles[t]) { Padding = new Padding(3) };
+                page.Controls.Add(lists[t]);
+                lootTabs.TabPages.Add(page);
+            }
+            split.Panel1.Controls.Add(lootTabs);
             split.Panel1.Padding = new Padding(6);
 
             var bottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 38, FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(0, 4, 0, 0) };
@@ -131,8 +176,66 @@ namespace LootEditor
             split.Panel2.Controls.Add(chestInfo);
             split.Panel2.Controls.Add(bottom);
 
-            Controls.Add(split);
+            var lootPage = new TabPage("Loot");
+            lootPage.Controls.Add(split);
+            mainTabs.TabPages.Add(lootPage);
+            var vendorPage = new TabPage("Vendors");
+            vendorPage.Controls.Add(BuildVendorLayout());
+            mainTabs.TabPages.Add(vendorPage);
+
+            Controls.Add(mainTabs);
             Controls.Add(top);
+        }
+
+        private Control BuildVendorLayout()
+        {
+            vendorSplit = new SplitContainer { Dock = DockStyle.Fill };
+            var leftLabel = new Label { Text = "Vendors in Content (stock vendors aren't in Content and can't be edited here)", Dock = DockStyle.Top, Height = 34, Font = new Font(Font, FontStyle.Bold) };
+            vendorSplit.Panel1.Controls.Add(vendorList);
+            vendorSplit.Panel1.Controls.Add(leftLabel);
+            vendorSplit.Panel1.Padding = new Padding(6);
+
+            var bottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 38, FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(0, 4, 0, 0) };
+            bottom.Controls.Add(vendorCountLabel);
+            bottom.Controls.Add(vendorAddButton);
+            bottom.Controls.Add(vendorRemoveButton);
+            bottom.Controls.Add(vendorSaveButton);
+
+            var gridTitle = new Label { Text = "Items for sale", Dock = DockStyle.Top, Height = 20, Font = new Font(Font, FontStyle.Bold) };
+            vendorSplit.Panel2.Padding = new Padding(6);
+            vendorSplit.Panel2.Controls.Add(vendorGrid);
+            vendorSplit.Panel2.Controls.Add(gridTitle);
+            vendorSplit.Panel2.Controls.Add(vendorInfo);
+            vendorSplit.Panel2.Controls.Add(bottom);
+            vendorInfo.Text = "Select a vendor on the left.";
+            return vendorSplit;
+        }
+
+        private void BuildVendorGrid()
+        {
+            vendorGrid.AllowUserToAddRows = false;
+            vendorGrid.AllowUserToDeleteRows = false;
+            vendorGrid.RowHeadersVisible = false;
+            vendorGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            vendorGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            vendorGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Wcid", HeaderText = "WCID", FillWeight = 15 });
+            vendorGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "ItemName", HeaderText = "Item", FillWeight = 60, ReadOnly = true });
+            vendorGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Stack", HeaderText = "Supply (-1 = unlimited)", FillWeight = 25 });
+            vendorGrid.CellEndEdit += (s, e) =>
+            {
+                if (vendorLoading || e.RowIndex < 0)
+                    return;
+                vendorDirty = true;
+                var row = vendorGrid.Rows[e.RowIndex];
+                if (vendorGrid.Columns[e.ColumnIndex].Name == "Wcid")
+                {
+                    var text = (row.Cells["Wcid"].Value ?? "").ToString().Trim();
+                    row.Cells["ItemName"].Value = uint.TryParse(text, out var wcid)
+                        ? index.GetName(wcid) ?? "(not found in Content - check the WCID)"
+                        : "(invalid WCID)";
+                }
+                UpdateVendorCount();
+            };
         }
 
         private void BuildGrid()
@@ -273,7 +376,7 @@ namespace LootEditor
 
         private void LoadRepo()
         {
-            if (!ConfirmDiscard())
+            if (!ConfirmDiscard() || !ConfirmVendorDiscard())
                 return;
 
             if (!Directory.Exists(ContentSql))
@@ -287,41 +390,64 @@ namespace LootEditor
             try
             {
                 var found = new List<Entry>();
+                var vendors = new List<VendorEntry>();
                 index.Build(ContentSql,
                     path => found.Add(new Entry { Path = path }),
                     (path, tables) => found.AddRange(tables.Select(tb => new Entry { Path = path, TableName = tb })),
-                    path => found.Add(new Entry { Path = path, IsProfile = true }));
+                    path => found.Add(new Entry { Path = path, IsProfile = true }),
+                    path => vendors.Add(new VendorEntry { Path = path }));
 
                 foreach (var entry in found)
                 {
                     if (entry.IsProfile)
                     {
                         var tt = LootProfileFile.ReadTreasureType(File.ReadAllText(entry.Path));
-                        entry.Label = $"[Loot profile] {tt}  {Path.GetFileNameWithoutExtension(entry.Path)}";
+                        entry.Label = $"{tt}  {Path.GetFileNameWithoutExtension(entry.Path)}";
                         continue;
                     }
 
                     var text = File.ReadAllText(entry.Path);
                     var header = ChestFile.ReadWeenieHeader(text);
                     var name = ChestFile.ReadName(text) ?? Path.GetFileNameWithoutExtension(entry.Path);
-                    entry.Label = entry.IsChest
-                        ? $"[Chest] {name}  ({header?.wcid})"
-                        : entry.TableName == EmoteRewardFile.UseTableName
-                            ? $"[Box] {name}  ({header?.wcid})"
-                            : $"[NPC] {name} - {entry.TableName}  ({header?.wcid})";
+                    entry.Label = entry.IsChest || entry.IsBox
+                        ? $"{name}  ({header?.wcid})"
+                        : $"{name} - {entry.TableName}  ({header?.wcid})";
                 }
                 found.Sort((a, b) => string.Compare(a.Label, b.Label, StringComparison.OrdinalIgnoreCase));
 
                 entries.Clear();
-                chestList.Items.Clear();
+                entries.AddRange(found);
+                suppressSelect = true;
+                foreach (var list in new[] { chestList, npcList, boxList, profileList })
+                    list.Items.Clear();
                 foreach (var entry in found)
                 {
-                    entries.Add(entry);
-                    chestList.Items.Add(entry.Label);
+                    var list = entry.IsProfile ? profileList : entry.IsChest ? chestList : entry.IsBox ? boxList : npcList;
+                    list.Items.Add(entry);
                 }
+                suppressSelect = false;
+                lootTabs.TabPages[0].Text = $"Chests ({chestList.Items.Count})";
+                lootTabs.TabPages[1].Text = $"NPC rewards ({npcList.Items.Count})";
+                lootTabs.TabPages[2].Text = $"Boxes ({boxList.Items.Count})";
+                lootTabs.TabPages[3].Text = $"Loot profiles ({profileList.Items.Count})";
 
+                foreach (var vendor in vendors)
+                {
+                    var text = File.ReadAllText(vendor.Path);
+                    var header = ChestFile.ReadWeenieHeader(text);
+                    vendor.Label = $"{ChestFile.ReadName(text) ?? Path.GetFileNameWithoutExtension(vendor.Path)}  ({header?.wcid})";
+                }
+                vendors.Sort((a, b) => string.Compare(a.Label, b.Label, StringComparison.OrdinalIgnoreCase));
+                vendorList.Items.Clear();
+                foreach (var vendor in vendors)
+                    vendorList.Items.Add(vendor);
+                mainTabs.TabPages[1].Text = $"Vendors ({vendors.Count})";
+
+                selectedEntry = null;
+                selectedVendor = null;
                 RefreshTargets(LiveTarget);
                 ClearChest();
+                ClearVendor();
             }
             finally
             {
@@ -371,37 +497,58 @@ namespace LootEditor
         {
             if (targetBox.SelectedItem == lastTarget)
                 return;
-            if (!ConfirmDiscard())
+            if (!ConfirmDiscard() || !ConfirmVendorDiscard())
             {
                 targetBox.SelectedItem = lastTarget;
                 return;
             }
             lastTarget = targetBox.SelectedItem;
             LoadSelectedChest();
+            LoadSelectedVendor();
         }
 
-        private void OnChestSelected()
+        private void OnListSelected(ListBox list)
         {
-            if (chestList.SelectedIndex == lastChestIndex)
+            if (suppressSelect || list.SelectedIndex < 0)
                 return;
-            if (!ConfirmDiscard())
+            var entry = (Entry)list.SelectedItem;
+            if (entry == selectedEntry)
+                return;
+
+            suppressSelect = true;
+            try
             {
-                chestList.SelectedIndex = lastChestIndex;
-                return;
+                if (!ConfirmDiscard())
+                {
+                    // put the selection back on the open item (it may be on another tab)
+                    list.ClearSelected();
+                    if (selectedEntry != null && list.Items.Contains(selectedEntry))
+                        list.SelectedItem = selectedEntry;
+                    return;
+                }
+                // only one item is open at a time: clear the selection on the other tabs
+                foreach (var other in new[] { chestList, npcList, boxList, profileList })
+                    if (other != list)
+                        other.ClearSelected();
             }
-            lastChestIndex = chestList.SelectedIndex;
+            finally
+            {
+                suppressSelect = false;
+            }
+
+            selectedEntry = entry;
             LoadSelectedChest();
         }
 
         private void LoadSelectedChest()
         {
-            if (chestList.SelectedIndex < 0)
+            if (selectedEntry == null)
             {
                 ClearChest();
                 return;
             }
 
-            var entry = entries[chestList.SelectedIndex];
+            var entry = selectedEntry;
             var contentPath = entry.Path;
             var targetPath = TargetPathFor(contentPath);
             var loadPath = File.Exists(targetPath) ? targetPath : contentPath;
@@ -565,8 +712,7 @@ namespace LootEditor
             currentProfile = null;
             SetProfileMode(false);
             dirty = false;
-            lastChestIndex = chestList.SelectedIndex;
-            chestInfo.Text = "Select a chest on the left.";
+            chestInfo.Text = "Select a chest, NPC table, box or loot profile on the left.";
             alwaysList.Items.Clear();
             loadingGrid = true;
             grid.Rows.Clear();
@@ -760,7 +906,7 @@ namespace LootEditor
                 return;
             }
 
-            var targetPath = TargetPathFor(entries[chestList.SelectedIndex].Path);
+            var targetPath = TargetPathFor(selectedEntry.Path);
 
             var fixedGives = new List<FixedGive>();
             foreach (DataGridViewRow row in fixedGrid.Rows)
@@ -835,7 +981,7 @@ namespace LootEditor
                 return;
             }
 
-            var targetPath = TargetPathFor(entries[chestList.SelectedIndex].Path);
+            var targetPath = TargetPathFor(selectedEntry.Path);
             try
             {
                 currentProfile.Save(targetPath, fields);
@@ -859,6 +1005,159 @@ namespace LootEditor
             if (answer == DialogResult.Yes)
             {
                 dirty = false;
+                return true;
+            }
+            return false;
+        }
+
+        // ---------- vendors ----------
+
+        private void OnVendorSelected()
+        {
+            if (suppressSelect || vendorList.SelectedIndex < 0)
+                return;
+            var vendor = (VendorEntry)vendorList.SelectedItem;
+            if (vendor == selectedVendor)
+                return;
+            if (!ConfirmVendorDiscard())
+            {
+                suppressSelect = true;
+                vendorList.SelectedItem = selectedVendor;
+                suppressSelect = false;
+                return;
+            }
+            selectedVendor = vendor;
+            LoadSelectedVendor();
+        }
+
+        private void LoadSelectedVendor()
+        {
+            if (selectedVendor == null)
+            {
+                ClearVendor();
+                return;
+            }
+
+            var targetPath = TargetPathFor(selectedVendor.Path);
+            var loadPath = File.Exists(targetPath) ? targetPath : selectedVendor.Path;
+            try
+            {
+                currentVendor = VendorFile.Load(loadPath, index);
+            }
+            catch (Exception ex)
+            {
+                ClearVendor();
+                MessageBox.Show(this, "Couldn't read this vendor:\n" + ex.Message, "Loot Editor");
+                return;
+            }
+
+            vendorInfo.Text = $"{currentVendor.Name}  (WCID {currentVendor.Wcid})   -   {currentVendor.Items.Count} items for sale\nLoaded from: {SourceText(loadPath, targetPath)}\n{loadPath}";
+            vendorLoading = true;
+            vendorGrid.Rows.Clear();
+            foreach (var item in currentVendor.Items)
+            {
+                var i = vendorGrid.Rows.Add(item.Wcid.ToString(), item.Name, item.StackSize.ToString(CultureInfo.InvariantCulture));
+                vendorGrid.Rows[i].Tag = item;
+            }
+            vendorLoading = false;
+            vendorDirty = false;
+            UpdateVendorCount();
+        }
+
+        private void ClearVendor()
+        {
+            currentVendor = null;
+            vendorDirty = false;
+            vendorInfo.Text = "Select a vendor on the left.";
+            vendorLoading = true;
+            vendorGrid.Rows.Clear();
+            vendorLoading = false;
+            UpdateVendorCount();
+        }
+
+        private void UpdateVendorCount()
+        {
+            vendorCountLabel.Text = currentVendor == null ? "" : $"{vendorGrid.Rows.Count} items" + (vendorDirty ? "   * unsaved" : "");
+        }
+
+        private void AddVendorItem()
+        {
+            if (currentVendor == null)
+                return;
+            var i = vendorGrid.Rows.Add("", "(type a WCID)", "-1");
+            vendorGrid.Rows[i].Tag = null;
+            vendorGrid.CurrentCell = vendorGrid.Rows[i].Cells["Wcid"];
+            vendorGrid.BeginEdit(true);
+            vendorDirty = true;
+            UpdateVendorCount();
+        }
+
+        private void RemoveVendorItems()
+        {
+            if (currentVendor == null)
+                return;
+            foreach (var row in vendorGrid.SelectedRows.Cast<DataGridViewRow>().ToList())
+                vendorGrid.Rows.Remove(row);
+            vendorDirty = true;
+            UpdateVendorCount();
+        }
+
+        private void SaveVendor()
+        {
+            if (currentVendor == null || selectedVendor == null)
+                return;
+            vendorGrid.EndEdit();
+
+            var items = new List<VendorItem>();
+            foreach (DataGridViewRow row in vendorGrid.Rows)
+            {
+                var wcidText = (row.Cells["Wcid"].Value ?? "").ToString().Trim();
+                var stackText = (row.Cells["Stack"].Value ?? "").ToString().Trim();
+                if (!uint.TryParse(wcidText, out var wcid) || wcid == 0)
+                {
+                    MessageBox.Show(this, $"Row {row.Index + 1}: the WCID \"{wcidText}\" isn't a valid number.", "Loot Editor");
+                    return;
+                }
+                if (!int.TryParse(stackText, out var stack) || stack < -1)
+                {
+                    MessageBox.Show(this, $"Row {row.Index + 1}: supply must be -1 (unlimited) or 0 or more.", "Loot Editor");
+                    return;
+                }
+                var original = row.Tag as VendorItem;
+                items.Add(new VendorItem
+                {
+                    Wcid = wcid,
+                    Name = index.GetName(wcid) ?? (row.Cells["ItemName"].Value ?? "").ToString(),
+                    StackSize = stack,
+                    Tokens = original?.Tokens,
+                    Comment = original?.Comment,
+                });
+            }
+
+            var targetPath = TargetPathFor(selectedVendor.Path);
+            try
+            {
+                currentVendor.Save(targetPath, items);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Save failed:\n" + ex.Message, "Loot Editor");
+                return;
+            }
+
+            vendorDirty = false;
+            LoadSelectedVendor();
+            MessageBox.Show(this, "Saved to:\n" + targetPath, "Loot Editor");
+        }
+
+        private bool ConfirmVendorDiscard()
+        {
+            if (!vendorDirty)
+                return true;
+            var answer = MessageBox.Show(this, "You have unsaved changes to this vendor. Discard them?", "Loot Editor", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (answer == DialogResult.Yes)
+            {
+                vendorDirty = false;
                 return true;
             }
             return false;

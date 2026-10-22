@@ -16,8 +16,9 @@ namespace LootEditor
         private static readonly Regex TreasureGeneratorRegex = new Regex(@"\(\s*\d+\s*,\s*-?[\d.]+\s*,\s*(\d+)\s*,(?:[^,()]*,){4}\s*72\s*,");
 
         private static readonly Regex GenerateCommentRegex = new Regex(@"Generate\s+(.+?)\s+\((\d+)\)");
+        private static readonly Regex CreateCommentRegex = new Regex(@"\(\s*\d+\s*,\s*\d+\s*,\s*(\d+)\s*,[^)]*\)\s*/\*\s*Create\s+(.+?)\s+\(\d+\)");
 
-        public void Build(string contentSqlFolder, Action<string> foundChest, Action<string, List<string>> foundRewardTables, Action<string> foundProfile)
+        public void Build(string contentSqlFolder, Action<string> foundChest, Action<string, List<string>> foundRewardTables, Action<string> foundProfile, Action<string> foundVendor = null)
         {
             names.Clear();
             profileUsers.Clear();
@@ -47,6 +48,18 @@ namespace LootEditor
                 {
                     if (uint.TryParse(m.Groups[2].Value, out var wcid) && !names.ContainsKey(wcid))
                         names[wcid] = m.Groups[1].Value.Trim();
+                }
+
+                // "Create Name (n)" comments on create_list rows name the row's WCID (covers stock items vendors sell)
+                if (text.Contains("weenie_properties_create_list"))
+                {
+                    foreach (Match m in CreateCommentRegex.Matches(text))
+                    {
+                        if (uint.TryParse(m.Groups[1].Value, out var wcid) && !names.ContainsKey(wcid))
+                            names[wcid] = m.Groups[2].Value.Trim();
+                    }
+                    if (foundVendor != null && VendorFile.IsVendor(text))
+                        foundVendor(file);
                 }
 
                 if (ChestFile.IsChestWithGenerator(text))
