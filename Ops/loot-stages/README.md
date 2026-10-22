@@ -33,6 +33,7 @@ folder that reopens it) when that content returns.
 | `originals/landblocks/01C9.sql` | Fargon (600000), Empyrean Storage Vault (600036), Bounty Collector (3000381) and Artemis (490530, mercenary vendor) placements |
 | `originals/weenies/Arena Patch/480480 Darkbeat.sql` | Darkbeat's shop: Bounty Purchase Token (60000213) and Writ of Pursuit (60000215) |
 | `originals/weenies/Peddler's Outpost/490150 Outpost Flying Machine.sql` | Hot Air Balloon at Peddler's Outpost (took an Energy Infused Rock and flew to the island); now only says it is grounded |
+| `originals/weenies/LootBoxes/510003 RareMysteryBox.sql`, `originals/weenies/LootBoxes/510004 MythicMysteryBox.sql` | Shimmering Skeleton Key removed from both boxes (permanent: it is a loot-system rare only) |
 
 If only some of the 01C9 placements return in a stage, copy just its INSERT/VALUES lines back
 instead of the whole file.

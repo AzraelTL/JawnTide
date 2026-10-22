@@ -47,9 +47,15 @@ Cache every few minutes for 8 hours, plus the XP and luminance bonus). There was
 and players found it boring. A redesign has to make holding a dungeon contested rather than a
 rotation of free rewards.
 
+## Permanent changes (not coming back)
+
+| What | Change | Original |
+|---|---|---|
+| Shimmering Skeleton Key (30258) | Only drops as a stock Tier 3 rare from the loot system (`LootGenerationFactory_Rare.cs`). Removed from the Rare Mystery Box (510003, was 5%) and the Mythic Mystery Box (510004, two entries, was 8%); their other rewards keep the same share of each other. Its Empyrean Cache source is off with Dungeon Control and should be removed before Dungeon Control returns | `originals/weenies/LootBoxes/510003 RareMysteryBox.sql`, `originals/weenies/LootBoxes/510004 MythicMysteryBox.sql` |
+
 ## Open decisions
 
-- Shimmering Skeleton Key (30258) has no use while the Empyrean Storage Vault is closed. Its Empyrean Cache source (0.1%) is already off with Dungeon Control; it still comes from the Rare/Mythic Mystery Boxes. Hold it back there or leave it?
+(none)
 
 ## Brought back
 
