@@ -34,38 +34,38 @@ VALUES (480480,   1, True ) /* Stuck */
      , (480480,  41, True ) /* ReportCollisionsAsEnvironment */;
 
 INSERT INTO `weenie_properties_float` (`object_Id`, `type`, `value`)
-VALUES (480480,   1,       5) /* HeartbeatInterval */
-     , (480480,   2,       0) /* HeartbeatTimestamp */
-     , (480480,   3,    0.16) /* HealthRate */
-     , (480480,   4,       5) /* StaminaRate */
-     , (480480,   5,       1) /* ManaRate */
-     , (480480,  11,     300) /* ResetInterval */
-     , (480480,  13,     0.9) /* ArmorModVsSlash */
-     , (480480,  14,       1) /* ArmorModVsPierce */
-     , (480480,  15,     1.1) /* ArmorModVsBludgeon */
-     , (480480,  16,     0.4) /* ArmorModVsCold */
-     , (480480,  17,     0.4) /* ArmorModVsFire */
-     , (480480,  18,       1) /* ArmorModVsAcid */
-     , (480480,  19,     0.6) /* ArmorModVsElectric */
-     , (480480,  37,       1) /* BuyPrice */
-     , (480480,  38,       1) /* SellPrice */
-     , (480480,  39,     2) /* DefaultScale */
-     , (480480,  54,       5) /* UseRadius */
-     , (480480,  64,       1) /* ResistSlash */
-     , (480480,  65,       1) /* ResistPierce */
-     , (480480,  66,       1) /* ResistBludgeon */
-     , (480480,  67,       1) /* ResistFire */
-     , (480480,  68,       1) /* ResistCold */
-     , (480480,  69,       1) /* ResistAcid */
-     , (480480,  70,       1) /* ResistElectric */
-     , (480480,  71,       1) /* ResistHealthBoost */
-     , (480480,  72,       1) /* ResistStaminaDrain */
-     , (480480,  73,       1) /* ResistStaminaBoost */
-     , (480480,  74,       1) /* ResistManaDrain */
-     , (480480,  75,       1) /* ResistManaBoost */
-     , (480480, 104,      10) /* ObviousRadarRange */
-     , (480480, 125,       1) /* ResistHealthDrain */
-	 , (480480,  76,     0.25) /* Translucency */;
+VALUES (480480, 1, 5) /* HeartbeatInterval */
+     , (480480, 2, 0) /* HeartbeatTimestamp */
+     , (480480, 3, 0.16) /* HealthRate */
+     , (480480, 4, 5) /* StaminaRate */
+     , (480480, 5, 1) /* ManaRate */
+     , (480480, 11, 300) /* ResetInterval */
+     , (480480, 13, 0.9) /* ArmorModVsSlash */
+     , (480480, 14, 1) /* ArmorModVsPierce */
+     , (480480, 15, 1.1) /* ArmorModVsBludgeon */
+     , (480480, 16, 0.4) /* ArmorModVsCold */
+     , (480480, 17, 0.4) /* ArmorModVsFire */
+     , (480480, 18, 1) /* ArmorModVsAcid */
+     , (480480, 19, 0.6) /* ArmorModVsElectric */
+     , (480480, 37, 1) /* BuyPrice */
+     , (480480, 38, 1) /* SellPrice */
+     , (480480, 39, 2) /* DefaultScale */
+     , (480480, 54, 5) /* UseRadius */
+     , (480480, 64, 1) /* ResistSlash */
+     , (480480, 65, 1) /* ResistPierce */
+     , (480480, 66, 1) /* ResistBludgeon */
+     , (480480, 67, 1) /* ResistFire */
+     , (480480, 68, 1) /* ResistCold */
+     , (480480, 69, 1) /* ResistAcid */
+     , (480480, 70, 1) /* ResistElectric */
+     , (480480, 71, 1) /* ResistHealthBoost */
+     , (480480, 72, 1) /* ResistStaminaDrain */
+     , (480480, 73, 1) /* ResistStaminaBoost */
+     , (480480, 74, 1) /* ResistManaDrain */
+     , (480480, 75, 1) /* ResistManaBoost */
+     , (480480, 104, 10) /* ObviousRadarRange */
+     , (480480, 125, 1) /* ResistHealthDrain */
+     , (480480, 76, 0.25) /* Translucency */;
 
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
 VALUES (480480,   1, 'Darkbeat') /* Name */
@@ -75,24 +75,24 @@ VALUES (480480,   1, 'Darkbeat') /* Name */
      , (480480,  24, 'Afterlife') /* TownName */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
-VALUES (480480,   1, 0x02000001) /* Setup */
-     , (480480,   2, 0x09000001) /* MotionTable */
-     , (480480,   3, 0x200000B6) /* SoundTable */
-     , (480480,   6, 0x040018F3) /* PaletteBase */
-     , (480480,   7, 0x10000402) /* ClothingBase */
-     , (480480,   8, 0x06003447) /* Icon */
-     , (480480,  22, 0x340000AB) /* PhysicsEffectTable */
-     , (480480,   9, 0x0500111F) /* EyesTexture */
-     , (480480,  10, 0x05001160) /* NoseTexture */
-     , (480480,  11, 0x050011D1) /* MouthTexture */
-     , (480480,  12, 0x0500024C) /* DefaultEyesTexture */
-     , (480480,  13, 0x050002F5) /* DefaultNoseTexture */
-     , (480480,  14, 0x0500025C) /* DefaultMouthTexture */
-     , (480480,  15, 0x04001FC7) /* HairPalette */
-     , (480480,  16, 0x040002BD) /* EyesPalette */
-     , (480480,  17, 0x0400049F) /* SkinPalette */
-     , (480480,  18, 0x010047FB) /* HeadObject */
-     , (480480,  57,    1000003) /* AlternateCurrency - PK Trophy */;
+VALUES (480480, 1, 0x02000001) /* Setup */
+     , (480480, 2, 0x09000001) /* MotionTable */
+     , (480480, 3, 0x200000B6) /* SoundTable */
+     , (480480, 6, 0x040018F3) /* PaletteBase */
+     , (480480, 7, 0x10000402) /* ClothingBase */
+     , (480480, 8, 0x06003447) /* Icon */
+     , (480480, 22, 0x340000AB) /* PhysicsEffectTable */
+     , (480480, 9, 0x0500111F) /* EyesTexture */
+     , (480480, 10, 0x05001160) /* NoseTexture */
+     , (480480, 11, 0x050011D1) /* MouthTexture */
+     , (480480, 12, 0x0500024C) /* DefaultEyesTexture */
+     , (480480, 13, 0x050002F5) /* DefaultNoseTexture */
+     , (480480, 14, 0x0500025C) /* DefaultMouthTexture */
+     , (480480, 15, 0x04001FC7) /* HairPalette */
+     , (480480, 16, 0x040002BD) /* EyesPalette */
+     , (480480, 17, 0x0400049F) /* SkinPalette */
+     , (480480, 18, 0x010047FB) /* HeadObject */
+     , (480480, 57, 1000003) /* AlternateCurrency - Phial of Bloody Tears */;
 
 INSERT INTO `weenie_properties_attribute` (`object_Id`, `type`, `init_Level`, `level_From_C_P`, `c_P_Spent`)
 VALUES (480480,   1, 290, 0, 0) /* Strength */
@@ -192,103 +192,88 @@ INSERT INTO `weenie_properties_emote_action` (`emote_Id`, `order`, `type`, `dela
 VALUES (@parent_id,  0,   5 /* Motion */, 0, 1, 0x1000006c /* Nod */, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 INSERT INTO `weenie_properties_create_list` (`object_Id`, `destination_Type`, `weenie_Class_Id`, `stack_Size`, `palette`, `shade`, `try_To_Bond`)
-VALUES  (480480, 2,   6046, 0, 93, 1.1, False) /* Greater Shadow Amuli Coat (6600) for Wield */
-     , (480480, 2,   6047, 0, 93, 1.1, False) /* Greater Shadow Amuli Leggings (6606) for Wield */
-     , (480480, 2,   74, 0, 93, 0.9, False) /* Olthoi Helm (3715) for Wield */
-     , (480480, 2,    57,  1, 93, 0.9, False) /* Create Platemail Gauntlets (57) for Wield */
-     , (480480, 2,    107,  1, 93, 0.9, False) /* Create Sollerets (107) for Wield */
-     , (480480, 2,   480622, 0, 0, 0, False) /* Deadly Hollow Staff (21362) for Wield */
-     , (480480, 4, 1910507,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-     , (480480, 4, 1910506,  0, 0, 0, False) /* Create Vestiri Robe (450010) for Shop */
-     , (480480, 4, 1910505,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 21063,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 4200050,  0, 0, 0, False) /* Create Vestiri Robe (450010) for Shop */
-     , (480480, 4, 4200051,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 480614,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	, (480480, 4, 480618,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	, (480480, 4, 480617,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	, (480480, 4, 480621,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	, (480480, 4, 480616,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	, (480480, 4, 480620,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	, (480480, 4, 480615,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	, (480480, 4, 480619,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-    , (480480, 4, 490290,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	, (480480, 4, 490291,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	, (480480, 4, 490292,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	, (480480, 4, 490293,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	, (480480, 4, 490294,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	, (480480, 4, 490295,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 460000,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 480485,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 480486,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 480638,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 490284,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 490224,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 4902243,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 4902245,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 490286,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 4902863,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 4902865,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 490287,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 4902873,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 4902875,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 490015,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 490042,  0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
-	 , (480480, 4, 490283,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 490289,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 490496,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 490297,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 490555,  0, 0, 0, False) /* Create Boxed Essence of Power for Shop */
-	 , (480480, 4, 490304,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 490512,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 1548802,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 1548803,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 490327,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 490328,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 490329,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 490330,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-     , (480480, 4, 490331,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 490332,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	  , (480480, 4, 490333,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	  , (480480, 4, 490334,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	  , (480480, 4, 490335,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	  , (480480, 4, 490336,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	  , (480480, 4, 490337,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	  , (480480, 4, 490338,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	  , (480480, 4, 490339,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	  , (480480, 4, 490340,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	  , (480480, 4, 490341,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	  , (480480, 4, 490342,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	  , (480480, 4, 490343,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	  , (480480, 4, 490344,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	  , (480480, 4, 490345,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	  , (480480, 4, 490346,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 490347,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 490348,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 490349,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	, (480480, 4, 490366,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	, (480480, 4, 490362,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-    , (480480, 4, 490361,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	, (480480, 4, 80438,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	, (480480, 4, 600003,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 600005,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 600006,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 600007,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	, (480480, 4, 600013,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	, (480480, 4, 600009,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-    , (480480, 4, 600011,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	, (480480, 4, 600020,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	, (480480, 4, 600021,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-    , (480480, 4, 600023,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	, (480480, 4, 600024,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	, (480480, 4, 600025,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 600026,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 600027,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 600028,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	, (480480, 4, 600029,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-     , (480480, 4, 52785,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	, (480480, 4, 52786,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 52787,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 52788,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	 , (480480, 4, 52789,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
-	, (480480, 4, 52790,  0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */;
+VALUES (480480, 2, 6046, 0, 93, 1.1, False) /* Greater Shadow Amuli Coat (6600) for Wield */
+     , (480480, 2, 6047, 0, 93, 1.1, False) /* Greater Shadow Amuli Leggings (6606) for Wield */
+     , (480480, 2, 74, 0, 93, 0.9, False) /* Olthoi Helm (3715) for Wield */
+     , (480480, 2, 57, 1, 93, 0.9, False) /* Create Platemail Gauntlets (57) for Wield */
+     , (480480, 2, 107, 1, 93, 0.9, False) /* Create Sollerets (107) for Wield */
+     , (480480, 2, 480622, 0, 0, 0, False) /* Deadly Hollow Staff (21362) for Wield */
+     , (480480, 4, 600020, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 600027, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 600023, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 600028, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 600026, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 600025, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 600021, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 600024, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 600029, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490015, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 480638, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 490362, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 460000, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 490347, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 1910506, 0, 0, 0, False) /* Create Vestiri Robe (450010) for Shop */
+     , (480480, 4, 1910507, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 1910505, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 490283, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490349, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490289, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490042, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 490295, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 490294, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 490284, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 490366, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490291, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 490290, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 600007, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 480486, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 490334, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490361, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490345, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490224, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 490287, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 490286, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 490346, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490335, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490336, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490337, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490338, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490339, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490340, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490344, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490333, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490343, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490341, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490342, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 480620, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 480616, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 490293, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 490292, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 4200051, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 4200050, 0, 0, 0, False) /* Create Vestiri Robe (450010) for Shop */
+     , (480480, 4, 480619, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 480615, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 490329, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490328, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490331, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490330, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490327, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490332, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 490304, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 80438, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 480485, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 490348, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 21063, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 600005, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 600003, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */
+     , (480480, 4, 480617, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 480621, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 4902243, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 4902245, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 4902873, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 4902875, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 4902863, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 4902865, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 480618, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 480614, 0, 0, 0, False) /* Create Festival Robe (450011) for Shop */
+     , (480480, 4, 600006, 0, 0, 0, False) /* Create Gelidite Robe (450009) for Shop */;
