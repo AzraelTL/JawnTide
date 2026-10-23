@@ -29,7 +29,7 @@ VALUES (490200,   1, True ) /* Stuck */
      , (490200,  41, True ) /* ReportCollisionsAsEnvironment */;
 
 INSERT INTO `weenie_properties_float` (`object_Id`, `type`, `value`)
-VALUES (490200,  37,    1.05) /* BuyPrice */
+VALUES (490200,  37,    0.95) /* BuyPrice: 0.95, below every vendor's 1.0 sell rate (1.05 let players buy at Ulenor or Orion and sell to Jalam at a profit) */
      , (490200,  38,    1.10) /* SellPrice */
      , (490200,  54,       3) /* UseRadius */;
 

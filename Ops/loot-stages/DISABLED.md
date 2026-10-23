@@ -74,6 +74,7 @@ rotation of free rewards.
 |---|---|---|
 | Shimmering Skeleton Key (30258) | Only drops as a stock Tier 3 rare from the loot system (`LootGenerationFactory_Rare.cs`). Removed from the Rare Mystery Box (510003, was 5%) and the Mythic Mystery Box (510004, two entries, was 8%); their other rewards keep the same share of each other. Its Empyrean Cache source is off with Dungeon Control and should be removed before Dungeon Control returns | `originals/weenies/LootBoxes/510003 RareMysteryBox.sql`, `originals/weenies/LootBoxes/510004 MythicMysteryBox.sql` |
 | Algos (4200009) | Never place in game. He sells the Armor Level, Armor Workmanship and Epic Randomizer Morph Gems and the Abandoned Mines Portal Sending Gem, which nothing else gives. The old dev had him privately (probably in his mansion basement); he isn't in the world since the fresh start | his file stays in `Content/sql/weenies/Town Control/` unchanged |
+| Jalam the Salvager (490200), Island Outpost | Buy rate lowered from 1.05 to 0.95. At 1.05 players could buy from Master Ulenor or Orion (same landblock, sell rate 1.0) and sell to Jalam for 5% profit, without limit. Keep his buy rate below every sell rate when the island reopens | his previous file in git history |
 
 ## Open decisions
 

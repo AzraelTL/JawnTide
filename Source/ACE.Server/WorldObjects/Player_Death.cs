@@ -889,6 +889,14 @@ namespace ACE.Server.WorldObjects
                     shouldDropTcRewards = false;
                 }
 
+                //JawnTide: no trophy or Town Control reward when the killer plays from the same IP as the victim
+                //(killing your own alt). IsDifferentIPAddress returns false when either IP is unknown.
+                var killerPlayer = PlayerManager.GetOnlinePlayer(new ObjectGuid((uint)corpse.KillerId));
+                if (killerPlayer == null || !IsDifferentIPAddress(killerPlayer))
+                {
+                    shouldDropTrophy = false;
+                    shouldDropTcRewards = false;
+                }
                 //Don't drop trophy if two dropped within last hour
                 if (LastPkTrophyDropTime.HasValue &&
                     Last2PkTrophyDropTime.HasValue &&
