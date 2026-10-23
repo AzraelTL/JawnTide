@@ -1,0 +1,48 @@
+# JawnTide resource monitor
+
+A small web page for the LAN that shows, per account:
+
+- last login, last IP, and the full IP history (from `ace_log.character_login_log`, which the server writes on
+  every character login), with the other accounts that used the same IP (shared IPs are highlighted)
+- the most played character (by in-game played time)
+- how much of each tracked currency the account holds, summed over its characters (main pack and side packs),
+  and which character holds it; anything not on a character is shown as "Elsewhere" (house storage, ground)
+- per-account totals over time (kept 30 days)
+
+Pages: `/` accounts (click a currency header to sort), `/account?name=...`, `/top` top 15 holders per currency,
+`/ips` IPs shared by several accounts. Open it from any machine on the LAN: **http://192.168.0.190:8080**
+
+## How it works
+
+`ace-monitor` is its own container (`Ops/monitor/compose.yml`), separate from the game server. Every 10 minutes
+(`INTERVAL_SECONDS`) it runs a few indexed SELECT queries as the MariaDB user `monitor`, which can only read
+`ace_auth.account`, `ace_shard` and `ace_log.character_login_log`. It never writes to the game databases and
+does not need the game server. ACE saves characters to the database every few minutes and on logout, so the
+numbers lag the game by up to that much.
+
+Tracked currencies are set by `DEFAULT_CURRENCIES` in `monitor.py` (WCID:label pairs); a `CURRENCIES`
+environment variable in compose.yml overrides them.
+
+The port is published on 192.168.0.190 only, and the router only forwards UDP 9000-9001, so the page is not
+reachable from the internet.
+
+## Setup (Linux, once)
+
+1. Make a password for the `monitor` user (stored in `.env`, never shown):
+
+       cd ~/jawntide-server && grep -q '^MONITOR_DB_PASSWORD=' .env || echo "MONITOR_DB_PASSWORD=$(openssl rand -hex 16)" >> .env
+
+2. Create the read-only database user:
+
+       cd ~/jawntide-server && MP=$(grep '^MONITOR_DB_PASSWORD=' .env | cut -d= -f2) && docker compose exec -T -e MP="$MP" ace-db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -e "CREATE USER IF NOT EXISTS monitor@\"%\" IDENTIFIED BY \"$MP\"; ALTER USER monitor@\"%\" IDENTIFIED BY \"$MP\"; GRANT SELECT ON ace_auth.account TO monitor@\"%\"; GRANT SELECT ON ace_shard.* TO monitor@\"%\"; GRANT SELECT ON ace_log.character_login_log TO monitor@\"%\"; FLUSH PRIVILEGES;"'
+
+3. Build and start it:
+
+       docker compose -f ~/JawnTide/Ops/monitor/compose.yml --env-file ~/jawntide-server/.env up -d --build && sleep 15 && docker logs --tail 5 ace-monitor
+
+The log should say `snapshot: N accounts, N characters`. It restarts by itself after a reboot.
+
+## Updating and stopping
+
+After pulling a new master: `docker compose -f ~/JawnTide/Ops/monitor/compose.yml --env-file ~/jawntide-server/.env up -d --build`.
+Stop it: `docker compose -f ~/JawnTide/Ops/monitor/compose.yml stop`.

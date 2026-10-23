@@ -1,0 +1,32 @@
+# JawnTide resource monitor. Runs next to ace-db and ace-server, reads the databases with a SELECT-only user.
+# Start (Linux): docker compose -f ~/JawnTide/Ops/monitor/compose.yml --env-file ~/jawntide-server/.env up -d --build
+# See README.md.
+name: jawntide-monitor
+services:
+  ace-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jawntide-monitor:local
+    container_name: ace-monitor
+    environment:
+      DB_HOST: ace-db
+      DB_USER: monitor
+      DB_PASSWORD: ${MONITOR_DB_PASSWORD}
+      INTERVAL_SECONDS: "600"
+      HISTORY_DAYS: "30"
+      TZ: America/New_York
+    volumes:
+      - monitor-data:/data
+    ports:
+      # LAN only: bound to the server's LAN address; the router does not forward TCP 8080.
+      - "192.168.0.190:8080:8080"
+    networks:
+      - ace
+    restart: unless-stopped
+volumes:
+  monitor-data:
+networks:
+  ace:
+    external: true
+    name: jawntide-server_default
