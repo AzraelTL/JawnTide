@@ -29,16 +29,16 @@ PORT = int(os.environ.get("PORT", "8080"))
 DATA = os.environ.get("DATA_FILE", "/data/monitor.sqlite")
 HISTORY_DAYS = int(os.environ.get("HISTORY_DAYS", "30"))
 
-# WCID:label pairs; the order is the column order on the pages
-DEFAULT_CURRENCIES = ("273:Pyreals,20630:MMD (Trade Note 250k),1000002:PK Trophy,1000003:Phial,43901:Promissory Note,"
-                      "480608:Darkbeat Key,490364:Hera Key,52968:Infused Amber,52969:Corrupted Amber,52797:Gauntlet Coin,"
-                      "45491:Quest Weapon Coin,45494:Imbue Swap Coin,490321:Lum Exchange Token,510000:A Box")
-CURRENCIES = []
-for part in os.environ.get("CURRENCIES", DEFAULT_CURRENCIES).split(","):
+# Tracked items: these first (WCID:label), then every alternate currency any vendor uses (read from ace_world on
+# each snapshot, so a vendor given a new currency is picked up automatically). Columns nobody holds are hidden.
+EXTRA_ITEMS = ("273:Pyreals,20630:MMD (Trade Note 250k),1000002:PK Trophy,1000003:Phial of Bloody Tears,"
+               "480608:Darkbeat Key,490364:Hera Key,52968:Infused Amber Shard,52969:Corrupted Amber Shard,"
+               "490321:Lum Exchange Token,510000:A Box")
+EXTRA = []
+for part in os.environ.get("EXTRA_ITEMS", EXTRA_ITEMS).split(","):
     if ":" in part:
         w, label = part.split(":", 1)
-        CURRENCIES.append((int(w.strip()), label.strip()))
-WCIDS = [w for w, _ in CURRENCIES]
+        EXTRA.append((int(w.strip()), label.strip()))
 
 PROP_INT_STACKSIZE = 12
 PROP_INT_AGE = 125
@@ -61,6 +61,20 @@ def take_snapshot():
     try:
         cur = conn.cursor()
         cur.execute("SET SESSION TRANSACTION READ ONLY")
+        currencies = list(EXTRA)
+        known = {w for w, _ in currencies}
+        for (wcid, name) in query(cur, """
+                SELECT d.value, MAX(s.value)
+                FROM ace_world.weenie_properties_d_i_d d
+                LEFT JOIN ace_world.weenie_properties_string s ON s.object_Id = d.value AND s.type = 1
+                WHERE d.type = 57 AND d.value <> 0
+                GROUP BY d.value"""):
+            if wcid not in known:
+                currencies.append((int(wcid), name or f"WCID {wcid}"))
+                known.add(wcid)
+        currencies = currencies[:len(EXTRA)] + sorted(currencies[len(EXTRA):], key=lambda c: c[1].lower())
+        WCIDS = [w for w, _ in currencies]
+
         accounts = {}
         for (aid, name, level, last_time, last_ip, created, created_ip, logins, banned) in query(cur, """
                 SELECT accountId, accountName, accessLevel, last_Login_Time, inet6_ntoa(last_Login_I_P),
@@ -125,8 +139,10 @@ def take_snapshot():
             best = max(a["characters"], key=lambda c: c["holdings"][w], default=None)
             a["holders"][w] = best if best and best["holdings"][w] > 0 else None
 
+    held = {w for w in WCIDS if elsewhere[w] or any(a["totals"][w] for a in accounts.values())}
     snap = dict(taken=datetime.now(), accounts=accounts, characters=chars, elsewhere=elsewhere,
-                ip_accounts={k: sorted(v) for k, v in ip_accounts.items()})
+                ip_accounts={k: sorted(v) for k, v in ip_accounts.items()},
+                currencies=currencies, held=held, wcids=WCIDS)
     save_history(snap)
     return snap, time.time() - started
 
@@ -143,7 +159,7 @@ def save_history(snap):
     db = history_db()
     try:
         ts = snap["taken"].strftime("%Y-%m-%d %H:%M")
-        rows = [(ts, a["name"], w, a["totals"][w]) for a in snap["accounts"].values() for w in WCIDS if a["totals"][w]]
+        rows = [(ts, a["name"], w, a["totals"][w]) for a in snap["accounts"].values() for w in snap["wcids"] if a["totals"][w]]
         db.executemany("INSERT INTO history VALUES (?, ?, ?, ?)", rows)
         db.execute("DELETE FROM history WHERE ts < ?", ((datetime.now() - timedelta(days=HISTORY_DAYS)).strftime("%Y-%m-%d %H:%M"),))
         db.commit()
@@ -158,7 +174,8 @@ def collector():
             with lock:
                 state.update(snapshot=snap, error=None, taken=snap["taken"], duration=took)
             print(f"{datetime.now():%Y-%m-%d %H:%M:%S} snapshot: {len(snap['accounts'])} accounts, "
-                  f"{len(snap['characters'])} characters, {took:.2f}s", flush=True)
+                  f"{len(snap['characters'])} characters, {len(snap['currencies'])} currencies tracked "
+                  f"({len(snap['held'])} held by someone), {took:.2f}s", flush=True)
         except Exception as ex:
             with lock:
                 state["error"] = f"{datetime.now():%Y-%m-%d %H:%M:%S}: {ex}"
@@ -225,12 +242,19 @@ def snapshot_or_wait():
         return state["snapshot"]
 
 
+def shown(snap):
+    """Currencies at least one character (or 'elsewhere') holds, in tracking order."""
+    return [(w, label) for w, label in snap["currencies"] if w in snap["held"]]
+
+
 def overview(sort):
     snap = snapshot_or_wait()
     if not snap:
         return page("Accounts", "<p>Waiting for the first snapshot.</p>")
+    CURRENCIES = shown(snap)
+    WCIDS = [w for w, _ in CURRENCIES]
     accounts = list(snap["accounts"].values())
-    key = int(sort) if sort and sort.isdigit() and int(sort) in WCIDS else WCIDS[1] if len(WCIDS) > 1 else None
+    key = int(sort) if sort and sort.isdigit() and int(sort) in WCIDS else (20630 if 20630 in WCIDS else (WCIDS[0] if WCIDS else None))
     accounts.sort(key=lambda a: (-(a["totals"].get(key, 0) if key else 0), a["name"].lower()))
     shared = {ip for ip, names in snap["ip_accounts"].items() if len(names) > 1}
     head = "".join(f'<th class="n"><a href="/?sort={w}">{e(label)}</a></th>' for w, label in CURRENCIES)
@@ -245,8 +269,11 @@ def overview(sort):
                     f'<td>{e(top["name"]) + " <span class=muted>(" + fmt_age(top["age"]) + ")</span>" if top else ""}</td>{cells}</tr>')
     total_cells = "".join(f'<td class="n"><b>{fmt_n(sum(a["totals"][w] for a in accounts))}</b></td>' for w in WCIDS)
     else_cells = "".join(f'<td class="n">{fmt_n(snap["elsewhere"][w])}</td>' for w in WCIDS)
+    hidden = len(snap["currencies"]) - len(CURRENCIES)
     body = (f'<p class="muted">{len(accounts)} accounts. Highlighted rows share an IP with another account. '
-            f'Click a currency to sort by it. "Elsewhere" is everything not on a character (house storage, ground, vendors).</p>'
+            f'Click a currency to sort by it. "Elsewhere" is everything not on a character (house storage, ground, vendors). '
+            f'Tracking {len(snap["currencies"])} currencies (every vendor alternate currency plus pyreals, MMDs and keys); '
+            f'{hidden} nobody holds yet are hidden.</p>'
             f'<div class="wrap"><table><tr><th>Account</th><th>Last login</th><th>Last IP</th><th class="n">IPs</th>'
             f'<th>Most played character</th>{head}</tr>{"".join(rows)}'
             f'<tr><td><b>All accounts</b></td><td></td><td></td><td></td><td></td>{total_cells}</tr>'
@@ -259,6 +286,8 @@ def account_page(name):
     a = next((x for x in snap["accounts"].values() if x["name"] == name), None) if snap else None
     if not a:
         return page("Account", f"<p>No account named {e(name)} in the last snapshot.</p>")
+    CURRENCIES = [(w, label) for w, label in snap["currencies"] if a["totals"][w]]
+    WCIDS = [w for w, _ in CURRENCIES]
     info = (f'<p>Access level {e(a["level"])}. Created {fmt_t(a["created"])} from {ip_link(a["created_ip"])}. '
             f'Logins: {e(a["logins"])}. Last login {fmt_t(a["last_login"])} from {ip_link(a["last_ip"])}.'
             f'{" <b class=err>Banned " + fmt_t(a["banned"]) + "</b>" if a["banned"] else ""}</p>')
@@ -299,7 +328,7 @@ def top_page():
     if not snap:
         return page("Top holders", "<p>Waiting for the first snapshot.</p>")
     parts = []
-    for w, label in CURRENCIES:
+    for w, label in shown(snap):
         holders = sorted((c for c in snap["characters"].values() if c["holdings"][w] > 0), key=lambda c: -c["holdings"][w])[:15]
         rows = "".join(f'<tr><td>{e(c["name"])}</td><td>{account_link(snap["accounts"][c["account"]]["name"]) if c["account"] in snap["accounts"] else ""}</td>'
                        f'<td class="n">{fmt_n(c["holdings"][w])}</td></tr>' for c in holders)
@@ -361,5 +390,5 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     threading.Thread(target=collector, daemon=True).start()
-    print(f"JawnTide monitor on port {PORT}, snapshot every {INTERVAL}s, tracking {len(WCIDS)} currencies", flush=True)
+    print(f"JawnTide monitor on port {PORT}, snapshot every {INTERVAL}s, plus every vendor alternate currency", flush=True)
     ThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
