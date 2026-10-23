@@ -2,6 +2,7 @@ using System.Collections.Generic;
 
 using ACE.DatLoader;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Factories;
 using ACE.Server.Network.GameMessages.Messages;
@@ -55,6 +56,17 @@ namespace ACE.Server.WorldObjects
             SpellId.CANTRIPMAGICITEMEXPERTISE2,
             SpellId.CANTRIPARMOREXPERTISE2,
             SpellId.CANTRIPWEAPONEXPERTISE2,
+        };
+
+        /// <summary>
+        /// Attributes a Tinker gets at 100 innate (the ones the tinkering skills use).
+        /// </summary>
+        public static readonly List<PropertyAttribute> TinkerInnate100Attributes = new List<PropertyAttribute>
+        {
+            PropertyAttribute.Strength,
+            PropertyAttribute.Endurance,
+            PropertyAttribute.Coordination,
+            PropertyAttribute.Focus,
         };
 
         /// <summary>
@@ -156,9 +168,17 @@ namespace ACE.Server.WorldObjects
                 }
             }
 
-            // --- Max all base attributes ---
-            foreach (var attr in Attributes.Values)
+            // --- Innate 100 in the four tinkering attributes, then max all base attributes ---
+            // Character creation allows only three attributes at 100; the tinkering skills need
+            // Strength, Endurance, Coordination and Focus, so all four are raised to 100 innate
+            // (never lowered). With the 190 raised ranks below that is 290 base.
+            foreach (var kvp in Attributes)
             {
+                var attr = kvp.Value;
+
+                if (TinkerInnate100Attributes.Contains(kvp.Key) && attr.StartingValue < 100)
+                    attr.StartingValue = 100;
+
                 attr.ExperienceSpent = maxAttrXp;
                 attr.Ranks           = (ushort)CalcAttributeRank(maxAttrXp);
 
@@ -216,7 +236,7 @@ namespace ACE.Server.WorldObjects
             {
                 Session.Network.EnqueueSend(new GameMessageSystemChat(
                     "You have been designated as a Tinker. Your crafting skills have been fully specialized and all combat skills have been removed. " +
-                    "This character may not train or specialize new skills, and will not suffer a vitae penalty on death.",
+                    "This character may not train or specialize new skills, will not suffer a vitae penalty on death, and stays level 1 (it earns no experience).",
                     ChatMessageType.Broadcast));
             }
         }

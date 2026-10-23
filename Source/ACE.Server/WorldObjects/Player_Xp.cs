@@ -259,6 +259,10 @@ namespace ACE.Server.WorldObjects
                 if (!bypassSeasonCap)
                     addAmount = ApplyRollingXpCap(addAmount, xpType);
 
+                // Tinkers stay level 1 forever: they never gain experience.
+                if (IsTinker)
+                    addAmount = 0;
+
                 AvailableExperience += addAmount;
                 TotalExperience += addAmount;
 

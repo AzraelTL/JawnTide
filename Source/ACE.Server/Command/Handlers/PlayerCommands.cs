@@ -1064,7 +1064,9 @@ namespace ACE.Server.Command.Handlers
             "Permanently designates this character as a Tinker. " +
             "Requirements: character must be level 1 and the account must not already have a Tinker character. " +
             "All crafting skills will be auto-specialized and maxed. All offensive combat skills will be removed. " +
-            "Tinker characters cannot train or specialize new skills and do not suffer vitae on death. This is irreversible.")]
+            "Strength, Endurance, Coordination and Focus are raised to 100 innate and all attributes are maxed. " +
+            "Tinker characters stay level 1 (they earn no experience), cannot train or specialize new skills and do not suffer vitae on death. " +
+            "Using it again on a Tinker refreshes it and upgrades its Tinkering Trinket. This is irreversible.")]
         public static void HandleFlagTinker(Session session, params string[] parameters)
         {
             var player = session.Player;
