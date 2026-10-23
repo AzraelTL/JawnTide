@@ -36,7 +36,7 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Class id of the Tinkering Trinket granted on flagging.
         /// </summary>
-        private const uint TinkeringTrinketWcid = 8142017u;
+        public const uint TinkeringTrinketWcid = 8142017u;
 
         /// <summary>
         /// Major cantrips added to the Tinkering Trinket: all six attributes and the four
@@ -207,7 +207,10 @@ namespace ACE.Server.WorldObjects
                     trinkets.Add(equipped);
             }
 
-            if (trinkets.Count == 0)
+            // A brand-new Tinker gets a trinket. An existing Tinker refreshing with none in hand does
+            // not get another (otherwise selling the trinket and re-running /flagtinker would farm them);
+            // an admin can replace a lost one.
+            if (trinkets.Count == 0 && !wasAlreadyTinker)
             {
                 var trinket = WorldObjectFactory.CreateNewWorldObject(TinkeringTrinketWcid);
                 if (trinket != null)

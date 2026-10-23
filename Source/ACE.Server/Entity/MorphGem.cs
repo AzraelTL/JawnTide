@@ -362,6 +362,13 @@ namespace ACE.Server.Entity
         {
             try
             {
+                // No morph gem of any kind works on the Tinkering Trinket.
+                if (target.WeenieClassId == Player.TinkeringTrinketWcid)
+                {
+                    player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
+                    return;
+                }
+
                 //Only allow loot gen items to be morphed, except for gems that are allowed to be applied to quest / rare items
                 if ((target.ItemWorkmanship == null ||
                     target.IsAttunedOrContainsAttuned ||
