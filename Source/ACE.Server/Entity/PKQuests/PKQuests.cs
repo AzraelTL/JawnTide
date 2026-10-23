@@ -659,7 +659,7 @@ namespace ACE.Server.Entity.PKQuests
                     var bounty_killstreak_3 = new PKQuest();
                     bounty_killstreak_3.QuestCode = "BOUNTY_KILLSTREAK_3";
                     bounty_killstreak_3.Description = "Kill 3 players who are on kill streaks";
-                    bounty_killstreak_3.RewardDescription = "50k luminance, 40% XP, 3 Keys, 2 Phials, 7 PK Trophies";
+                    bounty_killstreak_3.RewardDescription = "50k luminance, 40% XP, 1 Key, 2 Phials, 7 PK Trophies";
                     bounty_killstreak_3.Rewards = new List<string>() { "LUM,50000", "XP%,40", "DBKEY,1", "PHIAL,2", "PKTROPHY,7" };
                     bounty_killstreak_3.TaskCount = 3;
                     _pkQuestList.Add(bounty_killstreak_3);
@@ -668,7 +668,7 @@ namespace ACE.Server.Entity.PKQuests
                     var bounty_killstreak_5 = new PKQuest();
                     bounty_killstreak_5.QuestCode = "BOUNTY_KILLSTREAK_5";
                     bounty_killstreak_5.Description = "Kill 5 players who are on kill streaks";
-                    bounty_killstreak_5.RewardDescription = "90k luminance, 65% XP, 5 Keys, 4 Phials, 15 PK Trophies";
+                    bounty_killstreak_5.RewardDescription = "90k luminance, 65% XP, 2 Keys, 4 Phials, 15 PK Trophies";
                     bounty_killstreak_5.Rewards = new List<string>() { "LUM,90000", "XP%,65", "DBKEY,2", "PHIAL,4", "PKTROPHY,15" };
                     bounty_killstreak_5.TaskCount = 5;
                     _pkQuestList.Add(bounty_killstreak_5);
@@ -677,7 +677,7 @@ namespace ACE.Server.Entity.PKQuests
                     var bounty_streakbreaker_5 = new PKQuest();
                     bounty_streakbreaker_5.QuestCode = "BOUNTY_STREAKBREAKER_5";
                     bounty_streakbreaker_5.Description = "End a player's kill streak of 5 or more";
-                    bounty_streakbreaker_5.RewardDescription = "100k luminance, 75% XP, 6 Keys, 5 Phials, 20 PK Trophies";
+                    bounty_streakbreaker_5.RewardDescription = "100k luminance, 75% XP, 3 Keys, 5 Phials, 20 PK Trophies";
                     bounty_streakbreaker_5.Rewards = new List<string>() { "LUM,100000", "XP%,75", "DBKEY,3", "PHIAL,5", "PKTROPHY,20" };
                     bounty_streakbreaker_5.TaskCount = 1;
                     _pkQuestList.Add(bounty_streakbreaker_5);
@@ -686,7 +686,7 @@ namespace ACE.Server.Entity.PKQuests
                     var bounty_streakbreaker_10 = new PKQuest();
                     bounty_streakbreaker_10.QuestCode = "BOUNTY_STREAKBREAKER_10";
                     bounty_streakbreaker_10.Description = "End a player's kill streak of 10 or more";
-                    bounty_streakbreaker_10.RewardDescription = "200k luminance, 100% XP, 10 Keys, 8 Phials, 37 PK Trophies";
+                    bounty_streakbreaker_10.RewardDescription = "200k luminance, 100% XP, 5 Keys, 8 Phials, 37 PK Trophies";
                     bounty_streakbreaker_10.Rewards = new List<string>() { "LUM,200000", "XP%,100", "DBKEY,5", "PHIAL,8", "PKTROPHY,37" };
                     bounty_streakbreaker_10.TaskCount = 1;
                     _pkQuestList.Add(bounty_streakbreaker_10);
