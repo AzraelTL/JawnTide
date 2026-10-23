@@ -208,7 +208,7 @@ namespace ACE.Server.WorldObjects
             if (wasAlreadyTinker)
             {
                 Session.Network.EnqueueSend(new GameMessageSystemChat(
-                    "Your Tinker designation has been refreshed. Arcane Lore is now specialized and maxed, and your Tinkering Trinket has been upgraded with Major cantrips and Brilliance. " +
+                    "Your Tinker designation has been refreshed. Arcane Lore is now specialized and maxed, and your Tinkering Trinket has been upgraded with Major cantrips, Brilliance, Concentration and Malediction. " +
                     "If the trinket is equipped, re-equip it (or log out and back in) to apply the new buffs.",
                     ChatMessageType.Broadcast));
             }
@@ -222,7 +222,8 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
-        /// Adds the Major attribute and tinkering-skill cantrips, plus Brilliance, to a Tinkering
+        /// Adds the Major attribute and tinkering-skill cantrips, plus the Focusing Stone's spells
+        /// (Brilliance, Concentration and Malediction), to a Tinkering
         /// Trinket instance. Idempotent: GetOrAddKnownSpell will not create duplicate entries, so this
         /// is safe to call on a trinket that already has some or all of these.
         /// </summary>
@@ -232,6 +233,10 @@ namespace ACE.Server.WorldObjects
                 trinket.Biota.GetOrAddKnownSpell((int)cantrip, trinket.BiotaDatabaseLock, out _);
 
             trinket.Biota.GetOrAddKnownSpell((int)SpellId.BrillianceOther, trinket.BiotaDatabaseLock, out _);
+
+            // The other two spells of the Focusing Stone
+            trinket.Biota.GetOrAddKnownSpell((int)SpellId.ConcentrationSelf, trinket.BiotaDatabaseLock, out _);
+            trinket.Biota.GetOrAddKnownSpell((int)SpellId.MaledictionSelf, trinket.BiotaDatabaseLock, out _);
         }
     }
 }

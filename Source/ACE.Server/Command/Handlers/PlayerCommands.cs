@@ -1069,10 +1069,12 @@ namespace ACE.Server.Command.Handlers
         {
             var player = session.Player;
 
-            // Already a Tinker
+            // Already a Tinker: refresh (re-max the crafting skills and upgrade the Tinkering Trinket in
+            // place with any spells added since it was made). FlagAsTinker is idempotent and grants a new
+            // trinket only if the character holds none; the trinket is attuned, so it can't be passed on.
             if (player.IsTinker)
             {
-                player.Session.Network.EnqueueSend(new GameMessageSystemChat("This character is already a Tinker.", ChatMessageType.Broadcast));
+                player.FlagAsTinker();
                 return;
             }
 
