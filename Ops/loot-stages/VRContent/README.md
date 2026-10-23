@@ -6,13 +6,15 @@ with the same relative path as in `Content/sql`.
 
 ## What the patch restores
 
-| File | Restores |
+| Files | Restores |
 |---|---|
-| `landblocks/B54A.sql` | Brellegia, Doriathazaar and Doriathazaar's Horde (9), Summercrown, Aangesilus, Dridge, Kervim'telek, Swift and the Temple of the Font (53477) in the Viridian Rise camp, and their generator |
-| `landblocks/B349, B34A, B44B, B549, B54B, B649, B64A, B64B.sql` | the 30 Ancient Statues of the Viridian Rise (and the statue generators in B34A, B44B, B54B, B649, B64A); in B349 also Brellegia's and Aangesilus' Markers |
-| `landblocks/5966.sql`, `landblocks/B449.sql` | the 16 Ancient Statues of the Viridian Root (10 in the dungeon 5966, 6 in B449) |
+| `landblocks/` (20 outdoor landblocks B349, B34A, B448, B449, B44A, B44B, B548, B549, B54A, B54B, B54C, B648, B649, B64A, B64B, B64C, B749, B74A, B74B, and the Viridian Root dungeon 5966) | everything placed in Viridian Rise: the camp NPCs (Brellegia, Doriathazaar and his Horde, Summercrown, Aangesilus, Dridge, Kervim'telek, Swift), the Temple of the Font portal, the Guardians of the ten trees, the markers and notes, all Ancient Statues of the Viridian Rise and of the Viridian Root, the camp generators (A'nekshen, Zefir, Gromnie and Brier Wasp camps), the Sath'tik Eyestalks, the item generators (Amber Shards and other ground spawns), the Viridian portals (entrance, bridge, Deru and the six Viridian Root portals), and the Root dungeon's generators, statues and its exit portal |
 | `weenies/Town Control/` (the three Town Treasurers) | the Viridian Rise Deru Portal Sending Gem (53450) and the Temple of the Font Sending Gem (480600) in their shops |
 | `weenies/VR/` (Wind Fury, NightBrier, Norshuntyr, Zerzelikyr) | their Deru Portal Sending Gem drops (5 rolls of 20% each) |
+
+While the patch is out, each of those Content landblock files only deletes everything in its landblock, so
+nothing spawns there. Creatures that also spawn elsewhere (the Sath'tik Eyestalks, Tendrils and Tentacles in
+8A63 and F81E) still spawn there.
 
 The landblock files are ACE's stock versions (ACE-World-16PY-Patches, commit f5edf9b), which matched the live
 world database when the patch was made. The Treasurer and creature files are the Content versions from just
