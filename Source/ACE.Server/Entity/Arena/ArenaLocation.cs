@@ -1011,7 +1011,10 @@ namespace ACE.Server.Entity
 
                     //Handle PK quests
                     var hasWhitelistedOpponent = losers.FirstOrDefault(x => x.MonarchId != winner.MonarchId && TownControl.TownControlAllegiances.IsAllowedAllegiance((int)x.MonarchId)) != null && TownControl.TownControlAllegiances.IsAllowedAllegiance((int)winner.MonarchId);
-                    if (hasWhitelistedOpponent || ActiveEvent.EventType.ToLower().Equals("1v1"))
+                    // JawnTide: PK quest progress from arenas follows the arena reward rules (minimum character age, daily and hourly caps,
+                    // clanmate limit) even while arenas_disable_rewards is on, so new or farmed characters can't complete arena PK quests.
+                    var pkQuestEligible = IsPlayerRewardEligible(player, winner, ActiveEvent.Players) && !underageViolation;
+                    if (pkQuestEligible && (hasWhitelistedOpponent || ActiveEvent.EventType.ToLower().Equals("1v1")))
                     {
                         player.CompletePkQuestTasks(PKQuests.PKQuests.PKQuests_ParticipateAnyArena);
                         player.CompletePkQuestTasks(PKQuests.PKQuests.PKQuests_WinAnyArena);
@@ -1353,7 +1356,10 @@ namespace ACE.Server.Entity
 
                     //Handle PK quests
                     var hasWhitelistedOpponent = winners.FirstOrDefault(x => x.MonarchId != loser.MonarchId && TownControl.TownControlAllegiances.IsAllowedAllegiance((int)x.MonarchId)) != null && TownControl.TownControlAllegiances.IsAllowedAllegiance((int)loser.MonarchId);
-                    if (hasWhitelistedOpponent || ActiveEvent.EventType.ToLower().Equals("1v1"))
+                    // JawnTide: PK quest progress from arenas follows the arena reward rules (minimum character age, daily and hourly caps,
+                    // clanmate limit) even while arenas_disable_rewards is on, so new or farmed characters can't complete arena PK quests.
+                    var pkQuestEligible = IsPlayerRewardEligible(player, loser, ActiveEvent.Players) && !underageViolation;
+                    if (pkQuestEligible && (hasWhitelistedOpponent || ActiveEvent.EventType.ToLower().Equals("1v1")))
                     {
                         player.CompletePkQuestTasks(PKQuests.PKQuests.PKQuests_ParticipateAnyArena);
                         player.CompletePkQuestTask("ARENA_DMG20K", (int)loser.TotalDmgDealt);
@@ -1613,7 +1619,10 @@ namespace ACE.Server.Entity
 
                     //PK Quest stamps
                     var hasWhitelistedOpponent = ActiveEvent.Players.FirstOrDefault(x => x.TeamGuid != arenaPlayer.TeamGuid && x.MonarchId != arenaPlayer.MonarchId && TownControl.TownControlAllegiances.IsAllowedAllegiance((int)x.MonarchId)) != null && TownControl.TownControlAllegiances.IsAllowedAllegiance((int)arenaPlayer.MonarchId);
-                    if (hasWhitelistedOpponent || ActiveEvent.EventType.ToLower().Equals("1v1"))
+                    // JawnTide: PK quest progress from arenas follows the arena reward rules (minimum character age, daily and hourly caps,
+                    // clanmate limit) even while arenas_disable_rewards is on, so new or farmed characters can't complete arena PK quests.
+                    var pkQuestEligible = IsPlayerRewardEligible(player, arenaPlayer, ActiveEvent.Players) && !underageViolation;
+                    if (pkQuestEligible && (hasWhitelistedOpponent || ActiveEvent.EventType.ToLower().Equals("1v1")))
                     {
                         player.CompletePkQuestTasks(PKQuests.PKQuests.PKQuests_ParticipateAnyArena);
                         player.CompletePkQuestTask("ARENA_DMG20K", (int)arenaPlayer.TotalDmgDealt);
