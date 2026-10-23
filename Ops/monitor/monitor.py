@@ -3,9 +3,11 @@ JawnTide resource monitor (read-only).
 
 Every INTERVAL_SECONDS it reads the game databases with a SELECT-only user and keeps a snapshot of:
   - every account: last login, last IP, every IP it logged in from (from ace_log.character_login_log)
-  - every character: played time (Age) and how much of each tracked currency it holds
+  - every character: level, total XP, played time (Age), where it was last saved, and how much of each
+    tracked currency it holds
     (main pack and side packs; anything not on a character counts as "elsewhere")
-It stores per-account currency totals in a small SQLite file for history, and serves web pages on PORT.
+It stores per-account currency totals and per-character XP/played-time/location changes in a small SQLite file
+for history (XP gain rates and leveling spots come from that), and serves web pages on PORT.
 It never writes to the game databases.
 """
 import html
@@ -42,7 +44,11 @@ for part in os.environ.get("EXTRA_ITEMS", EXTRA_ITEMS).split(","):
 
 PROP_INT_STACKSIZE = 12
 PROP_INT_AGE = 125
+PROP_INT_LEVEL = 25
+PROP_INT64_TOTAL_XP = 1
+POSITION_LOCATION = 1
 PROP_IID_CONTAINER = 2
+WINDOWS = (1, 6, 24, 72, 168)  # hours offered on the Levels page
 
 state = {"snapshot": None, "error": None, "taken": None, "duration": None}
 lock = threading.Lock()
@@ -85,11 +91,17 @@ def take_snapshot():
                                  characters=[], ips={}, totals={w: 0 for w in WCIDS})
 
         chars = {}
-        for (cid, aid, name, deleted, age) in query(cur, """
-                SELECT c.id, c.account_Id, c.name, c.is_Deleted, COALESCE(a.value, 0)
+        for (cid, aid, name, deleted, age, level, xp, cell) in query(cur, """
+                SELECT c.id, c.account_Id, c.name, c.is_Deleted, COALESCE(a.value, 0), COALESCE(l.value, 1),
+                       COALESCE(x.value, 0), p.obj_Cell_Id
                 FROM ace_shard.`character` c
-                LEFT JOIN ace_shard.biota_properties_int a ON a.object_Id = c.id AND a.type = %s""", (PROP_INT_AGE,)):
+                LEFT JOIN ace_shard.biota_properties_int a ON a.object_Id = c.id AND a.type = %s
+                LEFT JOIN ace_shard.biota_properties_int l ON l.object_Id = c.id AND l.type = %s
+                LEFT JOIN ace_shard.biota_properties_int64 x ON x.object_Id = c.id AND x.type = %s
+                LEFT JOIN ace_shard.biota_properties_position p ON p.object_Id = c.id AND p.position_Type = %s""",
+                (PROP_INT_AGE, PROP_INT_LEVEL, PROP_INT64_TOTAL_XP, POSITION_LOCATION)):
             ch = dict(id=cid, account=aid, name=name, deleted=bool(deleted and deleted != b"\x00"), age=int(age or 0),
+                      level=int(level or 1), xp=int(xp or 0), landblock=(int(cell) >> 16) if cell else None,
                       holdings={w: 0 for w in WCIDS})
             chars[cid] = ch
             if aid in accounts:
@@ -152,7 +164,14 @@ def history_db():
     db = sqlite3.connect(DATA)
     db.execute("CREATE TABLE IF NOT EXISTS history (ts TEXT, account TEXT, wcid INTEGER, amount INTEGER)")
     db.execute("CREATE INDEX IF NOT EXISTS history_account ON history (account, ts)")
+    # One row per character per snapshot in which its XP, played time or location changed (offline characters add nothing).
+    db.execute("CREATE TABLE IF NOT EXISTS char_history (ts TEXT, cid INTEGER, xp INTEGER, age INTEGER, level INTEGER, landblock INTEGER)")
+    db.execute("CREATE INDEX IF NOT EXISTS char_history_cid ON char_history (cid, ts)")
+    db.execute("CREATE INDEX IF NOT EXISTS char_history_ts ON char_history (ts)")
     return db
+
+
+last_char_row = None  # cid -> (xp, age, landblock) as last written to char_history
 
 
 def save_history(snap):
@@ -161,7 +180,23 @@ def save_history(snap):
         ts = snap["taken"].strftime("%Y-%m-%d %H:%M")
         rows = [(ts, a["name"], w, a["totals"][w]) for a in snap["accounts"].values() for w in snap["wcids"] if a["totals"][w]]
         db.executemany("INSERT INTO history VALUES (?, ?, ?, ?)", rows)
-        db.execute("DELETE FROM history WHERE ts < ?", ((datetime.now() - timedelta(days=HISTORY_DAYS)).strftime("%Y-%m-%d %H:%M"),))
+        global last_char_row
+        if last_char_row is None:
+            last_char_row = {cid: (xp, age, lb) for cid, xp, age, lb in db.execute("""
+                SELECT h.cid, h.xp, h.age, h.landblock FROM char_history h
+                JOIN (SELECT cid, MAX(ts) AS mts FROM char_history GROUP BY cid) m ON h.cid = m.cid AND h.ts = m.mts""")}
+        crow = []
+        for c in snap["characters"].values():
+            if c["deleted"]:
+                continue
+            cur = (c["xp"], c["age"], c["landblock"])
+            if last_char_row.get(c["id"]) != cur:
+                crow.append((ts, c["id"], c["xp"], c["age"], c["level"], c["landblock"]))
+                last_char_row[c["id"]] = cur
+        db.executemany("INSERT INTO char_history VALUES (?, ?, ?, ?, ?, ?)", crow)
+        cutoff = (datetime.now() - timedelta(days=HISTORY_DAYS)).strftime("%Y-%m-%d %H:%M")
+        db.execute("DELETE FROM history WHERE ts < ?", (cutoff,))
+        db.execute("DELETE FROM char_history WHERE ts < ?", (cutoff,))
         db.commit()
     finally:
         db.close()
@@ -203,6 +238,10 @@ def fmt_t(t):
     return t.strftime("%Y-%m-%d %H:%M") if hasattr(t, "strftime") else ("" if t is None else str(t))
 
 
+def fmt_lb(lb):
+    return f"0x{lb:04X}" if lb is not None else ""
+
+
 def account_link(name):
     return f'<a href="/account?name={quote(name)}">{e(name)}</a>'
 
@@ -233,7 +272,7 @@ def page(title, body):
         status += f' <span class="err">Last error: {e(err)}</span>'
     return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="refresh" content="300"><title>{e(title)} - JawnTide monitor</title><style>{STYLE}</style></head><body>
-<header><b>JawnTide monitor</b><nav><a href="/">Accounts</a><a href="/top">Top holders</a><a href="/ips">Shared IPs</a></nav>
+<header><b>JawnTide monitor</b><nav><a href="/">Accounts</a><a href="/levels">Levels</a><a href="/top">Top holders</a><a href="/ips">Shared IPs</a></nav>
 <span class="muted">{status}</span></header><main>{body}</main></body></html>"""
 
 
@@ -266,7 +305,7 @@ def overview(sort):
         cells = "".join(f'<td class="n">{fmt_n(a["totals"][w])}</td>' for w in WCIDS)
         rows.append(f'<tr class="{"shared" if is_shared else ""}"><td>{account_link(a["name"])}</td>'
                     f'<td>{fmt_t(a["last_login"])}</td><td>{ip_link(a["last_ip"])}</td><td class="n">{len(ips)}</td>'
-                    f'<td>{e(top["name"]) + " <span class=muted>(" + fmt_age(top["age"]) + ")</span>" if top else ""}</td>{cells}</tr>')
+                    f'<td>{e(top["name"]) + " <span class=muted>(level " + str(top["level"]) + ", " + fmt_age(top["age"]) + ")</span>" if top else ""}</td>{cells}</tr>')
     total_cells = "".join(f'<td class="n"><b>{fmt_n(sum(a["totals"][w] for a in accounts))}</b></td>' for w in WCIDS)
     else_cells = "".join(f'<td class="n">{fmt_n(snap["elsewhere"][w])}</td>' for w in WCIDS)
     hidden = len(snap["currencies"]) - len(CURRENCIES)
@@ -296,10 +335,12 @@ def account_page(name):
     for c in sorted(a["characters"], key=lambda c: -c["age"]):
         cells = "".join(f'<td class="n">{fmt_n(c["holdings"][w])}</td>' for w in WCIDS)
         crow.append(f'<tr><td>{e(c["name"])}{" <span class=muted>(deleted)</span>" if c["deleted"] else ""}</td>'
+                    f'<td class="n">{c["level"]}</td><td class="n">{fmt_n(c["xp"])}</td>'
                     f'<td class="n">{fmt_age(c["age"])}</td>{cells}</tr>')
     total = "".join(f'<td class="n"><b>{fmt_n(a["totals"][w])}</b></td>' for w in WCIDS)
-    chars = (f'<h2>Characters (by played time)</h2><div class="wrap"><table><tr><th>Character</th><th class="n">Played</th>{head}</tr>'
-             f'{"".join(crow)}<tr><td><b>Total</b></td><td></td>{total}</tr></table></div>')
+    chars = (f'<h2>Characters (by played time)</h2><div class="wrap"><table><tr><th>Character</th><th class="n">Level</th>'
+             f'<th class="n">Total XP</th><th class="n">Played</th>{head}</tr>'
+             f'{"".join(crow)}<tr><td><b>Total</b></td><td></td><td></td><td></td>{total}</tr></table></div>')
     irow = []
     for ip, d in sorted(a["ips"].items(), key=lambda kv: str(kv[1]["last"]), reverse=True):
         others = [n for n in snap["ip_accounts"].get(ip, []) if n != a["name"]]
@@ -321,6 +362,85 @@ def account_page(name):
     history = (f'<h2>Totals over time (last {HISTORY_DAYS} days, newest first)</h2><div class="wrap"><table><tr><th>Snapshot</th>{head}</tr>'
                f'{hrow or "<tr><td class=muted>No history yet</td></tr>"}</table></div>')
     return page(a["name"], f'<h2>Account {e(a["name"])}</h2>{info}{chars}{ips}{history}')
+
+
+def xp_window(hours):
+    """XP and played time each character gained in the last `hours`, and XP gained per landblock.
+
+    The baseline is the character's last row before the window (or, if the monitor first saw it inside the window,
+    its first row there). Each XP gain between two rows is credited to the landblock of the later row, i.e. where
+    the character was saved after earning it."""
+    cutoff = (datetime.now() - timedelta(hours=hours)).strftime("%Y-%m-%d %H:%M")
+    db = history_db()
+    try:
+        before = {cid: (xp, age) for cid, xp, age in db.execute("""
+            SELECT h.cid, h.xp, h.age FROM char_history h
+            JOIN (SELECT cid, MAX(ts) AS mts FROM char_history WHERE ts <= ? GROUP BY cid) m ON h.cid = m.cid AND h.ts = m.mts""", (cutoff,))}
+        rows = db.execute("SELECT cid, xp, age, landblock FROM char_history WHERE ts > ? ORDER BY cid, ts", (cutoff,)).fetchall()
+    finally:
+        db.close()
+    gains, spots, prev_cid, prev = {}, {}, None, None
+    for cid, xp, age, lb in rows:
+        if cid != prev_cid:
+            prev_cid, prev = cid, before.get(cid)
+        if prev is not None:
+            dxp, dage = max(0, xp - prev[0]), max(0, age - prev[1])
+            g = gains.setdefault(cid, [0, 0])
+            g[0] += dxp
+            g[1] += dage
+            if dxp and lb is not None:
+                s = spots.setdefault(lb, [0, set()])
+                s[0] += dxp
+                s[1].add(cid)
+        prev = (xp, age)
+    return gains, spots
+
+
+def levels_page(sort, hours):
+    snap = snapshot_or_wait()
+    if not snap:
+        return page("Levels", "<p>Waiting for the first snapshot.</p>")
+    hours = int(hours) if hours and hours.isdigit() and int(hours) in WINDOWS else 24
+    sort = sort if sort in ("level", "gain", "rate", "played") else "level"
+    gains, spots = xp_window(hours)
+    rows = []
+    for c in snap["characters"].values():
+        if c["deleted"]:
+            continue
+        a = snap["accounts"].get(c["account"])
+        gxp, gage = gains.get(c["id"], (0, 0))
+        rate = gxp * 3600 // gage if gage >= 600 else None
+        rows.append((c, a, gxp, gage, rate))
+    keys = {"level": lambda r: (-r[0]["level"], -r[0]["xp"]), "gain": lambda r: (-r[2], -r[0]["level"]),
+            "rate": lambda r: (-(r[4] or 0), -r[2]), "played": lambda r: (-r[0]["age"], -r[0]["level"])}
+    rows.sort(key=keys[sort])
+    link = lambda s, h, label: f'<a href="/levels?sort={s}&hours={h}">{label}</a>'
+    win = " ".join(f"<b>{h}h</b>" if h == hours else link(sort, h, f"{h}h") for h in WINDOWS)
+    out = []
+    for c, a, gxp, gage, rate in rows:
+        admin = a and (a["level"] or 0) > 0
+        out.append(f'<tr><td>{e(c["name"])}{" <span class=muted>(admin)</span>" if admin else ""}</td>'
+                   f'<td>{account_link(a["name"]) if a else ""}</td><td class="n">{c["level"]}</td><td class="n">{fmt_n(c["xp"])}</td>'
+                   f'<td class="n">{fmt_age(c["age"])}</td><td class="n">{fmt_n(gxp)}</td>'
+                   f'<td class="n">{fmt_age(gage) if gage else ""}</td><td class="n">{fmt_n(rate) if rate else ""}</td>'
+                   f'<td>{fmt_lb(c["landblock"])}</td></tr>')
+    th = lambda s, label: f'<th class="n">{link(s, hours, label) if s != sort else "<u>" + label + "</u>"}</th>'
+    table = (f'<div class="wrap"><table><tr><th>Character</th><th>Account</th>{th("level", "Level")}<th class="n">Total XP</th>'
+             f'{th("played", "Played")}{th("gain", f"XP last {hours}h")}<th class="n">Played last {hours}h</th>'
+             f'{th("rate", "XP per hour played")}<th>Last saved at</th></tr>'
+             f'{"".join(out) or "<tr><td colspan=9 class=muted>No characters</td></tr>"}</table></div>')
+    srows = "".join(f'<tr><td>{fmt_lb(lb)}</td><td class="n">{fmt_n(x)}</td><td class="n">{len(cs)}</td>'
+                    f'<td>{e(", ".join(sorted(snap["characters"][i]["name"] for i in cs if i in snap["characters"])[:12]))}</td></tr>'
+                    for lb, (x, cs) in sorted(spots.items(), key=lambda kv: -kv[1][0])[:30])
+    spot = (f'<h2>Where XP was earned, last {hours}h (top 30 landblocks)</h2><div class="wrap"><table><tr><th>Landblock</th>'
+            f'<th class="n">XP gained</th><th class="n">Characters</th><th>Who</th></tr>'
+            f'{srows or "<tr><td colspan=4 class=muted>No XP gains recorded in this window yet</td></tr>"}</table></div>')
+    body = (f'<p class="muted">Window: {win}. Click a column to sort. "XP per hour played" divides the XP gained in the window '
+            f'by the time played in it (shown once a character played 10+ minutes in the window): an unusually high value '
+            f'next to others at the same level is the thing to look at. Gains are measured between snapshots and credited '
+            f'to the landblock where the character was next saved, so they lag the game by a few minutes. Landblocks '
+            f'are the first four hex digits of a location (0xB54A is the start of @teleloc 0xB54A002C).</p>{table}{spot}')
+    return page("Levels", body)
 
 
 def top_page():
@@ -363,6 +483,8 @@ class Handler(BaseHTTPRequestHandler):
                 body = overview(q.get("sort", [""])[0])
             elif url.path == "/account":
                 body = account_page(q.get("name", [""])[0])
+            elif url.path == "/levels":
+                body = levels_page(q.get("sort", [""])[0], q.get("hours", [""])[0])
             elif url.path == "/top":
                 body = top_page()
             elif url.path == "/ips":

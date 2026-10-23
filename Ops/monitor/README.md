@@ -4,16 +4,22 @@ A small web page for the LAN that shows, per account:
 
 - last login, last IP, and the full IP history (from `ace_log.character_login_log`, which the server writes on
   every character login), with the other accounts that used the same IP (shared IPs are highlighted)
-- the most played character (by in-game played time)
+- the most played character (by in-game played time) and its level; each account page lists every character's
+  level, total XP and played time
 - how much of each tracked currency the account holds, summed over its characters (main pack and side packs),
   and which character holds it; anything not on a character is shown as "Elsewhere" (house storage, ground).
   Tracked: pyreals, MMDs (Trade Note 250k), PK Trophies, Phials, Darkbeat and Hera keys, Amber Shards,
   Luminance Exchange Tokens, A Boxes, plus **every alternate currency any vendor uses** (read from the world
   database on each snapshot, so new ones appear by themselves). Currencies nobody holds are hidden.
 - per-account totals over time (kept 30 days)
+- **Levels** (`/levels`): every character on the server with level, total XP, played time, XP gained and time
+  played in a chosen window (1h, 6h, 24h, 72h, 7 days), XP per hour played, and the landblock where it was last
+  saved; sort by level, XP gained, XP per hour played or played time. Below it, the landblocks where the most XP
+  was earned in that window and who earned it. A character with a far higher XP per hour than others at its level
+  is worth a look (exploit, or a spot whose XP needs turning down). XP history starts when this version first runs.
 
-Pages: `/` accounts (click a currency header to sort), `/account?name=...`, `/top` top 15 holders per currency,
-`/ips` IPs shared by several accounts. Open it from any machine on the LAN: **http://192.168.0.190:8080**
+Pages: `/` accounts (click a currency header to sort), `/account?name=...`, `/levels`, `/top` top 15 holders per
+currency, `/ips` IPs shared by several accounts. Open it from any machine on the LAN: **http://192.168.0.190:8080**
 
 ## How it works
 
