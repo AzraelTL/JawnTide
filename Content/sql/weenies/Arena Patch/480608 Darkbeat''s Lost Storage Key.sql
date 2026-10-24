@@ -14,7 +14,7 @@ VALUES (480608,   1,      16384) /* ItemType - Key */
      , (480608,  92,          1) /* Structure */
      , (480608,  93,       1044) /* PhysicsState - Ethereal, IgnoreCollisions, Gravity */
      , (480608,  94,        640) /* TargetType - LockableMagicTarget */
-	 , (480608, 369,        150) /* UseRequiresLevel */
+	 , (480608, 369,         40) /* UseRequiresLevel */
 	 , (480608, 267,     14400) /* Lifespan */;
 
 INSERT INTO `weenie_properties_bool` (`object_Id`, `type`, `value`)
