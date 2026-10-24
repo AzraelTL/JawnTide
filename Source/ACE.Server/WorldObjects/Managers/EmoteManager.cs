@@ -142,7 +142,7 @@ namespace ACE.Server.WorldObjects.Managers
                 case EmoteType.AwardNoShareXP:
 
                     if (player != null)
-                        player.EarnXP(emote.Amount64 ?? emote.Amount ?? 0, XpType.Quest, ShareType.None);
+                        player.EarnXP(player.LimitQuestXpAward(emote.Amount64 ?? emote.Amount ?? 0), XpType.Quest, ShareType.None);
 
                     break;
 
@@ -174,7 +174,7 @@ namespace ACE.Server.WorldObjects.Managers
                         var amt = emote.Amount64 ?? emote.Amount ?? 0;
                         if (amt > 0)
                         {
-                            player.EarnXP(amt, XpType.Quest, ShareType.All);
+                            player.EarnXP(player.LimitQuestXpAward(amt), XpType.Quest, ShareType.All);
                         }
                         else if (amt < 0)
                         {

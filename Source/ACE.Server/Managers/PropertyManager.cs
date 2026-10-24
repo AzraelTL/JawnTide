@@ -665,6 +665,7 @@ namespace ACE.Server.Managers
         public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties =
             DictOf(
                 ("char_delete_time", new Property<long>(3600, "the amount of time in seconds a deleted character can be restored")),
+                ("quest_xp_award_max_levels", new Property<long>(5, "JawnTide: a single quest XP reward (AwardXP / AwardNoShareXP emotes: NPC turn-ins, used items) can raise a character at most this many levels; the rest is not awarded. Stops high-level quest items from power-leveling alts. 0 = no limit")),
                 ("loot_max_tier", new Property<long>(0, "JawnTide: highest loot tier random loot (corpses, chests, monster equipment) can roll. Higher tiers roll as this tier. 0 = no cap")),
                 ("chat_requires_account_time_seconds", new Property<long>(0, "the amount of time in seconds an account is required to have existed for for global chat privileges")),
                 ("chat_requires_player_age", new Property<long>(0, "the amount of time in seconds a player is required to have played for global chat privileges")),

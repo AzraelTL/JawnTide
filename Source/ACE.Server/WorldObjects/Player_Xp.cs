@@ -14,6 +14,37 @@ namespace ACE.Server.WorldObjects
 {
     partial class Player
     {
+        /// <summary>
+        /// JawnTide: limits one quest XP reward (AwardXP / AwardNoShareXP emote) so it can raise the character
+        /// at most quest_xp_award_max_levels levels. Big fixed rewards meant for high-level quests can otherwise
+        /// take a fresh character straight to the level cap when a high-level character hands it the quest item.
+        /// </summary>
+        public long LimitQuestXpAward(long amount)
+        {
+            var maxLevels = PropertyManager.GetLong("quest_xp_award_max_levels").Item;
+            if (amount <= 0 || maxLevels <= 0)
+                return amount;
+
+            var xpList = DatManager.PortalDat.XpTable.CharacterLevelXPList;
+            var maxLevel = xpList.Count - 1;
+            var currentLevel = Level ?? 1;
+
+            if (currentLevel >= maxLevel)
+                return amount;
+
+            var targetLevel = (int)Math.Min(maxLevel, currentLevel + maxLevels);
+            var room = (long)xpList[targetLevel] - (TotalExperience ?? 0);
+
+            if (room <= 0)
+                return 0;
+
+            if (amount <= room)
+                return amount;
+
+            Session.Network.EnqueueSend(new GameMessageSystemChat($"This reward is limited to {maxLevels} levels of experience for a character of your level.", ChatMessageType.Broadcast));
+            return room;
+        }
+
         // ── Season rolling XP cap: per-player per-category bucket state ─────────────
         // Cap*Xp track how much XP of each category the player has earned in the current
         // cap window; CapDailyMax*Cat are the budgets; CapPreviousXpCap is the cap value
