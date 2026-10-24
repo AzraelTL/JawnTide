@@ -1,4 +1,4 @@
-/* JawnTide live events: dropped around the event boss when it dies (event_boss_reward_boxes); hand it to the Shadow Warden (520103) for a random reward. Model and icon from the Common Mystery Box. */
+/* JawnTide live events: dropped around the event boss when it dies (event_boss_reward_boxes); hand it to Aidoneus (490076) for a random reward. Model and icon from the Common Mystery Box. */
 DELETE FROM `weenie` WHERE `class_Id` = 520102;
 
 INSERT INTO `weenie` (`class_Id`, `class_Name`, `type`, `last_Modified`)
@@ -19,8 +19,8 @@ VALUES (520102,  39,    0.38) /* DefaultScale */;
 
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
 VALUES (520102,   1, 'Shadow Spoils Box') /* Name */
-     , (520102,  14, 'Bring this to the Shadow Warden to see what it holds.') /* Use */
-     , (520102,  16, 'Spoils from the fall of a great shadow. The Shadow Warden knows how to open it.') /* LongDesc */;
+     , (520102,  14, 'Bring this to Aidoneus to see what it holds.') /* Use */
+     , (520102,  16, 'Spoils from the fall of a great shadow. Aidoneus knows how to open it.') /* LongDesc */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
 VALUES (520102,   1, 0x0200011E) /* Setup */

@@ -9,8 +9,7 @@ An admin plays the boss. Everything is driven by two admin commands, `@eventboss
    Strength is tuned with `event_boss_skill_ranks` and `event_boss_attribute_ranks` (100 each suits a level 100 boss
    that players around level 50-126 can hit; 226 and 190 is fully maxed). Change them, then `@eventboss on` again.
 2. Dress it for the part (dark armor or robes). Players see your character scaled up while the event runs.
-3. Place the **Shadow Warden** (520103), who opens the reward boxes, where players can reach him after the fight:
-   `@create 520103` spawns him in front of you until the next restart. For a permanent spot, add him to a landblock file.
+3. Reward boxes are opened by **Aidoneus** (490076), the same NPC who takes world boss drops, so nothing needs placing.
 
 ## Running an event
 
@@ -25,8 +24,8 @@ An admin plays the boss. Everything is driven by two admin commands, `@eventboss
 | Cancel without rewards | `@eventboss off` | Minions vanish, size back to normal |
 | Check | `@eventboss status` | |
 
-Players hand Shadow Spoils Boxes to the Shadow Warden for a roll on `EventBoss_random_reward` (copied from Aidoneus's
-table at first). **Tune that table in the Loot Editor (Loot > NPC rewards) before the first live event**: nine boxes per kill.
+Players hand Shadow Spoils Boxes to Aidoneus for a roll on `EventBoss_random_reward` (its own table, copied from his
+world boss table at first). **Tune that table in the Loot Editor (Loot > NPC rewards) before the first live event**: nine boxes per kill.
 
 ## Settings (all live with @modifylong / @modifydouble, no restart)
 
@@ -51,5 +50,6 @@ table at first). **Tune that table in the Loot Editor (Loot > NPC rewards) befor
 
 - Only one event boss at a time. The boss state is in memory: a server restart ends the event (no rewards).
 - The boss counts as a player, so players need to be able to attack it (JawnTide is a red server; check PK status if not).
-- More boss types later: a different look is a different dedicated character; different strength is different settings
+- More boss types later: each can drop its own box weenie, with its own `Refuse` emote and random table on Aidoneus.
+- Boss looks: a different look is a different dedicated character; different strength is different settings
   (health, minion creature and count, loot profile).
