@@ -24,7 +24,8 @@ VALUES (520111,   1,      32768) /* ItemType - Caster */
      , (520111, 117,         60) /* ItemManaCost */
      , (520111, 150,        103) /* HookPlacement - Hook */
      , (520111, 151,          2) /* HookType - Wall */
-     , (520111, 166,         31) /* SlayerCreatureType - Human */;
+     , (520111, 166,         31) /* SlayerCreatureType - Human */
+     , (520111, 179,          8) /* ImbuedEffect - SlashRending */;
 
 INSERT INTO `weenie_properties_bool` (`object_Id`, `type`, `value`)
 VALUES (520111,  22, True ) /* Inscribable */

@@ -30,7 +30,8 @@ VALUES (520112,   1,        256) /* ItemType - MissileWeapon */
      , (520112, 114,          1) /* Attuned - Attuned */
      , (520112, 150,        103) /* HookPlacement - Hook */
      , (520112, 151,          2) /* HookType - Wall */
-     , (520112, 166,         31) /* SlayerCreatureType - Human */;
+     , (520112, 166,         31) /* SlayerCreatureType - Human */
+     , (520112, 179,         12) /* ImbuedEffect - ArmorRending, SlashRending */;
 
 INSERT INTO `weenie_properties_bool` (`object_Id`, `type`, `value`)
 VALUES (520112,  22, True ) /* Inscribable */
