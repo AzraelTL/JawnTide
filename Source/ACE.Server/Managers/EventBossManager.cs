@@ -64,10 +64,6 @@ namespace ACE.Server.Managers
 
             MakeBossStats(boss);
 
-            // admins show as "+Name"; the boss should look like an ordinary player to everyone
-            if (boss.IsPlussed && boss.CloakStatus != CloakStatus.Player)
-                SentinelCommands.HandleCloak(boss.Session, "player");
-
             if (!bossOriginalScale.HasValue)
                 bossOriginalScale = boss.ObjScale ?? 1.0f;
             boss.ObjScale = (float)PropertyManager.GetDouble("event_boss_scale").Item;

@@ -867,7 +867,7 @@ namespace ACE.Server.WorldObjects
             UpdateObjectDescriptionFlag(ObjectDescriptionFlag.UiHidden, UiHidden);
 
             if (WeenieType == WeenieType.Admin || WeenieType == WeenieType.Sentinel)
-                UpdateObjectDescriptionFlag(ObjectDescriptionFlag.Admin, CloakStatus < CloakStatus.Player);
+                UpdateObjectDescriptionFlag(ObjectDescriptionFlag.Admin, CloakStatus < CloakStatus.Player && !(this is Player eventBoss && EventBossManager.IsBoss(eventBoss)));
 
             UpdateObjectDescriptionFlag(ObjectDescriptionFlag.FreePkStatus, PlayerKillerStatus == PlayerKillerStatus.Free);
             UpdateObjectDescriptionFlag(ObjectDescriptionFlag.ImmuneCellRestrictions, IgnoreHouseBarriers);

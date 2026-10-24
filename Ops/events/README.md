@@ -16,7 +16,7 @@ An admin plays the boss. Everything is driven by two admin commands, `@eventboss
 | Step | Command | What happens |
 |---|---|---|
 | Go to the arena of your choice | `@teleloc ...` | Outdoors works best (minions and boxes spawn in a ring) |
-| Start | `@eventboss on` | Every skill specialized with `event_boss_skill_ranks` ranks, attributes 100 innate + `event_boss_attribute_ranks` ranks, health `event_boss_health`, stamina and mana `event_boss_mana`, every spell learned, no spell components, size `event_boss_scale`, full heal, server-wide announcement (and the world boss Discord webhook); admin characters are switched to `@cloak player` so the name shows without the + (back to normal with `@cloak off`) |
+| Start | `@eventboss on` | Every skill specialized with `event_boss_skill_ranks` ranks, attributes 100 innate + `event_boss_attribute_ranks` ranks, health `event_boss_health`, stamina and mana `event_boss_mana`, every spell learned, no spell components, size `event_boss_scale`, full heal, server-wide announcement (and the world boss Discord webhook); an admin boss shows without the + in its name and with a normal radar dot while the event runs |
 | Relog | log out and back in | Right after `@eventboss on`: the client needs a fresh login to pick up thousands of new spells and the new skills; without it, wielding or moving items can get stuck |
 | Call helpers | `/minions` | `event_boss_minion_count` Shadow Minions (520101, level 80, no XP, no loot) in a ring around you. They attack players and never you. Cooldown `event_boss_summon_cooldown_seconds`; they vanish after `event_boss_minion_lifespan_seconds` or when the event ends |
 | Fight | | You melee and cast like any character |
