@@ -76,15 +76,20 @@ namespace ACE.Server.Managers
         }
 
         /// <summary>
-        /// Every skill trained, specialized and maxed; all attributes 100 innate plus max ranks; boss health and mana.
+        /// Every skill trained and specialized with event_boss_skill_ranks ranks; all attributes 100 innate plus
+        /// event_boss_attribute_ranks ranks; boss health and mana.
         /// Permanent on the character, so use a dedicated boss character.
         /// </summary>
         private static void MakeBossStats(Player boss)
         {
+            // how strong: ranks bought in every skill (max 226) and attribute (max 190); settings, so each boss type
+            // can be tuned live (use @eventboss on again to apply)
             var specXpList = DatManager.PortalDat.XpTable.SpecializedSkillXpList;
-            var maxSpecXp = specXpList[specXpList.Count - 1];
+            var skillRanks = (int)Math.Clamp(L("event_boss_skill_ranks"), 0, specXpList.Count - 1);
+            var skillXp = specXpList[skillRanks];
             var attrXpList = DatManager.PortalDat.XpTable.AttributeXpList;
-            var maxAttrXp = attrXpList[attrXpList.Count - 1];
+            var attrRanks = (int)Math.Clamp(L("event_boss_attribute_ranks"), 0, attrXpList.Count - 1);
+            var attrXp = attrXpList[attrRanks];
             var vitalXpList = DatManager.PortalDat.XpTable.VitalXpList;
             var maxVitalXp = vitalXpList[vitalXpList.Count - 1];
 
@@ -93,8 +98,8 @@ namespace ACE.Server.Managers
                 var cs = boss.GetCreatureSkill(skill);
                 cs.AdvancementClass = SkillAdvancementClass.Specialized;
                 cs.InitLevel = 10;
-                cs.ExperienceSpent = maxSpecXp;
-                cs.Ranks = (ushort)Player.CalcSkillRank(SkillAdvancementClass.Specialized, maxSpecXp);
+                cs.ExperienceSpent = skillXp;
+                cs.Ranks = (ushort)skillRanks;
                 boss.Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(boss, cs));
             }
 
@@ -102,8 +107,8 @@ namespace ACE.Server.Managers
             {
                 if (attr.StartingValue < 100)
                     attr.StartingValue = 100;
-                attr.ExperienceSpent = maxAttrXp;
-                attr.Ranks = (uint)Player.CalcAttributeRank(maxAttrXp);
+                attr.ExperienceSpent = attrXp;
+                attr.Ranks = (uint)attrRanks;
                 boss.Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(boss, attr));
             }
 
