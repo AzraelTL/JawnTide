@@ -66,10 +66,14 @@ namespace ACE.Server.Managers
             if (!bossOriginalScale.HasValue)
                 bossOriginalScale = boss.ObjScale ?? 1.0f;
             boss.ObjScale = (float)PropertyManager.GetDouble("event_boss_scale").Item;
-            boss.EnqueueBroadcast(new GameMessageUpdateObject(boss));
+            // others see the new size right away; the boss's own client is refreshed by the relog below
+            // (re-sending a player's own object to its client is what left wields and inventory moves stuck)
+            boss.EnqueueBroadcast(false, new GameMessageUpdateObject(boss));
 
             boss.SetMaxVitals();
             boss.PlayParticleEffect(PlayScript.BaelZharonSmite, boss.Guid);
+
+            boss.Session.Network.EnqueueSend(new GameMessageSystemChat("You are the event boss. Log out and back in now so your client picks up all your new skills and spells, then start the fight.", ChatMessageType.Broadcast));
 
             Announce($"{boss.Name} has appeared! Gather your allies and bring it down. Everyone nearby when it falls will be rewarded.");
             log.Info($"[EVENTBOSS] {boss.Name} (0x{boss.Guid}) is now the event boss");
@@ -142,7 +146,7 @@ namespace ACE.Server.Managers
 
             boss.ObjScale = bossOriginalScale ?? 1.0f;
             bossOriginalScale = null;
-            boss.EnqueueBroadcast(new GameMessageUpdateObject(boss));
+            boss.EnqueueBroadcast(false, new GameMessageUpdateObject(boss));
 
             DespawnMinions();
 
