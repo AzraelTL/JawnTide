@@ -282,9 +282,23 @@ namespace ACE.Server.WorldObjects
                     this.WorldBoss_LastPeriodicGlobal = DateTime.Now;
                 }
 
-                if(this.WeenieClassId != (WorldBossManager.GetActiveWorldBoss()?.WeenieID ?? 0))
+                // JawnTide: a world boss that is no longer the active one (the 4-hour timeout, or a stray copy)
+                // is removed without dying: no loot, no kill announcement, no participation reward.
+                // It used to call Die() here, so waiting out the 4 hours near a boss dropped its full loot.
+                var activeBoss = WorldBossManager.GetActiveWorldBoss();
+                if (!this.IsDead && (activeBoss == null || activeBoss.BossWorldObject != this))
                 {
-                    this.Die();
+                    log.Info($"[WORLDBOSS] {Name} (0x{Guid}) is no longer the active world boss; removing it without loot");
+
+                    if (WorldBosses.WorldBossMap.TryGetValue(this.WeenieClassId, out var wb) && wb.StatueWorldObject != null && !wb.StatueWorldObject.IsDestroyed
+                        && (activeBoss == null || activeBoss.StatueWorldObject != wb.StatueWorldObject))
+                    {
+                        wb.StatueWorldObject.TimeToRot = 0;
+                        wb.StatueWorldObject.Lifespan = 1;  // the statue removes itself on its next heartbeat
+                    }
+
+                    DeleteObject();
+                    return;
                 }
             }
 
