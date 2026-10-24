@@ -20,7 +20,7 @@ An admin plays the boss. Everything is driven by two admin commands, `@eventboss
 | Relog | log out and back in | Right after `@eventboss on`: the client needs a fresh login to pick up thousands of new spells and the new skills; without it, wielding or moving items can get stuck |
 | Call helpers | `/minions` | `event_boss_minion_count` Shadow Minions (520101, level 80, no XP, no loot) in a ring around you. They attack players and never you. Cooldown `event_boss_summon_cooldown_seconds`; they vanish after `event_boss_minion_lifespan_seconds` or when the event ends |
 | Fight | | You melee and cast like any character |
-| Boss dies | automatic | Announcement; every player in the landblock gets `event_boss_participation_trophies` PK Trophies; the top damager gets **Corpse of <boss>** filled from loot profile `event_boss_corpse_treasure` that only they (and their loot-sharing fellowship) can open for `event_boss_corpse_minutes`; `event_boss_reward_boxes` Shadow Spoils Boxes (520102) drop in a ring for anyone to grab; minions vanish; the boss goes to its lifestone with no vitae and loses nothing |
+| Boss dies | automatic | Announcement; every player in the landblock gets `event_boss_participation_trophies` PK Trophies; the top damager gets **Corpse of <boss>** filled from loot profile `event_boss_corpse_treasure` that only they (and their loot-sharing fellowship) can open for `event_boss_corpse_minutes`; `event_boss_reward_boxes` Shadow Spoils Boxes (520102) scatter at random around the body (2 to `event_boss_reward_box_radius` meters) for anyone to grab; minions vanish; the boss goes to its lifestone with no vitae and loses nothing |
 | Cancel without rewards | `@eventboss off` | Minions vanish, size back to normal |
 | Check | `@eventboss status` | |
 
@@ -40,6 +40,7 @@ world boss table at first). **Tune that table in the Loot Editor (Loot > NPC rew
 | event_boss_corpse_treasure | 10001 (World Boss Loot Profile; random loot still capped by loot_max_tier) |
 | event_boss_corpse_minutes | 30 |
 | event_boss_reward_boxes | 9 |
+| event_boss_reward_box_radius (meters) | 8 |
 | event_boss_reward_box_wcid | 520102 |
 | event_boss_minion_wcid | 520101 |
 | event_boss_minion_count | 9 |

@@ -673,6 +673,7 @@ namespace ACE.Server.Managers
                 ("event_boss_corpse_treasure", new Property<long>(10001, "JawnTide live events: loot profile (treasure_death id) that fills the event boss's corpse for the top damager")),
                 ("event_boss_corpse_minutes", new Property<long>(30, "JawnTide live events: minutes before the event boss's corpse rots")),
                 ("event_boss_reward_boxes", new Property<long>(9, "JawnTide live events: reward boxes dropped around the event boss when it dies")),
+                ("event_boss_reward_box_radius", new Property<long>(8, "JawnTide live events: reward boxes scatter at random 2 to this many meters around the event boss's body")),
                 ("event_boss_reward_box_wcid", new Property<long>(520102, "JawnTide live events: weenie of the reward box (Shadow Spoils Box)")),
                 ("event_boss_minion_wcid", new Property<long>(520101, "JawnTide live events: creature summoned by the event boss's /minions (Shadow Minion)")),
                 ("event_boss_minion_count", new Property<long>(9, "JawnTide live events: minions per /minions")),
