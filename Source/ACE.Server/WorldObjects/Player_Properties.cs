@@ -15,7 +15,8 @@ namespace ACE.Server.WorldObjects
     {
         public override string Name
         {
-            get => IsPlussed && CloakStatus < CloakStatus.Player ? "+" + base.Name : base.Name;
+            // JawnTide: the event boss shows without the admin "+"
+            get => IsPlussed && CloakStatus < CloakStatus.Player && !ACE.Server.Managers.EventBossManager.IsBoss(this) ? "+" + base.Name : base.Name;
 
             set => base.Name = value.TrimStart('+');
         }
