@@ -4,6 +4,7 @@ using System.Linq;
 
 using log4net;
 
+using ACE.Common;
 using ACE.Database;
 using ACE.DatLoader;
 using ACE.Entity;
@@ -259,7 +260,7 @@ namespace ACE.Server.Managers
                 // reward boxes on the ground around the body, first come first served
                 var boxWcid = (uint)L("event_boss_reward_box_wcid");
                 var boxes = (int)Math.Clamp(L("event_boss_reward_boxes"), 0, 30);
-                foreach (var pos in Ring(boss.Location, boxes, 3.0f))
+                foreach (var pos in Scatter(boss.Location, boxes, 2.0f, (float)Math.Max(2, L("event_boss_reward_box_radius"))))
                 {
                     var box = WorldObjectFactory.CreateNewWorldObject(boxWcid);
                     if (box == null) break;
@@ -321,6 +322,24 @@ namespace ACE.Server.Managers
                 var facing = new Position(center.LandblockId.Raw, center.PositionX, center.PositionY, center.PositionZ,
                     0f, 0f, (float)Math.Sin(angle / 2), (float)Math.Cos(angle / 2));
                 var pos = center.Indoors ? new Position(center) : facing.InFrontOf(radius);
+                pos.LandblockId = new LandblockId(pos.GetCell());
+                yield return pos;
+            }
+        }
+
+        /// <summary>
+        /// Positions at random angles and distances (minRadius..maxRadius) around a point, the way world boss loot
+        /// scatters on the ground (indoors they fall back to the point itself).
+        /// </summary>
+        private static IEnumerable<Position> Scatter(Position center, int count, float minRadius, float maxRadius)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                var angle = ThreadSafeRandom.Next(0.0f, (float)(2 * Math.PI));
+                var dist = ThreadSafeRandom.Next(minRadius, Math.Max(minRadius, maxRadius));
+                var facing = new Position(center.LandblockId.Raw, center.PositionX, center.PositionY, center.PositionZ,
+                    0f, 0f, (float)Math.Sin(angle / 2), (float)Math.Cos(angle / 2));
+                var pos = center.Indoors ? new Position(center) : facing.InFrontOf(dist);
                 pos.LandblockId = new LandblockId(pos.GetCell());
                 yield return pos;
             }
