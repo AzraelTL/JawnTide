@@ -12,13 +12,16 @@ A small web page for the LAN that shows, per account:
   Luminance Exchange Tokens, A Boxes, plus **every alternate currency any vendor uses** (read from the world
   database on each snapshot, so new ones appear by themselves). Currencies nobody holds are hidden.
 - per-account totals over time (kept 30 days)
+- **Allegiances** (`/allegiances`): every allegiance with at least one vassal (largest first) with its monarch, whether the
+  monarch is on the Town Control whitelist (`town_control_alleglist`), member and account counts and levels; below it each
+  allegiance's full patron/vassal tree. Whitelist IDs that no longer belong to a monarch are listed too.
 - **Levels** (`/levels`): every character on the server with level, total XP, played time, XP gained and time
   played in a chosen window (1h, 6h, 24h, 72h, 7 days), XP per hour played, and the landblock where it was last
   saved; sort by level, XP gained, XP per hour played or played time. Below it, the landblocks where the most XP
   was earned in that window and who earned it. A character with a far higher XP per hour than others at its level
   is worth a look (exploit, or a spot whose XP needs turning down). XP history starts when this version first runs.
 
-Pages: `/` accounts (click a currency header to sort), `/account?name=...`, `/levels`, `/top` top 15 holders per
+Pages: `/` accounts (click a currency header to sort), `/account?name=...`, `/levels`, `/allegiances`, `/top` top 15 holders per
 currency, `/ips` IPs shared by several accounts. Open it from any machine on the LAN: **http://192.168.0.190:8080**
 
 ## How it works

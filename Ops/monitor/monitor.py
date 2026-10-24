@@ -48,6 +48,8 @@ PROP_INT_LEVEL = 25
 PROP_INT64_TOTAL_XP = 1
 POSITION_LOCATION = 1
 PROP_IID_CONTAINER = 2
+PROP_IID_PATRON = 25
+PROP_IID_MONARCH = 26
 WINDOWS = (1, 6, 24, 72, 168)  # hours offered on the Levels page
 
 state = {"snapshot": None, "error": None, "taken": None, "duration": None}
@@ -107,6 +109,19 @@ def take_snapshot():
             if aid in accounts:
                 accounts[aid]["characters"].append(ch)
 
+        for (cid, ptype, value) in query(cur, """
+                SELECT p.object_Id, p.type, p.value
+                FROM ace_shard.biota_properties_i_i_d p
+                JOIN ace_shard.`character` c ON c.id = p.object_Id
+                WHERE p.type IN (%s, %s)""", (PROP_IID_PATRON, PROP_IID_MONARCH)):
+            ch = chars.get(cid)
+            if ch is not None:
+                ch["patron" if ptype == PROP_IID_PATRON else "monarch"] = int(value)
+
+        whitelist = set()
+        for (value,) in query(cur, "SELECT value FROM ace_shard.config_properties_string WHERE `key` = 'town_control_alleglist'"):
+            whitelist |= {int(x) for x in (value or "").split(",") if x.strip().isdigit()}
+
         elsewhere = {w: 0 for w in WCIDS}
         if WCIDS:
             marks = ",".join(["%s"] * len(WCIDS))
@@ -154,7 +169,7 @@ def take_snapshot():
     held = {w for w in WCIDS if elsewhere[w] or any(a["totals"][w] for a in accounts.values())}
     snap = dict(taken=datetime.now(), accounts=accounts, characters=chars, elsewhere=elsewhere,
                 ip_accounts={k: sorted(v) for k, v in ip_accounts.items()},
-                currencies=currencies, held=held, wcids=WCIDS)
+                currencies=currencies, held=held, wcids=WCIDS, whitelist=whitelist)
     save_history(snap)
     return snap, time.time() - started
 
@@ -260,7 +275,9 @@ main { padding: 16px 20px; } a { color: var(--acc); text-decoration: none; } a:h
 .wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 6px; margin-bottom: 18px; }
 table { border-collapse: collapse; width: 100%; } th, td { padding: 5px 9px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
 th { position: sticky; top: 0; background: var(--card); font-weight: 600; } td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
-tr.shared td { background: var(--hl); } .muted { color: var(--muted); } .err { color: #c0392b; } h2 { font-size: 16px; margin: 18px 0 8px; }
+tr.shared td { background: var(--hl); } ul.tree { margin: 4px 0 4px 18px; padding: 0; } ul.tree li { margin: 2px 0; }
+details { background: var(--card); border: 1px solid var(--line); border-radius: 6px; margin-bottom: 8px; padding: 6px 10px; } summary { cursor: pointer; }
+.yes { color: #1e8e3e; font-weight: 600; } .no { color: #c0392b; font-weight: 600; } .muted { color: var(--muted); } .err { color: #c0392b; } h2 { font-size: 16px; margin: 18px 0 8px; }
 """
 
 
@@ -272,7 +289,7 @@ def page(title, body):
         status += f' <span class="err">Last error: {e(err)}</span>'
     return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="refresh" content="300"><title>{e(title)} - JawnTide monitor</title><style>{STYLE}</style></head><body>
-<header><b>JawnTide monitor</b><nav><a href="/">Accounts</a><a href="/levels">Levels</a><a href="/top">Top holders</a><a href="/ips">Shared IPs</a></nav>
+<header><b>JawnTide monitor</b><nav><a href="/">Accounts</a><a href="/levels">Levels</a><a href="/allegiances">Allegiances</a><a href="/top">Top holders</a><a href="/ips">Shared IPs</a></nav>
 <span class="muted">{status}</span></header><main>{body}</main></body></html>"""
 
 
@@ -443,6 +460,60 @@ def levels_page(sort, hours):
     return page("Levels", body)
 
 
+def allegiances_page():
+    snap = snapshot_or_wait()
+    if not snap:
+        return page("Allegiances", "<p>Waiting for the first snapshot.</p>")
+    live = {cid: c for cid, c in snap["characters"].items() if not c["deleted"]}
+    children = {}
+    for c in live.values():
+        if c.get("patron") in live:
+            children.setdefault(c["patron"], []).append(c)
+    roots = [c for c in live.values() if c.get("patron") not in live and c["id"] in children]
+
+    def subtree(c):
+        out = [c]
+        for k in children.get(c["id"], []):
+            out += subtree(k)
+        return out
+
+    def acct(c):
+        a = snap["accounts"].get(c["account"])
+        return account_link(a["name"]) if a else ""
+
+    def tree(c):
+        kids = sorted(children.get(c["id"], []), key=lambda k: (-len(subtree(k)), -k["level"]))
+        inner = "".join(tree(k) for k in kids)
+        return (f'<li>{e(c["name"])} <span class="muted">level {c["level"]}</span> {acct(c)}'
+                + (f'<ul class="tree">{inner}</ul>' if inner else "") + "</li>")
+
+    rows, blocks = [], []
+    for r in sorted(roots, key=lambda r: -len(subtree(r))):
+        members = subtree(r)
+        accounts = {m["account"] for m in members}
+        wl = r["id"] in snap["whitelist"]
+        flag = '<span class="yes">Yes</span>' if wl else '<span class="no">No</span>'
+        rows.append(f'<tr><td>{e(r["name"])}</td><td>{acct(r)}</td><td>{flag}</td><td class="n">{len(members)}</td>'
+                    f'<td class="n">{len(accounts)}</td><td class="n">{max(m["level"] for m in members)}</td>'
+                    f'<td class="n">{sum(m["level"] for m in members) // len(members)}</td></tr>')
+        blocks.append(f'<details><summary><b>{e(r["name"])}</b> ({len(members)} characters, {len(accounts)} accounts) '
+                      f'whitelisted: {flag}</summary><ul class="tree">{tree(r)}</ul></details>')
+    stale = [w for w in snap["whitelist"] if w not in live or live[w].get("patron") in live]
+    note = ""
+    if stale:
+        names = ", ".join(e(live[w]["name"]) if w in live else f"#{w} (deleted or unknown)" for w in stale)
+        note = f'<p class="muted">Whitelisted IDs that are no longer a monarch: {names}</p>'
+    body = (f'<p class="muted">Every allegiance with at least one vassal, largest first. "Whitelisted" means the monarch is on '
+            f'town_control_alleglist (add with /addwhitelist name), so the allegiance can take part in Town Control. '
+            f'Server settings are saved to the database every 5 minutes, so a new whitelist entry can take up to '
+            f'15 minutes to show here. Click an allegiance below to see its tree.</p>{note}'
+            f'<div class="wrap"><table><tr><th>Monarch</th><th>Account</th><th>Whitelisted</th><th class="n">Characters</th>'
+            f'<th class="n">Accounts</th><th class="n">Highest level</th><th class="n">Average level</th></tr>'
+            f'{"".join(rows) or "<tr><td colspan=7 class=muted>No allegiances yet</td></tr>"}</table></div>'
+            f'<h2>Trees</h2>{"".join(blocks)}')
+    return page("Allegiances", body)
+
+
 def top_page():
     snap = snapshot_or_wait()
     if not snap:
@@ -485,6 +556,8 @@ class Handler(BaseHTTPRequestHandler):
                 body = account_page(q.get("name", [""])[0])
             elif url.path == "/levels":
                 body = levels_page(q.get("sort", [""])[0], q.get("hours", [""])[0])
+            elif url.path == "/allegiances":
+                body = allegiances_page()
             elif url.path == "/top":
                 body = top_page()
             elif url.path == "/ips":
