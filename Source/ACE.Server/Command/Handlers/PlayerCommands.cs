@@ -1069,7 +1069,15 @@ namespace ACE.Server.Command.Handlers
             "Using it again on a Tinker refreshes it and upgrades its Tinkering Trinket. This is irreversible.")]
         public static void HandleFlagTinker(Session session, params string[] parameters)
         {
+            HandleFlagTinker(session, false);
+        }
+
+        private static void HandleFlagTinker(Session session, bool confirmed)
+        {
             var player = session.Player;
+
+            if (player == null)
+                return;
 
             // Already a Tinker: refresh (re-max the crafting skills and upgrade the Tinkering Trinket in
             // place with any spells added since it was made). FlagAsTinker is idempotent and grants a new
@@ -1092,6 +1100,20 @@ namespace ACE.Server.Command.Handlers
             if (accountPlayers != null && accountPlayers.Values.Any(p => p.IsTinker))
             {
                 player.Session.Network.EnqueueSend(new GameMessageSystemChat("Your account already has a Tinker character. Only one Tinker is allowed per account.", ChatMessageType.Broadcast));
+                return;
+            }
+
+            // Flagging is permanent: ask first. On Yes the checks above run again, then the character is flagged.
+            if (!confirmed)
+            {
+                var msg = $"Make {player.Name} a Tinker? This is PERMANENT and cannot be undone.\n\n" +
+                          "All crafting skills are specialized and maxed, Strength, Endurance, Coordination and Focus go to 100, " +
+                          "and all combat skills are removed.\n\n" +
+                          "This character stays level 1 forever, can't train new skills, and can't attack, cast spells on or heal other players.\n\n" +
+                          "Only one Tinker is allowed per account.";
+
+                if (!player.ConfirmationManager.EnqueueSend(new Confirmation_Custom(player.Guid, () => HandleFlagTinker(session, true)), msg))
+                    player.SendWeenieError(WeenieError.ConfirmationInProgress);
                 return;
             }
 
