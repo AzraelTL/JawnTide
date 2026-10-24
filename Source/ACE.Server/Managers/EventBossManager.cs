@@ -126,6 +126,11 @@ namespace ACE.Server.Managers
                 boss.Session.Network.EnqueueSend(new GameMessagePrivateUpdateVital(boss, vital));
             }
 
+            // the level players see when they appraise the boss
+            var level = (int)Math.Clamp(L("event_boss_level"), 1, 999);
+            boss.Level = level;
+            boss.Session.Network.EnqueueSend(new GameMessagePrivateUpdatePropertyInt(boss, PropertyInt.Level, level));
+
             boss.SpellComponentsRequired = false;
             boss.Session.Network.EnqueueSend(new GameMessagePrivateUpdatePropertyBool(boss, PropertyBool.SpellComponentsRequired, false));
 

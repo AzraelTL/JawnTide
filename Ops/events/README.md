@@ -31,6 +31,7 @@ world boss table at first). **Tune that table in the Loot Editor (Loot > NPC rew
 
 | Setting | Default |
 |---|---|
+| event_boss_level (shown on appraisal; strength comes from the ranks) | 100 |
 | event_boss_skill_ranks (every skill specialized; 226 = max) | 100 |
 | event_boss_attribute_ranks (on top of 100 innate; 190 = max) | 100 |
 | event_boss_health | 20000 |
@@ -49,7 +50,9 @@ world boss table at first). **Tune that table in the Loot Editor (Loot > NPC rew
 
 ## Notes
 
-- Only one event boss at a time. The boss state is in memory: a server restart ends the event (no rewards).
+- Only one event boss at a time. The boss state is in memory: a server restart ends the event (no rewards), so run
+  `@eventboss on` again after a restart. The skills, attributes and level it sets are saved on the character like any
+  other change (every few minutes and on logout), so stop the server only after the boss has logged out.
 - The boss counts as a player, so players need to be able to attack it (JawnTide is a red server; check PK status if not).
 - More boss types later: each can drop its own box weenie, with its own `Refuse` emote and random table on Aidoneus.
 - Boss looks: a different look is a different dedicated character; different strength is different settings
