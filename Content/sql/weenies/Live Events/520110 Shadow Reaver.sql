@@ -26,7 +26,8 @@ VALUES (520110,   1,          1) /* ItemType - MeleeWeapon */
      , (520110, 108,        800) /* ItemMaxMana */
      , (520110, 114,          1) /* Attuned - Attuned */
      , (520110, 151,          2) /* HookType - Wall */
-     , (520110, 166,         31) /* SlayerCreatureType - Human */;
+     , (520110, 166,         31) /* SlayerCreatureType - Human */
+     , (520110, 179,         12) /* ImbuedEffect - ArmorRending, SlashRending */;
 
 INSERT INTO `weenie_properties_bool` (`object_Id`, `type`, `value`)
 VALUES (520110,  22, True ) /* Inscribable */
