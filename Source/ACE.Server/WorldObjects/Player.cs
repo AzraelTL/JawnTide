@@ -629,6 +629,8 @@ namespace ACE.Server.WorldObjects
 
         public void LogOut_Inner(bool clientSessionTerminatedAbruptly = false)
         {
+            EventBossManager.OnLogout(this);
+
             IsBusy = true;
             IsLoggingOut = true;
 

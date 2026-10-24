@@ -915,6 +915,7 @@ namespace ACE.Server.Managers
                 ("season_leaderboard_webhook", new Property<string>("", "Discord webhook URL for the weekly season leaderboard milestone post")),
                 ("ip_binding_ip_whitelist", new Property<string>("", "Comma-separated list of IP addresses exempt from the one-account-per-IP binding rule (e.g. a LAN or staff office IP). Accounts logging in from these IPs bypass conflict checks entirely (unlimited accounts).")),
                 ("ip_binding_ip_allowance", new Property<string>("", "Comma-separated per-IP overrides for the number of distinct accounts allowed to bind to a single IP, formatted 'ip:count'. Example: '203.0.113.42:2, 198.51.100.7:2'. IPs not listed use the default allowance of 1 (one account per IP). Unlike ip_binding_ip_whitelist, this enforces a hard cap instead of unlimited.")),
+                ("event_boss_characters", new Property<string>("", "JawnTide live events: comma separated character IDs that become the event boss whenever they log in (set with @eventboss make / unmake)")),
                 ("town_control_alleglist", new Property<string>("", "A comma separated list of MonarchID values to whitelist allegiances for participation in town control events")),
                 ("town_control_globals_webhook", new Property<string>("", "Webhook to be send Town Control global messages.")),
                 ("arenas_blacklist", new Property<string>("", "A comma separated list of CharacterID values that cannot participate in Arenas")),

@@ -11,6 +11,16 @@ An admin plays the boss. Everything is driven by two admin commands, `@eventboss
 2. Dress it for the part (dark armor or robes). Players see your character scaled up while the event runs.
 3. Reward boxes are opened by **Aidoneus** (490076), the same NPC who takes world boss drops, so nothing needs placing.
 
+## Permanent boss characters
+
+`@eventboss make` on a boss character makes it permanent: from then on it becomes the event boss automatically about
+5 seconds after it logs in (stats, size, no +, announcement), and the event ends when it logs out. So you just log it
+in when you want to run an event. `@eventboss unmake` turns it back into an ordinary character (its stats stay);
+`@eventboss list` shows the permanent boss characters. Only one event boss can be active at a time.
+
+When the boss dies it keeps all its buffs and gets no vitae; it wakes at its lifestone and the event is over (rewards
+handed out). Log out and back in, or `@eventboss on`, to start the next fight.
+
 ## Running an event
 
 | Step | Command | What happens |
