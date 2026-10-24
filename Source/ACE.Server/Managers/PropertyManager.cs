@@ -665,6 +665,8 @@ namespace ACE.Server.Managers
         public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties =
             DictOf(
                 ("char_delete_time", new Property<long>(3600, "the amount of time in seconds a deleted character can be restored")),
+                ("event_boss_skill_ranks", new Property<long>(100, "JawnTide live events: ranks the event boss gets in every (specialized) skill; 226 = maxed. Lower it so lower-level players can hit it (apply with @eventboss on)")),
+                ("event_boss_attribute_ranks", new Property<long>(100, "JawnTide live events: ranks the event boss gets in every attribute, on top of 100 innate; 190 = maxed (apply with @eventboss on)")),
                 ("event_boss_health", new Property<long>(20000, "JawnTide live events: the event boss's maximum health (set by @eventboss on)")),
                 ("event_boss_mana", new Property<long>(10000, "JawnTide live events: the event boss's maximum stamina and mana (set by @eventboss on)")),
                 ("event_boss_participation_trophies", new Property<long>(5, "JawnTide live events: PK Trophies for every player in the landblock when the event boss dies (0 = none)")),
