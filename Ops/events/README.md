@@ -28,9 +28,11 @@ them). Create them on the boss character with `@ci`:
 
 | WCID | Weapon | Notes |
 |---|---|---|
-| 520110 | Shadow Reaver | Two-handed sword, 60 slash damage, +25% offense and defense |
-| 520111 | Shadow Wand | +25% war and void damage, +25% defense, 30% mana conversion |
-| 520112 | Shadow Longbow | Damage modifier 2.5, +25% offense and defense; needs arrows (`@ci` any stock arrows) |
+| 520110 | Shadow Reaver | Weeping Two Handed Spear +10% in a two-handed sword shape: 52 slash, offense 1.35, defense 1.30, Bael'Zharon's Hate (human slayer 3.74x), ignores armor and shields, Moderate Two Handed Aptitude |
+| 520111 | Shadow Wand | Weeping Wand +10%: defense 1.1, mana conversion +2.2%, human slayer 1.54x, Life and War Mastery Other VI, Focus and Willpower Self VI, Moderate Mana Conversion Prowess |
+| 520112 | Shadow Longbow | Weeping Bow +10%: damage 29, modifier 2.40, offense 1.1, defense 1.30, human slayer 3.19x, ignores armor and shields, Moderate Missile Aptitude; needs arrows (`@ci` any stock arrows) |
+
+Bael'Zharon's Hate makes them human slayers: every player character counts as human, so they hit players very hard.
 
 Tune them by editing their files in `Content/sql/weenies/Live Events/` (then import + restart).
 
