@@ -21,6 +21,19 @@ in when you want to run an event. `@eventboss unmake` turns it back into an ordi
 When the boss dies it keeps all its buffs and gets no vitae; it wakes at its lifestone and the event is over (rewards
 handed out). Log out and back in, or `@eventboss on`, to start the next fight.
 
+## Boss weapons
+
+Boss-only weapons with no wield requirements, attuned and bonded (never traded, dropped or sold; nothing sells or drops
+them). Create them on the boss character with `@ci`:
+
+| WCID | Weapon | Notes |
+|---|---|---|
+| 520110 | Shadow Reaver | Two-handed sword, 60 slash damage, +25% offense and defense |
+| 520111 | Shadow Wand | +25% war and void damage, +25% defense, 30% mana conversion |
+| 520112 | Shadow Longbow | Damage modifier 2.5, +25% offense and defense; needs arrows (`@ci` any stock arrows) |
+
+Tune them by editing their files in `Content/sql/weenies/Live Events/` (then import + restart).
+
 ## Running an event
 
 | Step | Command | What happens |
