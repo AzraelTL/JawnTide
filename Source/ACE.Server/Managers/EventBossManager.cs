@@ -49,7 +49,90 @@ namespace ACE.Server.Managers
 
         private static long L(string key) => PropertyManager.GetLong(key).Item;
 
-        public static void Start(Player boss)
+        // ---- permanent boss characters (event_boss_characters): they become the event boss whenever they log in ----
+
+        private static HashSet<uint> PermanentBosses()
+        {
+            var set = new HashSet<uint>();
+            foreach (var part in (PropertyManager.GetString("event_boss_characters").Item ?? "").Split(','))
+                if (uint.TryParse(part.Trim(), out var guid))
+                    set.Add(guid);
+            return set;
+        }
+
+        private static void SavePermanentBosses(HashSet<uint> set)
+        {
+            PropertyManager.ModifyString("event_boss_characters", string.Join(",", set.OrderBy(g => g)));
+        }
+
+        public static bool IsPermanentBoss(Player player) => player != null && PermanentBosses().Contains(player.Guid.Full);
+
+        /// <summary>
+        /// @eventboss make: this character is a boss character from now on (it becomes the event boss on every login)
+        /// </summary>
+        public static void MakePermanent(Player boss)
+        {
+            var set = PermanentBosses();
+            set.Add(boss.Guid.Full);
+            SavePermanentBosses(set);
+            boss.Session.Network.EnqueueSend(new GameMessageSystemChat($"{boss.Name} is now a permanent event boss character: it becomes the event boss every time it logs in.", ChatMessageType.Broadcast));
+            Start(boss);
+        }
+
+        /// <summary>
+        /// @eventboss unmake: back to an ordinary character (its boss stats stay)
+        /// </summary>
+        public static void UnmakePermanent(Player boss)
+        {
+            var set = PermanentBosses();
+            if (set.Remove(boss.Guid.Full))
+                SavePermanentBosses(set);
+            boss.Session.Network.EnqueueSend(new GameMessageSystemChat($"{boss.Name} is no longer a permanent event boss character.", ChatMessageType.Broadcast));
+            if (IsBoss(boss))
+                Stop(boss, true);
+        }
+
+        public static string ListPermanent()
+        {
+            var names = PermanentBosses().Select(g => PlayerManager.FindByGuid(g)?.Name ?? $"0x{g:X8}");
+            var list = string.Join(", ", names);
+            return string.IsNullOrEmpty(list) ? "No permanent event boss characters." : $"Permanent event boss characters: {list}";
+        }
+
+        /// <summary>
+        /// Called on login: a permanent boss character becomes the event boss a few seconds after entering the world
+        /// </summary>
+        public static void OnLogin(Player player)
+        {
+            if (!IsPermanentBoss(player))
+                return;
+
+            var chain = new ActionChain();
+            chain.AddDelaySeconds(5.0f);
+            chain.AddAction(player, () =>
+            {
+                if (player.IsLoggingOut || player.Session == null)
+                    return;
+                if (IsActive && !IsBoss(player))
+                {
+                    player.Session.Network.EnqueueSend(new GameMessageSystemChat("Another event boss is already active, so this character was not made the event boss.", ChatMessageType.Broadcast));
+                    return;
+                }
+                Start(player, true);
+            });
+            chain.EnqueueChain();
+        }
+
+        /// <summary>
+        /// Called on logout: the event ends without rewards
+        /// </summary>
+        public static void OnLogout(Player player)
+        {
+            if (IsBoss(player))
+                Stop(player, true);
+        }
+
+        public static void Start(Player boss, bool fromLogin = false)
         {
             lock (locker)
             {
@@ -74,7 +157,10 @@ namespace ACE.Server.Managers
             boss.SetMaxVitals();
             boss.PlayParticleEffect(PlayScript.BaelZharonSmite, boss.Guid);
 
-            boss.Session.Network.EnqueueSend(new GameMessageSystemChat("You are the event boss. Log out and back in now so your client picks up all your new skills and spells, then start the fight.", ChatMessageType.Broadcast));
+            if (!fromLogin)
+                boss.Session.Network.EnqueueSend(new GameMessageSystemChat("You are the event boss. Log out and back in now so your client picks up all your new skills and spells, then start the fight.", ChatMessageType.Broadcast));
+            else
+                boss.Session.Network.EnqueueSend(new GameMessageSystemChat("You are the event boss.", ChatMessageType.Broadcast));
 
             Announce($"{boss.Name} has appeared! Gather your allies and bring it down. Everyone nearby when it falls will be rewarded.");
             log.Info($"[EVENTBOSS] {boss.Name} (0x{boss.Guid}) is now the event boss");
@@ -134,7 +220,9 @@ namespace ACE.Server.Managers
             boss.SpellComponentsRequired = false;
             boss.Session.Network.EnqueueSend(new GameMessagePrivateUpdatePropertyBool(boss, PropertyBool.SpellComponentsRequired, false));
 
-            DeveloperCommands.HandleAddAllSpells(boss.Session);
+            // every spell, the first time only (re-learning thousands of spells on every login floods the client)
+            if ((boss.Biota.PropertiesSpellBook?.Count ?? 0) < 1000)
+                DeveloperCommands.HandleAddAllSpells(boss.Session);
         }
 
         /// <summary>

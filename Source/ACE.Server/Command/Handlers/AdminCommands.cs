@@ -5170,7 +5170,10 @@ namespace ACE.Server.Command.Handlers
         // JawnTide live events (see Ops/events/README.md)
         [CommandHandler("eventboss", AccessLevel.Admin, CommandHandlerFlag.RequiresWorld, 1,
             "Live events: makes your current character the event boss, or ends the event.",
-            "on | off | status\n" +
+            "make | unmake | list | on | off | status\n" +
+            "make: this character becomes a permanent boss character: it becomes the event boss (and gets its stats) every time it logs in.\n" +
+            "unmake: back to an ordinary character.\n" +
+            "list: the permanent boss characters.\n" +
             "on: every skill specialized and maxed, attributes maxed, boss health and mana, all spells, no components, scaled up. Use a dedicated character: the stats stay.\n" +
             "off: ends the event without rewards (minions vanish, size returns to normal).\n" +
             "When the event boss dies, rewards are handed out automatically.")]
@@ -5179,6 +5182,15 @@ namespace ACE.Server.Command.Handlers
             var player = session.Player;
             switch (parameters[0].ToLowerInvariant())
             {
+                case "make":
+                    EventBossManager.MakePermanent(player);
+                    break;
+                case "unmake":
+                    EventBossManager.UnmakePermanent(player);
+                    break;
+                case "list":
+                    session.Network.EnqueueSend(new GameMessageSystemChat(EventBossManager.ListPermanent(), ChatMessageType.Broadcast));
+                    break;
                 case "on":
                     EventBossManager.Start(player);
                     break;
