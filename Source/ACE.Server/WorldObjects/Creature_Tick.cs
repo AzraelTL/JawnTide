@@ -286,8 +286,10 @@ namespace ACE.Server.WorldObjects
                 // is removed without dying: no loot, no kill announcement, no participation reward.
                 // It used to call Die() here, so waiting out the 4 hours near a boss dropped its full loot.
                 var activeBoss = WorldBossManager.GetActiveWorldBoss();
-                if (!this.IsDead && (activeBoss == null || activeBoss.BossWorldObject != this))
+                if (!worldBossRemoving && !this.IsDead && !this.IsDestroyed && (activeBoss == null || activeBoss.BossWorldObject != this))
                 {
+                    worldBossRemoving = true;
+
                     log.Info($"[WORLDBOSS] {Name} (0x{Guid}) is no longer the active world boss; removing it without loot");
 
                     if (WorldBosses.WorldBossMap.TryGetValue(this.WeenieClassId, out var wb) && wb.StatueWorldObject != null && !wb.StatueWorldObject.IsDestroyed
@@ -298,7 +300,8 @@ namespace ACE.Server.WorldObjects
                     }
 
                     DeleteObject();
-                    return;
+                    // no early return: base.Heartbeat below schedules the next heartbeat (returning here made the
+                    // landblock call this again immediately, in a tight loop, until the removal went through)
                 }
             }
 
