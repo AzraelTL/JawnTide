@@ -366,6 +366,13 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         protected override void Die(DamageHistoryInfo lastDamager, DamageHistoryInfo topDamager)
         {
+            // JawnTide live events: the event boss gets its own death (rewards, no vitae, no items lost)
+            if (EventBossManager.IsBoss(this))
+            {
+                EventBossDie(topDamager);
+                return;
+            }
+
             IsInDeathProcess = true;
 
             if (topDamager?.Guid == Guid && IsPKType)
@@ -517,6 +524,41 @@ namespace ACE.Server.WorldObjects
                 IsBusy = false;
             });
 
+            dieChain.EnqueueChain();
+        }
+
+        /// <summary>
+        /// JawnTide: death of the event boss. Rewards are handed out by EventBossManager; the boss loses
+        /// nothing (no vitae, no corpse of its own items, no PK Trophy) and goes to its lifestone.
+        /// </summary>
+        private void EventBossDie(DamageHistoryInfo topDamager)
+        {
+            IsInDeathProcess = true;
+
+            if (topDamager == null || topDamager.Guid == Guid)
+                topDamager = DamageHistory.GetTopDamager(false);
+            if (topDamager != null && topDamager.Guid == Guid)
+                topDamager = null;
+
+            UpdateVital(Health, 0);
+            IsBusy = true;
+
+            if (CombatMode == CombatMode.Magic && MagicState.IsCasting)
+                FailCast(false);
+
+            EnqueueBroadcastMotion(new Motion(MotionStance.NonCombat, MotionCommand.Dead));
+            Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute2ndLevel(this, Vital.Health, 0));
+
+            EventBossManager.OnBossDeath(this, topDamager);
+
+            var dieChain = new ActionChain();
+            var animLength = DatManager.PortalDat.ReadFromDat<MotionTable>(MotionTableId).GetAnimationLength(MotionCommand.Dead);
+            dieChain.AddDelaySeconds(animLength + 1.0f);
+            dieChain.AddAction(this, () =>
+            {
+                ThreadSafeTeleportOnDeath();
+                IsBusy = false;
+            });
             dieChain.EnqueueChain();
         }
 

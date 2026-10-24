@@ -270,6 +270,10 @@ namespace ACE.Server.WorldObjects
                 if (Tolerance.HasFlag(Tolerance.Monster) && (creature is Player || creature is CombatPet))
                     continue;
 
+                // JawnTide: event boss minions never target the event boss
+                if (IsEventBossMinion && creature is Player eventBoss && EventBossManager.IsBoss(eventBoss))
+                    continue;
+
                 //Dungon control guardians don't target dungeon owners
                 if (this.IsDungeonControlGuardian && (creature as Player)?.Allegiance?.MonarchId == this.GuardianAllegianceId)
                     continue;
@@ -355,6 +359,9 @@ namespace ACE.Server.WorldObjects
             foreach (var creature in PhysicsObj.ObjMaint.GetVisibleTargetsValuesOfTypeCreature())
             {
                 if (creature is Player player && (!player.Attackable || player.Teleporting || (player.Hidden ?? false)))
+                    continue;
+
+                if (IsEventBossMinion && creature is Player eventBoss && EventBossManager.IsBoss(eventBoss))
                     continue;
 
                 if (Tolerance.HasFlag(Tolerance.Monster) && (creature is Player || creature is CombatPet))
