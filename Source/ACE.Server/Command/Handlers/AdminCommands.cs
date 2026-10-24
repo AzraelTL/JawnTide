@@ -5167,6 +5167,40 @@ namespace ACE.Server.Command.Handlers
             }
         }
 
+        // JawnTide live events (see Ops/events/README.md)
+        [CommandHandler("eventboss", AccessLevel.Admin, CommandHandlerFlag.RequiresWorld, 1,
+            "Live events: makes your current character the event boss, or ends the event.",
+            "on | off | status\n" +
+            "on: every skill specialized and maxed, attributes maxed, boss health and mana, all spells, no components, scaled up. Use a dedicated character: the stats stay.\n" +
+            "off: ends the event without rewards (minions vanish, size returns to normal).\n" +
+            "When the event boss dies, rewards are handed out automatically.")]
+        public static void HandleEventBoss(Session session, params string[] parameters)
+        {
+            var player = session.Player;
+            switch (parameters[0].ToLowerInvariant())
+            {
+                case "on":
+                    EventBossManager.Start(player);
+                    break;
+                case "off":
+                    if (!EventBossManager.IsBoss(player))
+                        session.Network.EnqueueSend(new GameMessageSystemChat("This character is not the event boss.", ChatMessageType.Broadcast));
+                    else
+                        EventBossManager.Stop(player, true);
+                    break;
+                default:
+                    session.Network.EnqueueSend(new GameMessageSystemChat(EventBossManager.IsBoss(player) ? "You are the event boss." : EventBossManager.IsActive ? "Another character is the event boss." : "No event is running.", ChatMessageType.Broadcast));
+                    break;
+            }
+        }
+
+        [CommandHandler("minions", AccessLevel.Admin, CommandHandlerFlag.RequiresWorld, 0,
+            "Live events: the event boss summons its minions (they never attack the boss).", "")]
+        public static void HandleMinions(Session session, params string[] parameters)
+        {
+            EventBossManager.SummonMinions(session.Player);
+        }
+
         [CommandHandler("worldbossinfo", AccessLevel.Sentinel, CommandHandlerFlag.None, 0,
             "Displays debug info about world bosses")]
         public static void HandleWorldBossInfo(Session session, params string[] parameters)

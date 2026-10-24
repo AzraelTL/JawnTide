@@ -665,6 +665,17 @@ namespace ACE.Server.Managers
         public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties =
             DictOf(
                 ("char_delete_time", new Property<long>(3600, "the amount of time in seconds a deleted character can be restored")),
+                ("event_boss_health", new Property<long>(20000, "JawnTide live events: the event boss's maximum health (set by @eventboss on)")),
+                ("event_boss_mana", new Property<long>(10000, "JawnTide live events: the event boss's maximum stamina and mana (set by @eventboss on)")),
+                ("event_boss_participation_trophies", new Property<long>(5, "JawnTide live events: PK Trophies for every player in the landblock when the event boss dies (0 = none)")),
+                ("event_boss_corpse_treasure", new Property<long>(10001, "JawnTide live events: loot profile (treasure_death id) that fills the event boss's corpse for the top damager")),
+                ("event_boss_corpse_minutes", new Property<long>(30, "JawnTide live events: minutes before the event boss's corpse rots")),
+                ("event_boss_reward_boxes", new Property<long>(9, "JawnTide live events: reward boxes dropped around the event boss when it dies")),
+                ("event_boss_reward_box_wcid", new Property<long>(520102, "JawnTide live events: weenie of the reward box (Shadow Spoils Box)")),
+                ("event_boss_minion_wcid", new Property<long>(520101, "JawnTide live events: creature summoned by the event boss's /minions (Shadow Minion)")),
+                ("event_boss_minion_count", new Property<long>(9, "JawnTide live events: minions per /minions")),
+                ("event_boss_minion_lifespan_seconds", new Property<long>(300, "JawnTide live events: seconds before summoned minions vanish (they also vanish when the event ends)")),
+                ("event_boss_summon_cooldown_seconds", new Property<long>(120, "JawnTide live events: seconds between uses of /minions")),
                 ("fi_cooldown_seconds", new Property<long>(2, "JawnTide: seconds a player must wait between uses of /fi (and /objsend), which resends every object around them to fix invisible monsters, NPCs and items")),
                 ("quest_xp_award_max_levels", new Property<long>(5, "JawnTide: a single quest XP reward (AwardXP / AwardNoShareXP emotes: NPC turn-ins, used items) can raise a character at most this many levels; the rest is not awarded. Stops high-level quest items from power-leveling alts. 0 = no limit")),
                 ("loot_max_tier", new Property<long>(0, "JawnTide: highest loot tier random loot (corpses, chests, monster equipment) can roll. Higher tiers roll as this tier. 0 = no cap")),
@@ -732,6 +743,7 @@ namespace ACE.Server.Managers
         public static readonly ReadOnlyDictionary<string, Property<double>> DefaultDoubleProperties =
             DictOf(
 
+                ("event_boss_scale", new Property<double>(2.0, "JawnTide live events: size of the event boss while the event runs (1 = normal)")),
                 ("cantrip_drop_rate", new Property<double>(1.0, "Scales the chance for cantrips to drop in each tier. Defaults to 1.0, as per end of retail")),
                 ("cloak_cooldown_seconds", new Property<double>(5.0, "The number of seconds between possible cloak procs.")),
                 ("cloak_max_proc_base", new Property<double>(0.25, "The max proc chance of a cloak.")),
