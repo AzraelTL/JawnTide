@@ -18,6 +18,7 @@ database, and copying a file back does nothing until it is imported (then `clear
 | Bounty Purchase Token | 60000213 | Removed from Darkbeat's shop | `originals/weenies/Arena Patch/480480 Darkbeat.sql` | With the Bounty Collector |
 | Writ of Pursuit | 60000215 | Removed from Darkbeat's shop | `originals/weenies/Arena Patch/480480 Darkbeat.sql` | With the Bounty Collector |
 | Hot Air Balloon at Peddler's Outpost (Energy Infused Rock → island) | 490150 | Says it is grounded; no longer takes the rock or flies. The other way to the island, the Empyrean Compass (490322), is held back from Hera, its only source | `originals/weenies/Peddler's Outpost/490150 Outpost Flying Machine.sql` | Undecided |
+| Luminance flagging (access to earn luminance): Nalicana's test (hand in Battle Lord Gregor's Mnemosyne) and Morgan le Fay's shortcut (hand in Blackmoor's Favor, which also unlocked all aetheria slots) | 43398, 32000110 | The reward emote now only says "The Paths of the Empyrean are not yet open. Return when the realm has grown stronger." The player keeps the item. Both already required level 200 | `stage2/weenies/Luminance Patch/43398 Nalicana.sql`, `stage2/weenies/Randomchanges/32000110 Morgan le Fay.sql` | When the level cap passes 200 |
 
 To reopen a Marketplace placement, copy just its three lines (INSERT, VALUES, @teleloc comment)
 from `originals/landblocks/01C9.sql` back into `Content/sql/landblocks/01C9.sql`, or the stage
