@@ -1219,6 +1219,14 @@ namespace ACE.Server.WorldObjects
             questSolve = false;
             isFromAPlayerCorpse = false;
 
+            // JawnTide: event boss prizes can only be picked up by players who are red (PK)
+            if (!EventBossManager.CanClaimPrize(this, item, itemRootOwner))
+            {
+                Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full, WeenieError.ActionCancelled));
+                Session.Network.EnqueueSend(new GameMessageSystemChat("Only player killers (red) can claim event boss prizes. Wait until you are red again.", ChatMessageType.Broadcast));
+                return false;
+            }
+
             if (item.QuestRestriction != null && !QuestManager.HasQuest(item.QuestRestriction))
             {
                 QuestManager.HandleNoQuestError(item);

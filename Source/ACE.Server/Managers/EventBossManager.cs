@@ -38,6 +38,7 @@ namespace ACE.Server.Managers
         private static float? bossOriginalScale;
         private static DateTime lastSummon = DateTime.MinValue;
         private static readonly List<Creature> minions = new List<Creature>();
+        private static readonly HashSet<uint> rewardCorpses = new HashSet<uint>();
 
         public static bool IsActive { get { lock (locker) return bossGuid.HasValue; } }
 
@@ -63,6 +64,28 @@ namespace ACE.Server.Managers
         /// A reward box dropped by the event boss, lying in the world (its Quest property limits pickups per character)
         /// </summary>
         public static bool IsRewardBox(WorldObject item) => item != null && item.WeenieClassId == (uint)L("event_boss_reward_box_wcid");
+
+        /// <summary>
+        /// True if this is the loot corpse an event boss left for its top damager
+        /// </summary>
+        public static bool IsRewardCorpse(WorldObject obj)
+        {
+            if (obj == null) return false;
+            lock (locker) return rewardCorpses.Contains(obj.Guid.Full);
+        }
+
+        /// <summary>
+        /// Event prizes (Shadow Spoils Boxes lying around, and anything on the boss's loot corpse) can only be
+        /// claimed by a player who is red (PK) right now, so not while white during the PK respite timer
+        /// </summary>
+        public static bool CanClaimPrize(Player player, WorldObject item, Container rootOwner)
+        {
+            if (player == null || player.IsPK) return true;
+
+            var isPrize = (IsRewardBox(item) && rootOwner != player) || IsRewardCorpse(rootOwner);
+
+            return !isPrize;
+        }
 
         // ---- permanent boss characters (event_boss_characters): they become the event boss whenever they log in ----
 
@@ -457,6 +480,12 @@ namespace ACE.Server.Managers
             corpse.RemoveProperty(PropertyInt.Value);
             corpse.InitPhysicsObj();
             corpse.EnterWorld();
+
+            lock (locker)
+            {
+                if (rewardCorpses.Count > 500) rewardCorpses.Clear();   // corpses rot after event_boss_corpse_minutes; keep the list small
+                rewardCorpses.Add(corpse.Guid.Full);
+            }
         }
 
         /// <summary>

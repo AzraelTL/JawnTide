@@ -87,6 +87,8 @@ world boss table at first). **Tune that table in the Loot Editor (Loot > NPC rew
 - A player the boss kills dies as if a monster killed them: they stay red (no PK respite timer), drop no PK Trophy,
   and there's no PK kill broadcast, kill streak or PvP stat. Normal vitae and item loss apply. This counts whenever
   the boss is the top damager on the victim (a player who mostly took damage from another player is still a PK death).
+- Only players who are red (PK) right now can pick up a Shadow Spoils Box or take items from the boss's loot corpse.
+  A player who is white during the PK respite timer gets "Only player killers (red) can claim event boss prizes."
 - More boss types later: each can drop its own box weenie, with its own `Refuse` emote and random table on Aidoneus.
 - Boss looks: a different look is a different dedicated character; different strength is different settings
   (health, minion creature and count, loot profile).
