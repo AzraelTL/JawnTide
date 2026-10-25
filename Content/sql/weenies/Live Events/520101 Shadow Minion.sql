@@ -1,4 +1,4 @@
-/* JawnTide live events: summoned by the event boss's /minions. Copy of the stock Umbris Shadow (4254, level 80) with no XP and no loot. */
+/* JawnTide live events: summoned by the event boss's /minions. Copy of the stock Umbris Shadow (4254, level 80) with no XP; its only loot is one Shadow Essence (520120). */
 DELETE FROM `weenie` WHERE `class_Id` = 520101;
 
 INSERT INTO `weenie` (`class_Id`, `class_Name`, `type`, `last_Modified`)
@@ -153,6 +153,9 @@ VALUES (520101,    72,  2.032)  /* Frost Bolt IV */
      , (520101,  1310,  2.006)  /* Armor Self IV */
      , (520101,  1418,  2.023)  /* Slowness Other IV */
      , (520101,  1466,  2.023)  /* Feeblemind Other IV */;
+
+INSERT INTO `weenie_properties_create_list` (`object_Id`, `destination_Type`, `weenie_Class_Id`, `stack_Size`, `palette`, `shade`, `try_To_Bond`)
+VALUES (520101, 9, 520120,  1, 0, 1, False) /* Create Shadow Essence (520120) for ContainTreasure */;
 
 INSERT INTO `weenie_properties_event_filter` (`object_Id`, `event`)
 VALUES (520101,  94) /* ATTACK_NOTIFICATION_EVENT */

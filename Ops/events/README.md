@@ -43,11 +43,13 @@ Tune them by editing their files in `Content/sql/weenies/Live Events/` (then imp
 | Go to the arena of your choice | `@teleloc ...` | Outdoors works best (minions and boxes spawn in a ring) |
 | Start | `@eventboss on` | Every skill specialized with `event_boss_skill_ranks` ranks, attributes 100 innate + `event_boss_attribute_ranks` ranks, health `event_boss_health`, stamina and mana `event_boss_mana`, every spell learned, no spell components, size `event_boss_scale`, full heal, server-wide announcement (and the world boss Discord webhook); an admin boss shows without the + in its name and with a normal radar dot while the event runs |
 | Relog | log out and back in | Right after `@eventboss on`: the client needs a fresh login to pick up thousands of new spells and the new skills; without it, wielding or moving items can get stuck |
-| Call helpers | `/minions` | `event_boss_minion_count` Shadow Minions (520101, level 80, no XP, no loot) in a ring around you. They attack players and never you. Cooldown `event_boss_summon_cooldown_seconds`; they vanish after `event_boss_minion_lifespan_seconds` or when the event ends |
+| Call helpers | `/minions` | `event_boss_minion_count` Shadow Minions (520101, level 80, no XP; each drops one Shadow Essence) in a ring around you. They attack players and never you. Cooldown `event_boss_summon_cooldown_seconds`; they vanish after `event_boss_minion_lifespan_seconds` or when the event ends |
 | Fight | | You melee and cast like any character |
 | Boss dies | automatic | Announcement; every player in the landblock gets `event_boss_participation_trophies` PK Trophies; the top damager gets **Corpse of <boss>** filled from loot profile `event_boss_corpse_treasure` that only they (and their loot-sharing fellowship) can open for `event_boss_corpse_minutes`; `event_boss_reward_boxes` Shadow Spoils Boxes (520102) scatter at random around the body (2 to `event_boss_reward_box_radius` meters) for anyone to grab; minions vanish; the boss goes to its lifestone with no vitae and loses nothing |
 | Cancel without rewards | `@eventboss off` | Minions vanish, size back to normal |
 | Check | `@eventboss status` | |
+
+Shadow Essences (520120, stackable, attuned and bonded) drop from minions; Aidoneus trades **10 for a Hera's Vault Key**.
 
 Players hand Shadow Spoils Boxes to Aidoneus for a roll on `EventBoss_random_reward` (its own table, copied from his
 world boss table at first). **Tune that table in the Loot Editor (Loot > NPC rewards) before the first live event**: nine boxes per kill.
