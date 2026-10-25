@@ -38,7 +38,7 @@ namespace ACE.Server.Managers
         private static float? bossOriginalScale;
         private static DateTime lastSummon = DateTime.MinValue;
         private static readonly List<Creature> minions = new List<Creature>();
-        private static readonly HashSet<uint> rewardCorpses = new HashSet<uint>();
+        private static readonly HashSet<uint> rewardLoot = new HashSet<uint>();
 
         public static bool IsActive { get { lock (locker) return bossGuid.HasValue; } }
 
@@ -66,23 +66,23 @@ namespace ACE.Server.Managers
         public static bool IsRewardBox(WorldObject item) => item != null && item.WeenieClassId == (uint)L("event_boss_reward_box_wcid");
 
         /// <summary>
-        /// True if this is the loot corpse an event boss left for its top damager
+        /// True if this item is part of the loot an event boss scattered on the ground when it died
         /// </summary>
-        public static bool IsRewardCorpse(WorldObject obj)
+        public static bool IsRewardLoot(WorldObject item)
         {
-            if (obj == null) return false;
-            lock (locker) return rewardCorpses.Contains(obj.Guid.Full);
+            if (item == null) return false;
+            lock (locker) return rewardLoot.Contains(item.Guid.Full);
         }
 
         /// <summary>
-        /// Event prizes (Shadow Spoils Boxes lying around, and anything on the boss's loot corpse) can only be
+        /// Event prizes (Shadow Spoils Boxes and the boss's loot lying on the ground) can only be
         /// claimed by a player who is red (PK) right now, so not while white during the PK respite timer
         /// </summary>
         public static bool CanClaimPrize(Player player, WorldObject item, Container rootOwner)
         {
             if (player == null || player.IsPK) return true;
 
-            var isPrize = (IsRewardBox(item) && rootOwner != player) || IsRewardCorpse(rootOwner);
+            var isPrize = rootOwner != player && (IsRewardBox(item) || IsRewardLoot(item));
 
             return !isPrize;
         }
@@ -407,7 +407,7 @@ namespace ACE.Server.Managers
             try
             {
                 var topName = topDamager?.Name?.TrimStart('+') ?? "no one";
-                Announce($"{boss.Name} has been slain! {topName} dealt the most damage and may claim its corpse.");
+                Announce($"{boss.Name} has been slain by {topName}! Its treasure lies scattered on the ground for any player killer to claim.");
 
                 // everyone in the landblock (except the boss) gets the participation reward
                 var trophies = (int)Math.Max(0, L("event_boss_participation_trophies"));
@@ -424,9 +424,9 @@ namespace ACE.Server.Managers
                     }
                 }
 
-                // the corpse: loot only the top damager can open
-                if (topDamager != null && topDamager.IsPlayer && topDamager.Guid.Full != boss.Guid.Full)
-                    CreateLootCorpse(boss, topDamager);
+                // no corpse: the loot of one pull of the event_boss_loot_chest_wcid chest (Darkbeat's Storage Locker)
+                // lands on the ground around the body, first come first served (red players only)
+                DropChestPull(boss);
 
                 // reward boxes on the ground around the body, first come first served
                 var boxWcid = (uint)L("event_boss_reward_box_wcid");
@@ -450,42 +450,148 @@ namespace ACE.Server.Managers
             }
         }
 
-        private static void CreateLootCorpse(Player boss, DamageHistoryInfo topDamager)
+        /// <summary>
+        /// Rolls one pull of a chest's generator table (like opening the chest once) and drops the items on the ground
+        /// around the boss. Same rules as the chest: every always-spawn (-1) entry once (the treasure profile),
+        /// then random picks from the rest by their probabilities until InitGeneratedObjects is reached,
+        /// each entry limited by its own max_Create.
+        /// </summary>
+        private static void DropChestPull(Player boss)
         {
-            var corpse = WorldObjectFactory.CreateNewWorldObject(DatabaseManager.World.GetCachedWeenie("corpse")) as Corpse;
-            if (corpse == null) return;
+            var chestWcid = (uint)L("event_boss_loot_chest_wcid");
+            var items = RollChestPull(chestWcid, boss.CurrentLandblock?.Id.Landblock);
 
-            corpse.SetupTableId = boss.SetupTableId;
-            corpse.MotionTableId = boss.MotionTableId;
-            corpse.PaletteBaseDID = boss.PaletteBaseDID;
-            corpse.PhysicsTableId = boss.PhysicsTableId;
-            corpse.ObjScale = boss.ObjScale;
-
-            corpse.Location = new Position(boss.Location);
-            corpse.VictimId = boss.Guid.Full;
-            corpse.KillerId = topDamager.Guid.Full;
-            corpse.Name = $"Corpse of {boss.Name}";
-            corpse.LongDesc = $"Killed by {topDamager.Name?.TrimStart('+')}.";
-            corpse.TimeToRot = Math.Max(60, L("event_boss_corpse_minutes") * 60);
-
-            var profile = DatabaseManager.World.GetCachedDeathTreasure((uint)L("event_boss_corpse_treasure"));
-            if (profile != null)
+            if (items.Count == 0)
             {
-                foreach (var item in LootGenerationFactory.CreateRandomLootObjects(profile))
-                    corpse.TryAddToInventory(item);
+                log.Warn($"[EVENTBOSS] event_boss_loot_chest_wcid {chestWcid} produced no loot");
+                return;
             }
-            else
-                log.Warn($"[EVENTBOSS] event_boss_corpse_treasure {L("event_boss_corpse_treasure")} is not a loot profile");
 
-            corpse.RemoveProperty(PropertyInt.Value);
-            corpse.InitPhysicsObj();
-            corpse.EnterWorld();
+            var seconds = Math.Max(60, L("event_boss_loot_minutes") * 60);
+            var positions = Scatter(boss.Location, items.Count, 1.0f, (float)Math.Max(2, L("event_boss_reward_box_radius"))).ToList();
 
-            lock (locker)
+            for (var i = 0; i < items.Count; i++)
             {
-                if (rewardCorpses.Count > 500) rewardCorpses.Clear();   // corpses rot after event_boss_corpse_minutes; keep the list small
-                rewardCorpses.Add(corpse.Guid.Full);
+                var item = items[i];
+                item.Location = positions[i];
+                item.TimeToRot = seconds;
+
+                lock (locker)
+                {
+                    if (rewardLoot.Count > 5000) rewardLoot.Clear();   // items rot after event_boss_loot_minutes; keep the list small
+                    rewardLoot.Add(item.Guid.Full);
+                }
+
+                if (!item.EnterWorld())
+                    item.Destroy();
             }
+
+            log.Info($"[EVENTBOSS] {boss.Name} dropped {items.Count} items from a pull of chest {chestWcid}");
+        }
+
+        private static List<WorldObject> RollChestPull(uint chestWcid, ushort? landblock)
+        {
+            var results = new List<WorldObject>();
+
+            var weenie = DatabaseManager.World.GetCachedWeenie(chestWcid);
+            if (weenie?.PropertiesGenerator == null || weenie.PropertiesGenerator.Count == 0)
+                return results;
+
+            var profiles = weenie.PropertiesGenerator.ToList();
+
+            var initObjects = 1;
+            if (weenie.PropertiesInt != null && weenie.PropertiesInt.TryGetValue(PropertyInt.InitGeneratedObjects, out var init) && init > 0)
+                initObjects = init;
+
+            var created = new int[profiles.Count];
+            var total = 0;
+
+            bool IsMaxed(int i) => profiles[i].MaxCreate > 0 && created[i] >= profiles[i].MaxCreate;
+
+            void Spawn(int i)
+            {
+                var p = profiles[i];
+
+                if (p.WhereCreate.HasFlag(RegenLocationType.Treasure))
+                {
+                    var deathTreasure = DatabaseManager.World.GetCachedDeathTreasure(p.WeenieClassId);
+                    if (deathTreasure != null)
+                    {
+                        // same whitelist handling as a chest (GeneratorProfile.TreasureGenerator), using the boss's landblock
+                        deathTreasure.DisableRatings = PropertyManager.GetBool("ratings_whitelist_enabled").Item && !Whitelist.IsRatingsWhitelistedChestWeenie(chestWcid)
+                            && (!landblock.HasValue || !Whitelist.IsRatingsWhitelistedLandblock(landblock.Value));
+                        deathTreasure.DisableSets = PropertyManager.GetBool("equipmentset_whitelist_enabled").Item && (!landblock.HasValue || !Whitelist.IsEquipmentSetWhitelistedLandblock(landblock.Value));
+                        deathTreasure.DisableEpicCantrips = PropertyManager.GetBool("epic_whitelist_enabled").Item && (!landblock.HasValue || !Whitelist.IsEpicWhitelistedLandblock(landblock.Value));
+                        deathTreasure.DisableLegendaryCantrips = PropertyManager.GetBool("legendary_whitelist_enabled").Item && (!landblock.HasValue || !Whitelist.IsLegendaryWhitelistedLandblock(landblock.Value));
+                        deathTreasure.DisableAetheria = PropertyManager.GetBool("aetheria_whitelist_enabled").Item && (!landblock.HasValue || !Whitelist.IsAetheriaWhitelistedLandblock(landblock.Value));
+                        deathTreasure.DisableHighLevelAetheria = PropertyManager.GetBool("aetheria_highlevel_whitelist_enabled").Item && (!landblock.HasValue || !Whitelist.IsAetheriaWhitelistedLandblock(landblock.Value));
+
+                        results.AddRange(LootGenerationFactory.CreateRandomLootObjects(deathTreasure).Where(o => o != null));
+                    }
+                    else
+                        log.Warn($"[EVENTBOSS] chest {chestWcid}: treasure profile {p.WeenieClassId} not found");
+
+                    created[i]++;
+                    total++;    // a treasure roll counts as one generated object, like on the chest
+                    return;
+                }
+
+                var count = p.InitCreate > 0 ? p.InitCreate : 1;
+                if (p.MaxCreate > 0) count = Math.Min(count, p.MaxCreate - created[i]);
+                count = Math.Min(count, Math.Max(1, initObjects - total));
+
+                for (var n = 0; n < count; n++)
+                {
+                    var wo = WorldObjectFactory.CreateNewWorldObject(p.WeenieClassId);
+                    if (wo == null) break;
+
+                    if (p.StackSize.HasValue && p.StackSize.Value > 1 && wo.MaxStackSize.HasValue)
+                        wo.SetStackSize(Math.Min(p.StackSize.Value, wo.MaxStackSize.Value));
+
+                    results.Add(wo);
+                }
+                created[i] += count;
+                total += count;
+            }
+
+            // always-spawn entries first
+            for (var i = 0; i < profiles.Count; i++)
+            {
+                if (profiles[i].Probability == -1 && !IsMaxed(i))
+                    Spawn(i);
+            }
+
+            // then random picks, using the generator's cumulative probabilities over entries that aren't maxed yet
+            for (var guard = 0; total < initObjects && guard < 50; guard++)
+            {
+                var cumulative = new List<(int index, float upTo)>();
+                var sum = 0.0f;
+                var last = 0.0f;
+
+                for (var i = 0; i < profiles.Count; i++)
+                {
+                    var prob = profiles[i].Probability;
+                    if (prob == -1) continue;
+
+                    if (!IsMaxed(i))
+                    {
+                        if (last > prob) last = 0.0f;
+                        sum += prob - last;
+                        cumulative.Add((i, sum));
+                    }
+                    last = prob;
+                }
+
+                if (cumulative.Count == 0 || sum <= 0) break;
+
+                var rng = ThreadSafeRandom.Next(0.0f, sum);
+                var pick = cumulative.FirstOrDefault(c => rng < c.upTo);
+                if (pick.upTo == 0) pick = cumulative[cumulative.Count - 1];
+
+                Spawn(pick.index);
+            }
+
+            return results;
         }
 
         /// <summary>
