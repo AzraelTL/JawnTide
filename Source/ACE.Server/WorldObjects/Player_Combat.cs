@@ -765,7 +765,8 @@ namespace ACE.Server.WorldObjects
 
         public bool IsPKDeath(uint? killerGuid)
         {
-            return PlayerKillerStatus.HasFlag(PlayerKillerStatus.PK) && new ObjectGuid(killerGuid ?? 0).IsPlayer() && killerGuid != Guid.Full;
+            // JawnTide live events: a death to the event boss counts as a monster kill (no PK respite, no PK Trophy, no PK broadcast)
+            return PlayerKillerStatus.HasFlag(PlayerKillerStatus.PK) && new ObjectGuid(killerGuid ?? 0).IsPlayer() && killerGuid != Guid.Full && !EventBossManager.IsBossGuid(killerGuid);
         }
 
         /// <summary>
@@ -778,7 +779,7 @@ namespace ACE.Server.WorldObjects
 
         public bool IsPKLiteDeath(uint? killerGuid)
         {
-            return PlayerKillerStatus.HasFlag(PlayerKillerStatus.PKLite) && new ObjectGuid(killerGuid ?? 0).IsPlayer() && killerGuid != Guid.Full;
+            return PlayerKillerStatus.HasFlag(PlayerKillerStatus.PKLite) && new ObjectGuid(killerGuid ?? 0).IsPlayer() && killerGuid != Guid.Full && !EventBossManager.IsBossGuid(killerGuid);
         }
 
         public CombatMode LastCombatMode;

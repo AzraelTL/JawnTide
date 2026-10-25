@@ -47,6 +47,16 @@ namespace ACE.Server.Managers
             lock (locker) return bossGuid == player.Guid.Full;
         }
 
+        /// <summary>
+        /// True if this guid is the current event boss. Used so a player killed by the boss dies like a monster kill:
+        /// no PK respite (stays red), no PK Trophy drop, no PK kill broadcast or PvP stats
+        /// </summary>
+        public static bool IsBossGuid(uint? guid)
+        {
+            if (!guid.HasValue) return false;
+            lock (locker) return bossGuid == guid.Value;
+        }
+
         private static long L(string key) => PropertyManager.GetLong(key).Item;
 
         /// <summary>

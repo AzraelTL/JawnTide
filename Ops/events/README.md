@@ -84,6 +84,9 @@ world boss table at first). **Tune that table in the Loot Editor (Loot > NPC rew
   `@eventboss on` again after a restart. The skills, attributes and level it sets are saved on the character like any
   other change (every few minutes and on logout), so stop the server only after the boss has logged out.
 - The boss counts as a player, so players need to be able to attack it (JawnTide is a red server; check PK status if not).
+- A player the boss kills dies as if a monster killed them: they stay red (no PK respite timer), drop no PK Trophy,
+  and there's no PK kill broadcast, kill streak or PvP stat. Normal vitae and item loss apply. This counts whenever
+  the boss is the top damager on the victim (a player who mostly took damage from another player is still a PK death).
 - More boss types later: each can drop its own box weenie, with its own `Refuse` emote and random table on Aidoneus.
 - Boss looks: a different look is a different dedicated character; different strength is different settings
   (health, minion creature and count, loot profile).
