@@ -1587,17 +1587,32 @@ namespace ACE.Server.WorldObjects
 
         public const float ProjHeight = 2.0f / 3.0f;
 
+        /// <summary>
+        /// JawnTide live events: the scaled-up event boss launches its spell projectiles (bolts, rings, walls, streaks)
+        /// from the height of a normal-sized body, so they don't fly over everyone's heads
+        /// </summary>
+        private float SpellLaunchHeight
+        {
+            get
+            {
+                var scale = ObjScale ?? 1.0f;
+                if (scale > 1.0f && this is Player player && ACE.Server.Managers.EventBossManager.IsBoss(player))
+                    return Height / scale;
+                return Height;
+            }
+        }
+
         public Vector3 CalculatePreOffset(Spell spell, ProjectileSpellType spellType, WorldObject target)
         {
             var startFactor = spellType == ProjectileSpellType.Arc ? 1.0f : ProjHeight;
 
-            var preOffset = new Vector3(0, 0, Height * startFactor);
+            var preOffset = new Vector3(0, 0, SpellLaunchHeight * startFactor);
 
             if (target == null)
                 return preOffset;
 
             var startPos = new Physics.Common.Position(PhysicsObj.Position);
-            startPos.Frame.Origin.Z += Height * startFactor;
+            startPos.Frame.Origin.Z += SpellLaunchHeight * startFactor;
 
             var endFactor = spellType == ProjectileSpellType.Arc ? ProjHeightArc : ProjHeight;
 
