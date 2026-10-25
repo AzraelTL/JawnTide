@@ -8,7 +8,9 @@ An admin plays the boss. Everything is driven by two admin commands, `@eventboss
    e.g. "Sinister Shadow"). `@eventboss on` rewrites every skill and attribute on whatever character uses it, permanently.
    Strength is tuned with `event_boss_skill_ranks` and `event_boss_attribute_ranks` (100 each suits a level 100 boss
    that players around level 50-126 can hit; 226 and 190 is fully maxed). Change them, then `@eventboss on` again.
-2. Dress it for the part (dark armor or robes). Players see your character scaled up while the event runs.
+2. Its look: `@eventboss on`/`make` gives the character a creature body from the `event_boss_look_*` settings (default:
+   the Sinister Shadow), saved on the character; gear is not drawn over it while it is the boss. Use a **human male**
+   character (it already has the body the Shadow uses). Other players see it right away; your own screen after a relog.
 3. Reward boxes are opened by **Aidoneus** (490076), the same NPC who takes world boss drops, so nothing needs placing.
 
 ## Permanent boss characters
@@ -59,6 +61,7 @@ world boss table at first). **Tune that table in the Loot Editor (Loot > NPC rew
 | Setting | Default |
 |---|---|
 | event_boss_level (shown on appraisal; strength comes from the ranks) | 100 |
+| event_boss_look_setup / _clothing_base / _palette_base / _palette_template / _shade (double) | the Sinister Shadow: 0x02000001 / 0x100000B0 / 0x0400007E / 39 / 0.5 (clothing_base 0 = own look) |
 | event_boss_skill_ranks (every skill specialized; 226 = max) | 100 |
 | event_boss_attribute_ranks (on top of 100 innate; 190 = max) | 100 |
 | event_boss_health | 20000 |

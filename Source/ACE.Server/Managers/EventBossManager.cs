@@ -212,6 +212,8 @@ namespace ACE.Server.Managers
                 boss.Session.Network.EnqueueSend(new GameMessagePrivateUpdateVital(boss, vital));
             }
 
+            ApplyLook(boss);
+
             // the level players see when they appraise the boss
             var level = (int)Math.Clamp(L("event_boss_level"), 1, 999);
             boss.Level = level;
@@ -223,6 +225,25 @@ namespace ACE.Server.Managers
             // every spell, the first time only (re-learning thousands of spells on every login floods the client)
             if ((boss.Biota.PropertiesSpellBook?.Count ?? 0) < 1000)
                 DeveloperCommands.HandleAddAllSpells(boss.Session);
+        }
+
+        /// <summary>
+        /// The boss's look: a creature's body (setup, clothing table, palette) instead of its own, from the
+        /// event_boss_look_* settings (default: the Sinister Shadow). Saved on the character, which is a dedicated boss
+        /// character. Equipment is not drawn on top of it (Creature.CalculateObjDesc). event_boss_look_clothing_base 0 keeps
+        /// the character's own look.
+        /// </summary>
+        private static void ApplyLook(Player boss)
+        {
+            var clothingBase = (uint)L("event_boss_look_clothing_base");
+            if (clothingBase == 0)
+                return;
+
+            boss.SetupTableId = (uint)L("event_boss_look_setup");
+            boss.ClothingBase = clothingBase;
+            boss.PaletteBaseDID = (uint)L("event_boss_look_palette_base");
+            boss.PaletteTemplate = (int)L("event_boss_look_palette_template");
+            boss.Shade = PropertyManager.GetDouble("event_boss_look_shade").Item;
         }
 
         /// <summary>

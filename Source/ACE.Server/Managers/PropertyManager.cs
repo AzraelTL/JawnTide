@@ -665,6 +665,10 @@ namespace ACE.Server.Managers
         public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties =
             DictOf(
                 ("char_delete_time", new Property<long>(3600, "the amount of time in seconds a deleted character can be restored")),
+                ("event_boss_look_setup", new Property<long>(0x02000001, "JawnTide live events: model (Setup) the event boss character is given by @eventboss on/make (default: human body, as the Sinister Shadow uses)")),
+                ("event_boss_look_clothing_base", new Property<long>(0x100000B0, "JawnTide live events: body skin (ClothingBase) for the event boss (default 0x100000B0: the Shadow look); 0 = keep the character's own look")),
+                ("event_boss_look_palette_base", new Property<long>(0x0400007E, "JawnTide live events: palette base for the event boss look")),
+                ("event_boss_look_palette_template", new Property<long>(39, "JawnTide live events: palette template (color scheme) for the event boss look; 39 = Black")),
                 ("event_boss_level", new Property<long>(100, "JawnTide live events: the level the event boss shows (set by @eventboss on; does not change its strength)")),
                 ("event_boss_skill_ranks", new Property<long>(100, "JawnTide live events: ranks the event boss gets in every (specialized) skill; 226 = maxed. Lower it so lower-level players can hit it (apply with @eventboss on)")),
                 ("event_boss_attribute_ranks", new Property<long>(100, "JawnTide live events: ranks the event boss gets in every attribute, on top of 100 innate; 190 = maxed (apply with @eventboss on)")),
@@ -747,6 +751,7 @@ namespace ACE.Server.Managers
         public static readonly ReadOnlyDictionary<string, Property<double>> DefaultDoubleProperties =
             DictOf(
 
+                ("event_boss_look_shade", new Property<double>(0.5, "JawnTide live events: shade for the event boss look")),
                 ("event_boss_scale", new Property<double>(2.0, "JawnTide live events: size of the event boss while the event runs (1 = normal)")),
                 ("cantrip_drop_rate", new Property<double>(1.0, "Scales the chance for cantrips to drop in each tier. Defaults to 1.0, as per end of retail")),
                 ("cloak_cooldown_seconds", new Property<double>(5.0, "The number of seconds between possible cloak procs.")),

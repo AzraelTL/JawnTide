@@ -34,6 +34,10 @@ namespace ACE.Server.WorldObjects
 
         public override ACE.Entity.ObjDesc CalculateObjDesc()
         {
+            // JawnTide live events: the event boss is drawn as its creature body (ClothingBase from @eventboss), without gear
+            if (this is Player eventBoss && ClothingBase.HasValue && ACE.Server.Managers.EventBossManager.IsBoss(eventBoss))
+                return base.CalculateObjDesc();
+
             ACE.Entity.ObjDesc objDesc = new ACE.Entity.ObjDesc();
             ClothingTable item;
 
