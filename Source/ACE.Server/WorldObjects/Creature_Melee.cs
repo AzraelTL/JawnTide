@@ -144,6 +144,11 @@ namespace ACE.Server.WorldObjects
                 if (player != null && player.CheckPKStatusVsTarget(creature, null) != null)
                     continue;
 
+                // JawnTide: cleaves never hit players in the attacker's own allegiance (same monarch). They don't use up
+                // a cleave either, so the swing can still reach the next enemy behind them. The main target is unchanged.
+                if (player != null && cleaveTargetPlayer != null && player.IsSameAllegiance(cleaveTargetPlayer))
+                    continue;
+
                 if (!creature.Attackable && creature.TargetingTactic == TargetingTactic.None || creature.Teleporting)
                     continue;
 
