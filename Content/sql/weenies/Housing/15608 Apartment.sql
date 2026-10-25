@@ -23,5 +23,6 @@ VALUES (15608,   1, 0x02000C7A) /* Setup */
      , (15608,   8, 0x0600218C) /* Icon */;
 
 INSERT INTO `weenie_properties_create_list` (`object_Id`, `destination_Type`, `weenie_Class_Id`, `stack_Size`, `palette`, `shade`, `try_To_Bond`)
-VALUES (15608, 16,   1000002, 50, 0, 0, False) /* Create Pyreal (273) for HouseBuy */
-     , (15608, 32,   1000002, 25, 0, 0, False) /* Create Pyreal (273) for HouseRent */;
+VALUES (15608, 16,     273,   100000, 0, 0, False) /* Create Pyreal (273) for HouseBuy */
+     , (15608, 16,   11710,        1, 0, 0, False) /* Create Writ of Refuge (11710) for HouseBuy */
+     , (15608, 32,     273,    10000, 0, 0, False) /* Create Pyreal (273) for HouseRent */;

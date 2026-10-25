@@ -24,5 +24,8 @@ VALUES (14936,   1, 0x02000AAF) /* Setup */
      , (14936,   8, 0x0600218C) /* Icon */;
 
 INSERT INTO `weenie_properties_create_list` (`object_Id`, `destination_Type`, `weenie_Class_Id`, `stack_Size`, `palette`, `shade`, `try_To_Bond`)
-VALUES (14936, 16,   1000002,  100, 0, 0, False) /* Create Cabbage (260) for HouseBuy */
-     , (14936, 32,   1000002,  40, 0, 0, False) /* Create Pyreal (273) for HouseRent */;
+VALUES (14936, 16,     273,  2000000, 0, 0, False) /* Create Pyreal (273) for HouseBuy */
+     , (14936, 16,   11710,        5, 0, 0, False) /* Create Writ of Refuge (11710) for HouseBuy */
+     , (14936, 16,   14772,        1, 0, 0, False) /* Create Peppermint Monougat Chew (14772) for HouseBuy */
+     , (14936, 32,     273,   100000, 0, 0, False) /* Create Pyreal (273) for HouseRent */
+     , (14936, 32,   11710,        2, 0, 0, False) /* Create Writ of Refuge (11710) for HouseRent */;

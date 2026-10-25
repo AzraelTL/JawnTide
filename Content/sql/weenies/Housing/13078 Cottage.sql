@@ -24,5 +24,7 @@ VALUES (13078,   1, 0x02000AAF) /* Setup */
      , (13078,   8, 0x0600218C) /* Icon */;
 
 INSERT INTO `weenie_properties_create_list` (`object_Id`, `destination_Type`, `weenie_Class_Id`, `stack_Size`, `palette`, `shade`, `try_To_Bond`)
-VALUES (13078, 16,   1000002,  50, 0, 0, False) /* Create Cabbage (260) for HouseBuy */
-     , (13078, 32,   1000002,  25, 0, 0, False) /* Create Pyreal (273) for HouseRent */;
+VALUES (13078, 16,     273,   300000, 0, 0, False) /* Create Pyreal (273) for HouseBuy */
+     , (13078, 16,   11710,        1, 0, 0, False) /* Create Writ of Refuge (11710) for HouseBuy */
+     , (13078, 16,    4224,        1, 0, 0, False) /* Create Armoredillo Hide Coat (4224) for HouseBuy */
+     , (13078, 32,     273,    30000, 0, 0, False) /* Create Pyreal (273) for HouseRent */;

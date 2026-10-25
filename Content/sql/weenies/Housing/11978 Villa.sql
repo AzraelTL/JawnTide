@@ -24,5 +24,8 @@ VALUES (11978,   1, 0x02000AAF) /* Setup */
      , (11978,   8, 0x0600218C) /* Icon */;
 
 INSERT INTO `weenie_properties_create_list` (`object_Id`, `destination_Type`, `weenie_Class_Id`, `stack_Size`, `palette`, `shade`, `try_To_Bond`)
-VALUES (11978, 16,   1000002,  100, 0, 0, False) /* Create Cabbage (260) for HouseBuy */
-     , (11978, 32,   1000002,  40, 0, 0, False) /* Create Pyreal (273) for HouseRent */;
+VALUES (11978, 16,     273,  2000000, 0, 0, False) /* Create Pyreal (273) for HouseBuy */
+     , (11978, 16,   11710,        5, 0, 0, False) /* Create Writ of Refuge (11710) for HouseBuy */
+     , (11978, 16,    3674,        1, 0, 0, False) /* Create Ash Gromnie Tooth (3674) for HouseBuy */
+     , (11978, 32,     273,   100000, 0, 0, False) /* Create Pyreal (273) for HouseRent */
+     , (11978, 32,   11710,        2, 0, 0, False) /* Create Writ of Refuge (11710) for HouseRent */;

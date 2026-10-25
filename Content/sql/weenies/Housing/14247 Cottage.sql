@@ -24,5 +24,7 @@ VALUES (14247,   1, 0x02000AAF) /* Setup */
      , (14247,   8, 0x0600218C) /* Icon */;
 
 INSERT INTO `weenie_properties_create_list` (`object_Id`, `destination_Type`, `weenie_Class_Id`, `stack_Size`, `palette`, `shade`, `try_To_Bond`)
-VALUES (14247, 16,   1000002,  50, 0, 0, False) /* Create Cabbage (260) for HouseBuy */
-     , (14247, 32,   1000002,  25, 0, 0, False) /* Create Pyreal (273) for HouseRent */;
+VALUES (14247, 16,     273,   300000, 0, 0, False) /* Create Pyreal (273) for HouseBuy */
+     , (14247, 16,   11710,        1, 0, 0, False) /* Create Writ of Refuge (11710) for HouseBuy */
+     , (14247, 16,    7046,        1, 0, 0, False) /* Create Sclavus Tongue (7046) for HouseBuy */
+     , (14247, 32,     273,    30000, 0, 0, False) /* Create Pyreal (273) for HouseRent */;
