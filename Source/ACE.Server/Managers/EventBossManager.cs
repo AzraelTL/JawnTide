@@ -49,6 +49,11 @@ namespace ACE.Server.Managers
 
         private static long L(string key) => PropertyManager.GetLong(key).Item;
 
+        /// <summary>
+        /// A reward box dropped by the event boss, lying in the world (its Quest property limits pickups per character)
+        /// </summary>
+        public static bool IsRewardBox(WorldObject item) => item != null && item.WeenieClassId == (uint)L("event_boss_reward_box_wcid");
+
         // ---- permanent boss characters (event_boss_characters): they become the event boss whenever they log in ----
 
         private static HashSet<uint> PermanentBosses()

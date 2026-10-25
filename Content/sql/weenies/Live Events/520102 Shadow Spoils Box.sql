@@ -20,7 +20,8 @@ VALUES (520102,  39,    0.38) /* DefaultScale */;
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
 VALUES (520102,   1, 'Shadow Spoils Box') /* Name */
      , (520102,  14, 'Bring this to Aidoneus to see what it holds.') /* Use */
-     , (520102,  16, 'Spoils from the fall of a great shadow. Aidoneus knows how to open it.') /* LongDesc */;
+     , (520102,  16, 'Spoils from the fall of a great shadow. Aidoneus knows how to open it.') /* LongDesc */
+     , (520102,  33, 'EventBossBoxPickup') /* Quest */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
 VALUES (520102,   1, 0x0200011E) /* Setup */

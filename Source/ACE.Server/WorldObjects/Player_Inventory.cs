@@ -1264,7 +1264,8 @@ namespace ACE.Server.WorldObjects
             if (item.Quest != null) // We're picking up an item with a quest stamp that can also be a timer/limiter
             {
                 var itemFoundOnMyCorpse = itemFoundOnCorpse && (itemRootOwner.VictimId == Guid.Full);
-                if (item.GeneratorId != null || (itemFoundOnCorpse && !itemFoundOnMyCorpse)) // item is controlled by a generator or is on a corpse that is not my own
+                // JawnTide: event boss reward boxes lie loose on the ground (no generator), but their pickup timer still applies
+                if (item.GeneratorId != null || (itemFoundOnCorpse && !itemFoundOnMyCorpse) || EventBossManager.IsRewardBox(item)) // item is controlled by a generator or is on a corpse that is not my own
                 {
                     if (QuestManager.CanSolve(item.Quest))
                     {
