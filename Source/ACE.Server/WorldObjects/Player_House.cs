@@ -88,22 +88,19 @@ namespace ACE.Server.WorldObjects
 
             if (slumlord.House.HouseType != HouseType.Apartment)
             {
-                if (PropertyManager.GetBool("house_15day_account").Item && !Account15Days)
+                if (PropertyManager.GetBool("house_15day_account").Item && !HouseAccountAgeReached)
                 {
-                    var accountTimeSpan = DateTime.UtcNow - Account.CreateTime;
-                    if (accountTimeSpan.TotalDays < 15)
-                    {
-                        var msg = "Your account must be at least 15 days old to purchase this dwelling. This applies to all housing except apartments.";
-                        Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, msg), new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
-                        log.Info($"[HOUSE] {Name}.HandleActionBuyHouse(): Failed pre-purchase requirement - house_15day_account");
-                        return;
-                    }
+                    var days = HouseAccountAgeDays;
+                    var msg = $"Your account must be at least {days} day{(days == 1 ? "" : "s")} old to purchase this dwelling. This applies to all housing except apartments.";
+                    Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, msg), new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
+                    log.Info($"[HOUSE] {Name}.HandleActionBuyHouse(): Failed pre-purchase requirement - house_15day_account");
+                    return;
                 }
 
                 if (PropertyManager.GetBool("house_30day_cooldown").Item)
                 {
-                    // fix gap
-                    if (!Account15Days) ManageAccount15Days_HousePurchaseTimestamp();
+                    // fix gap (also clears a wait date left over from an older account-age setting)
+                    ManageAccount15Days_HousePurchaseTimestamp();
 
                     var lastPurchaseTime = Time.GetDateTimeFromTimestamp(HousePurchaseTimestamp ?? 0);
                     var lastPurchaseTimePlus30 = lastPurchaseTime.AddDays(30);
@@ -1867,12 +1864,28 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
+        /// JawnTide: days an account must exist before its characters can buy a non-apartment house
+        /// (house_account_age_days, retail 15). Only enforced while house_15day_account is true.
+        /// </summary>
+        public static int HouseAccountAgeDays => (int)Math.Max(0, PropertyManager.GetLong("house_account_age_days").Item);
+
+        /// <summary>
+        /// True once this account is old enough to buy a non-apartment house
+        /// </summary>
+        public bool HouseAccountAgeReached => (DateTime.UtcNow - Account.CreateTime).TotalDays >= HouseAccountAgeDays;
+
+        /// <summary>
         /// When house_15day_account is true (retail server default),
-        /// new characters logging in on accounts less than 15 days old
-        /// have their HousePurchaseTimestamp set to 15 days before account creation.
+        /// new characters logging in on accounts younger than house_account_age_days
+        /// have their HousePurchaseTimestamp set to (30 - house_account_age_days) days before account creation.
         /// 
         /// This is for the House panel to show the correct date the character may purchase a house,
         /// which the client automatically calculates as 30 days after HousePurchaseTimestamp
+        /// </summary>
+        private int AccountAgeWaitTimestamp => (int)Time.GetUnixTime(Account.CreateTime.AddDays(HouseAccountAgeDays - 30));
+
+        /// <summary>
+        /// The value the retail 15-day rule stored; recognized so it can be cleared after the wait was shortened
         /// </summary>
         private int FifteenDaysBeforeAccountCreation => (int)Time.GetUnixTime(Account.CreateTime.AddDays(-15));
 
@@ -1885,15 +1898,18 @@ namespace ACE.Server.WorldObjects
 
             if (HouseRentTimestamp != null) return;
 
-            if (PropertyManager.GetBool("house_15day_account").Item && !Account15Days)
+            var isWaitTimestamp = HousePurchaseTimestamp == AccountAgeWaitTimestamp || HousePurchaseTimestamp == FifteenDaysBeforeAccountCreation;
+
+            if (PropertyManager.GetBool("house_15day_account").Item && !HouseAccountAgeReached)
             {
                 // this is set so the next purchase time displays properly on house tab
-                HousePurchaseTimestamp = FifteenDaysBeforeAccountCreation;
+                if (HousePurchaseTimestamp == null || isWaitTimestamp)
+                    HousePurchaseTimestamp = AccountAgeWaitTimestamp;
             }
-            else if (HousePurchaseTimestamp == FifteenDaysBeforeAccountCreation)
+            else if (isWaitTimestamp)
             {
-                // account is now 15+ days old and still has not purchased a house, remove unneeded HousePurchaseTimestamp
-                // also if server admin sets house_15day_account to false, this corrects the next purchase time on the House panel 
+                // account is now old enough and still has not purchased a house, remove unneeded HousePurchaseTimestamp
+                // also if server admin turns off house_15day_account or shortens the wait, this corrects the next purchase time on the House panel
                 HousePurchaseTimestamp = null;
             }
         }

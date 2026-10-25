@@ -686,6 +686,7 @@ namespace ACE.Server.Managers
                 ("event_boss_summon_cooldown_seconds", new Property<long>(120, "JawnTide live events: seconds between uses of /minions")),
                 ("fi_cooldown_seconds", new Property<long>(2, "JawnTide: seconds a player must wait between uses of /fi (and /objsend), which resends every object around them to fix invisible monsters, NPCs and items")),
                 ("quest_xp_award_max_levels", new Property<long>(5, "JawnTide: a single quest XP reward (AwardXP / AwardNoShareXP emotes: NPC turn-ins, used items) can raise a character at most this many levels; the rest is not awarded. Stops high-level quest items from power-leveling alts. 0 = no limit")),
+                ("house_account_age_days", new Property<long>(3, "JawnTide: how many days old an account must be before its characters can buy a cottage, villa or mansion (apartments have no wait). Only applies while house_15day_account is true. Retail was 15")),
                 ("loot_max_tier", new Property<long>(0, "JawnTide: highest loot tier random loot (corpses, chests, monster equipment) can roll. Higher tiers roll as this tier. 0 = no cap")),
                 ("chat_requires_account_time_seconds", new Property<long>(0, "the amount of time in seconds an account is required to have existed for for global chat privileges")),
                 ("chat_requires_player_age", new Property<long>(0, "the amount of time in seconds a player is required to have played for global chat privileges")),
