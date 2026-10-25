@@ -30,7 +30,7 @@ them). Create them on the boss character with `@ci`:
 |---|---|---|
 | 520110 | Shadow Reaver | Weeping Two Handed Spear +10% in a two-handed sword shape: 52 slash, offense 1.35, defense 1.30, Bael'Zharon's Hate (human slayer 3.74x), ignores armor and shields, Moderate Two Handed Aptitude |
 | 520111 | Shadow Wand | Weeping Wand +10%: defense 1.1, mana conversion +2.2%, human slayer 1.54x, Slash Rending, Life and War Mastery Other VI, Focus and Willpower Self VI, Moderate Mana Conversion Prowess |
-| 520112 | Shadow Longbow | Weeping Bow +10%: damage 29, modifier 2.40, offense 1.1, defense 1.30, human slayer 3.19x, ignores armor and shields, Armor Rending and Slash Rending, Moderate Missile Aptitude; needs arrows (`@ci` any stock arrows) |
+| 520112 | Shadow Longbow | Weeping Bow +10%: damage 29, modifier 2.40, offense 1.1, defense 1.30, human slayer 3.19x, ignores armor and shields, Slash Rending, Moderate Missile Aptitude; needs arrows (`@ci` any stock arrows) |
 
 Bael'Zharon's Hate makes them human slayers: every player character counts as human, so they hit players very hard.
 

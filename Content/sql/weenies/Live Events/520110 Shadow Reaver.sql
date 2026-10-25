@@ -27,8 +27,7 @@ VALUES (520110,   1,          1) /* ItemType - MeleeWeapon */
      , (520110, 114,          1) /* Attuned - Attuned */
      , (520110, 151,          2) /* HookType - Wall */
      , (520110, 166,         31) /* SlayerCreatureType - Human */
-     , (520110, 179,          4) /* ImbuedEffect - ArmorRending */
-     , (520110, 303,          8) /* ImbuedEffect2 - SlashRending */;
+     , (520110, 179,          8) /* ImbuedEffect - SlashRending (armor is already fully ignored: Armor Cleaving) */;
 
 INSERT INTO `weenie_properties_bool` (`object_Id`, `type`, `value`)
 VALUES (520110,  22, True ) /* Inscribable */
