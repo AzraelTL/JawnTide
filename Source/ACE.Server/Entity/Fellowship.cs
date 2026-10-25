@@ -694,6 +694,44 @@ namespace ACE.Server.Entity
         }
 
         /// <summary>
+        /// JawnTide: fellows who share kill task credit with this player (not including the player).
+        /// Same landblock always counts (a whole dungeon); otherwise both must be outdoors (buildings count as outdoors)
+        /// and within fellow_kt_range meters. Fellows in a different dungeon never count.
+        /// fellow_kt_range 0 falls back to the stock WithinRange.
+        /// </summary>
+        public List<Player> KillTaskWithinRange(Player player)
+        {
+            var range = PropertyManager.GetDouble("fellow_kt_range").Item;
+
+            if (range <= 0)
+                return WithinRange(player);
+
+            var results = new List<Player>();
+
+            if (player.Location == null)
+                return results;
+
+            foreach (var fellow in GetFellowshipMembers().Values)
+            {
+                if (fellow == player || fellow.Location == null)
+                    continue;
+
+                bool shareable;
+
+                if (player.Location.Landblock == fellow.Location.Landblock)
+                    shareable = true;
+                else if ((player.CurrentLandblock?.IsDungeon ?? true) || (fellow.CurrentLandblock?.IsDungeon ?? true))
+                    shareable = false;
+                else
+                    shareable = player.Location.Distance2D(fellow.Location) <= range;
+
+                if (shareable)
+                    results.Add(fellow);
+            }
+            return results;
+        }
+
+        /// <summary>
         /// Called when someone in the fellowship levels up
         /// </summary>
         public void OnFellowLevelUp(Player player)

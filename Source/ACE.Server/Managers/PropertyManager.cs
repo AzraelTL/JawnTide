@@ -553,7 +553,7 @@ namespace ACE.Server.Managers
                 ("equipmentsetid_name_decoration", new Property<bool>(false, "enable this to add the EquipmentSet name to loot armor name")),
                 ("fastbuff", new Property<bool>(true, "If TRUE, enables the fast buffing trick from retail.")),
                 ("fellow_busy_no_recruit", new Property<bool>(true, "if FALSE, fellows can be recruited while they are busy, different from retail")),
-                ("fellow_kt_killer", new Property<bool>(true, "if FALSE, fellowship kill tasks will share with the fellowship, even if the killer doesn't have the quest")),
+                ("fellow_kt_killer", new Property<bool>(false, "if FALSE, fellowship kill tasks will share with the fellowship, even if the killer doesn't have the quest. JawnTide default FALSE (retail TRUE)")),
                 ("fellow_kt_landblock", new Property<bool>(false, "if TRUE, fellowship kill tasks will share with landblock range (192 distance radius, or entire dungeon)")),
                 ("fellow_quest_bonus", new Property<bool>(false, "if TRUE, applies EvenShare formula to fellowship quest reward XP (300% max bonus, defaults to false in retail)")),
                 ("fix_chest_missing_inventory_window", new Property<bool>(false, "Very non-standard fix. This fixes an acclient bug where unlocking a chest, and then quickly opening it before the client has received the Locked=false update from server can result in the chest opening, but with the chest inventory window not displaying. Bug has a higher chance of appearing with more network latency.")),
@@ -900,7 +900,8 @@ namespace ACE.Server.Managers
                 ("catchup_xp_min_multiplier", new Property<double>(2.0, "catch-up XP multiplier for a character just below catchup_xp_threshold of the cap")),
                 ("daily_monster_xp_category_ratio", new Property<double>(0.60, "fraction of the player's remaining season-cap headroom that can be filled from Monster-category XP (creature kills, fellowship, allegiance passup, proficiency) per cap window")),
                 ("daily_quest_xp_category_ratio", new Property<double>(0.60, "fraction of the player's remaining season-cap headroom that can be filled from Quest-category XP (quests, exploration, emotes) per cap window")),
-                ("daily_pvp_xp_category_ratio", new Property<double>(1.0, "fraction of the player's remaining season-cap headroom that can be filled from PvP-category XP per cap window"))
+                ("daily_pvp_xp_category_ratio", new Property<double>(1.0, "fraction of the player's remaining season-cap headroom that can be filled from PvP-category XP per cap window")),
+                ("fellow_kt_range", new Property<double>(600, "JawnTide: fellowship kill task sharing range in meters. A kill counts for every fellow with the task who is in the same landblock (the whole dungeon when underground) or, when both are outdoors, within this distance. 0 = stock ACE range (radar range, or fellow_kt_landblock)"))
                 
                 );
 

@@ -333,8 +333,8 @@ namespace ACE.Server.WorldObjects
                 if (playerDamager.Fellowship == null)
                     continue;
 
-                // share with fellows in kill task range
-                var fellows = playerDamager.Fellowship.WithinRange(playerDamager);
+                // share with fellows in kill task range (JawnTide: fellow_kt_range)
+                var fellows = playerDamager.Fellowship.KillTaskWithinRange(playerDamager);
 
                 foreach (var fellow in fellows)
                 {
