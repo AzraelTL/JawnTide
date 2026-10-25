@@ -15,13 +15,13 @@ An admin plays the boss. Everything is driven by two admin commands, `@eventboss
 
 ## Permanent boss characters
 
-`@eventboss make` on a boss character makes it permanent: from then on it becomes the event boss automatically about
-5 seconds after it logs in (stats, size, no +, announcement), and the event ends when it logs out. So you just log it
-in when you want to run an event. `@eventboss unmake` turns it back into an ordinary character (its stats stay);
+`@eventboss make` on a boss character makes it permanent. To run an event: log it in, get into position, and type
+**`/startevent`** (stats re-applied, size, no +, Shadow look, announcement). **`/endevent`** stops it without rewards,
+and logging out also ends it. `@eventboss unmake` turns it back into an ordinary character (its stats stay);
 `@eventboss list` shows the permanent boss characters. Only one event boss can be active at a time.
 
 When the boss dies it keeps all its buffs and gets no vitae; it wakes at its lifestone and the event is over (rewards
-handed out). Log out and back in, or `@eventboss on`, to start the next fight.
+handed out). Type `/startevent` again to start the next fight.
 
 ## Boss weapons
 

@@ -5171,7 +5171,7 @@ namespace ACE.Server.Command.Handlers
         [CommandHandler("eventboss", AccessLevel.Admin, CommandHandlerFlag.RequiresWorld, 1,
             "Live events: makes your current character the event boss, or ends the event.",
             "make | unmake | list | on | off | status\n" +
-            "make: this character becomes a permanent boss character: it becomes the event boss (and gets its stats) every time it logs in.\n" +
+            "make: this character becomes a permanent boss character; log it in, get into position and type /startevent.\n" +
             "unmake: back to an ordinary character.\n" +
             "list: the permanent boss characters.\n" +
             "on: every skill specialized and maxed, attributes maxed, boss health and mana, all spells, no components, scaled up. Use a dedicated character: the stats stay.\n" +
@@ -5204,6 +5204,23 @@ namespace ACE.Server.Command.Handlers
                     session.Network.EnqueueSend(new GameMessageSystemChat(EventBossManager.IsBoss(player) ? "You are the event boss." : EventBossManager.IsActive ? "Another character is the event boss." : "No event is running.", ChatMessageType.Broadcast));
                     break;
             }
+        }
+
+        [CommandHandler("startevent", AccessLevel.Admin, CommandHandlerFlag.RequiresWorld, 0,
+            "Live events: a boss character (@eventboss make) starts the event where it stands.", "")]
+        public static void HandleStartEvent(Session session, params string[] parameters)
+        {
+            EventBossManager.StartEventCommand(session.Player);
+        }
+
+        [CommandHandler("endevent", AccessLevel.Admin, CommandHandlerFlag.RequiresWorld, 0,
+            "Live events: ends the running event without rewards (same as @eventboss off).", "")]
+        public static void HandleEndEvent(Session session, params string[] parameters)
+        {
+            if (!EventBossManager.IsBoss(session.Player))
+                session.Network.EnqueueSend(new GameMessageSystemChat("This character is not the event boss.", ChatMessageType.Broadcast));
+            else
+                EventBossManager.Stop(session.Player, true);
         }
 
         [CommandHandler("minions", AccessLevel.Admin, CommandHandlerFlag.RequiresWorld, 0,

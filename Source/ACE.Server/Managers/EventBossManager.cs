@@ -100,7 +100,8 @@ namespace ACE.Server.Managers
         }
 
         /// <summary>
-        /// Called on login: a permanent boss character becomes the event boss a few seconds after entering the world
+        /// Called on login: a permanent boss character is reminded how to start the event (it no longer starts by itself,
+        /// so the boss can get into position first)
         /// </summary>
         public static void OnLogin(Player player)
         {
@@ -113,14 +114,32 @@ namespace ACE.Server.Managers
             {
                 if (player.IsLoggingOut || player.Session == null)
                     return;
-                if (IsActive && !IsBoss(player))
-                {
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat("Another event boss is already active, so this character was not made the event boss.", ChatMessageType.Broadcast));
-                    return;
-                }
-                Start(player, true);
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat("You are a boss character. Get into position, then type /startevent to begin (/endevent to stop without rewards).", ChatMessageType.Broadcast));
             });
             chain.EnqueueChain();
+        }
+
+        /// <summary>
+        /// /startevent: a permanent boss character starts the event where it stands
+        /// </summary>
+        public static void StartEventCommand(Player player)
+        {
+            if (IsBoss(player))
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat("The event is already running.", ChatMessageType.Broadcast));
+                return;
+            }
+            if (IsActive)
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat("Another event boss is already active.", ChatMessageType.Broadcast));
+                return;
+            }
+            if (!IsPermanentBoss(player))
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat("This is not a boss character. Use @eventboss make first (or @eventboss on for a one-off).", ChatMessageType.Broadcast));
+                return;
+            }
+            Start(player, true);
         }
 
         /// <summary>
