@@ -20,6 +20,8 @@ The `web` user can read only what the site shows:
 - `ace_shard.biota_properties_int`, `biota_properties_int64`, `biota_properties_i_i_d` (level, XP, patron, monarch)
 - `ace_log.pk_kills_log`, `ace_log.arena_event`, `ace_log.arena_character_stats`
 - `ace_log.arena_player` without `player_ip`
+- `ace_web.town_control_whitelist`: a view showing only the `town_control_alleglist` setting (for the Town Control flag on
+  the Allegiances page); the web user cannot read any other server setting
 
 It cannot see account names, passwords, IP addresses or login history. The container runs read-only as `nobody`.
 

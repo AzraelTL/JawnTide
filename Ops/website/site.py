@@ -75,6 +75,14 @@ def take_snapshot():
             if ch is not None:
                 ch["patron" if ptype == PROP_IID_PATRON else "monarch"] = int(value)
 
+        # Town Control whitelist, through a one-row view (the web user can't read the rest of the server settings)
+        whitelist = set()
+        try:
+            for (value,) in q("SELECT value FROM ace_web.town_control_whitelist"):
+                whitelist |= {int(x) for x in (value or "").split(",") if x.strip().isdigit()}
+        except Exception as ex:
+            print(f"town control whitelist not readable: {ex}", flush=True)
+
         kills = []
         for killer, victim, km, vm, when in q("""
                 SELECT killer_id, victim_id, killer_monarch_id, victim_monarch_id, kill_datetime
@@ -108,7 +116,7 @@ def take_snapshot():
                     events[eid]["players"].append(dict(id=cid, name=name, team=team, kills=ks or 0, deaths=deaths or 0))
 
         patrons = {c["patron"] for c in chars.values() if c.get("patron")}
-        return dict(taken=now, chars=chars, kills=kills, arena_stats=arena_stats, patrons=patrons,
+        return dict(taken=now, chars=chars, kills=kills, arena_stats=arena_stats, patrons=patrons, whitelist=whitelist,
                     arena_events=sorted(events.values(), key=lambda v: v["ended"], reverse=True))
     finally:
         conn.close()
@@ -261,6 +269,7 @@ dl.facts dd{margin:0}
 details{border-bottom:1px solid var(--line);padding:.55rem 0}
 summary{cursor:pointer;display:flex;gap:1rem;flex-wrap:wrap;align-items:baseline}
 summary b{font:400 1.35rem/1.2 var(--display)}
+.badge{font-size:.85rem;font-weight:500;color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:.05rem .55rem;white-space:nowrap}
 ul.tree{list-style:none;margin:.4rem 0 .2rem;padding-left:1.1rem;border-left:1px solid var(--line)}
 ul.tree li{padding:.12rem 0}
 """
@@ -426,11 +435,13 @@ def allegiances_page(snap):
     blocks = []
     for r in sorted(roots, key=lambda r: (-size(r), r["name"])):
         m = members(r)
-        blocks.append(f'<details><summary><b>{e(r["name"])}</b><span class="muted">{len(m)} members, highest level '
+        badge = '<span class="badge">Town Control</span>' if r["id"] in snap.get("whitelist", set()) else ""
+        blocks.append(f'<details><summary><b>{e(r["name"])}</b>{badge}<span class="muted">{len(m)} members, highest level '
                       f'{max(x["level"] for x in m)}, {n(kills.get(r["id"], 0))} kills this week</span></summary>'
                       f'<ul class="tree">{"".join(tree(k) for k in sorted(children[r["id"]], key=lambda k: (-size(k), -k["level"], k["name"])))}</ul></details>')
     return (f'<h1>Allegiances</h1><p class="lede">Every allegiance with at least one vassal, largest first. '
-            f'Open one to see its tree. Numbers next to names are levels.</p>'
+            f'Open one to see its tree. Numbers next to names are levels. '
+            f'<span class="badge">Town Control</span> marks allegiances whitelisted for Town Control.</p>'
             f'{"".join(blocks) or "<p class=empty>No allegiances yet.</p>"}')
 
 
@@ -522,7 +533,7 @@ def sample_snapshot():
               dict(id=1, type="1v1", ended=now - timedelta(days=1, hours=2), winner="c",
                    players=[dict(id=1000, name="Grimvale", team="c", kills=1, deaths=0), dict(id=1004, name="Sythe", team="d", kills=0, deaths=1)])]
     patrons = {c["patron"] for c in chars.values() if c.get("patron")}
-    return dict(taken=now, chars=chars, kills=kills, arena_stats=stats, arena_events=events, patrons=patrons)
+    return dict(taken=now, chars=chars, kills=kills, arena_stats=stats, arena_events=events, patrons=patrons, whitelist={1000, 1013})
 
 
 def write_sample(out):
