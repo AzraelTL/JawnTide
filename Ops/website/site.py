@@ -225,10 +225,9 @@ def span_text(seconds):
 
 
 def played(seconds):
-    """In-game played time, like the game's /age: days and hours, or hours and minutes under a day"""
+    """In-game played time in hours and minutes"""
     s = max(0, int(seconds or 0))
-    d, h, m = s // 86400, s % 86400 // 3600, s % 3600 // 60
-    return f"{d}d {h}h" if d else f"{h}h {m}m"
+    return f"{s // 3600:,}h {s % 3600 // 60}m"
 
 
 def countdown(end, utc):
