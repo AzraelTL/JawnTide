@@ -115,11 +115,29 @@ def take_snapshot():
                 if cid not in admins:
                     events[eid]["players"].append(dict(id=cid, name=name, team=team, kills=ks or 0, deaths=deaths or 0))
 
+        # Town Control: towns and recent battles (times there are UTC)
+        utc = q("SELECT UTC_TIMESTAMP()")[0][0]
+        towns = [dict(id=tid, name=name, owner=owner, conflict=bit(conf), length=int(length or 0), respite=int(resp or 0))
+                 for tid, name, owner, conf, length, resp in q("""
+                     SELECT town_id, town_name, owner_Id, is_in_conflict, conflict_length, conflict_respite_length
+                     FROM ace_town_control.town ORDER BY town_name""")]
+        battles = [dict(id=eid, town=tid, start=start, end=end, attacker=att, attacker_name=an, defender=dfn,
+                        defender_name=dn, won=None if won is None else bit(won))
+                   for eid, tid, start, end, att, an, dfn, dn, won in q("""
+                       SELECT event_id, town_id, event_start_time, event_end_time, attacker_id, attacker_clan_name,
+                              defender_id, defender_clan_name, is_attack_success
+                       FROM ace_town_control.town_control_event ORDER BY event_start_time DESC LIMIT 500""")]
+
         patrons = {c["patron"] for c in chars.values() if c.get("patron")}
         return dict(taken=now, chars=chars, kills=kills, arena_stats=arena_stats, patrons=patrons, whitelist=whitelist,
+                    utc=utc, towns=towns, battles=battles,
                     arena_events=sorted(events.values(), key=lambda v: v["ended"], reverse=True))
     finally:
         conn.close()
+
+
+def bit(v):
+    return bool(v) and v not in (b"\x00", 0, "0")
 
 
 def collector():
@@ -194,6 +212,21 @@ def tc_badge(snap, monarch_id):
     return ' <span class="badge">Town Control</span>' if monarch_id in snap.get("whitelist", set()) else ""
 
 
+def span_text(seconds):
+    s = max(0, int(seconds))
+    d, h, m = s // 86400, s % 86400 // 3600, s % 3600 // 60
+    if d:
+        return f"{d}d {h}h" if h else f"{d}d"
+    if h:
+        return f"{h}h {m}m" if m else f"{h}h"
+    return f"{max(m, 1)}m" if s else "0m"
+
+
+def countdown(end, utc):
+    """Time left until end (UTC); the page's script keeps it ticking between refreshes"""
+    return f'<span class="cd" data-end="{end.strftime("%Y-%m-%dT%H:%M:%SZ")}">{span_text((end - utc).total_seconds())}</span>'
+
+
 def rank_cell(i):
     cls = " top" if i <= 3 else ""
     return f'<td class="rank{cls}">{i}</td>'
@@ -254,9 +287,14 @@ td.k{color:var(--blood);font-weight:700}
 .show a{color:var(--dim);text-decoration:none;padding:0 .1rem;border-bottom:2px solid transparent}
 .show a:hover{color:var(--bone)}
 .show a[aria-current]{color:var(--bone);border-bottom-color:var(--portal)}
+.war{color:var(--blood);font-weight:700}
+.calm{color:var(--dim)}
+.resp{display:block;color:var(--dim);font-size:.95rem}
+td.wrapcell{white-space:normal;min-width:12rem}
 .feed{list-style:none;padding:0;margin:0;max-width:40rem}
 .feed li{display:flex;justify-content:space-between;gap:1rem;padding:.45rem 0;border-bottom:1px solid var(--line)}
 .feed b{font-weight:700}
+.feed li>span:last-child{white-space:nowrap}
 .feed .x{color:var(--blood)}
 .cols{display:grid;gap:0 2.5rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,26rem),1fr))}
 .empty{padding:1.2rem 0;color:var(--dim)}
@@ -298,7 +336,7 @@ ul.tree{list-style:none;margin:.4rem 0 .2rem;padding-left:1.1rem;border-left:1px
 ul.tree li{padding:.12rem 0}
 """
 
-PAGES = [("/", "Home"), ("/pk", "PK kills"), ("/arena", "Arena"), ("/levels", "Levels"), ("/allegiances", "Allegiances")]
+PAGES = [("/", "Home"), ("/pk", "PK kills"), ("/towns", "Town Control"), ("/arena", "Arena"), ("/levels", "Levels"), ("/allegiances", "Allegiances")]
 
 
 def layout(path, title, body, snap):
@@ -310,7 +348,10 @@ def layout(path, title, body, snap):
             f'{FONTS}<style>{CSS}</style></head><body>'
             f'<header class="bar"><div class="bar-in"><a class="mark" href="/">JawnTide</a><nav>{nav}</nav></div></header>'
             f'<main>{body}{stamp}</main>'
-            '<script>document.querySelectorAll("button.copy").forEach(b=>b.addEventListener("click",()=>{'
+            '<script>function tick(){const now=Date.now();document.querySelectorAll(".cd").forEach(el=>{'
+            'let s=Math.max(0,Math.floor((Date.parse(el.dataset.end)-now)/1000));const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),x=s%60;'
+            'el.textContent=d?(h?`${d}d ${h}h`:`${d}d`):h?(m?`${h}h ${m}m`:`${h}h`):s?`${m}m ${x}s`:"ending"})}tick();setInterval(tick,1000);'
+            'document.querySelectorAll("button.copy").forEach(b=>b.addEventListener("click",()=>{'
             'navigator.clipboard.writeText(b.dataset.copy).then(()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy address",1600)})}))</script>'
             f'</body></html>')
 
@@ -369,6 +410,67 @@ def pk_page(snap, window, query):
             f'{n(len(kills))} kills {label.lower()}.</p><div class="tabs">{tabs}</div>{killers}'
             f'<div class="cols"><section><h2>Allegiances</h2>{allegs}</section>'
             f'<section><h2>Latest kills</h2><ul class="feed">{recent or "<li class=muted>No kills yet.</li>"}</ul></section></div>')
+
+
+def towns_page(snap):
+    utc = snap["utc"]
+    towns, battles = snap["towns"], snap["battles"]
+    if not towns:
+        return '<h1>Town Control</h1><p class="empty">No towns are set up for Town Control yet.</p>'
+    allegiance = lambda mid, fallback=None: e(name_of(snap, mid)) if mid in snap["chars"] else e(fallback or "Unknown")
+
+    rows = []
+    for t in towns:
+        active = next((b for b in battles if b["town"] == t["id"] and b["end"] is None), None) if t["conflict"] else None
+        holder = allegiance(t["owner"]) if t["owner"] else '<span class="calm">Nobody</span>'
+        if active:
+            status = (f'<span class="war">Under attack</span><span class="resp">{e(active["attacker_name"])} challenging '
+                      f'{e(active["defender_name"]) if active["defender_name"] else "an empty town"}</span>')
+            timer = countdown(active["start"] + timedelta(seconds=t["length"]), utc)
+        else:
+            status, timer = '<span class="calm">Peaceful</span>', '<span class="calm">No battle</span>'
+        # respite: an allegiance that started an attack here can't kill the governor again until respite has passed
+        latest = {}
+        for b in battles:
+            if b["town"] == t["id"] and b["attacker"] not in latest:
+                latest[b["attacker"]] = b
+        waiting = sorted(((b["attacker_name"], b["start"] + timedelta(seconds=t["respite"])) for b in latest.values()
+                          if b["start"] + timedelta(seconds=t["respite"]) > utc), key=lambda w: w[1])
+        resp = "".join(f'<span class="resp">{e(nm)} {countdown(until, utc)}</span>' for nm, until in waiting)
+        rows.append(f'<tr><td><b>{e(t["name"])}</b></td><td>{holder}{tc_badge(snap, t["owner"]) if t["owner"] else ""}</td>'
+                    f'<td class="wrapcell">{status}</td><td>{timer}<span class="resp">lasts {span_text(t["length"])}</span></td>'
+                    f'<td class="wrapcell">{span_text(t["respite"])} per allegiance{resp or "<span class=resp>Nobody waiting</span>"}</td></tr>')
+    table = (f'<div class="wrap"><table><tr><th>Town</th><th>Held by</th><th>Status</th><th>Battle timer</th>'
+             f'<th>Governor respite</th></tr>{"".join(rows)}</table></div>')
+
+    held = {}
+    for t in towns:
+        if t["owner"]:
+            held.setdefault(t["owner"], []).append(t["name"])
+    hrows = "".join(f'<tr>{rank_cell(i)}<td>{allegiance(mid)}{tc_badge(snap, mid)}</td><td class="n k">{len(ns)}</td>'
+                    f'<td class="muted wrapcell">{e(", ".join(sorted(ns)))}</td></tr>'
+                    for i, (mid, ns) in enumerate(sorted(held.items(), key=lambda h: (-len(h[1]), name_of(snap, h[0]))), 1))
+    holders = (f'<div class="wrap"><table style="min-width:24rem"><tr><th></th><th>Allegiance</th><th class="n">Towns</th><th>Which</th></tr>'
+               f'{hrows}</table></div>' if hrows else '<p class="empty">No town is held yet.</p>')
+
+    names = {t["id"]: t["name"] for t in towns}
+    feed = []
+    for b in battles[:20]:
+        town = e(names.get(b["town"], "a town"))
+        vs = f' held by {e(b["defender_name"])}' if b["defender_name"] else ""
+        if b["end"] is None:
+            result = '<span class="war">battle on</span>'
+        elif b["won"]:
+            result = "taken"
+        else:
+            result = "held"
+        feed.append(f'<li><span><b>{e(b["attacker_name"])}</b> attacked {town}{vs}: {result}</span>'
+                    f'<span class="muted">{ago(b["start"], utc)}</span></li>')
+    return (f'<h1>Town Control</h1><p class="lede">Kill a town’s governor to start a battle for it. The battle runs for the '
+            f'battle timer; hold the town to the end and it’s yours. An allegiance that starts a battle must wait out the '
+            f'respite before it can kill that town’s governor again. Only whitelisted allegiances can take part.</p>'
+            f'{table}<div class="cols"><section><h2>Towns held</h2>{holders}</section>'
+            f'<section><h2>Recent battles</h2><ul class="feed">{"".join(feed) or "<li class=muted>No battles yet.</li>"}</ul></section></div>')
 
 
 def arena_page(snap, etype, query):
@@ -481,6 +583,8 @@ def render(path, query, snap):
         return layout(path, "A red Asheron's Call server", home_page(snap), snap)
     if path == "/pk":
         return layout(path, "PK kills", pk_page(snap, query.get("window", ["7d"])[0], query), snap)
+    if path == "/towns":
+        return layout(path, "Town Control", towns_page(snap), snap)
     if path == "/arena":
         return layout(path, "Arena", arena_page(snap, query.get("type", [""])[0], query), snap)
     if path == "/levels":
@@ -561,8 +665,19 @@ def sample_snapshot():
                    players=[dict(id=1000, name="Grimvale", team="a", kills=1, deaths=0), dict(id=1002, name="Ashkaro", team="b", kills=0, deaths=1)]),
               dict(id=1, type="1v1", ended=now - timedelta(days=1, hours=2), winner="c",
                    players=[dict(id=1000, name="Grimvale", team="c", kills=1, deaths=0), dict(id=1004, name="Sythe", team="d", kills=0, deaths=1)])]
+    towns = [dict(id=1, name="Arwic", owner=1000, conflict=True, length=3600, respite=86400),
+             dict(id=2, name="Holtburg", owner=1008, conflict=False, length=3600, respite=86400),
+             dict(id=3, name="Shoushi", owner=1000, conflict=False, length=3600, respite=86400),
+             dict(id=4, name="Yaraq", owner=None, conflict=False, length=3600, respite=86400)]
+    battles = [dict(id=5, town=1, start=now - timedelta(minutes=22), end=None, attacker=1013, attacker_name="Faelin",
+                    defender=1000, defender_name="Grimvale", won=None),
+               dict(id=4, town=2, start=now - timedelta(hours=6), end=now - timedelta(hours=5), attacker=1008,
+                    attacker_name="Mirelock", defender=1013, defender_name="Faelin", won=True),
+               dict(id=3, town=3, start=now - timedelta(hours=20), end=now - timedelta(hours=19), attacker=1013,
+                    attacker_name="Faelin", defender=1000, defender_name="Grimvale", won=False)]
     patrons = {c["patron"] for c in chars.values() if c.get("patron")}
-    return dict(taken=now, chars=chars, kills=kills, arena_stats=stats, arena_events=events, patrons=patrons, whitelist={1000, 1013})
+    return dict(taken=now, chars=chars, kills=kills, arena_stats=stats, arena_events=events, patrons=patrons,
+                whitelist={1000, 1013}, utc=now, towns=towns, battles=battles)
 
 
 def write_sample(out):
@@ -575,7 +690,8 @@ def write_sample(out):
         sections.append(f'<section data-page="{path}" hidden>{main}</section>')
     shell = render("/", {}, snap)
     head, tail = shell[:shell.index("<main>") + 6], shell[shell.index("</main>"):]
-    switch = ('<script>const ids={"#home":"/","#pk":"/pk","#arena":"/arena","#levels":"/levels","#allegiances":"/allegiances"};'
+    ids = ",".join(f'"#{"home" if p == "/" else p.strip("/")}":"{p}"' for p, _ in PAGES)
+    switch = ('<script>const ids={' + ids + '};'
               'function show(p){document.querySelectorAll("section[data-page]").forEach(s=>s.hidden=s.dataset.page!==p);'
               'document.querySelectorAll("nav a").forEach(a=>{if(ids[a.getAttribute("href")]===p)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")})}'
               'function route(){show(ids[location.hash]||"/");scrollTo(0,0)}'

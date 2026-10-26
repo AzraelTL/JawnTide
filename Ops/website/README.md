@@ -4,7 +4,8 @@ The site for jawntide.com: `site.py` (one small Python web server) and `home.htm
 
 Pages: `/` home (server info, how to connect, Discord), `/pk` open-world PK kills (24 hours, 7 days, 30 days,
 all time; top killers, allegiances, latest kills), `/arena` standings per arena type by rank points and recent
-matches, `/levels` the top 100 characters and everyone by level, `/allegiances` monarch trees with kills this week.
+matches, `/towns` Town Control (who holds each town, live battles with attacker and defender, battle and
+governor respite timers, recent battles), `/levels` the top 100 characters and everyone by level, `/allegiances` monarch trees with kills this week.
 
 ## How it works
 
@@ -20,6 +21,7 @@ The `web` user can read only what the site shows:
 - `ace_shard.biota_properties_int`, `biota_properties_int64`, `biota_properties_i_i_d` (level, XP, patron, monarch)
 - `ace_log.pk_kills_log`, `ace_log.arena_event`, `ace_log.arena_character_stats`
 - `ace_log.arena_player` without `player_ip`
+- `ace_town_control.town`, `ace_town_control.town_control_event` (the Town Control page)
 - `ace_web.town_control_whitelist`: a view showing only the `town_control_alleglist` setting (for the Town Control flag on
   the Allegiances page); the web user cannot read any other server setting
 
