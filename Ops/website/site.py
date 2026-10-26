@@ -174,6 +174,26 @@ def allegiance_name(snap, cid):
     return m["name"] if m else ""
 
 
+SHOW = [("25", 25), ("50", 50), ("100", 100), ("250", 250), ("all", None)]
+
+
+def parse_show(query, default):
+    v = query.get("show", [""])[0]
+    return next((s for s in SHOW if s[0] == v), next(s for s in SHOW if s[0] == default))
+
+
+def show_links(path, keep, current):
+    """'Show 25 50 100 250 All' links that keep the page's other choices (window, type)"""
+    extra = "".join(f"&amp;{k}={e(v)}" for k, v in keep.items() if v)
+    links = "".join(f'<a href="{path}?show={k}{extra}"{" aria-current=page" if k == current else ""}>{"All" if k == "all" else k}</a>'
+                    for k, _ in SHOW)
+    return f'<div class="show"><span class="muted">Show</span>{links}</div>'
+
+
+def tc_badge(snap, monarch_id):
+    return ' <span class="badge">Town Control</span>' if monarch_id in snap.get("whitelist", set()) else ""
+
+
 def rank_cell(i):
     cls = " top" if i <= 3 else ""
     return f'<td class="rank{cls}">{i}</td>'
@@ -230,6 +250,10 @@ td.k{color:var(--blood);font-weight:700}
 .tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin:0 0 1.2rem}
 .tabs a{padding:.3rem .8rem;border:1px solid var(--line);border-radius:999px;color:var(--dim);text-decoration:none}
 .tabs a[aria-current]{background:var(--panel);color:var(--bone);border-color:var(--portal)}
+.show{display:flex;gap:.2rem .75rem;flex-wrap:wrap;align-items:baseline;margin:.8rem 0 0;font-size:.95rem}
+.show a{color:var(--dim);text-decoration:none;padding:0 .1rem;border-bottom:2px solid transparent}
+.show a:hover{color:var(--bone)}
+.show a[aria-current]{color:var(--bone);border-bottom-color:var(--portal)}
 .feed{list-style:none;padding:0;margin:0;max-width:40rem}
 .feed li{display:flex;justify-content:space-between;gap:1rem;padding:.45rem 0;border-bottom:1px solid var(--line)}
 .feed b{font-weight:700}
@@ -305,25 +329,26 @@ WINDOWS = [("24h", "Last 24 hours", timedelta(hours=24)), ("7d", "Last 7 days", 
            ("30d", "Last 30 days", timedelta(days=30)), ("all", "All time", None)]
 
 
-def pk_page(snap, window):
+def pk_page(snap, window, query):
     key, label, span = next((w for w in WINDOWS if w[0] == window), WINDOWS[1])
+    show_key, limit = parse_show(query, "50")
     now = snap["taken"]
     kills = [k for k in snap["kills"] if span is None or k["when"] >= now - span]
-    tabs = "".join(f'<a href="/pk?window={k}"{" aria-current=page" if k == key else ""}>{t}</a>' for k, t, _ in WINDOWS)
+    tabs = "".join(f'<a href="/pk?window={k}&amp;show={show_key}"{" aria-current=page" if k == key else ""}>{t}</a>' for k, t, _ in WINDOWS)
 
     tally = {}
     for k in kills:
         tally.setdefault(k["killer"], [0, 0])[0] += 1
         tally.setdefault(k["victim"], [0, 0])[1] += 1
     board = sorted(((cid, kd) for cid, kd in tally.items() if kd[0] > 0),
-                   key=lambda r: (-r[1][0], -(r[1][0] / max(r[1][1], 1)), name_of(snap, r[0])))[:50]
+                   key=lambda r: (-r[1][0], -(r[1][0] / max(r[1][1], 1)), name_of(snap, r[0])))[:limit]
     rows = []
     for i, (cid, (k, d)) in enumerate(board, 1):
         rows.append(f'<tr>{rank_cell(i)}<td>{e(name_of(snap, cid))}</td><td class="muted">{e(allegiance_name(snap, cid))}</td>'
                     f'<td class="n k">{n(k)}</td><td class="n">{n(d)}</td><td class="n">{k / max(d, 1):.2f}</td></tr>')
     killers = (f'<div class="wrap"><table><tr><th></th><th>Character</th><th>Allegiance</th><th class="n">Kills</th>'
                f'<th class="n">Deaths</th><th class="n">K/D</th></tr>{"".join(rows)}</table></div>' if rows
-               else '<p class="empty">No kills in this window yet.</p>')
+               else '<p class="empty">No kills in this window yet.</p>') + show_links("/pk", {"window": key}, show_key)
 
     alleg = {}
     for k in kills:
@@ -333,7 +358,7 @@ def pk_page(snap, window):
             alleg.setdefault(k["vm"], [0, 0])[1] += 1
     arows = []
     for i, (mid, (k, d)) in enumerate(sorted(((m, v) for m, v in alleg.items() if v[0] > 0), key=lambda r: -r[1][0])[:15], 1):
-        arows.append(f'<tr>{rank_cell(i)}<td>{e(name_of(snap, mid))}</td><td class="n k">{n(k)}</td><td class="n">{n(d)}</td></tr>')
+        arows.append(f'<tr>{rank_cell(i)}<td>{e(name_of(snap, mid))}{tc_badge(snap, mid)}</td><td class="n k">{n(k)}</td><td class="n">{n(d)}</td></tr>')
     allegs = (f'<div class="wrap"><table style="min-width:20rem"><tr><th></th><th>Monarch</th><th class="n">Kills</th><th class="n">Deaths</th></tr>'
               f'{"".join(arows)}</table></div>' if arows else '<p class="empty">No allegiance kills in this window yet.</p>')
 
@@ -346,16 +371,17 @@ def pk_page(snap, window):
             f'<section><h2>Latest kills</h2><ul class="feed">{recent or "<li class=muted>No kills yet.</li>"}</ul></section></div>')
 
 
-def arena_page(snap, etype):
+def arena_page(snap, etype, query):
+    show_key, limit = parse_show(query, "50")
     types = sorted({s["type"] for s in snap["arena_stats"] if s["type"]}, key=lambda t: (t != "1v1", t != "2v2", t))
     now = snap["taken"]
     if not types:
         return ('<h1>Arena</h1><p class="lede">Arena standings and recent matches.</p>'
                 '<p class="empty">No arena matches yet. Join the queue in game with /arena join.</p>')
     etype = etype if etype in types else types[0]
-    tabs = "".join(f'<a href="/arena?type={e(t)}"{" aria-current=page" if t == etype else ""}>{e(t)}</a>' for t in types)
+    tabs = "".join(f'<a href="/arena?type={e(t)}&amp;show={show_key}"{" aria-current=page" if t == etype else ""}>{e(t)}</a>' for t in types)
     stats = sorted((s for s in snap["arena_stats"] if s["type"] == etype and s["matches"] > 0),
-                   key=lambda s: (-s["points"], -s["wins"], s["name"] or ""))[:50]
+                   key=lambda s: (-s["points"], -s["wins"], s["name"] or ""))[:limit]
     rows = "".join(
         f'<tr>{rank_cell(i)}<td>{e(s["name"])}</td><td class="n k">{n(s["points"])}</td><td class="n">{n(s["matches"])}</td>'
         f'<td class="n">{n(s["wins"])}</td><td class="n">{n(s["losses"])}</td><td class="n">{n(s["draws"])}</td>'
@@ -364,7 +390,7 @@ def arena_page(snap, etype):
     table = (f'<div class="wrap"><table><tr><th></th><th>Character</th><th class="n">Rank points</th><th class="n">Matches</th>'
              f'<th class="n">Wins</th><th class="n">Losses</th><th class="n">Draws</th><th class="n">Kills</th>'
              f'<th class="n">Deaths</th><th class="n">Damage dealt</th></tr>{rows}</table></div>' if rows
-             else '<p class="empty">No matches of this type yet.</p>')
+             else '<p class="empty">No matches of this type yet.</p>') + show_links("/arena", {"type": etype}, show_key)
 
     all_matches = sum(s["matches"] for s in snap["arena_stats"])
     matches = []
@@ -380,9 +406,10 @@ def arena_page(snap, etype):
             f'<h2>Recent matches</h2><ul class="feed">{"".join(matches) or "<li class=muted>No finished matches yet.</li>"}</ul>')
 
 
-def levels_page(snap):
+def levels_page(snap, query):
+    show_key, limit = parse_show(query, "100")
     live = [c for c in snap["chars"].values() if not c["deleted"]]
-    top = sorted(live, key=lambda c: (-c["level"], -c["xp"], c["name"]))[:100]
+    top = sorted(live, key=lambda c: (-c["level"], -c["xp"], c["name"]))[:limit]
     rows = "".join(
         f'<tr>{rank_cell(i)}<td>{e(c["name"])}</td><td class="n k">{c["level"]}</td><td class="n">{n(c["xp"])}</td>'
         f'<td class="muted">{e(allegiance_name(snap, c["id"]))}</td></tr>'
@@ -394,13 +421,15 @@ def levels_page(snap):
     most = max(brackets.values()) if brackets else 1
     bars = "".join(f'<span>{b}–{b + 24}</span><span class="bar" style="width:{100 * v / most:.1f}%"></span><span class="n">{n(v)}</span>'
                    for b, v in sorted(brackets.items()))
-    return (f'<h1>Levels</h1><p class="lede">The 100 highest characters on the server, out of {n(len(live))}.</p>'
+    shown = f"The {n(len(top))} highest characters" if len(top) < len(live) else "Every character"
+    return (f'<h1>Levels</h1><p class="lede">{shown} on the server, out of {n(len(live))}.</p>'
             f'<div class="wrap"><table><tr><th></th><th>Character</th><th class="n">Level</th><th class="n">Total XP</th>'
-            f'<th>Allegiance</th></tr>{rows}</table></div>'
+            f'<th>Allegiance</th></tr>{rows}</table></div>{show_links("/levels", {}, show_key)}'
             f'<h2>Everyone by level</h2><div class="bars">{bars}</div>')
 
 
-def allegiances_page(snap):
+def allegiances_page(snap, query):
+    show_key, limit = parse_show(query, "all")
     live = {cid: c for cid, c in snap["chars"].items() if not c["deleted"]}
     children = {}
     for c in live.values():
@@ -433,7 +462,7 @@ def allegiances_page(snap):
                 + (f'<ul class="tree">{inner}</ul>' if inner else "") + "</li>")
 
     blocks = []
-    for r in sorted(roots, key=lambda r: (-size(r), r["name"])):
+    for r in sorted(roots, key=lambda r: (-size(r), r["name"]))[:limit]:
         m = members(r)
         badge = '<span class="badge">Town Control</span>' if r["id"] in snap.get("whitelist", set()) else ""
         blocks.append(f'<details><summary><b>{e(r["name"])}</b>{badge}<span class="muted">{len(m)} members, highest level '
@@ -442,7 +471,7 @@ def allegiances_page(snap):
     return (f'<h1>Allegiances</h1><p class="lede">Every allegiance with at least one vassal, largest first. '
             f'Open one to see its tree. Numbers next to names are levels. '
             f'<span class="badge">Town Control</span> marks allegiances whitelisted for Town Control.</p>'
-            f'{"".join(blocks) or "<p class=empty>No allegiances yet.</p>"}')
+            f'{"".join(blocks) or "<p class=empty>No allegiances yet.</p>"}{show_links("/allegiances", {}, show_key) if roots else ""}')
 
 
 def render(path, query, snap):
@@ -451,13 +480,13 @@ def render(path, query, snap):
     if path == "/":
         return layout(path, "A red Asheron's Call server", home_page(snap), snap)
     if path == "/pk":
-        return layout(path, "PK kills", pk_page(snap, query.get("window", ["7d"])[0]), snap)
+        return layout(path, "PK kills", pk_page(snap, query.get("window", ["7d"])[0], query), snap)
     if path == "/arena":
-        return layout(path, "Arena", arena_page(snap, query.get("type", [""])[0]), snap)
+        return layout(path, "Arena", arena_page(snap, query.get("type", [""])[0], query), snap)
     if path == "/levels":
-        return layout(path, "Levels", levels_page(snap), snap)
+        return layout(path, "Levels", levels_page(snap, query), snap)
     if path == "/allegiances":
-        return layout(path, "Allegiances", allegiances_page(snap), snap)
+        return layout(path, "Allegiances", allegiances_page(snap, query), snap)
     return None
 
 
@@ -556,7 +585,8 @@ def write_sample(out):
     for path, _ in PAGES:
         tok = "home" if path == "/" else path.strip("/")
         doc = doc.replace(f'href="{path}"', f'href="#{tok}"')
-    doc = doc.replace('href="/pk?', 'href="#pk" data-x="').replace('href="/arena?', 'href="#arena" data-x="')
+    for path, _ in PAGES[1:]:
+        doc = doc.replace(f'href="{path}?', f'href="#{path.strip("/")}" data-x="')
     with open(out, "w", encoding="utf-8") as f:
         f.write(doc)
 
