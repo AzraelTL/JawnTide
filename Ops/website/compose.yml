@@ -1,0 +1,36 @@
+# JawnTide public website (jawntide.com). Runs next to ace-db, reads the databases with the SELECT-only user "web".
+# Start or update (Linux): docker compose -f ~/JawnTide/Ops/website/compose.yml --env-file ~/jawntide-server/.env up -d --build
+# See README.md.
+name: jawntide-website
+services:
+  ace-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jawntide-web:local
+    container_name: ace-web
+    environment:
+      DB_HOST: ace-db
+      DB_USER: web
+      DB_PASSWORD: ${WEB_DB_PASSWORD}
+      INTERVAL_SECONDS: "300"
+      TZ: America/New_York
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      # LAN only for now: bound to the server's LAN address; the router does not forward TCP 8081.
+      # The internet will reach the site through a Cloudflare Tunnel, not through this port.
+      - "192.168.0.190:8081:8080"
+    networks:
+      - ace
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=5)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+networks:
+  ace:
+    external: true
+    name: jawntide-server_default
