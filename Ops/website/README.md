@@ -27,6 +27,17 @@ The `web` user can read only what the site shows:
 
 It cannot see account names, passwords, IP addresses or login history. The container runs read-only as `nobody`.
 
+## Going public: Cloudflare Tunnel
+
+jawntide.com's DNS is on Cloudflare (nameservers archer/jasmine.ns.cloudflare.com, set at IONOS). `play.jawntide.com`
+is an A record to 24.154.20.35 with the proxy **off** (grey cloud), because the game's UDP can't go through Cloudflare.
+
+`ace-tunnel` (cloudflared) connects out to Cloudflare and brings visitors to `ace-web`. No router port is forwarded for the
+site and the home IP is hidden behind Cloudflare. It sits on its own Docker network (`jawntide-public`) with `ace-web`
+only, so it cannot reach the database or the game server. Its token is `CLOUDFLARE_TUNNEL_TOKEN` in
+`~/jawntide-server/.env` (a secret; never paste it anywhere). The tunnel (`jawntide-web`, Cloudflare Zero Trust >
+Networks > Tunnels) has public hostnames `jawntide.com` and `www.jawntide.com`, both to `HTTP ace-web:8080`.
+
 ## Setup (Linux, once)
 
 1. Create the `web` user with a random password saved in `~/jawntide-server/.env` as `WEB_DB_PASSWORD`
