@@ -519,13 +519,24 @@ def arena_page(snap, etype, query):
             f'<h2>Recent matches</h2><ul class="feed">{"".join(matches) or "<li class=muted>No finished matches yet.</li>"}</ul>')
 
 
+LEVEL_SORTS = [("total", "By level and total XP"), ("earned", "By earned XP (no pass-up)")]
+
+
 def levels_page(snap, query):
     show_key, limit = parse_show(query, "100")
+    sort = query.get("sort", ["total"])[0]
+    sort = sort if sort in dict(LEVEL_SORTS) else "total"
     live = [c for c in snap["chars"].values() if not c["deleted"]]
-    top = sorted(live, key=lambda c: (-c["level"], -c["xp"], c["name"]))[:limit]
+    earned = lambda c: max(0, c["xp"] - c.get("passup", 0))
+    if sort == "earned":
+        top = sorted(live, key=lambda c: (-earned(c), -c["level"], c["name"]))[:limit]
+    else:
+        top = sorted(live, key=lambda c: (-c["level"], -c["xp"], c["name"]))[:limit]
+    tabs = "".join(f'<a href="/levels?sort={k}&amp;show={show_key}"{" aria-current=page" if k == sort else ""}>{t}</a>'
+                   for k, t in LEVEL_SORTS)
     rows = "".join(
         f'<tr>{rank_cell(i)}<td>{e(c["name"])}</td><td class="n k">{c["level"]}</td><td class="n">{n(c["xp"])}</td>'
-        f'<td class="n">{n(max(0, c["xp"] - c.get("passup", 0)))}</td><td class="n">{n(c.get("passup", 0))}</td>'
+        f'<td class="n">{n(earned(c))}</td><td class="n">{n(c.get("passup", 0))}</td>'
         f'<td class="n">{played(c.get("age", 0))}</td><td class="muted">{e(allegiance_name(snap, c["id"]))}</td></tr>'
         for i, c in enumerate(top, 1))
     brackets = {}
@@ -537,9 +548,9 @@ def levels_page(snap, query):
                    for b, v in sorted(brackets.items()))
     shown = f"The {n(len(top))} highest characters" if len(top) < len(live) else "Every character"
     return (f'<h1>Levels</h1><p class="lede">{shown} on the server, out of {n(len(live))}. Pass-up XP is what a '
-            f'character has received from its vassals; earned XP is the rest of its total.</p>'
+            f'character has received from its vassals; earned XP is the rest of its total.</p><div class="tabs">{tabs}</div>'
             f'<div class="wrap"><table><tr><th></th><th>Character</th><th class="n">Level</th><th class="n">Total XP</th>'
-            f'<th class="n">Earned XP</th><th class="n">Pass-up XP</th><th class="n">Time played</th><th>Allegiance</th></tr>{rows}</table></div>{show_links("/levels", {}, show_key)}'
+            f'<th class="n">Earned XP</th><th class="n">Pass-up XP</th><th class="n">Time played</th><th>Allegiance</th></tr>{rows}</table></div>{show_links("/levels", {"sort": sort}, show_key)}'
             f'<h2>Everyone by level</h2><div class="bars">{bars}</div>')
 
 
