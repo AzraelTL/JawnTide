@@ -30,6 +30,7 @@ HOME_FILE = os.environ.get("HOME_FILE", os.path.join(os.path.dirname(os.path.abs
 
 PROP_INT_LEVEL = 25
 PROP_INT_AGE = 125          # seconds played
+PROP_INT64_ALLEG_XP_RECEIVED = 9002   # pass-up XP a patron has received from vassals (stock ACE)
 PROP_INT64_TOTAL_XP = 1
 PROP_IID_PATRON = 25
 PROP_IID_MONARCH = 26
@@ -56,17 +57,19 @@ def take_snapshot():
         admin_accounts = {r[0] for r in q("SELECT accountId FROM ace_auth.account WHERE accessLevel > 0")}
 
         chars, admins = {}, set()
-        for cid, aid, name, deleted, level, xp, age in q("""
-                SELECT c.id, c.account_Id, c.name, c.is_Deleted, COALESCE(l.value, 1), COALESCE(x.value, 0), COALESCE(a.value, 0)
+        for cid, aid, name, deleted, level, xp, age, passup in q("""
+                SELECT c.id, c.account_Id, c.name, c.is_Deleted, COALESCE(l.value, 1), COALESCE(x.value, 0), COALESCE(a.value, 0),
+                       COALESCE(r.value, 0)
                 FROM ace_shard.`character` c
                 LEFT JOIN ace_shard.biota_properties_int l ON l.object_Id = c.id AND l.type = %s
                 LEFT JOIN ace_shard.biota_properties_int64 x ON x.object_Id = c.id AND x.type = %s
-                LEFT JOIN ace_shard.biota_properties_int a ON a.object_Id = c.id AND a.type = %s""",
-                (PROP_INT_LEVEL, PROP_INT64_TOTAL_XP, PROP_INT_AGE)):
+                LEFT JOIN ace_shard.biota_properties_int a ON a.object_Id = c.id AND a.type = %s
+                LEFT JOIN ace_shard.biota_properties_int64 r ON r.object_Id = c.id AND r.type = %s""",
+                (PROP_INT_LEVEL, PROP_INT64_TOTAL_XP, PROP_INT_AGE, PROP_INT64_ALLEG_XP_RECEIVED)):
             if aid in admin_accounts:
                 admins.add(int(cid))
                 continue
-            chars[int(cid)] = dict(id=int(cid), name=name, level=int(level), xp=int(xp), age=int(age),
+            chars[int(cid)] = dict(id=int(cid), name=name, level=int(level), xp=int(xp), age=int(age), passup=int(passup),
                                    deleted=bool(deleted and deleted not in (b"\x00", 0)))
 
         for cid, ptype, value in q("""
@@ -522,6 +525,7 @@ def levels_page(snap, query):
     top = sorted(live, key=lambda c: (-c["level"], -c["xp"], c["name"]))[:limit]
     rows = "".join(
         f'<tr>{rank_cell(i)}<td>{e(c["name"])}</td><td class="n k">{c["level"]}</td><td class="n">{n(c["xp"])}</td>'
+        f'<td class="n">{n(max(0, c["xp"] - c.get("passup", 0)))}</td><td class="n">{n(c.get("passup", 0))}</td>'
         f'<td class="n">{played(c.get("age", 0))}</td><td class="muted">{e(allegiance_name(snap, c["id"]))}</td></tr>'
         for i, c in enumerate(top, 1))
     brackets = {}
@@ -532,9 +536,10 @@ def levels_page(snap, query):
     bars = "".join(f'<span>{b}–{b + 24}</span><span class="bar" style="width:{100 * v / most:.1f}%"></span><span class="n">{n(v)}</span>'
                    for b, v in sorted(brackets.items()))
     shown = f"The {n(len(top))} highest characters" if len(top) < len(live) else "Every character"
-    return (f'<h1>Levels</h1><p class="lede">{shown} on the server, out of {n(len(live))}.</p>'
+    return (f'<h1>Levels</h1><p class="lede">{shown} on the server, out of {n(len(live))}. Pass-up XP is what a '
+            f'character has received from its vassals; earned XP is the rest of its total.</p>'
             f'<div class="wrap"><table><tr><th></th><th>Character</th><th class="n">Level</th><th class="n">Total XP</th>'
-            f'<th class="n">Time played</th><th>Allegiance</th></tr>{rows}</table></div>{show_links("/levels", {}, show_key)}'
+            f'<th class="n">Earned XP</th><th class="n">Pass-up XP</th><th class="n">Time played</th><th>Allegiance</th></tr>{rows}</table></div>{show_links("/levels", {}, show_key)}'
             f'<h2>Everyone by level</h2><div class="bars">{bars}</div>')
 
 
@@ -645,7 +650,7 @@ def sample_snapshot():
     for i, nm in enumerate(names):
         lvl = rnd.choice([126, 126, 126, 124, 119, 112, 98, 87, 75, 60, 44, 30])
         chars[1000 + i] = dict(id=1000 + i, name=nm, level=lvl, xp=lvl * lvl * 270000 + rnd.randint(0, 9_000_000), deleted=False,
-                               age=lvl * 1100 + rnd.randint(0, 40000))
+                               age=lvl * 1100 + rnd.randint(0, 40000), passup=rnd.choice([0, 0, 0, 12_000_000, 250_000_000]))
     for cid in (1001, 1002, 1003, 1004, 1005):
         chars[cid].update(patron=1000, monarch=1000)
     for cid in (1006, 1007):
