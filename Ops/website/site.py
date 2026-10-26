@@ -29,6 +29,7 @@ PORT = int(os.environ.get("PORT", "8080"))
 HOME_FILE = os.environ.get("HOME_FILE", os.path.join(os.path.dirname(os.path.abspath(__file__)), "home.html"))
 
 PROP_INT_LEVEL = 25
+PROP_INT_AGE = 125          # seconds played
 PROP_INT64_TOTAL_XP = 1
 PROP_IID_PATRON = 25
 PROP_IID_MONARCH = 26
@@ -55,16 +56,17 @@ def take_snapshot():
         admin_accounts = {r[0] for r in q("SELECT accountId FROM ace_auth.account WHERE accessLevel > 0")}
 
         chars, admins = {}, set()
-        for cid, aid, name, deleted, level, xp in q("""
-                SELECT c.id, c.account_Id, c.name, c.is_Deleted, COALESCE(l.value, 1), COALESCE(x.value, 0)
+        for cid, aid, name, deleted, level, xp, age in q("""
+                SELECT c.id, c.account_Id, c.name, c.is_Deleted, COALESCE(l.value, 1), COALESCE(x.value, 0), COALESCE(a.value, 0)
                 FROM ace_shard.`character` c
                 LEFT JOIN ace_shard.biota_properties_int l ON l.object_Id = c.id AND l.type = %s
-                LEFT JOIN ace_shard.biota_properties_int64 x ON x.object_Id = c.id AND x.type = %s""",
-                (PROP_INT_LEVEL, PROP_INT64_TOTAL_XP)):
+                LEFT JOIN ace_shard.biota_properties_int64 x ON x.object_Id = c.id AND x.type = %s
+                LEFT JOIN ace_shard.biota_properties_int a ON a.object_Id = c.id AND a.type = %s""",
+                (PROP_INT_LEVEL, PROP_INT64_TOTAL_XP, PROP_INT_AGE)):
             if aid in admin_accounts:
                 admins.add(int(cid))
                 continue
-            chars[int(cid)] = dict(id=int(cid), name=name, level=int(level), xp=int(xp),
+            chars[int(cid)] = dict(id=int(cid), name=name, level=int(level), xp=int(xp), age=int(age),
                                    deleted=bool(deleted and deleted not in (b"\x00", 0)))
 
         for cid, ptype, value in q("""
@@ -220,6 +222,13 @@ def span_text(seconds):
     if h:
         return f"{h}h {m}m" if m else f"{h}h"
     return f"{max(m, 1)}m" if s else "0m"
+
+
+def played(seconds):
+    """In-game played time, like the game's /age: days and hours, or hours and minutes under a day"""
+    s = max(0, int(seconds or 0))
+    d, h, m = s // 86400, s % 86400 // 3600, s % 3600 // 60
+    return f"{d}d {h}h" if d else f"{h}h {m}m"
 
 
 def countdown(end, utc):
@@ -514,7 +523,7 @@ def levels_page(snap, query):
     top = sorted(live, key=lambda c: (-c["level"], -c["xp"], c["name"]))[:limit]
     rows = "".join(
         f'<tr>{rank_cell(i)}<td>{e(c["name"])}</td><td class="n k">{c["level"]}</td><td class="n">{n(c["xp"])}</td>'
-        f'<td class="muted">{e(allegiance_name(snap, c["id"]))}</td></tr>'
+        f'<td class="n">{played(c.get("age", 0))}</td><td class="muted">{e(allegiance_name(snap, c["id"]))}</td></tr>'
         for i, c in enumerate(top, 1))
     brackets = {}
     for c in live:
@@ -526,7 +535,7 @@ def levels_page(snap, query):
     shown = f"The {n(len(top))} highest characters" if len(top) < len(live) else "Every character"
     return (f'<h1>Levels</h1><p class="lede">{shown} on the server, out of {n(len(live))}.</p>'
             f'<div class="wrap"><table><tr><th></th><th>Character</th><th class="n">Level</th><th class="n">Total XP</th>'
-            f'<th>Allegiance</th></tr>{rows}</table></div>{show_links("/levels", {}, show_key)}'
+            f'<th class="n">Time played</th><th>Allegiance</th></tr>{rows}</table></div>{show_links("/levels", {}, show_key)}'
             f'<h2>Everyone by level</h2><div class="bars">{bars}</div>')
 
 
@@ -636,7 +645,8 @@ def sample_snapshot():
     chars = {}
     for i, nm in enumerate(names):
         lvl = rnd.choice([126, 126, 126, 124, 119, 112, 98, 87, 75, 60, 44, 30])
-        chars[1000 + i] = dict(id=1000 + i, name=nm, level=lvl, xp=lvl * lvl * 270000 + rnd.randint(0, 9_000_000), deleted=False)
+        chars[1000 + i] = dict(id=1000 + i, name=nm, level=lvl, xp=lvl * lvl * 270000 + rnd.randint(0, 9_000_000), deleted=False,
+                               age=lvl * 1100 + rnd.randint(0, 40000))
     for cid in (1001, 1002, 1003, 1004, 1005):
         chars[cid].update(patron=1000, monarch=1000)
     for cid in (1006, 1007):

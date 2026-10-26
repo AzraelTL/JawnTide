@@ -5,7 +5,7 @@ The site for jawntide.com: `site.py` (one small Python web server) and `home.htm
 Pages: `/` home (server info, how to connect, Discord), `/pk` open-world PK kills (24 hours, 7 days, 30 days,
 all time; top killers, allegiances, latest kills), `/arena` standings per arena type by rank points and recent
 matches, `/towns` Town Control (who holds each town, live battles with attacker and defender, battle and
-governor respite timers, recent battles), `/levels` the top 100 characters and everyone by level, `/allegiances` monarch trees with kills this week.
+governor respite timers, recent battles), `/levels` the top characters (level, XP, time played, allegiance) and everyone by level, `/allegiances` monarch trees with kills this week.
 
 ## How it works
 
