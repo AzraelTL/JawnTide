@@ -1885,9 +1885,13 @@ namespace ACE.Server.WorldObjects
         private int AccountAgeWaitTimestamp => (int)Time.GetUnixTime(Account.CreateTime.AddDays(HouseAccountAgeDays - 30));
 
         /// <summary>
-        /// The value the retail 15-day rule stored; recognized so it can be cleared after the wait was shortened
+        /// True if HousePurchaseTimestamp is a wait date this code wrote, not a real purchase.
+        /// Any date before the account was created can't be a real purchase, so wait dates written under an
+        /// older house_account_age_days (or the retail 15-day rule) are recognized and corrected when the setting changes.
         /// </summary>
-        private int FifteenDaysBeforeAccountCreation => (int)Time.GetUnixTime(Account.CreateTime.AddDays(-15));
+        private bool IsAccountAgeWaitTimestamp =>
+            HousePurchaseTimestamp.HasValue &&
+            (HousePurchaseTimestamp.Value < (int)Time.GetUnixTime(Account.CreateTime) || HousePurchaseTimestamp.Value == AccountAgeWaitTimestamp);
 
         /// <summary>
         /// Munges the HousePurchaseTimestamp for new accounts for correct display on House panel
@@ -1898,11 +1902,12 @@ namespace ACE.Server.WorldObjects
 
             if (HouseRentTimestamp != null) return;
 
-            var isWaitTimestamp = HousePurchaseTimestamp == AccountAgeWaitTimestamp || HousePurchaseTimestamp == FifteenDaysBeforeAccountCreation;
+            var isWaitTimestamp = IsAccountAgeWaitTimestamp;
 
             if (PropertyManager.GetBool("house_15day_account").Item && !HouseAccountAgeReached)
             {
                 // this is set so the next purchase time displays properly on house tab
+                // (rewritten whenever house_account_age_days has changed since it was set)
                 if (HousePurchaseTimestamp == null || isWaitTimestamp)
                     HousePurchaseTimestamp = AccountAgeWaitTimestamp;
             }
