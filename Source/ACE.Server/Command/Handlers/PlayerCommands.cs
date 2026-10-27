@@ -380,30 +380,15 @@ namespace ACE.Server.Command.Handlers
         /// Force resend of all visible objects known to this player. Can fix rare cases of invisible object bugs.
         /// Can only be used once every 5 mins max.
         /// </summary>
-        [CommandHandler("objsend", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, "Force resend of all visible objects known to this player. Can fix rare cases of invisible object bugs. Same as /fi.")]
+        [CommandHandler("objsend", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, "Force resend of all visible objects known to this player. Can fix rare cases of invisible object bugs. Can be used once every 5 minutes.")]
         public static void HandleObjSend(Session session, params string[] parameters)
-        {
-            ResendKnownObjects(session, parameters);
-        }
-
-        /// <summary>
-        /// JawnTide: /fi, the short name players know from other servers for /objsend
-        /// </summary>
-        [CommandHandler("fi", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, "Fixes invisible or missing monsters, NPCs and items by resending everything around you. Add 'creature' to resend only creatures.", "fi [creature]")]
-        public static void HandleFi(Session session, params string[] parameters)
-        {
-            ResendKnownObjects(session, parameters);
-        }
-
-        private static void ResendKnownObjects(Session session, string[] parameters)
         {
             // a good repro spot for this is the first room after the door in facility hub
             // in the portal drop / staircase room, the VisibleCells do not have the room after the door
             // however, the room after the door *does* have the portal drop / staircase room in its VisibleCells (the inverse relationship is imbalanced)
             // not sure how to fix this atm, seems like it triggers a client bug..
 
-            var cooldown = Math.Max(1, PropertyManager.GetLong("fi_cooldown_seconds").Item);
-            if (DateTime.UtcNow - session.Player.PrevObjSend < TimeSpan.FromSeconds(cooldown))
+            if (DateTime.UtcNow - session.Player.PrevObjSend < TimeSpan.FromMinutes(5))
             {
                 session.Player.SendTransientError("You have used this command too recently!");
                 return;
@@ -422,7 +407,47 @@ namespace ACE.Server.Command.Handlers
                 session.Player.TrackObject(knownObj);
             }
             session.Player.PrevObjSend = DateTime.UtcNow;
-            session.Network.EnqueueSend(new GameMessageSystemChat("Refreshed the objects around you.", ChatMessageType.Broadcast));
+        }
+
+        /// <summary>
+        /// JawnTide: /fi resends every monster and NPC this player knows about, WITHOUT deleting them first
+        /// (same approach as ACE-DreamWeave). The old /fi deleted and recreated every object around the player,
+        /// including other players and items, so client plugins saw everything vanish and reappear and spammed chat.
+        /// Players are left out on purpose. /objsend is still there for a full delete-and-resend.
+        /// </summary>
+        [CommandHandler("fi", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, "Resends nearby monsters and NPCs to your client, to fix invisible creature bugs.")]
+        [CommandHandler("fixinvisible", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, "Resends nearby monsters and NPCs to your client, to fix invisible creature bugs.")]
+        public static void HandleFixInvisible(Session session, params string[] parameters)
+        {
+            // RequiresWorld only checks CurrentLandblock; PhysicsObj (and ObjMaint) can still be null while entering the world
+            if (session.Player.PhysicsObj == null)
+                return;
+
+            var cooldown = Math.Max(1, PropertyManager.GetLong("fi_cooldown_seconds").Item);
+            if (DateTime.UtcNow - session.Player.PrevFixInvisible < TimeSpan.FromSeconds(cooldown))
+            {
+                session.Player.SendTransientError("You have used this command too recently!");
+                return;
+            }
+
+            var resent = 0;
+
+            foreach (var creature in session.Player.ObjMaint.GetKnownObjectsValuesAsCreature())
+            {
+                if (creature is Player)
+                    continue;
+
+                // same check TrackObject makes, so the count matches what was actually sent
+                if (creature.Visibility && !session.Player.Adminvision)
+                    continue;
+
+                session.Player.TrackObject(creature);
+                resent++;
+            }
+
+            session.Player.PrevFixInvisible = DateTime.UtcNow;
+
+            session.Network.EnqueueSend(new GameMessageSystemChat($"Resent {resent} creature{(resent == 1 ? "" : "s")} to your client.", ChatMessageType.Broadcast));
         }
 
         // show player ace server versions

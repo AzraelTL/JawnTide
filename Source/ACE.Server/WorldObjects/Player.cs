@@ -91,6 +91,11 @@ namespace ACE.Server.WorldObjects
 
         public DateTime PrevObjSend;
 
+        /// <summary>
+        /// JawnTide: last use of /fi (in memory only), separate from /objsend
+        /// </summary>
+        public DateTime PrevFixInvisible;
+
         public float CurrentRadarRange => Location.Indoors ? MaxRadarRange_Indoors : MaxRadarRange_Outdoors;
 
         /// <summary>
