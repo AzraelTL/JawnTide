@@ -8,6 +8,7 @@ VALUES (520201,   1,        128) /* ItemType - Misc */
      , (520201,   5,         10) /* EncumbranceVal */
      , (520201,   8,         10) /* Mass */
      , (520201,  16,          1) /* ItemUseable - No */
+     , (520201,  18,         32) /* UiEffects - Fire */
      , (520201,  19,          0) /* Value */
      , (520201,  33,         -1) /* Bonded - Slippery */
      , (520201,  93,       1044) /* PhysicsState - Ethereal, IgnoreCollisions, Gravity */;

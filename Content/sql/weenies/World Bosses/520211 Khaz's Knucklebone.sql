@@ -9,6 +9,7 @@ VALUES (520211,   1,        128) /* ItemType - Misc */
      , (520211,   5,         10) /* EncumbranceVal */
      , (520211,   8,         10) /* Mass */
      , (520211,  16,          1) /* ItemUseable - No */
+     , (520211,  18,        128) /* UiEffects - Frost */
      , (520211,  19,          0) /* Value */
      , (520211,  33,         -1) /* Bonded - Slippery */
      , (520211,  93,       1044) /* PhysicsState - Ethereal, IgnoreCollisions, Gravity */;

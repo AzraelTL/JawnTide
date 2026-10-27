@@ -41,4 +41,4 @@ Stats are a first pass, to tune on JawnTest. Effective skill = the init value in
 | Minions | 6 Ascendant Drudge, 3 Drudge Mystic | 6 Tiatus Lugian, 3 Bokrok Lugian | 5 Shadow Phantom, 4 Shadow Spectre |
 
 Like the other town bosses, they ignore players' magic armor and magic resistance buffs (IgnoreMagicArmor and IgnoreMagicResist) and have Overpower 10.
-Each token reuses an icon from the older tokens: Fang = Olthoi King Claw, Knucklebone = Blood vial, Shroud = Martine's Cloak.
+Each token reuses an icon from the older tokens (Fang = Olthoi King Claw, Knucklebone = Blood vial, Shroud = Martine's Cloak) but has its own colored glow (UiEffects) so it stands apart: Fang Fire (red), Knucklebone Frost (blue), Shroud Nether (purple). The older tokens have no glow.

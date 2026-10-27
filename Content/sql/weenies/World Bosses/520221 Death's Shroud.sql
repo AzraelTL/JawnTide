@@ -9,6 +9,7 @@ VALUES (520221,   1,        128) /* ItemType - Misc */
      , (520221,   5,         10) /* EncumbranceVal */
      , (520221,   8,         10) /* Mass */
      , (520221,  16,          1) /* ItemUseable - No */
+     , (520221,  18,       4096) /* UiEffects - Nether */
      , (520221,  19,          0) /* Value */
      , (520221,  33,         -1) /* Bonded - Slippery */
      , (520221,  93,       1044) /* PhysicsState - Ethereal, IgnoreCollisions, Gravity */;
