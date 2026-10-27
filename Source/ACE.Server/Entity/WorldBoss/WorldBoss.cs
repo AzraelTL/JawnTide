@@ -175,6 +175,30 @@ namespace ACE.Server.Entity.WorldBoss
                     ok.SpawnLocations = townSpawnLocations;                    
                     _worldBossMap.Add(490010, ok);
 
+                    //JawnTide: Moloch, roams the towns like Bael'Zharon, Martine and the Olthoi King, balanced for levels 100-120
+                    var moloch = new WorldBoss();
+                    moloch.WeenieID = 520200;
+                    moloch.Name = "Moloch";
+                    moloch.SpawnMsg = "The distant hills shake with the beating of a thousand crude drums. Wild, guttural chanting rolls across the land as every drudge in Dereth takes up the same name, over and over, louder and louder. Moloch, the Drudge Warlord, has come down from the high places at the head of his horde, and he hungers for the ears of the brave.";
+                    moloch.SpawnLocations = townSpawnLocations;
+                    _worldBossMap.Add(520200, moloch);
+
+                    //JawnTide: Khaz, roams the towns like Bael'Zharon, Martine and the Olthoi King, balanced for levels 100-120
+                    var khaz = new WorldBoss();
+                    khaz.WeenieID = 520210;
+                    khaz.Name = "Khaz";
+                    khaz.SpawnMsg = "A deep, rhythmic thunder rolls across Dereth, but there is not a cloud in the sky. Rocks tumble from the cliffs and the rivers jump in their beds as something vast strides down from the mountain fastness. Khaz, the Lugian Titan, has left his halls to prove that no human can stand against him. The ground itself trembles at his approach.";
+                    khaz.SpawnLocations = townSpawnLocations;
+                    _worldBossMap.Add(520210, khaz);
+
+                    //JawnTide: Death, roams the towns like Bael'Zharon, Martine and the Olthoi King, balanced for levels 100-120
+                    var death = new WorldBoss();
+                    death.WeenieID = 520220;
+                    death.Name = "Death";
+                    death.SpawnMsg = "Without warning the sun dims, as if a great hand had passed across it. Every torch in Dereth gutters, every hearth grows cold, and a whisper slides through the mind of every living soul, patient and certain. It speaks only one word, and that word is a name. Death, an Umbris Shadow older than the Empyrean, walks among the living, and it has come to collect.";
+                    death.SpawnLocations = townSpawnLocations;
+                    _worldBossMap.Add(520220, death);
+
                     //Aerbax in Lesser Battle Dungeon
                     var aerbax = new WorldBoss();
                     aerbax.WeenieID = 49009000;
@@ -222,7 +246,10 @@ namespace ACE.Server.Entity.WorldBoss
                     {
                         490028,
                         490029,
-                        490030
+                        490030,
+                        520201, // Moloch's Fang
+                        520211, // Khaz's Knucklebone
+                        520221  // Death's Shroud
                     };
                 }
 
