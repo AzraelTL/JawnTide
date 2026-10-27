@@ -45,6 +45,7 @@ folder that reopens it, rather than the whole file.
 | Colosseum Coin Collector (36519) | Greater Gem of Knowledge and all six Gems of Knowledge | `Ops/stock-vendors/36519 Colosseum Coin Collector.sql` | Stage 2 or later |
 | Panhsj (44241) | A'nekshay Gem of Knowledge and Gem of Lesser Knowledge | `Ops/stock-vendors/44241 Panhsj.sql` | Stage 2 or later |
 | Wreen, Vellum, Zabien (52705-52707) | Gauntlet Gem of Knowledge and Gauntlet Gem of Vast Knowledge | `Ops/stock-vendors/` | Stage 2 or later |
+| Mana Scarab (37155), the scarab for every level 8 spell, Oct 27: Gilly (24588), Farnor, Raenholm and Vermilia the Archmage (38687, 38689, 38691), Arqubal and Hacha Jien the Archmage (80423, 80424), Master Ulenor the Archmage (490136) | Mana Scarab. Its other source, the Crate of Spell Components (490220, sold at the Outpost General Store), now gives only the 4000 Prismatic Tapers (crates already owned too). Every existing Mana Scarab was deleted from the shard database with the server stopped. While they are gone no player can cast level 8 spells | stock vendors: `Ops/stock-vendors/`; Ulenor and the crate: `stage2/weenies/Peddler's Outpost/` | Stage 2 |
 
 ## VRContent patch (Viridian Rise, applied on its own)
 
