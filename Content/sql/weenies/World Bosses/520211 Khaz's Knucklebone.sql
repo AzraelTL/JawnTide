@@ -23,7 +23,7 @@ VALUES (520211,  39,     0.33) /* DefaultScale */;
 
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
 VALUES (520211,   1, 'Khaz''s Knucklebone') /* Name */
-     , (520211,  16, 'A knucklebone the size of a human fist, pried from the hand of Khaz, the Lugian Titan.') /* LongDesc */
+     , (520211,  16, 'A knucklebone the size of a human fist, pried from the hand of Khaz'', the Lugian Titan.') /* LongDesc */
      , (520211,  33, 'KhazsKnucklebone') /* Quest */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)

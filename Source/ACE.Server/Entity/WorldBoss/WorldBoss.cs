@@ -183,11 +183,11 @@ namespace ACE.Server.Entity.WorldBoss
                     moloch.SpawnLocations = townSpawnLocations;
                     _worldBossMap.Add(520200, moloch);
 
-                    //JawnTide: Khaz, roams the towns like Bael'Zharon, Martine and the Olthoi King, balanced for levels 100-120
+                    //JawnTide: Khaz', roams the towns like Bael'Zharon, Martine and the Olthoi King, balanced for levels 100-120
                     var khaz = new WorldBoss();
                     khaz.WeenieID = 520210;
-                    khaz.Name = "Khaz";
-                    khaz.SpawnMsg = "A deep, rhythmic thunder rolls across Dereth, but there is not a cloud in the sky. Rocks tumble from the cliffs and the rivers jump in their beds as something vast strides down from the mountain fastness. Khaz, the Lugian Titan, has left his halls to prove that no human can stand against him. The ground itself trembles at his approach.";
+                    khaz.Name = "Khaz'";
+                    khaz.SpawnMsg = "A deep, rhythmic thunder rolls across Dereth, but there is not a cloud in the sky. Rocks tumble from the cliffs and the rivers jump in their beds as something vast strides down from the mountain fastness. Khaz', the Lugian Titan, has left his halls to prove that no human can stand against him. The ground itself trembles at his approach.";
                     khaz.SpawnLocations = townSpawnLocations;
                     _worldBossMap.Add(520210, khaz);
 

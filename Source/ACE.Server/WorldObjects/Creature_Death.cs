@@ -1348,7 +1348,9 @@ namespace ACE.Server.WorldObjects
                 WorldBossManager.HandleBossDeath();
 
                 //Global broadcast the kill
-                var globalMsg = $"{deadBoss.Name} has been slain by {(killer == null ? "NULL" : killer.Name)} and the land is once again safe from {deadBoss.Name}'s terror... for now";
+                // JawnTide: a name that already ends in an apostrophe (Khaz') takes just an s for the possessive
+                var bossPossessive = deadBoss.Name.EndsWith("'") ? deadBoss.Name + "s" : deadBoss.Name + "'s";
+                var globalMsg = $"{deadBoss.Name} has been slain by {(killer == null ? "NULL" : killer.Name)} and the land is once again safe from {bossPossessive} terror... for now";
                 PlayerManager.BroadcastToAll(new GameMessageSystemChat(globalMsg, ChatMessageType.Broadcast));
 
                 //If this is an indoor boss with a statue, destroy the statue
