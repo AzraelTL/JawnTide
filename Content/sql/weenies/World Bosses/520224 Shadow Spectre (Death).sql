@@ -1,4 +1,4 @@
-/* JawnTide: Shadow Spectre for Death (520220), a copy of stock 23090 that also casts Flame Chain (4096) and Impious Curse (2814) */
+/* JawnTide: Shadow Spectre for Death (520220), a copy of stock 23090 that casts only Flame Chain (4096) and Impious Curse (2814) and fights with fire: archer (Yumi 23137 with Deadly Fire Arrows 15435), fire unarmed hits */
 DELETE FROM `weenie` WHERE `class_Id` = 520224;
 
 INSERT INTO `weenie` (`class_Id`, `class_Name`, `type`, `last_Modified`)
@@ -125,34 +125,14 @@ VALUES (520224,  0,  4,  0,    0,  460,  460,  368,  391,  276,  506,  322,  345
      , (520224,  2,  4,  0,    0,  460,  460,  368,  391,  276,  506,  322,  345,    0, 3,    0, 0.17,    0,    0, 0.17,    0,    0, 0.17,    0,    0, 0.17,    0) /* Abdomen */
      , (520224,  3,  4,  0,    0,  460,  460,  368,  391,  276,  506,  322,  345,    0, 1, 0.23, 0.03,    0, 0.23, 0.03,    0, 0.23, 0.03,    0, 0.23, 0.03,    0) /* UpperArm */
      , (520224,  4,  4,  0,    0,  460,  460,  368,  391,  276,  506,  322,  345,    0, 2,    0,  0.3,    0,    0,  0.3,    0,    0,  0.3,    0,    0,  0.3,    0) /* LowerArm */
-     , (520224,  5,  4, 50, 0.75,  460,  460,  368,  391,  276,  506,  322,  345,    0, 2,    0,  0.2,    0,    0,  0.2,    0,    0,  0.2,    0,    0,  0.2,    0) /* Hand */
+     , (520224,  5, 16, 50, 0.75,  460,  460,  368,  391,  276,  506,  322,  345,    0, 2,    0,  0.2,    0,    0,  0.2,    0,    0,  0.2,    0,    0,  0.2,    0) /* Hand */
      , (520224,  6,  4,  0,    0,  460,  460,  368,  391,  276,  506,  322,  345,    0, 3,    0, 0.13, 0.18,    0, 0.13, 0.18,    0, 0.13, 0.18,    0, 0.13, 0.18) /* UpperLeg */
      , (520224,  7,  4,  0,    0,  460,  460,  368,  391,  276,  506,  322,  345,    0, 3,    0,    0,  0.6,    0,    0,  0.6,    0,    0,  0.6,    0,    0,  0.6) /* LowerLeg */
-     , (520224,  8,  4, 60, 0.75,  460,  460,  368,  391,  276,  506,  322,  345,    0, 3,    0,    0, 0.22,    0,    0, 0.22,    0,    0, 0.22,    0,    0, 0.22) /* Foot */;
+     , (520224,  8, 16, 60, 0.75,  460,  460,  368,  391,  276,  506,  322,  345,    0, 3,    0,    0, 0.22,    0,    0, 0.22,    0,    0, 0.22,    0,    0, 0.22) /* Foot */;
 
 INSERT INTO `weenie_properties_spell_book` (`object_Id`, `spell`, `probability`)
-VALUES (520224,    74,  2.032)  /* Frost Bolt VI */
-     , (520224,    80,  2.032)  /* Lightning Bolt VI */
-     , (520224,    85,  2.032)  /* Flame Bolt VI */
-     , (520224,    91,  2.032)  /* Force Bolt VI */
-     , (520224,    97,  2.032)  /* Whirling Blade VI */
-     , (520224,   138,  2.003)  /* Frost Volley VI */
-     , (520224,   142,  2.003)  /* Lightning Volley VI */
-     , (520224,   146,  2.003)  /* Flame Volley VI */
-     , (520224,   154,  2.003)  /* Blade Volley VI */
-     , (520224,   234,  2.023)  /* Vulnerability Other VI */
-     , (520224,   267,  2.023)  /* Defenselessness Other VI */
-     , (520224,   285,  2.023)  /* Magic Yield Other VI */
-     , (520224,   628,  2.023)  /* Life Magic Ineptitude Other VI */
-     , (520224,  1161,   2.02)  /* Heal Self VI */
-     , (520224,  1242,  2.011)  /* Drain Health Other VI */
-     , (520224,  1254,  2.011)  /* Drain Stamina Other VI */
-     , (520224,  1265,  2.011)  /* Drain Mana Other VI */
-     , (520224,  1312,  2.006)  /* Armor Self VI */
-     , (520224,  1420,  2.023)  /* Slowness Other VI */
-     , (520224,  1468,  2.023)  /* Feeblemind Other VI */
-     , (520224,  4096,   2.05)  /* Flame Chain (JawnTide: Death's minions) */
-     , (520224,  2814,   2.05)  /* Impious Curse (JawnTide: Death's minions) */;
+VALUES (520224,  4096,   2.15)  /* Flame Chain (JawnTide: Death's minions) */
+     , (520224,  2814,   2.15)  /* Impious Curse (JawnTide: Death's minions) */;
 
 INSERT INTO `weenie_properties_event_filter` (`object_Id`, `event`)
 VALUES (520224,  94) /* ATTACK_NOTIFICATION_EVENT */
@@ -166,4 +146,6 @@ VALUES (520224, 9,  6058,  0, 0, 0.04, False) /* Create Dark Shard (6058) for Co
      , (520224, 9, 23108,  0, 0, 0.01, False) /* Create Twisted Dark Key (23108) for ContainTreasure */
      , (520224, 9,     0,  0, 0, 0.99, False) /* Create nothing for ContainTreasure */
      , (520224, 9, 27388,  0, 0, 0.005, False) /* Create Dark Towers (27388) for ContainTreasure */
-     , (520224, 9,     0,  0, 0, 0.995, False) /* Create nothing for ContainTreasure */;
+     , (520224, 9,     0,  0, 0, 0.995, False) /* Create nothing for ContainTreasure */
+     , (520224, 2, 23137, 1, 0, 0, False) /* Create Yumi (23137) for Wield */
+     , (520224, 2, 15435, 100, 0, 0, False) /* Create Deadly Fire Arrow (15435) for Wield */;

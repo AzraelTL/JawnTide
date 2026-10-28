@@ -1,4 +1,4 @@
-/* JawnTide: Shadow Phantom for Death (520220), a copy of stock 23089 that also casts Flame Chain (4096) and Impious Curse (2814) */
+/* JawnTide: Shadow Phantom for Death (520220), a copy of stock 23089 that casts only Flame Chain (4096) and Impious Curse (2814) and fights with fire:  melee (Flaming Tachi 47675), fire unarmed hits */
 DELETE FROM `weenie` WHERE `class_Id` = 520223;
 
 INSERT INTO `weenie` (`class_Id`, `class_Name`, `type`, `last_Modified`)
@@ -89,18 +89,6 @@ VALUES (520223,   1, 0x02000001) /* Setup */
      , (520223,  16, 0x040002BE) /* EyesPalette */
      , (520223,  17, 0x040002B8) /* SkinPalette */
      , (520223,  22, 0x34000063) /* PhysicsEffectTable */
-     , (520223,  32,        426) /* WieldedTreasureType - 
-                                   # Set: 1
-                                   |  30.00% chance of Tachi (23136)
-                                   |         with
-                                   |            100.00% chance of Kite Shield (23135)
-                                   |  30.00% chance of Yumi (23137)
-                                   |         with
-                                   |            100.00% chance of 20x Deadly Arrow (15429)
-                                   |  30.00% chance of Heavy Crossbow (23131)
-                                   |         with
-                                   |            100.00% chance of 45x to 50x Deadly Quarrel (15438) | StackSizeVariance: 0.1
-                                   |  10.00% chance of nothing from this set */
      , (520223,  35,        464) /* DeathTreasureType - Loot Tier: 5 */;
 
 INSERT INTO `weenie_properties_attribute` (`object_Id`, `type`, `init_Level`, `level_From_C_P`, `c_P_Spent`)
@@ -137,29 +125,14 @@ VALUES (520223,  0,  4,  0,    0,  500,  500,  400,  425,  300,  550,  350,  375
      , (520223,  2,  4,  0,    0,  500,  500,  400,  425,  300,  550,  350,  375,    0, 3,    0, 0.17,    0,    0, 0.17,    0,    0, 0.17,    0,    0, 0.17,    0) /* Abdomen */
      , (520223,  3,  4,  0,    0,  500,  500,  400,  425,  300,  550,  350,  375,    0, 1, 0.23, 0.03,    0, 0.23, 0.03,    0, 0.23, 0.03,    0, 0.23, 0.03,    0) /* UpperArm */
      , (520223,  4,  4,  0,    0,  500,  500,  400,  425,  300,  550,  350,  375,    0, 2,    0,  0.3,    0,    0,  0.3,    0,    0,  0.3,    0,    0,  0.3,    0) /* LowerArm */
-     , (520223,  5,  4, 50, 0.75,  500,  500,  400,  425,  300,  550,  350,  375,    0, 2,    0,  0.2,    0,    0,  0.2,    0,    0,  0.2,    0,    0,  0.2,    0) /* Hand */
+     , (520223,  5, 16, 50, 0.75,  500,  500,  400,  425,  300,  550,  350,  375,    0, 2,    0,  0.2,    0,    0,  0.2,    0,    0,  0.2,    0,    0,  0.2,    0) /* Hand */
      , (520223,  6,  4,  0,    0,  500,  500,  400,  425,  300,  550,  350,  375,    0, 3,    0, 0.13, 0.18,    0, 0.13, 0.18,    0, 0.13, 0.18,    0, 0.13, 0.18) /* UpperLeg */
      , (520223,  7,  4,  0,    0,  500,  500,  400,  425,  300,  550,  350,  375,    0, 3,    0,    0,  0.6,    0,    0,  0.6,    0,    0,  0.6,    0,    0,  0.6) /* LowerLeg */
-     , (520223,  8,  4, 60, 0.75,   60,   60,   48,   51,   36,   66,   42,   45,    0, 3,    0,    0, 0.22,    0,    0, 0.22,    0,    0, 0.22,    0,    0, 0.22) /* Foot */;
+     , (520223,  8, 16, 60, 0.75,   60,   60,   48,   51,   36,   66,   42,   45,    0, 3,    0,    0, 0.22,    0,    0, 0.22,    0,    0, 0.22,    0,    0, 0.22) /* Foot */;
 
 INSERT INTO `weenie_properties_spell_book` (`object_Id`, `spell`, `probability`)
-VALUES (520223,    74,  2.036)  /* Frost Bolt VI */
-     , (520223,    80,  2.036)  /* Lightning Bolt VI */
-     , (520223,    91,  2.036)  /* Force Bolt VI */
-     , (520223,    97,  2.036)  /* Whirling Blade VI */
-     , (520223,   138,  2.005)  /* Frost Volley VI */
-     , (520223,   142,  2.005)  /* Lightning Volley VI */
-     , (520223,   146,  2.005)  /* Flame Volley VI */
-     , (520223,   154,  2.005)  /* Blade Volley VI */
-     , (520223,   234,   2.01)  /* Vulnerability Other VI */
-     , (520223,   267,   2.01)  /* Defenselessness Other VI */
-     , (520223,   285,   2.01)  /* Magic Yield Other VI */
-     , (520223,  1161,  2.009)  /* Heal Self VI */
-     , (520223,  1242,  2.009)  /* Drain Health Other VI */
-     , (520223,  1254,  2.009)  /* Drain Stamina Other VI */
-     , (520223,  1265,  2.009)  /* Drain Mana Other VI */
-     , (520223,  4096,   2.05)  /* Flame Chain (JawnTide: Death's minions) */
-     , (520223,  2814,   2.05)  /* Impious Curse (JawnTide: Death's minions) */;
+VALUES (520223,  4096,   2.15)  /* Flame Chain (JawnTide: Death's minions) */
+     , (520223,  2814,   2.15)  /* Impious Curse (JawnTide: Death's minions) */;
 
 INSERT INTO `weenie_properties_event_filter` (`object_Id`, `event`)
 VALUES (520223,  94) /* ATTACK_NOTIFICATION_EVENT */
@@ -171,4 +144,5 @@ VALUES (520223, 9,  6058,  0, 0, 0.04, False) /* Create Dark Shard (6058) for Co
      , (520223, 9,  6876,  0, 0, 0.04, False) /* Create Sturdy Iron Key (6876) for ContainTreasure */
      , (520223, 9,     0,  0, 0, 0.96, False) /* Create nothing for ContainTreasure */
      , (520223, 9, 27388,  0, 0, 0.005, False) /* Create Dark Towers (27388) for ContainTreasure */
-     , (520223, 9,     0,  0, 0, 0.995, False) /* Create nothing for ContainTreasure */;
+     , (520223, 9,     0,  0, 0, 0.995, False) /* Create nothing for ContainTreasure */
+     , (520223, 2, 47675, 1, 0, 0, False) /* Create Flaming Tachi (47675) for Wield */;
