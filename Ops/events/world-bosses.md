@@ -34,7 +34,7 @@ Stats are a first pass, to tune on JawnTest. Effective skill = the init value in
 
 | | Moloch | Khaz' | Death |
 |---|---|---|---|
-| Look | Kerthump the Ear Taker (drudge), scale 2.0 | Lord Kresovus (lugian), scale 1.6 | Umbris Shadow, scale 1.5 |
+| Look | Kerthump the Ear Taker (drudge), scale 4.0 | Lord Kresovus (lugian), scale 1.6 | Umbris Shadow, scale 1.5 |
 | Level shown | 150 | 150 | 150 |
 | Health | 120,000 | 160,000 | 100,000 |
 | Attack (effective) | ~457 melee | ~480 melee | ~403 melee, ~445 war/void |

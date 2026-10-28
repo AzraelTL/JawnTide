@@ -49,7 +49,7 @@ VALUES (520200,   1,        5) /* HeartbeatInterval */
      , (520200,  31,       35) /* VisualAwarenessRange */
      , (520200,  34,        1) /* PowerupTime */
      , (520200,  36,        1) /* ChargeSpeed */
-     , (520200,  39,      2.0) /* DefaultScale */
+     , (520200,  39,      4.0) /* DefaultScale */
      , (520200,  41,      600) /* RegenerationInterval */
      , (520200,  43,       20) /* GeneratorRadius */
      , (520200,  55,      110) /* HomeRadius */
