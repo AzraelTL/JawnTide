@@ -5,6 +5,7 @@ Small SQL files that change stock or custom world data after the rest of the con
 - The folder name starts with `zz-` on purpose. The server runs content SQL in sorted full-path order,
   so these run **after** `Content/sql/weenies/...` and `Content/sql/landblocks/...`.
 - Every file is **safe to run repeatedly** (the server re-runs content on startup).
+- Files only change the world database. Never write to `ace_shard` or any other database from Content (see `Ops/archive/README.md`).
 - Files never refer to auto-numbered ids (emote ids and so on), because those differ on every fresh database.
 
 | File | What it does |
