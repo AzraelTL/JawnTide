@@ -5,7 +5,7 @@ VALUES (520220, 'worldbossdeath', 10, '2026-10-27 00:00:00') /* Creature */;
 
 INSERT INTO `weenie_properties_int` (`object_Id`, `type`, `value`)
 VALUES (520220,   1,         16) /* ItemType - Creature */
-     , (520220,   2,         22) /* CreatureType - Shadow */
+     , (520220,   2,         95) /* CreatureType - Apparition (JawnTide: a type no slayer weapon targets; looks like a shadow) */
      , (520220,   3,         39) /* PaletteTemplate - Black */
      , (520220,   6,         -1) /* ItemsCapacity */
      , (520220,   7,         -1) /* ContainersCapacity */

@@ -5,7 +5,7 @@ VALUES (520200, 'worldbossmoloch', 10, '2026-10-27 00:00:00') /* Creature */;
 
 INSERT INTO `weenie_properties_int` (`object_Id`, `type`, `value`)
 VALUES (520200,   1,         16) /* ItemType - Creature */
-     , (520200,   2,          3) /* CreatureType - Drudge */
+     , (520200,   2,         76) /* CreatureType - Target (JawnTide: a type no slayer weapon targets; looks like a drudge) */
      , (520200,   3,         39) /* PaletteTemplate - Black */
      , (520200,   6,         -1) /* ItemsCapacity */
      , (520200,   7,         -1) /* ContainersCapacity */

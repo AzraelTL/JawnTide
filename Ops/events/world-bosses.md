@@ -37,6 +37,7 @@ Stats are a first pass, to tune on JawnTest. Effective skill = the init value in
 |---|---|---|---|
 | Look | Kerthump the Ear Taker (drudge), scale 4.0 | Lord Kresovus (lugian), scale 3.2 | Umbris Shadow, scale 3.0 |
 | Level shown | 150 | 150 | 150 |
+| Creature type | Target (76) | EnchantedArms (87) | Apparition (95) |
 | Health | 120,000 | 160,000 | 100,000 |
 | Attack (effective) | ~457 melee | ~480 melee | ~403 melee, ~445 war/void |
 | Melee / magic defense (effective) | ~407 / ~380 | ~370 / ~351 | ~400 / ~420 |
@@ -46,6 +47,6 @@ Stats are a first pass, to tune on JawnTest. Effective skill = the init value in
 | Specials (per boss attack) | Call the Horde 4% (refills dead minions), Squall of Swords 3% (1833, warned 2 s ahead), Blade Ring 5% (warned 2 s ahead) | Shield shifts like the Olthoi King, 3% each: Stone Hide (+900 melee defense), Boulder Wall (+900 missile defense), War Chant (+900 magic defense), Fury (drops all three); Stone Fists 4% (1838, warned 2 s ahead); Shockwave Ring 6% (warned 2 s ahead) | Hellfire 3% (Fire Vuln VII then Flame Chain on its target), Unravel 3% (Dispel All Good Other VII on its target), Call the Shades 4% (refills dead minions), Nether Ring 6% (warned 2 s ahead) |
 | Minions | 6 Ascendant Drudge, 3 Drudge Mystic | 6 Tiatus Lugian, 3 Bokrok Lugian | 5 Shadow Phantom (melee, Flaming Tachi), 4 Shadow Spectre (archers, Deadly Fire Arrows): Death's own copies 520223/520224 that cast only Flame Chain and Impious Curse, all hits fire |
 
-Every special announces itself in local chat. Khaz' shields reuse Aerbax's shield spells (4240-4245), the same ones the Olthoi King uses.
+Their creature types are ones no slayer weapon targets, so Drudge, Lugian and Shadow slayers do nothing extra to them (the look comes from the model, not the type). Every special announces itself in local chat. Khaz' shields reuse Aerbax's shield spells (4240-4245), the same ones the Olthoi King uses.
 Like the other town bosses, they ignore players' magic armor and magic resistance buffs (IgnoreMagicArmor and IgnoreMagicResist) and have Overpower 10.
 Each token reuses an icon from the older tokens (Fang = Olthoi King Claw, Knucklebone = Blood vial, Shroud = Martine's Cloak) but has its own colored glow (UiEffects) so it stands apart: Fang Fire (red), Knucklebone Frost (blue), Shroud Nether (purple). The older tokens have no glow.

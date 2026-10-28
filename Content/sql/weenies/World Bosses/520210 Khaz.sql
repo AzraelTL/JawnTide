@@ -5,7 +5,7 @@ VALUES (520210, 'worldbosskhaz', 10, '2026-10-27 00:00:00') /* Creature */;
 
 INSERT INTO `weenie_properties_int` (`object_Id`, `type`, `value`)
 VALUES (520210,   1,         16) /* ItemType - Creature */
-     , (520210,   2,          5) /* CreatureType - Lugian */
+     , (520210,   2,         87) /* CreatureType - EnchantedArms (JawnTide: a type no slayer weapon targets; looks like a lugian) */
      , (520210,   3,         13) /* PaletteTemplate - Purple */
      , (520210,   6,         -1) /* ItemsCapacity */
      , (520210,   7,         -1) /* ContainersCapacity */
