@@ -277,19 +277,21 @@ table { border-collapse: collapse; width: 100%; } th, td { padding: 5px 9px; bor
 th { position: sticky; top: 0; background: var(--card); font-weight: 600; } td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
 tr.shared td { background: var(--hl); } ul.tree { margin: 4px 0 4px 18px; padding: 0; } ul.tree li { margin: 2px 0; }
 details { background: var(--card); border: 1px solid var(--line); border-radius: 6px; margin-bottom: 8px; padding: 6px 10px; } summary { cursor: pointer; }
+code { font: 12.5px ui-monospace, Menlo, monospace; } td.wrapd { white-space: normal; min-width: 260px; max-width: 520px; } tr.changed td { background: var(--hl); }
+.filters { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin: 0 0 12px; } .filters input[type=search] { flex: 1 1 280px; min-width:0; padding:6px 9px; font:inherit; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--fg); } .filters select { font:inherit; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--fg); }
 .yes { color: #1e8e3e; font-weight: 600; } .no { color: #c0392b; font-weight: 600; } .muted { color: var(--muted); } .err { color: #c0392b; } h2 { font-size: 16px; margin: 18px 0 8px; }
 """
 
 
-def page(title, body):
+def page(title, body, refresh=True):
     with lock:
         taken, err, took = state["taken"], state["error"], state["duration"]
     status = f"Snapshot {fmt_t(taken)} ({took:.1f}s), every {INTERVAL // 60} min" if taken else "No snapshot yet"
     if err:
         status += f' <span class="err">Last error: {e(err)}</span>'
     return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="refresh" content="300"><title>{e(title)} - JawnTide monitor</title><style>{STYLE}</style></head><body>
-<header><b>JawnTide monitor</b><nav><a href="/">Accounts</a><a href="/levels">Levels</a><a href="/allegiances">Allegiances</a><a href="/top">Top holders</a><a href="/ips">Shared IPs</a></nav>
+{'<meta http-equiv="refresh" content="300">' if refresh else ""}<title>{e(title)} - JawnTide monitor</title><style>{STYLE}</style></head><body>
+<header><b>JawnTide monitor</b><nav><a href="/">Accounts</a><a href="/levels">Levels</a><a href="/allegiances">Allegiances</a><a href="/top">Top holders</a><a href="/ips">Shared IPs</a><a href="/settings">Settings</a></nav>
 <span class="muted">{status}</span></header><main>{body}</main></body></html>"""
 
 
@@ -545,6 +547,124 @@ def ip_page(addr):
     return page(addr, f"<h2>IP {e(addr)}</h2><p>Accounts that logged in from it:</p><ul>{rows or '<li class=muted>None</li>'}</ul>")
 
 
+# ---------------------------------------------------------------- settings
+
+CATALOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "settings_catalog.json")
+SECRET_WORDS = ("webhook", "key", "token", "password", "secret", "proxycheck")
+SETTING_TABLES = (("bool", "config_properties_boolean", "value + 0"), ("long", "config_properties_long", "value"),
+                  ("double", "config_properties_double", "value"), ("string", "config_properties_string", "value"))
+COMMANDS = {"bool": ("modifybool", "fetchbool"), "long": ("modifylong", "fetchlong"),
+            "double": ("modifydouble", "fetchdouble"), "string": ("modifystring", "fetchstring")}
+
+
+def load_catalog():
+    try:
+        with open(CATALOG_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except OSError:
+        return {"areas": [], "settings": []}
+
+
+def live_settings():
+    """Every setting stored in ace_shard (read fresh on each page load). Settings never changed in game are not stored."""
+    stored = {}
+    conn = pymysql.connect(database="ace_shard", **DB)
+    try:
+        with conn.cursor() as cur:
+            for typ, table, col in SETTING_TABLES:
+                for key, value in query(cur, f"SELECT `key`, {col} FROM {table}"):
+                    stored[key] = (typ, value)
+    finally:
+        conn.close()
+    return stored
+
+
+def norm(typ, value):
+    """A value as text, the same way for stored values and catalog defaults, so they can be compared."""
+    if value is None:
+        return ""
+    if typ == "bool":
+        return "true" if str(value).lower() in ("1", "true") else "false"
+    if typ == "double":
+        try:
+            return f"{float(value):g}"
+        except ValueError:
+            return str(value)
+    return str(value)
+
+
+def settings_page():
+    cat = load_catalog()
+    try:
+        stored = live_settings()
+        err = ""
+    except Exception as ex:
+        stored, err = {}, f'<p class="err">Could not read the live settings: {e(ex)}</p>'
+    known = {r["key"] for r in cat["settings"]}
+    changed_count = 0
+    rows = []
+    last_area = None
+    for r in cat["settings"]:
+        key, typ = r["key"], r["type"]
+        secret = typ == "string" and any(w in key for w in SECRET_WORDS)
+        default = norm(typ, r["default"])
+        in_db = key in stored
+        current = norm(typ, stored[key][1]) if in_db else default
+        changed = in_db and current != default
+        changed_count += changed
+        if secret:
+            shown_cur = "set" if current else "(empty)"
+            shown_def = "(empty)" if not default else "hidden"
+        else:
+            shown_cur = current if current != "" else "(empty)"
+            shown_def = default if default != "" else "(empty)"
+        if r["area"] != last_area:
+            rows.append(f'<tr class="area"><th colspan="5">{e(r["area"])}</th></tr>')
+            last_area = r["area"]
+        mod, fetch = COMMANDS[typ]
+        cmd = f"@{fetch} {key}" + ("" if secret else f"<br>@{mod} {key} <i>value</i>")
+        tags = (' <span class="muted">JawnTide</span>' if r["jawntide"] else "")
+        rows.append(
+            f'<tr class="s{" changed" if changed else ""}" data-area="{e(r["area"])}" data-changed="{1 if changed else 0}" '
+            f'data-text="{e((key + " " + r["desc"]).lower().replace("_", " "))}">'
+            f'<td><code>{e(key)}</code>{tags}<br><span class="muted">{typ}</span></td>'
+            f'<td class="n"><b>{e(shown_cur)}</b></td><td class="n muted">{e(shown_def)}</td>'
+            f'<td class="wrapd">{e(r["desc"])}</td><td><code>{cmd}</code></td></tr>')
+    extra = sorted(k for k in stored if k not in known)
+    extra_html = ""
+    if extra:
+        items = "".join(f"<li><code>{e(k)}</code> ({stored[k][0]})</li>" for k in extra)
+        extra_html = (f"<h2>Stored but no longer used ({len(extra)})</h2><p class=muted>Settings saved in the database that "
+                      f"the server code no longer has. They do nothing.</p><ul>{items}</ul>")
+    areas = "".join(f'<option>{e(a)}</option>' for a in cat["areas"])
+    body = f"""<h2>Server settings</h2>
+<p class="muted">{len(cat["settings"])} settings an admin can change in game. <b>Current</b> is the live value read from the database just now; highlighted rows differ from the default ({changed_count}).
+Change with <code>@modifybool</code>, <code>@modifylong</code>, <code>@modifydouble</code> or <code>@modifystring</code>; a change made in game is saved to the database within 5 minutes, so wait 5 minutes before a restart. Secret values are hidden.</p>
+{err}
+<div class="filters"><input id="q" type="search" placeholder="Search names and descriptions" aria-label="Search settings">
+<select id="area" aria-label="Area"><option value="">All areas</option>{areas}</select>
+<label><input id="chg" type="checkbox"> Changed from default only</label> <span id="cnt" class="muted"></span></div>
+<div class="wrap"><table id="t"><thead><tr><th>Setting</th><th class="n">Current</th><th class="n">Default</th><th>What it does</th><th>Commands</th></tr></thead>
+<tbody>{"".join(rows)}</tbody></table></div>
+{extra_html}
+<script>
+(function(){{
+  var q=document.getElementById('q'), a=document.getElementById('area'), c=document.getElementById('chg'), cnt=document.getElementById('cnt');
+  function run(){{
+    var words=q.value.toLowerCase().replace(/_/g,' ').split(/\\s+/).filter(Boolean), n=0, seen={{}};
+    document.querySelectorAll('#t tr.s').forEach(function(tr){{
+      var ok=(!a.value||tr.dataset.area===a.value)&&(!c.checked||tr.dataset.changed==='1')&&words.every(function(w){{return tr.dataset.text.indexOf(w)>=0;}});
+      tr.hidden=!ok; if(ok){{n++; seen[tr.dataset.area]=1;}}
+    }});
+    document.querySelectorAll('#t tr.area').forEach(function(tr){{ tr.hidden=!seen[tr.textContent]; }});
+    cnt.textContent=n+' shown';
+  }}
+  [q,a,c].forEach(function(el){{el.addEventListener('input',run);}}); run();
+}})();
+</script>"""
+    return page("Settings", body, refresh=False)
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         url = urlparse(self.path)
@@ -564,6 +684,8 @@ class Handler(BaseHTTPRequestHandler):
                 body = ips_page()
             elif url.path == "/ip":
                 body = ip_page(q.get("addr", [""])[0])
+            elif url.path == "/settings":
+                body = settings_page()
             elif url.path == "/health":
                 body = "ok"
             else:

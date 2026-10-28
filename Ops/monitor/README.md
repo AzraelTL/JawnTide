@@ -21,8 +21,15 @@ A small web page for the LAN that shows, per account:
   was earned in that window and who earned it. A character with a far higher XP per hour than others at its level
   is worth a look (exploit, or a spot whose XP needs turning down). XP history starts when this version first runs.
 
+- **Settings** (`/settings`): every server setting an admin can change in game, grouped by area, with its **current live value**
+  (read from `ace_shard.config_properties_*` each time the page loads), its default, what it does and the `@fetch`/`@modify`
+  commands. Rows that differ from the default are highlighted; search, area and "changed only" filters. Secret values
+  (webhooks, keys) show only as "set" or "(empty)". Names, defaults and descriptions come from `settings_catalog.json`,
+  built from `Source/ACE.Server/Managers/PropertyManager.cs`: after adding or changing a setting there, run
+  `python Ops/monitor/make_settings_catalog.py` from the repo root and commit the JSON.
+
 Pages: `/` accounts (click a currency header to sort), `/account?name=...`, `/levels`, `/allegiances`, `/top` top 15 holders per
-currency, `/ips` IPs shared by several accounts. Open it from any machine on the LAN: **http://192.168.0.190:8080**
+currency, `/ips` IPs shared by several accounts, `/settings` server settings. Open it from any machine on the LAN: **http://192.168.0.190:8080**
 
 ## How it works
 

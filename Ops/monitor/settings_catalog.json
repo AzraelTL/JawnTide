@@ -1,0 +1,3245 @@
+{
+ "areas": [
+  "World bosses & events",
+  "Arena",
+  "Town Control",
+  "Bounties",
+  "PvP damage tuning",
+  "PvP & player killers",
+  "XP, levels & luminance",
+  "Loot & salvage",
+  "Housing",
+  "Allegiance & fellowship",
+  "Vendors & economy",
+  "Chat, Discord & messages",
+  "Accounts, logins & security",
+  "Combat & magic",
+  "Server & everything else"
+ ],
+ "settings": [
+  {
+   "key": "disable_low_level_world_bosses",
+   "type": "bool",
+   "default": "true",
+   "jawntide": true,
+   "desc": "disables spawning of the lower-level world bosses (Moloch, Khaz', Death); disable_world_bosses covers all the others",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "disable_world_bosses",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "disables spawning of world bosses",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_attribute_ranks",
+   "type": "long",
+   "default": "100",
+   "jawntide": true,
+   "desc": "ranks the event boss gets in every attribute, on top of 100 innate; 190 = maxed (apply with @eventboss on)",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_characters",
+   "type": "string",
+   "default": "",
+   "jawntide": true,
+   "desc": "comma separated character IDs that become the event boss whenever they log in (set with @eventboss make / unmake)",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_health",
+   "type": "long",
+   "default": "20000",
+   "jawntide": true,
+   "desc": "the event boss's maximum health (set by @eventboss on)",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_level",
+   "type": "long",
+   "default": "100",
+   "jawntide": true,
+   "desc": "the level the event boss shows (set by @eventboss on; does not change its strength)",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_look_clothing_base",
+   "type": "long",
+   "default": "0x100000B0",
+   "jawntide": true,
+   "desc": "body skin (ClothingBase) for the event boss (default 0x100000B0: the Shadow look); 0 = keep the character's own look",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_look_palette_base",
+   "type": "long",
+   "default": "0x0400007E",
+   "jawntide": true,
+   "desc": "palette base for the event boss look",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_look_palette_template",
+   "type": "long",
+   "default": "39",
+   "jawntide": true,
+   "desc": "palette template (color scheme) for the event boss look; 39 = Black",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_look_setup",
+   "type": "long",
+   "default": "0x02000001",
+   "jawntide": true,
+   "desc": "model (Setup) the event boss character is given by @eventboss on/make (default: human body, as the Sinister Shadow uses)",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_look_shade",
+   "type": "double",
+   "default": "0.5",
+   "jawntide": true,
+   "desc": "shade for the event boss look",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_loot_chest_wcid",
+   "type": "long",
+   "default": "480607",
+   "jawntide": true,
+   "desc": "when the event boss dies, one pull of this chest's loot (480607 = Darkbeat's Storage Locker) drops on the ground around it. The boss leaves no corpse",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_loot_minutes",
+   "type": "long",
+   "default": "30",
+   "jawntide": true,
+   "desc": "minutes the event boss's loot stays on the ground before it rots",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_mana",
+   "type": "long",
+   "default": "10000",
+   "jawntide": true,
+   "desc": "the event boss's maximum stamina and mana (set by @eventboss on)",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_minion_count",
+   "type": "long",
+   "default": "9",
+   "jawntide": true,
+   "desc": "minions per /minions",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_minion_lifespan_seconds",
+   "type": "long",
+   "default": "300",
+   "jawntide": true,
+   "desc": "seconds before summoned minions vanish (they also vanish when the event ends)",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_minion_wcid",
+   "type": "long",
+   "default": "520101",
+   "jawntide": true,
+   "desc": "creature summoned by the event boss's /minions (Shadow Minion)",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_participation_trophies",
+   "type": "long",
+   "default": "5",
+   "jawntide": true,
+   "desc": "PK Trophies for every player in the landblock when the event boss dies (0 = none)",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_reward_box_radius",
+   "type": "long",
+   "default": "8",
+   "jawntide": true,
+   "desc": "reward boxes scatter at random 2 to this many meters around the event boss's body",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_reward_box_wcid",
+   "type": "long",
+   "default": "520102",
+   "jawntide": true,
+   "desc": "weenie of the reward box (Shadow Spoils Box)",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_reward_boxes",
+   "type": "long",
+   "default": "9",
+   "jawntide": true,
+   "desc": "reward boxes dropped around the event boss when it dies",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_scale",
+   "type": "double",
+   "default": "2.0",
+   "jawntide": true,
+   "desc": "size of the event boss while the event runs (1 = normal)",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_skill_ranks",
+   "type": "long",
+   "default": "100",
+   "jawntide": true,
+   "desc": "ranks the event boss gets in every (specialized) skill; 226 = maxed. Lower it so lower-level players can hit it (apply with @eventboss on)",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "event_boss_summon_cooldown_seconds",
+   "type": "long",
+   "default": "120",
+   "jawntide": true,
+   "desc": "seconds between uses of /minions",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "world_boss_webhook",
+   "type": "string",
+   "default": "",
+   "jawntide": false,
+   "desc": "Webhook to be send world boss messages.",
+   "area": "World bosses & events"
+  },
+  {
+   "key": "arena_1v1_global_dmg_mod",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "a damage modifier applied across all melee, missile and war/void projectile damage during arena 1v1 events.",
+   "area": "Arena"
+  },
+  {
+   "key": "arena_1v1_healkit_restoration_bonus_cap",
+   "type": "double",
+   "default": "1.5",
+   "jawntide": false,
+   "desc": "the maximum effective restoration bonus applied from a healing kit during arena 1v1 events.",
+   "area": "Arena"
+  },
+  {
+   "key": "arena_1v1_healkit_skill_bonus_cap",
+   "type": "double",
+   "default": "150",
+   "jawntide": false,
+   "desc": "the maximum effective skill bonus applied from a healing kit during arena 1v1 events.",
+   "area": "Arena"
+  },
+  {
+   "key": "arena_allow_observers",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enable this to allow players to watch arena matches as invisible observers",
+   "area": "Arena"
+  },
+  {
+   "key": "arena_allow_same_ip_match",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enable this allow two characters connected from the same IP to be matched in an arena event",
+   "area": "Arena"
+  },
+  {
+   "key": "arena_corpse_rot_seconds",
+   "type": "double",
+   "default": "900",
+   "jawntide": false,
+   "desc": "the number of seconds a corpse that is generated in an arena landblock takes to rot. Default 15 mins.",
+   "area": "Arena"
+  },
+  {
+   "key": "arena_globals_webhook",
+   "type": "string",
+   "default": "",
+   "jawntide": false,
+   "desc": "Webhook to be send Arena global messages.",
+   "area": "Arena"
+  },
+  {
+   "key": "arena_pk_respite_timer",
+   "type": "double",
+   "default": "120",
+   "jawntide": false,
+   "desc": "the number of seconds that a player killer is set to non-player killer status after dying to another player killer in an arena match.  Should be a value less than pk_respite_timer, or else pk_respite_timer will override.",
+   "area": "Arena"
+  },
+  {
+   "key": "arenas_blacklist",
+   "type": "string",
+   "default": "",
+   "jawntide": false,
+   "desc": "A comma separated list of CharacterID values that cannot participate in Arenas",
+   "area": "Arena"
+  },
+  {
+   "key": "arenas_disable_rewards",
+   "type": "bool",
+   "default": "false",
+   "jawntide": true,
+   "desc": "if TRUE, arena events grant no rewards (no XP, luminance or items) to winners, losers or draws. Stats and rankings are still recorded",
+   "area": "Arena"
+  },
+  {
+   "key": "arenas_min_level",
+   "type": "long",
+   "default": "25",
+   "jawntide": false,
+   "desc": "the minimum level required to join an arena queue",
+   "area": "Arena"
+  },
+  {
+   "key": "arenas_reward_min_age",
+   "type": "long",
+   "default": "864000",
+   "jawntide": false,
+   "desc": "the minimum in-game age in seconds required to get arena rewards",
+   "area": "Arena"
+  },
+  {
+   "key": "arenas_reward_min_level",
+   "type": "long",
+   "default": "25",
+   "jawntide": false,
+   "desc": "the minimum level required to get arena rewards",
+   "area": "Arena"
+  },
+  {
+   "key": "disable_arenas",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "set to true to disable arena events",
+   "area": "Arena"
+  },
+  {
+   "key": "dungeoncontrol_capturescore_mod",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "modifies the score needed to capture a dungeon in dungeon control, generally used for testing",
+   "area": "Town Control"
+  },
+  {
+   "key": "town_control_allegiance_player_limit",
+   "type": "long",
+   "default": "13",
+   "jawntide": false,
+   "desc": "the maximum total entries of players per allegiance",
+   "area": "Town Control"
+  },
+  {
+   "key": "town_control_alleglist",
+   "type": "string",
+   "default": "",
+   "jawntide": false,
+   "desc": "A comma separated list of MonarchID values to whitelist allegiances for participation in town control events",
+   "area": "Town Control"
+  },
+  {
+   "key": "town_control_enable_webhook_debug",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "If true, town control debug messages get sent to webhook",
+   "area": "Town Control"
+  },
+  {
+   "key": "town_control_globals_webhook",
+   "type": "string",
+   "default": "",
+   "jawntide": false,
+   "desc": "Webhook to be send Town Control global messages.",
+   "area": "Town Control"
+  },
+  {
+   "key": "town_control_ip_restricted",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enable this to restrict unique Ip access to Town Control Events",
+   "area": "Town Control"
+  },
+  {
+   "key": "town_control_periodic_reward_defender_seconds",
+   "type": "long",
+   "default": "25",
+   "jawntide": false,
+   "desc": "the number seconds between periodic trophy awards during an active town control event for the defending clan",
+   "area": "Town Control"
+  },
+  {
+   "key": "town_control_periodic_reward_seconds",
+   "type": "long",
+   "default": "50",
+   "jawntide": false,
+   "desc": "the number seconds between periodic trophy awards during an active town control event",
+   "area": "Town Control"
+  },
+  {
+   "key": "town_control_reward_defender_lum_amount",
+   "type": "long",
+   "default": "500",
+   "jawntide": false,
+   "desc": "the amount of lum each defender gets every {town_control_periodic_reward_seconds} during an active town control event",
+   "area": "Town Control"
+  },
+  {
+   "key": "town_control_reward_level_minimum",
+   "type": "long",
+   "default": "100",
+   "jawntide": false,
+   "desc": "the minimum level a player has to be to receive town control rewards",
+   "area": "Town Control"
+  },
+  {
+   "key": "town_control_reward_zerg_limit",
+   "type": "long",
+   "default": "9",
+   "jawntide": false,
+   "desc": "the maximum numbers of players from the same clan allowed in the town control conflict landblock",
+   "area": "Town Control"
+  },
+  {
+   "key": "town_control_trophy_chance",
+   "type": "double",
+   "default": "0.25",
+   "jawntide": false,
+   "desc": "the change that a town control trophy is given to a player that is within the landblock of an active town control event with each player tick",
+   "area": "Town Control"
+  },
+  {
+   "key": "bounty_allow_all_locations",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enable this to allow all locations to be valid bounty locations",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_allow_logged_out",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enable this to allow logged out characters to be valid bounties",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_cooldown_expiration_time",
+   "type": "long",
+   "default": "0",
+   "jawntide": false,
+   "desc": "the amount of time in minutes for a bounty hunter's cooldown penalty",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_cooldown_target_expiration_time",
+   "type": "long",
+   "default": "30",
+   "jawntide": false,
+   "desc": "the amount of time in minutes for a bounty target's cooldown penalty",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_currency_return_amount",
+   "type": "long",
+   "default": "1",
+   "jawntide": false,
+   "desc": "the amount of bounty currency to return for expired turn-ins)",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_currency_wcid",
+   "type": "long",
+   "default": "1000003",
+   "jawntide": false,
+   "desc": "the WCID for the type of item used for the bounty currency (DEFAULT: is Phial Of Tears)",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_expiration_time",
+   "type": "long",
+   "default": "60",
+   "jawntide": false,
+   "desc": "the amount of time in minutes a bounty expires",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_expirations_enabled",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enable this to allow bounties to expire",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_kill_streak_minimum",
+   "type": "long",
+   "default": "4",
+   "jawntide": false,
+   "desc": "the minimum killstreak count a player must have before being added to high priority bounties",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_last_location_duration",
+   "type": "double",
+   "default": "30.0",
+   "jawntide": false,
+   "desc": "the number of seconds before a player can use the bounty contract's location finder again",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_location_currency_wcid",
+   "type": "long",
+   "default": "1000002",
+   "jawntide": false,
+   "desc": "the WCID for the type of item used for the bounty contract location finder (DEFAULT: is PK Trophy)",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_location_price_amount",
+   "type": "long",
+   "default": "25",
+   "jawntide": false,
+   "desc": "the amount of bounty contract location finder currency it costs to use the location finder",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_max_contracts",
+   "type": "long",
+   "default": "3",
+   "jawntide": false,
+   "desc": "the maximum amount of contracts a player can have",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_minimum_player_level",
+   "type": "long",
+   "default": "150",
+   "jawntide": false,
+   "desc": "the minimum player level that a bounty can be assigned to",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_npc_use_cooldown_seconds",
+   "type": "double",
+   "default": "3.0",
+   "jawntide": false,
+   "desc": "the cooldown in seconds between bounty npc usage",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_pk_timer_active_enabled",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enable this for custom bounty pk timer active check",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_system_enabled",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enable this for the bounty hunter pvp feature",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_weight_exponent",
+   "type": "double",
+   "default": "0.75",
+   "jawntide": false,
+   "desc": "bounty weight tuning for selecting targets. More random selections when closer to 0.1, higher priority selections when closer to 1.0 for higher priority target selections",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_weight_maxstack_scale",
+   "type": "double",
+   "default": "0.2",
+   "jawntide": false,
+   "desc": "bounty weight max stack scale tuning this is used to apply an effective max stack",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_weight_multiplier",
+   "type": "double",
+   "default": "50.0",
+   "jawntide": false,
+   "desc": "bounty weight multiplier tuning, use in conjunction with bounty_weight_exponent",
+   "area": "Bounties"
+  },
+  {
+   "key": "bounty_wop_currency_wcid",
+   "type": "long",
+   "default": "1000003",
+   "jawntide": false,
+   "desc": "the WCID for the type of item used for the bounty Writ of Pursuit currency (DEFAULT: is Phial Of Tears)",
+   "area": "Bounties"
+  },
+  {
+   "key": "pk_bounty_timer",
+   "type": "long",
+   "default": "120",
+   "jawntide": false,
+   "desc": "the number of seconds where a player cannot perform certain actions (ie. teleporting) after encountering a bounty hunter",
+   "area": "Bounties"
+  },
+  {
+   "key": "writ_of_pursuit_enabled",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enable this for the writ of pursuit bounty feature",
+   "area": "Bounties"
+  },
+  {
+   "key": "ignore_magic_armor_pvp_scalar",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the effectiveness of IgnoreMagicArmor (ie. hollow weapons) in pvp battles. 1.0 = full effectiveness / ignore all enchantments on armor (default), 0.5 = half effectiveness / use half enchantments from armor, 0.0 = no effectiveness / use full enchantments from armor",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "ignore_magic_resist_pvp_scalar",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the effectiveness of IgnoreMagicResist (ie. hollow weapons) in pvp battles. 1.0 = full effectiveness / ignore all resistances from life enchantments (default), 0.5 = half effectiveness / use half resistances from life enchantments, 0.0 = no effectiveness / use full resistances from life enchantments",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_cloak_max_dmg_mitigation",
+   "type": "double",
+   "default": "100",
+   "jawntide": false,
+   "desc": "The maximum amount of damage a cloak proc can mitigate",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_cs_critrate_mod",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the crit rate for CS",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_damage_cap",
+   "type": "long",
+   "default": "450",
+   "jawntide": false,
+   "desc": "The cap for PvP damage per strike",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_2h",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Two Handed Weapons",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_2h_ar",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for 2H AR.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_2h_cb",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for v CB.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_2h_cb_crit",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for 2H CB Crit.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_2h_cs",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for 2H CS.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_2h_hollow",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for 2H Hollow.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_2h_phantom",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for 2H Phantom.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_ar",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for armor rending",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_bow",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for hollow",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_bow_ar",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Bow AR.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_bow_cb",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Bow CB.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_bow_cb_crit",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Bow CB Crit.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_bow_cs",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Bow CS.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_bow_hollow",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Bow Hollow.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_bow_phantom",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Bow Phantom.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_cb",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for crippling blow",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_cs",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for critical strike",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_fw",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Finesse Weapons",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_fw_ar",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for FW AR.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_fw_cb",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for FW CB.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_fw_cb_crit",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for FW CB Crit.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_fw_cs",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for FW CS.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_fw_hollow",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for FW Hollow.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_fw_phantom",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for war FW Phantom.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_hollow",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for hollow",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_hw",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Heavy Weapons",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_hw_ar",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for HW AR.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_hw_cb",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for HW CB.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_hw_cb_crit",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for HW CB Crit.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_hw_cb_crit_multistrike",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of Crit damage for HW Multi Strike weapons.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_hw_cs",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for HW CS.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_hw_hollow",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for HW Hollow.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_hw_multistrike",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for HW Multi Strike weapons.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_hw_phantom",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for HW Phantom.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_lw",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Light Weapons",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_lw_ar",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for LW AR.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_lw_cb",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for LW CB.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_lw_cb_crit",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for LW CB Crit.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_lw_cb_crit_triplestrike",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of Crit damage for LW Triple Strike weapons.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_lw_cs",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for LW CS.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_lw_hollow",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for LW Hollow.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_lw_phantom",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for LW Phantom.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_lw_triplestrike",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for LW Triple Strike weapons.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_phantom",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for phantom",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_tw",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for hollow",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_tw_ar",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for TW AR.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_tw_cb",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for TW CB.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_tw_cb_crit",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for TW CB Crit.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_tw_cs",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for TW CS.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_tw_hollow",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for TW Hollow.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_tw_phantom",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for TW Phantom.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_void",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage players take from Void Magic (not including streaks and DOTs which have their own mods)",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_void_cb_crit",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of CB crit damage for void magic.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_void_crit",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of crit damage for void magic.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_void_dot",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for void DOTs.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_void_dot_rating_reduction",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of rating reduction received from a void DOT that's cast by a PK on another player.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_void_streak",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for void streaks.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_void_variance",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the low end for void magic bolts and arcs without effecting top end.  Values under 1 will reduce the variance and increase min dmg by the amount the variance was reduced.  Values over 1 will increase variance and reduce min dmg to match.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_war",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for war magic",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_war_blast",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for war blasts",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_war_cb_crit",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of CB crit damage for war magic.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_war_cs_crit",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of CS crit damage for war magic.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_war_cs_dmg",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of CS damage for war magic for all hits (both crits and non-crits).",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_war_streak",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for war streaks",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_war_variance",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the low end for war magic bolts and arcs without effecting top end.  Values under 1 will reduce the variance and increase min dmg by the amount the variance was reduced.  Values over 1 will increase variance and reduce min dmg to match.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_xbow",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Xbow",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_xbow_ar",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Xbow AR.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_xbow_cb",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Xbow CB.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_xbow_cb_crit",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Xbow CB Crit.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_xbow_cs",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Xbow CS.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_xbow_hollow",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Xbow Hollow.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_xbow_phantom",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of damage for Xbow Phantom.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_ratings_mod_critdmg",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the bonus received from crit dmg and crit dmg reduction ratings during pvp",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_ratings_mod_dmg",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the bonus received from dmg and dmg reduction ratings during pvp",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_void_hybrid_mod",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of DOT damage when a player is a hybrid void.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "allow_pkl_bump",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enables retail behavior where /pkl checks for entry collisions, bumping the player position over if standing on another PKLite. This effectively enables /pkl door skipping from retail",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "daily_pvp_xp_category_ratio",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "fraction of the player's remaining season-cap headroom that can be filled from PvP-category XP per cap window",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "disable_pvp_cleave",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "disables melee cleave attacks from targeting players",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "dispel_rares_pvp",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "If true, disables rare gem buffs from being usable in PvP.",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pk_kill_diminish_hours",
+   "type": "double",
+   "default": "3.0",
+   "jawntide": false,
+   "desc": "hours the diminishing-returns suppression lasts once the threshold is exceeded",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pk_kill_diminish_threshold",
+   "type": "double",
+   "default": "3.0",
+   "jawntide": false,
+   "desc": "number of kills against the same victim (per character AND per account) within the window before rewards are suppressed",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pk_kill_window_hours",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "sliding-window length (hours) for same-target PK diminishing returns",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pk_kills_webhook",
+   "type": "string",
+   "default": "",
+   "jawntide": false,
+   "desc": "Webhook used for sending PK Kill messages.",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pk_new_character_grace_period",
+   "type": "double",
+   "default": "300",
+   "jawntide": false,
+   "desc": "the number of seconds, in addition to pk_respite_timer, that a player killer is set to non-player killer status after first exiting training academy",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pk_respite_timer",
+   "type": "double",
+   "default": "300",
+   "jawntide": false,
+   "desc": "the number of seconds that a player killer is set to non-player killer status after dying to another player killer",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pk_server",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "set this to TRUE for darktide servers",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pk_server_safe_training_academy",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "set this to TRUE to disable pk fighting in training academy and time to exit starter town safely",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pk_timer",
+   "type": "long",
+   "default": "20",
+   "jawntide": false,
+   "desc": "the number of seconds where a player cannot perform certain actions (ie. teleporting) after becoming involved in a PK battle",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pk_xp_kill_reward_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "award PvP XP (XpType.PvP) to the killer on an open-world PK kill of a different allegiance, scaled by level gap and subject to same-target diminishing returns",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pk_xp_kill_reward_max_pct",
+   "type": "double",
+   "default": "0.10",
+   "jawntide": false,
+   "desc": "maximum open-world PK-kill XP reward as a fraction of the killer's XP-to-next-level",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pk_xp_kill_reward_min_pct",
+   "type": "double",
+   "default": "0.05",
+   "jawntide": false,
+   "desc": "minimum open-world PK-kill XP reward as a fraction of the killer's XP-to-next-level",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pk_xp_level_diff_decay",
+   "type": "double",
+   "default": "0.85",
+   "jawntide": false,
+   "desc": "per-level exponential decay applied to open-world PK-kill XP when the victim is below the killer's level (0.85 => ~20% reward at 10 levels below)",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pk_xp_zerg_penalty_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "reduce all XpType.PvP XP by the earner's allegiance online headcount (<=10 online = 100%, scaling down to 10% at 17+)",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pkl_server",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "set this to TRUE for pink servers",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pvp_chug_timer",
+   "type": "long",
+   "default": "0",
+   "jawntide": false,
+   "desc": "the minimum time in milliseconds between chugs. if a chug is used within X milliseconds of a previous one, it will heal for 0. if value is set to 0 the feature is disabled.",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "pvp_dispel_vuln_timer",
+   "type": "long",
+   "default": "300",
+   "jawntide": false,
+   "desc": "the number of seconds where a player's dispel actions will not remove vulns after becoming involved in a PK battle",
+   "area": "PvP & player killers"
+  },
+  {
+   "key": "advocate_fane_auto_bestow_level",
+   "type": "double",
+   "default": "1",
+   "jawntide": false,
+   "desc": "the level that advocates are automatically bestowed by Advocate Fane if advocate_fane_auto_bestow is true",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "aetheria_highlevel_whitelist_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enable this to limit areas where level 4 and 5 aetheria drop to whitelisted landblocks",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "allow_swear_to_lower_level",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if TRUE (retail behavior), a player may swear allegiance to a lower-level patron; no allegiance XP passes up until the patron surpasses the vassal's level. If FALSE, the patron must currently be greater or equal level.",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "attribute_augmentation_safety_cap",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if TRUE players are not able to use attribute augmentations if the innate value of the target attribute is >= 96. All normal restrictions to these augmentations still apply.",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "catchup_xp_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "when true, characters whose total XP is below catchup_xp_threshold of the season cap earn boosted XP",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "catchup_xp_max_multiplier",
+   "type": "double",
+   "default": "5.0",
+   "jawntide": false,
+   "desc": "catch-up XP multiplier for a character at 0 XP",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "catchup_xp_min_multiplier",
+   "type": "double",
+   "default": "2.0",
+   "jawntide": false,
+   "desc": "catch-up XP multiplier for a character just below catchup_xp_threshold of the cap",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "catchup_xp_threshold",
+   "type": "double",
+   "default": "0.70",
+   "jawntide": false,
+   "desc": "characters below this fraction of the current season XP cap earn boosted XP; at or above it they earn normally",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "chat_requires_player_level",
+   "type": "long",
+   "default": "0",
+   "jawntide": false,
+   "desc": "the level a player is required to have for global chat privileges",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "daily_monster_xp_category_ratio",
+   "type": "double",
+   "default": "0.60",
+   "jawntide": false,
+   "desc": "fraction of the player's remaining season-cap headroom that can be filled from Monster-category XP (creature kills, fellowship, allegiance passup, proficiency) per cap window",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "daily_quest_xp_category_ratio",
+   "type": "double",
+   "default": "0.60",
+   "jawntide": false,
+   "desc": "fraction of the player's remaining season-cap headroom that can be filled from Quest-category XP (quests, exploration, emotes) per cap window",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "default_subscription_level",
+   "type": "long",
+   "default": "1",
+   "jawntide": false,
+   "desc": "retail defaults to 1, 1 = standard subscription (same as 2 and 3), 4 grants ToD pre-order bonus item Asheron's Benediction",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "fellowship_even_share_level",
+   "type": "long",
+   "default": "50",
+   "jawntide": false,
+   "desc": "level when fellowship XP sharing is no longer restricted",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "ignore_burden_below_character_level",
+   "type": "long",
+   "default": "10",
+   "jawntide": false,
+   "desc": "The minimum character level at which burden will start to apply. Retail defaults to 0.",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "luminance_modifier",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the amount of luminance received by players",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "offline_xp_passup_limit",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if FALSE, allows unlimited xp to passup to offline characters in allegiances",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "quest_lum_modifier",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scale multiplier for amount of quest luminance received by players.  Quest lum is also modified by 'luminance_modifier'.",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "quest_xp_award_max_levels",
+   "type": "long",
+   "default": "5",
+   "jawntide": true,
+   "desc": "a single quest XP reward (AwardXP / AwardNoShareXP emotes: NPC turn-ins, used items) can raise a character at most this many levels; the rest is not awarded. Stops high-level quest items from power-leveling alts. 0 = no limit",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "quest_xp_modifier",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scale multiplier for amount of quest XP received by players.  Quest XP is also modified by 'xp_modifier'.",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "rolling_level_cap_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "master on/off for the server-wide rolling season XP cap",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "rolling_level_cap_season_days",
+   "type": "long",
+   "default": "90",
+   "jawntide": false,
+   "desc": "number of days over which the rolling XP cap rises linearly from rolling_level_cap_start_xp to the level-275 XP requirement, after which it freezes",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "rolling_level_cap_start_timestamp",
+   "type": "long",
+   "default": "0",
+   "jawntide": false,
+   "desc": "Unix timestamp of season day 0 for the rolling XP cap. 0 = season not started.",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "rolling_level_cap_start_xp",
+   "type": "long",
+   "default": "0",
+   "jawntide": false,
+   "desc": "total-XP value of the rolling cap on season day 0",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "rolling_xp_cap",
+   "type": "long",
+   "default": "0",
+   "jawntide": false,
+   "desc": "current computed rolling XP cap (managed automatically by RollingLevelCapManager)",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "rolling_xp_cap_timestamp",
+   "type": "long",
+   "default": "0",
+   "jawntide": false,
+   "desc": "last time rolling_xp_cap was recomputed (managed automatically)",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "rolling_xp_modifier_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "when true, RollingLevelCapManager drives the xp_modifier config along a season curve (0.25x at start up to rolling_xp_modifier_max)",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "rolling_xp_modifier_max",
+   "type": "double",
+   "default": "3.0",
+   "jawntide": false,
+   "desc": "end-of-ramp value for xp_modifier when rolling_xp_modifier_enabled is true; the modifier curves from 0.25x at season start up to this",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "use_portal_max_level_requirement",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "disable this to ignore the max level restriction on portals",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "xp_modifier",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "scales the amount of xp received by players",
+   "area": "XP, levels & luminance"
+  },
+  {
+   "key": "allow_jump_loot",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enables retail behavior where a player can quickly loot items while jumping, bypassing the 'crouch down' animation",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "allow_negative_rating_curve",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enables retail behavior where negative DRR from void dots didn't switch to the reverse rating formula, resulting in a possibly unintended curve that quickly ramps up as -rating goes down, eventually approaching infinity / divide by 0 for -100 rating. less than -100 rating would produce negative numbers.",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "equipmentset_whitelist_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enable this to limit areas where Sets drop to whitelisted landblocks",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "equipmentsetid_drop_rate",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Modifier for EquipmentSetID drop rate, 1 being normal",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "equipmentsetid_enabled",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enable this to allow adding EquipmentSetIDs to loot armor",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "equipmentsetid_name_decoration",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enable this to add the EquipmentSet name to loot armor name",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "legacy_loot_system",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "use the previous iteration of the ace lootgen system",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "loot_disable_ratings",
+   "type": "bool",
+   "default": "false",
+   "jawntide": true,
+   "desc": "if TRUE, random loot (corpses, chests, monster equipment) never rolls gear ratings, at any tier",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "loot_max_tier",
+   "type": "long",
+   "default": "0",
+   "jawntide": true,
+   "desc": "highest loot tier random loot (corpses, chests, monster equipment) can roll. Higher tiers roll as this tier. 0 = no cap",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "loot_quality_mod",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if FALSE then the loot quality modifier of a Death Treasure profile does not affect loot generation",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "rare_audit_webhook",
+   "type": "string",
+   "default": "",
+   "jawntide": false,
+   "desc": "Webhook to be send rare audit messages.",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "rare_drop_rate_percent",
+   "type": "double",
+   "default": "0.04",
+   "jawntide": false,
+   "desc": "Adjust the chance of a rare to spawn as a percentage. Default is 0.04, or 1 in 2,500. Max is 100, or every eligible drop.",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "rares_max_days_between",
+   "type": "long",
+   "default": "45",
+   "jawntide": false,
+   "desc": "for rares_real_time_v2: the maximum number of days a player can go before a rare is generated on rare eligible creature kills",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "rares_max_seconds_between",
+   "type": "long",
+   "default": "5256000",
+   "jawntide": false,
+   "desc": "for rares_real_time: the maximum number of seconds a player can go before a second chance at a rare is allowed on rare eligible creature kills that did not generate a rare",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "rares_real_time",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "allow for second chance roll based on an rng seeded timestamp for a rare on rare eligible kills that do not generate a rare, rares_max_seconds_between defines maximum seconds before second chance kicks in",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "rares_real_time_v2",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "chances for a rare to be generated on rare eligible kills are modified by the last time one was found per each player, rares_max_days_between defines maximum days before guaranteed rare generation",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "rating_drop_rate",
+   "type": "double",
+   "default": "0.25",
+   "jawntide": false,
+   "desc": "Sets the chance for ratings to drop.  Default is 0.25, or 25%.  Keep in mind that ratings only drop on Tier 8, and then there's separate rolls to determine what level of rating you get.  This setting only affects the base drop rate.",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "ratings_whitelist_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enable this to limit areas where Ratings drop on loot gen armor to whitelisted landblocks",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "salvage_handle_overages",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "in retail, if 2 salvage bags were combined beyond 100 structure, the overages would be lost",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "house_15day_account",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if disabled, houses can be purchased with accounts created less than 15 days old",
+   "area": "Housing"
+  },
+  {
+   "key": "house_30day_cooldown",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if disabled, houses can be purchased without waiting 30 days between each purchase",
+   "area": "Housing"
+  },
+  {
+   "key": "house_account_age_days",
+   "type": "long",
+   "default": "3",
+   "jawntide": true,
+   "desc": "how many days old an account must be before its characters can buy a cottage, villa or mansion (apartments have no wait). Only applies while house_15day_account is true. Retail was 15",
+   "area": "Housing"
+  },
+  {
+   "key": "house_hook_limit",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if disabled, house hook limits are ignored",
+   "area": "Housing"
+  },
+  {
+   "key": "house_hookgroup_limit",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if disabled, house hook group limits are ignored",
+   "area": "Housing"
+  },
+  {
+   "key": "house_per_char",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "if TRUE, allows 1 house per char instead of 1 house per account",
+   "area": "Housing"
+  },
+  {
+   "key": "house_purchase_requirements",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if disabled, requirements to purchase/rent house are not checked",
+   "area": "Housing"
+  },
+  {
+   "key": "house_rent_enabled",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "If FALSE then rent is not required",
+   "area": "Housing"
+  },
+  {
+   "key": "mansion_min_rank",
+   "type": "long",
+   "default": "6",
+   "jawntide": false,
+   "desc": "overrides the default allegiance rank required to own a mansion",
+   "area": "Housing"
+  },
+  {
+   "key": "allegiance_free_swears",
+   "type": "long",
+   "default": "3",
+   "jawntide": false,
+   "desc": "number of times a character may swear allegiance for free before PK-trophy costs apply",
+   "area": "Allegiance & fellowship"
+  },
+  {
+   "key": "allegiance_swear_base_cost",
+   "type": "long",
+   "default": "100",
+   "jawntide": false,
+   "desc": "PK-trophy cost of the first paid allegiance swear (the one after allegiance_free_swears)",
+   "area": "Allegiance & fellowship"
+  },
+  {
+   "key": "allegiance_swear_cooldown_days",
+   "type": "double",
+   "default": "7.0",
+   "jawntide": false,
+   "desc": "days a character must wait between allegiance swears once trophy costs apply (i.e. past allegiance_free_swears). The free swears are exempt. Set to 0 to disable the cooldown.",
+   "area": "Allegiance & fellowship"
+  },
+  {
+   "key": "allegiance_swear_max_cost",
+   "type": "long",
+   "default": "10000",
+   "jawntide": false,
+   "desc": "maximum PK-trophy cost of an allegiance swear; the cost ramps from the base to this cap over 12 paid swears (with 3 free, the cap is reached at the 15th swear)",
+   "area": "Allegiance & fellowship"
+  },
+  {
+   "key": "chat_log_allegiance",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log allegiance chat",
+   "area": "Allegiance & fellowship"
+  },
+  {
+   "key": "chat_log_fellow",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log fellow chat",
+   "area": "Allegiance & fellowship"
+  },
+  {
+   "key": "fellow_busy_no_recruit",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if FALSE, fellows can be recruited while they are busy, different from retail",
+   "area": "Allegiance & fellowship"
+  },
+  {
+   "key": "fellow_kt_killer",
+   "type": "bool",
+   "default": "false",
+   "jawntide": true,
+   "desc": "if FALSE, fellowship kill tasks will share with the fellowship, even if the killer doesn't have the quest. JawnTide default FALSE (retail TRUE)",
+   "area": "Allegiance & fellowship"
+  },
+  {
+   "key": "fellow_kt_landblock",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "if TRUE, fellowship kill tasks will share with landblock range (192 distance radius, or entire dungeon)",
+   "area": "Allegiance & fellowship"
+  },
+  {
+   "key": "fellow_kt_range",
+   "type": "double",
+   "default": "600",
+   "jawntide": true,
+   "desc": "fellowship kill task sharing range in meters. A kill counts for every fellow with the task who is in the same landblock (the whole dungeon when underground) or, when both are outdoors, within this distance. 0 = stock ACE range (radar range, or fellow_kt_landblock)",
+   "area": "Allegiance & fellowship"
+  },
+  {
+   "key": "fellow_quest_bonus",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "if TRUE, applies EvenShare formula to fellowship quest reward XP (300% max bonus, defaults to false in retail)",
+   "area": "Allegiance & fellowship"
+  },
+  {
+   "key": "chat_disable_trade",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "disable trade global chat channel",
+   "area": "Vendors & economy"
+  },
+  {
+   "key": "chat_log_trade",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log trade chat",
+   "area": "Vendors & economy"
+  },
+  {
+   "key": "corpse_destroy_pyreals",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "If FALSE then pyreals will not be completely destroyed on player death",
+   "area": "Vendors & economy"
+  },
+  {
+   "key": "iou_trades",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "(non-retail function) If enabled, IOUs can be traded for objects that are missing in DB but added/restored later on",
+   "area": "Vendors & economy"
+  },
+  {
+   "key": "vendor_disable_resell",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "disables all vendor reselling of items bought from players; i.e. all items a players sells to a vendor are destroyed",
+   "area": "Vendors & economy"
+  },
+  {
+   "key": "vendor_max_items_per_sale",
+   "type": "long",
+   "default": "24",
+   "jawntide": false,
+   "desc": "the maximum number of items a player can sell to a vendor in a single transaction",
+   "area": "Vendors & economy"
+  },
+  {
+   "key": "vendor_sale_rate_limit_seconds",
+   "type": "long",
+   "default": "60",
+   "jawntide": false,
+   "desc": "the minimum number of seconds that must pass after a player sells to a vendor before a player can sell to a vendor again",
+   "area": "Vendors & economy"
+  },
+  {
+   "key": "vendor_shop_uses_generator",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enables or disables vendors using generator system in addition to createlist to create artificial scarcity",
+   "area": "Vendors & economy"
+  },
+  {
+   "key": "vendor_unique_rot_time",
+   "type": "double",
+   "default": "300",
+   "jawntide": false,
+   "desc": "the number of seconds before unique items sold to vendors disappear",
+   "area": "Vendors & economy"
+  },
+  {
+   "key": "broadcast_kill_streak",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enable this to broadcast kill streak messages",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_disable_general",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "disable general global chat channel",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_disable_lfg",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "disable lfg global chat channel",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_disable_olthoi",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "disable olthoi global chat channel",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_disable_roleplay",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "disable roleplay global chat channel",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_echo_only",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "global chat returns to sender only",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_echo_reject",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "global chat returns to sender on reject",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_inform_reject",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "global chat informs sender on reason for reject",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_log_abuse",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log abuse chat",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_log_admin",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log admin chat",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_log_advocate",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log advocate chat",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_log_audit",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "log audit chat",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_log_debug",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log debug chat",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_log_general",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log general chat",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_log_global",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log global broadcasts",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_log_help",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log help chat",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_log_lfg",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log LFG chat",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_log_olthoi",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log olthoi chat",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_log_qa",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log QA chat",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_log_roleplay",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log roleplay chat",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_log_sentinel",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log sentinel chat",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_log_society",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log society chat",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_log_townchans",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "log advocate town chat",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_requires_account_15days",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "global chat privileges requires accounts to be 15 days or older",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_requires_account_time_seconds",
+   "type": "long",
+   "default": "0",
+   "jawntide": false,
+   "desc": "the amount of time in seconds an account is required to have existed for for global chat privileges",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "chat_requires_player_age",
+   "type": "long",
+   "default": "0",
+   "jawntide": false,
+   "desc": "the amount of time in seconds a player is required to have played for global chat privileges",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "globalchatgag_ip_list",
+   "type": "string",
+   "default": "",
+   "jawntide": false,
+   "desc": "List of IPs that are global chat gagged",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "lifestone_broadcast_death",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if true, player deaths are additionally broadcast to other players standing near the destination lifestone",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "popup_header",
+   "type": "string",
+   "default": "Welcome to Asheron's Call!",
+   "jawntide": false,
+   "desc": "Welcome message displayed when you log in",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "popup_motd",
+   "type": "string",
+   "default": "",
+   "jawntide": false,
+   "desc": "Popup message of the day",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "popup_welcome",
+   "type": "string",
+   "default": "To begin your training, speak to the Society Greeter. Walk up to the Society Greeter using the 'W' key, then double-click on her to initiate a conversation.",
+   "jawntide": false,
+   "desc": "Welcome message popup in training halls",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "popup_welcome_olthoi",
+   "type": "string",
+   "default": "Welcome to the Olthoi hive! Be sure to talk to the Olthoi Queen to receive the Olthoi protections granted by the energies of the hive.",
+   "jawntide": false,
+   "desc": "Welcome message displayed on the first login for an Olthoi Player",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "season_leaderboard_webhook",
+   "type": "string",
+   "default": "",
+   "jawntide": false,
+   "desc": "Discord webhook URL for the weekly season leaderboard milestone post",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "server_motd",
+   "type": "string",
+   "default": "",
+   "jawntide": false,
+   "desc": "Server message of the day",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "show_dot_messages",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enabled, shows combat messages for DoT damage ticks. defaults to disabled, as in retail",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "turbine_chat_webhook",
+   "type": "string",
+   "default": "",
+   "jawntide": false,
+   "desc": "Webhook to be used for turbine chat. This is for copying ingame general chat channels to a Discord channel.",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "turbine_chat_webhook_audit",
+   "type": "string",
+   "default": "",
+   "jawntide": false,
+   "desc": "Webhook to be used for ingame audit log.",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "use_turbine_chat",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enables or disables global chat channels (General, LFG, Roleplay, Trade, Olthoi, Society, Allegience)",
+   "area": "Chat, Discord & messages"
+  },
+  {
+   "key": "account_login_boots_in_use",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if FALSE, oldest connection to account is not booted when new connection occurs",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "aetheria_whitelist_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enable this to limit areas where aetheria drop to whitelisted landblocks",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "block_vpn_connections",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enable this to block user sessions from IPs identified as VPN proxies",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "cantrip_drop_rate",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the chance for cantrips to drop in each tier. Defaults to 1.0, as per end of retail",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "enforce_account_ip_binding",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enable the one-account-per-IP binding system: each IP accumulates onto the account that first used it, and a new account logging in from an IP already claimed by another account is rejected (subject to ip_binding_ip_whitelist and ip_binding_ip_allowance)",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "epic_cantrip_drop_rate",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the chance for epic cantrips to drop, relative to other cantrip levels in the tier. Defaults to 1.0, as per end of retail",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "epic_whitelist_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enable this to limit areas where Epic cantrips drop to whitelisted landblocks",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "force_login_materialization",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "forces players to materialize on login",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "force_login_materialization_duration",
+   "type": "double",
+   "default": "10.0",
+   "jawntide": false,
+   "desc": "the number of seconds after logging in that a player should force materialize",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "force_logout_materialization",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "forces players to materialize on logut",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "force_logout_materialization_duration",
+   "type": "double",
+   "default": "1",
+   "jawntide": false,
+   "desc": "the number of seconds a player should materialize for before logging out",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "ip_binding_ip_allowance",
+   "type": "string",
+   "default": "",
+   "jawntide": false,
+   "desc": "Comma-separated per-IP overrides for the number of distinct accounts allowed to bind to a single IP, formatted 'ip:count'. Example: '203.0.113.42:2, 198.51.100.7:2'. IPs not listed use the default allowance of 1 (one account per IP). Unlike ip_binding_ip_whitelist, this enforces a hard cap instead of unlimited.",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "ip_binding_ip_whitelist",
+   "type": "string",
+   "default": "",
+   "jawntide": false,
+   "desc": "Comma-separated list of IP addresses exempt from the one-account-per-IP binding rule (e.g. a LAN or staff office IP). Accounts logging in from these IPs bypass conflict checks entirely (unlimited accounts).",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "legendary_cantrip_drop_rate",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the chance for legendary cantrips to drop, relative to other cantrip levels in the tier. Defaults to 1.0, as per end of retail",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "legendary_whitelist_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enable this to limit areas where Legendary cantrips drop to whitelisted landblocks",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "major_cantrip_drop_rate",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the chance for major cantrips to drop, relative to other cantrip levels in the tier. Defaults to 1.0, as per end of retail",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "max_chars_per_account",
+   "type": "long",
+   "default": "11",
+   "jawntide": false,
+   "desc": "retail defaults to 11, client supports up to 20",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "minor_cantrip_drop_rate",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the chance for minor cantrips to drop, relative to other cantrip levels in the tier. Defaults to 1.0, as per end of retail",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "proxycheck_api_key",
+   "type": "string",
+   "default": "",
+   "jawntide": false,
+   "desc": "API key for proxycheck.io service for VPN detection",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "show_first_login_gift",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "if TRUE, will show on first login that the player earned bonus item (Blackmoor's Favor and/or Asheron's Benediction), disabled by default because msg is kind of odd on an emulator",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "vpn_check_ip_whitelist",
+   "type": "string",
+   "default": "",
+   "jawntide": true,
+   "desc": "comma-separated IP addresses that are never VPN-checked (for a player wrongly flagged as a VPN)",
+   "area": "Accounts, logins & security"
+  },
+  {
+   "key": "advanced_combat_pets",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "(non-retail function) If enabled, Combat Pets can cast spells",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "aetheria_heal_color",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "If enabled, changes the aetheria healing over time messages from the default retail red color to green",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "allow_negative_dispel_resist",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enables retail behavior where #-# negative dispels can be resisted",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "cloak_cooldown_seconds",
+   "type": "double",
+   "default": "5.0",
+   "jawntide": false,
+   "desc": "The number of seconds between possible cloak procs.",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "cloak_max_proc_base",
+   "type": "double",
+   "default": "0.25",
+   "jawntide": false,
+   "desc": "The max proc chance of a cloak.",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "cloak_max_proc_damage_percentage",
+   "type": "double",
+   "default": "0.30",
+   "jawntide": false,
+   "desc": "The damage percentage at which cloak proc chance plateaus.",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "cloak_max_proc_rate",
+   "type": "double",
+   "default": "25.0",
+   "jawntide": false,
+   "desc": "Cap cloak proc chance to this percentage (100.0 will effectively use the standard ACE proc rate).",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "cloak_min_proc",
+   "type": "double",
+   "default": "0",
+   "jawntide": false,
+   "desc": "The minimum proc chance of a cloak.",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "corpse_decay_tick_logging",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "If ENABLED then player corpse ticks will be logged",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "corpse_spam_limit",
+   "type": "long",
+   "default": "15",
+   "jawntide": false,
+   "desc": "the number of corpses a player is allowed to leave on a landblock at one time",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "fast_missile_modifier",
+   "type": "double",
+   "default": "1.2",
+   "jawntide": false,
+   "desc": "The speed multiplier applied to fast missiles. Defaults to retail value of 1.2",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "item_dispel",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "if enabled, allows players to dispel items. defaults to end of retail, where item dispels could only target creatures",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "jump_cancels_melee",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "cancels melee attacks when the target is jumping",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "melee_max_angle",
+   "type": "double",
+   "default": "0.0",
+   "jawntide": false,
+   "desc": "for melee players, the maximum angle before a TurnTo is required. retail appeared to have required a TurnTo even for the smallest of angle offsets.",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "permit_corpse_all",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "If TRUE, /permit grants permittees access to all corpses of the permitter. Defaults to FALSE as per retail, where /permit only grants access to 1 locked corpse",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "require_spell_comps",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if FALSE, spell components are no longer required to be in inventory to cast spells. defaults to enabled, as in retail",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "safe_spell_comps",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "if TRUE, disables spell component burning for everyone",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "smite_uses_takedamage",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "if enabled, smite applies damage via TakeDamage",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "spell_projectile_ethereal",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "broadcasts all spell projectiles as ethereal to clients only, and manually send stop velocity on collision. can fix various issues with client missing target id.",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "spellcast_max_angle",
+   "type": "double",
+   "default": "20.0",
+   "jawntide": false,
+   "desc": "for advanced player spell casting, the maximum angle to target release a spell projectile. retail seemed to default to value of around 20, although some players seem to prefer a higher 45 degree angle",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "spellcast_recoil_queue",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "if true, players can queue the next spell to cast during recoil animation",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "suicide_instant_death",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "if enabled, @die command kills player instantly. defaults to disabled, as in retail",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "use_cloak_proc_custom_scale",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "If TRUE, the calculation for cloak procs will be based upon the values set by the server oeprator.",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "vitae_penalty",
+   "type": "double",
+   "default": "0.05",
+   "jawntide": false,
+   "desc": "the amount of vitae penalty a player gets per death",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "vitae_penalty_max",
+   "type": "double",
+   "default": "0.40",
+   "jawntide": false,
+   "desc": "the maximum vitae penalty a player can have",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "advocate_fane_auto_bestow",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "If enabled, Advocate Fane will automatically bestow new advocates to advocate_fane_auto_bestow_level",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "aetheria_drop_rate",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Modifier for Aetheria drop rate, 1 being normal",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "allow_door_hold",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enables retail behavior where standing on a door while it is closing keeps the door as ethereal until it is free from collisions, effectively holding the door open for other players",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "allow_fast_chug",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enables retail behavior where a player can consume food and drink faster than normal by breaking animation",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "allow_summoning_killtask_multicredit",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enables retail behavior where a summoner can get multiple killtask credits from a monster",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "assess_creature_mod",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "(non-retail function) If enabled, re-enables former skill formula, when assess creature skill is not trained or spec'ed",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "char_delete_time",
+   "type": "long",
+   "default": "3600",
+   "jawntide": false,
+   "desc": "the amount of time in seconds a deleted character can be restored",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "chess_ai_start_time",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": false,
+   "desc": "the number of seconds for the chess ai to start. defaults to -1 (disabled)",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "chess_enabled",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if FALSE then chess will be disabled",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "client_movement_formula",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "If enabled, server uses DoMotion/StopMotion self-client movement methods instead of apply_raw_movement",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "container_opener_name",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "If enabled, when a player tries to open a container that is already in use by someone else, replaces 'someone else' in the message with the actual name of the player",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "content_folder",
+   "type": "string",
+   "default": "Content",
+   "jawntide": false,
+   "desc": "for content creators to live edit weenies. defaults to Content folder found in same directory as ACE.Server.dll",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "craft_exact_msg",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "If TRUE, and player has crafting chance of success dialog enabled, shows them an additional message in their chat window with exact %",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "creature_name_check",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if enabled, creature names in world database restricts player names during character creation",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "creatures_drop_createlist_wield",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "If FALSE then Wielded items in CreateList will not drop. Retail defaulted to TRUE but there are currently data errors",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "dat_newer_warning_msg",
+   "type": "string",
+   "default": "Your DAT files are newer than expected.\\nPlease visit https://emulator.ac/how-to-play to download the correct DAT files.",
+   "jawntide": false,
+   "desc": "Warning message displayed (if show_dat_warning is true) to player if client connects to this server",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "dat_older_warning_msg",
+   "type": "string",
+   "default": "Your DAT files are incomplete.\\nThis server does not support dynamic DAT updating at this time.\\nPlease visit https://emulator.ac/how-to-play to download the complete DAT files.",
+   "jawntide": false,
+   "desc": "Warning message displayed (if show_dat_warning is true) to player if client attempts DAT download from server",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "encounter_delay",
+   "type": "double",
+   "default": "1800",
+   "jawntide": false,
+   "desc": "the number of seconds a generator profile for regions is delayed from returning to free slots",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "encounter_regen_interval",
+   "type": "double",
+   "default": "600",
+   "jawntide": false,
+   "desc": "the number of seconds a generator for regions at which spawns its next set of objects",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "enforce_player_movement",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enable this to enforce server side verification of player movement",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "fastbuff",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "If TRUE, enables the fast buffing trick from retail.",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "fi_cooldown_seconds",
+   "type": "long",
+   "default": "60",
+   "jawntide": true,
+   "desc": "seconds a player must wait between uses of /fi, which resends nearby monsters and NPCs (no delete) to fix invisible creatures",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "fix_chest_missing_inventory_window",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "Very non-standard fix. This fixes an acclient bug where unlocking a chest, and then quickly opening it before the client has received the Locked=false update from server can result in the chest opening, but with the chest inventory window not displaying. Bug has a higher chance of appearing with more network latency.",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "force_teleport_materialization",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "forces players to materialize on teleport",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "force_teleport_materialization_duration",
+   "type": "double",
+   "default": "10.0",
+   "jawntide": false,
+   "desc": "the number of seconds after teleporting that a player should force materialize",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "gateway_ties_summonable",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if disabled, players cannot summon ties from gateways. defaults to enabled, as in retail",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "gearknight_core_plating",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if disabled, Gear Knight players are not required to use core plating devices for armor and clothing. defaults to enabled, as in retail",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "jump_limit",
+   "type": "long",
+   "default": "7",
+   "jawntide": false,
+   "desc": "the number of jumps you can do before being penalized",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "jump_penalty_length",
+   "type": "long",
+   "default": "5",
+   "jawntide": false,
+   "desc": "the number of seconds you're penalized after hitting the jump limits",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "jump_second_timer",
+   "type": "long",
+   "default": "10",
+   "jawntide": false,
+   "desc": "the number of seconds cutoff for jumping",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "local_server",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "Do not enable on live servers! Enable this to allow for server behavior to change as necessary for testing envrionments.",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "minimum_portalspace_seconds",
+   "type": "long",
+   "default": "3",
+   "jawntide": false,
+   "desc": "the minimum number of seconds a player must be in portal space before exiting",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "mob_awareness_range",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Scales the distance the monsters become alerted and aggro the players",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "npc_hairstyle_fullrange",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "if TRUE, allows generated creatures to use full range of hairstyles. Retail only allowed first nine (0-8) out of 51",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "olthoi_play_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "allows players to create and play as olthoi characters",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "override_encounter_spawn_rates",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "if enabled, landblock encounter spawns are overidden by double properties below.",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "persist_movement",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "If TRUE, persists autonomous movements such as turns and sidesteps through non-autonomous server actions. Retail didn't appear to do this, but some players may prefer this.",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "pet_stow_replace",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "pet stowing for different pet devices becomes a stow and replace. defaults to retail value of false",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "player_config_command",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "If enabled, players can use /config to change their settings via text commands",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "player_receive_immediate_save",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "if enabled, when the player receives items from an NPC, they will be saved immediately",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "player_save_interval",
+   "type": "long",
+   "default": "300",
+   "jawntide": false,
+   "desc": "the number of seconds between automatic player saves",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "quest_info_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "toggles the /myquests player command",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "quest_mindelta_rate",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "scales all quest min delta time between solves, 1 being normal",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "recent_teleport_prevention",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enable this to prevent players from teleporting too frequently",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "recent_teleport_threshold",
+   "type": "double",
+   "default": "3.0",
+   "jawntide": false,
+   "desc": "the number of seconds after materializing that a player can teleport again",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "reportbug_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "toggles the /reportbug player command",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "runrate_add_hooks",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "if TRUE, adds some runrate hooks that were missing from retail (exhaustion done, raise skill/attribute",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "season_kd_min_kills",
+   "type": "long",
+   "default": "10",
+   "jawntide": false,
+   "desc": "minimum kills (in the ranking window) required to appear on the K/D Ratio leaderboard",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "season_leaderboard_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "master on/off for the season leaderboard + Season Champion weekly milestone snapshots",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "show_ammo_buff",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "shows active enchantments such as blood drinker on equipped missile ammo during appraisal",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "show_aura_buff",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "shows active aura enchantments on wielded items during appraisal",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "show_dat_warning",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "if TRUE, will alert player (dat_warning_msg) when client attempts to download from server and boot them from game, disabled by default",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "show_mana_conv_bonus_0",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if disabled, only shows mana conversion bonus if not zero, during appraisal of casting items",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "summoning_killtask_multicredit_cap",
+   "type": "long",
+   "default": "2",
+   "jawntide": false,
+   "desc": "if allow_summoning_killtask_multicredit is enabled, the maximum # of killtask credits a player can receive from 1 kill",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "taboo_table",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if enabled, taboo table restricts player names during character creation",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "tailoring_intermediate_uieffects",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "If true, tailoring intermediate icons retain the magical/elemental highlight of the original item",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "teleport_visibility_fix",
+   "type": "long",
+   "default": "0",
+   "jawntide": false,
+   "desc": "Fixes some possible issues with invisible players and mobs. 0 = default / disabled, 1 = players only, 2 = creatures, 3 = all world objects",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "tinker_lotto_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enables the tinkering lotto feature",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "trajectory_alt_solver",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "use the alternate trajectory solver for missiles and spell projectiles",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "trophy_drop_rate",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": false,
+   "desc": "Modifier for trophies dropped on creature death",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "turnto_use_heading_stealth",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "If TRUE, uses TurnToHeading (0x09) instead of TurnToObject (0x08) to prevent war detect plugins from detecting target ID (preserves visual, hides target info)",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "unlimited_sequence_gaps",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "upon startup, allows server to find all unused guids in a range instead of a set hard limit",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "unlocker_window",
+   "type": "double",
+   "default": "10.0",
+   "jawntide": false,
+   "desc": "The number of seconds a player unlocking a chest has exclusive access to first opening the chest.",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "use_generator_rotation_offset",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "enables or disables using the generator's current rotation when offseting relative positions",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "use_wield_requirements",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "disable this to bypass wield requirements. mostly for dev debugging",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "version_info_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "toggles the /aceversion player command",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "world_closed",
+   "type": "bool",
+   "default": "false",
+   "jawntide": false,
+   "desc": "enable this to startup world as a closed to players world",
+   "area": "Server & everything else"
+  }
+ ]
+}
