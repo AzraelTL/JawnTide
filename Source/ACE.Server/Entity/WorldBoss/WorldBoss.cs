@@ -233,6 +233,70 @@ namespace ACE.Server.Entity.WorldBoss
             }
         }
 
+        /// <summary>
+        /// JawnTide: town name for each town spawn landblock, used when a town boss's own position has no map
+        /// coordinates (it was dragged into a building or dungeon, which used to be announced as "NULL").
+        /// </summary>
+        private static readonly Dictionary<uint, string> TownNames = new Dictionary<uint, string>()
+        {
+            { 0xA9B4, "Holtburg" },
+            { 0xC5A9, "Arwic" },
+            { 0xBC9F, "Cragstone" },
+            { 0xA1A4, "Glenden Wood" },
+            { 0xCE95, "Eastham" },
+            { 0xC88C, "Rithwic" },
+            { 0xBF80, "Lytelthorpe" },
+            { 0xDA75, "Dryreach" },
+            { 0xB470, "Yanshi" },
+            { 0xC95B, "Sawato" },
+            { 0xDA55, "Shoushi" },
+            { 0xF659, "Tou-Tou" },
+            { 0xE74E, "Hebian-to" },
+            { 0xCD41, "Baishi" },
+            { 0xE63D, "Nanto" },
+            { 0xDB3B, "Lin" },
+            { 0xE532, "Mayoi" },
+            { 0xF782, "Bobo" },
+            { 0xE721, "Kryst" },
+            { 0xBA17, "Kara" },
+            { 0xBDD2, "Bandit Castle" },
+            { 0x8090, "Zaikhal" },
+            { 0x8588, "Al-Jalima" },
+            { 0x987B, "Samsur" },
+            { 0x7D64, "Yaraq" },
+            { 0xA25F, "Uziz" },
+            { 0x9058, "Al-Arqas" },
+            { 0x934B, "Xarabydun" },
+            { 0x9E43, "Khayyaban" },
+            { 0x9722, "Qalabar" },
+            { 0x64D5, "Stonehold" },
+            { 0x2581, "Fort Tethena" },
+            { 0x1134, "Ayan" },
+            { 0x2B11, "Candeth" },
+            { 0x17B2, "Redspire" },
+            { 0x2BB5, "Greenspire" },
+            { 0x21B0, "Bluespire" },
+            { 0x1EB6, "Timaru" },
+            { 0x27EC, "Silyun" },
+            { 0x38F7, "Fiun" },
+        };
+
+        /// <summary>
+        /// JawnTide: "near Holtburg (42.1N, 33.6E)" for the town this boss spawned at, or null if unknown
+        /// </summary>
+        public static string GetSpawnTownDisplay(WorldBoss boss)
+        {
+            if (boss?.Location == null)
+                return null;
+
+            var coords = boss.Location.GetMapCoordStr();
+            TownNames.TryGetValue(boss.Location.Cell >> 16, out var town);
+
+            if (town != null && coords != null)
+                return $"near {town} ({coords})";
+            return town != null ? $"near {town}" : coords;
+        }
+
         public static bool IsWorldBoss(uint weenieId)
         {
             return WorldBosses.WorldBossMap.ContainsKey(weenieId);

@@ -25,6 +25,7 @@ The town bosses all work the same way:
 * There's no corpse. The loot generator scatters 9 tokens, 9 Darkbeat's Lost Storage Keys and 10 piles of treasure (profile 10025).
 * Every player in the landblock gets 5 PK Trophies. XpOverride is 400,000,000.
 * Only PKs can pick up tokens, and each pickup has a 3-minute timer.
+* Once a boss is below 90% health its position is announced every 2 minutes. A town boss dragged into a building or dungeon (no map coordinates) is announced as "near <town> (<town coords>)" for the town it spawned at, instead of "NULL".
 * Aidoneus (490076) takes one token of each kind per 20 hours. He gives luminance, level-proportional XP (up to 5 billion), 2 Darkbeat keys, 40 Trade Notes, 100 PK Trophies and 5 Phials of Bloody Tears, plus one roll on `WorldBoss_random_reward`.
 
 ## Moloch, Khaz' and Death (Oct 27, 2026)

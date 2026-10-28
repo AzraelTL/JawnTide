@@ -240,7 +240,8 @@ namespace ACE.Server.WorldObjects
                 {
                     var msg = "";
                     var wb = WorldBosses.WorldBossMap[this.WeenieClassId];
-                    string coordsDisplay = (wb?.StatueWeenieId.HasValue ?? false) ? (wb?.Location?.GetMapCoordStr() ?? "NULL") : (this.Location?.GetMapCoordStr() ?? "NULL");
+                    // JawnTide: a town boss dragged indoors has no map coordinates, so announce the town it spawned at instead of "NULL"
+                    string coordsDisplay = (wb?.StatueWeenieId.HasValue ?? false) ? (wb?.Location?.GetMapCoordStr() ?? "NULL") : (this.Location?.GetMapCoordStr() ?? WorldBosses.GetSpawnTownDisplay(wb) ?? "NULL");
                     if (this.WorldBoss_LastPeriodicGlobal.HasValue)
                     {
                         if (wb?.StatueWeenieId.HasValue ?? false)
