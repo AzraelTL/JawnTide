@@ -39,10 +39,11 @@ Stats are a first pass, to tune on JawnTest. Effective skill = the init value in
 | Health | 120,000 | 160,000 | 100,000 |
 | Attack (effective) | ~457 melee | ~480 melee | ~403 melee, ~445 war/void |
 | Melee / magic defense (effective) | ~407 / ~380 | ~370 / ~351 | ~400 / ~420 |
-| Melee damage | 75 hand, 60 foot (bludgeon) | 85 / 70 (bludgeon) | 50 / 40 (cold) |
-| Spells | Force Bolt VII, Whirling Blade VII, Blade Arc VII, Blade Vuln VII, Imperil VII | Shock Wave VII, Bludgeoning Volley VII, Bludgeon Vuln VII, Slowness VII | Nether Bolt VII, Nether Arc VII, Curse of Festering VII, Drain Health VII, Harm VII, Fester VII |
-| Specials (per boss attack) | Call the Horde 4% (refills dead minions), Seize 3% (pulls his target to him, only if 15 m or more away), Blade Ring 5% (warned 2 s ahead) | Shield shifts like the Olthoi King, 3% each: Stone Hide (+900 melee defense), Boulder Wall (+900 missile defense), War Chant (+900 magic defense), Fury (drops all three); Shockwave Ring 6% (warned 2 s ahead) | Shadow Grasp 3% (pulls its target to it, only if 15 m or more away), Unravel 3% (Dispel All Good Other VII on its target), Call the Shades 4% (refills dead minions), Nether Ring 6% (warned 2 s ahead) |
-| Minions | 6 Ascendant Drudge, 3 Drudge Mystic | 6 Tiatus Lugian, 3 Bokrok Lugian | 5 Shadow Phantom, 4 Shadow Spectre |
+| Element | Blade (slashing) | Bludgeon | Nether, plus fire |
+| Melee damage | 75 hand, 60 foot (slashing) | 85 / 70 (bludgeon) | 50 / 40 (nether) |
+| Spells | Blade Volley VII, Whirling Blade VII, Blade Arc VII, Blade Vuln VII, Imperil VII | Shock Wave VII, Bludgeoning Volley VII, Bludgeon Vuln VII, Slowness VII | Nether Bolt VII, Nether Arc VII, Curse of Festering VII, Impious Curse (2814), Flame Chain (4096), Fire Vuln VII, Drain Health VII, Harm VII, Fester VII |
+| Specials (per boss attack) | Call the Horde 4% (refills dead minions), Squall of Swords 3% (1833, warned 2 s ahead), Blade Ring 5% (warned 2 s ahead) | Shield shifts like the Olthoi King, 3% each: Stone Hide (+900 melee defense), Boulder Wall (+900 missile defense), War Chant (+900 magic defense), Fury (drops all three); Stone Fists 4% (1838, warned 2 s ahead); Shockwave Ring 6% (warned 2 s ahead) | Hellfire 3% (Fire Vuln VII then Flame Chain on its target), Unravel 3% (Dispel All Good Other VII on its target), Call the Shades 4% (refills dead minions), Nether Ring 6% (warned 2 s ahead) |
+| Minions | 6 Ascendant Drudge, 3 Drudge Mystic | 6 Tiatus Lugian, 3 Bokrok Lugian | 5 Shadow Phantom, 4 Shadow Spectre (Death's own copies 520223/520224 that also cast Flame Chain and Impious Curse) |
 
 Every special announces itself in local chat. Khaz' shields reuse Aerbax's shield spells (4240-4245), the same ones the Olthoi King uses.
 Like the other town bosses, they ignore players' magic armor and magic resistance buffs (IgnoreMagicArmor and IgnoreMagicResist) and have Overpower 10.

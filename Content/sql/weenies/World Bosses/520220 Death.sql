@@ -118,10 +118,10 @@ VALUES (520220,  0,  4,   0,    0,  300, 300, 300, 300, 360, 240, 300, 300,    0
      , (520220,  2,  4,   0,    0,  300, 300, 300, 300, 360, 240, 300, 300,    0, 3,    0, 0.17,    0,    0, 0.17,    0,    0, 0.17,    0,    0, 0.17,    0) /* Abdomen */
      , (520220,  3,  4,   0,    0,  300, 300, 300, 300, 360, 240, 300, 300,    0, 1, 0.23, 0.03,    0, 0.23, 0.03,    0, 0.23, 0.03,    0, 0.23, 0.03,    0) /* UpperArm */
      , (520220,  4,  4,   0,    0,  300, 300, 300, 300, 360, 240, 300, 300,    0, 2,    0,  0.3,    0,    0,  0.3,    0,    0,  0.3,    0,    0,  0.3,    0) /* LowerArm */
-     , (520220,  5,  8,  50,  0.5,  300, 300, 300, 300, 360, 240, 300, 300,    0, 2,    0,  0.2,    0,    0,  0.2,    0,    0,  0.2,    0,    0,  0.2,    0) /* Hand */
+     , (520220,  5, 1024,  50,  0.5,  300, 300, 300, 300, 360, 240, 300, 300,    0, 2,    0,  0.2,    0,    0,  0.2,    0,    0,  0.2,    0,    0,  0.2,    0) /* Hand */
      , (520220,  6,  4,   0,    0,  300, 300, 300, 300, 360, 240, 300, 300,    0, 3,    0, 0.13, 0.18,    0, 0.13, 0.18,    0, 0.13, 0.18,    0, 0.13, 0.18) /* UpperLeg */
      , (520220,  7,  4,   0,    0,  300, 300, 300, 300, 360, 240, 300, 300,    0, 3,    0,    0,  0.6,    0,    0,  0.6,    0,    0,  0.6,    0,    0,  0.6) /* LowerLeg */
-     , (520220,  8,  8,  40,  0.5,  300, 300, 300, 300, 360, 240, 300, 300,    0, 3,    0,    0, 0.22,    0,    0, 0.22,    0,    0, 0.22,    0,    0, 0.22) /* Foot */;
+     , (520220,  8, 1024,  40,  0.5,  300, 300, 300, 300, 360, 240, 300, 300,    0, 3,    0,    0, 0.22,    0,    0, 0.22,    0,    0, 0.22,    0,    0, 0.22) /* Foot */;
 
 INSERT INTO `weenie_properties_spell_book` (`object_Id`, `spell`, `probability`)
 VALUES (520220,  5355,   2.1)  /* Nether Bolt VII */
@@ -129,6 +129,9 @@ VALUES (520220,  5355,   2.1)  /* Nether Bolt VII */
      , (520220,  5377,  2.15)  /* Curse of Festering VII */
      , (520220,  2328,   2.1)  /* Drain Health Other VII */
      , (520220,  2070,  2.05)  /* Harm Other VII */
+     , (520220,  2814,   2.1)  /* Impious Curse */
+     , (520220,  4096,   2.1)  /* Flame Chain */
+     , (520220,  2170,  2.15)  /* Fire Vulnerability Other VII */
      , (520220,  2178,  2.15)  /* Fester Other VII */;
 
 INSERT INTO `weenie_properties_event_filter` (`object_Id`, `event`)
@@ -143,14 +146,16 @@ INSERT INTO `weenie_properties_emote_action` (`emote_Id`, `order`, `type`, `dela
 VALUES (@parent_id, 0, 16 /* WorldBroadcast */, 0, 1, NULL, '%s has struck down Death! The Umbris Shadow unravels into nothing, and for a moment the whole world seems a little brighter.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 /* Specials: Taunt emotes run after each of the boss's attacks. Probabilities are cumulative thresholds (ACE picks the lowest one above a random roll), so each special's own chance per attack is in its comment. */
-/* Shadow Grasp (3%) */
+/* Hellfire (3%): Fire Vulnerability on its target, then Flame Chain */
 INSERT INTO `weenie_properties_emote` (`object_Id`, `category`, `probability`, `weenie_Class_Id`, `style`, `substyle`, `quest`, `vendor_Type`, `min_Health`, `max_Health`)
 VALUES (520220, 14 /* Taunt */, 0.03, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 SET @parent_id = LAST_INSERT_ID();
 
 INSERT INTO `weenie_properties_emote_action` (`emote_Id`, `order`, `type`, `delay`, `extent`, `motion`, `message`, `test_String`, `min`, `max`, `min_64`, `max_64`, `min_Dbl`, `max_Dbl`, `stat`, `display`, `amount`, `amount_64`, `hero_X_P_64`, `percent`, `spell_Id`, `wealth_Rating`, `treasure_Class`, `treasure_Type`, `p_Script`, `sound`, `destination_Type`, `weenie_Class_Id`, `stack_Size`, `palette`, `shade`, `try_To_Bond`, `obj_Cell_Id`, `origin_X`, `origin_Y`, `origin_Z`, `angles_W`, `angles_X`, `angles_Y`, `angles_Z`)
-VALUES (@parent_id, 0, 99 /* TeleportTarget */, 0, 1, NULL, 'Death reaches into the darkness and drags its victim to its side!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 1, 1, 0, 0, 0) /* pulls the target to the boss (relative position, 1 m up); only targets 15 m or more away, and the message goes out only when it pulls */;
+VALUES (@parent_id, 0, 17 /* LocalBroadcast */, 0, 1, NULL, 'Death wreathes its victim in hellfire!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+     , (@parent_id, 1, 19 /* CastSpellInstant */, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2170 /* Fire Vulnerability Other VII */, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+     , (@parent_id, 2, 19 /* CastSpellInstant */, 1, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 4096 /* Flame Chain */, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 /* Unravel (3%) */
 INSERT INTO `weenie_properties_emote` (`object_Id`, `category`, `probability`, `weenie_Class_Id`, `style`, `substyle`, `quest`, `vendor_Type`, `min_Health`, `max_Health`)
@@ -186,5 +191,5 @@ INSERT INTO `weenie_properties_create_list` (`object_Id`, `destination_Type`, `w
 VALUES (520220, 9, 520222,  0, 0, 1, False) /* Create Death's Shroud Gen (520222) for ContainTreasure */;
 
 INSERT INTO `weenie_properties_generator` (`object_Id`, `probability`, `weenie_Class_Id`, `delay`, `init_Create`, `max_Create`, `when_Create`, `where_Create`, `stack_Size`, `palette_Id`, `shade`, `obj_Cell_Id`, `origin_X`, `origin_Y`, `origin_Z`, `angles_W`, `angles_X`, `angles_Y`, `angles_Z`)
-VALUES (520220, -1, 23089, 1, 5, 5, 1, 2, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Shadow Phantom (23089) (x5 up to max of 5) - Regenerate upon Destruction - Location to (re)Generate: Scatter */
-     , (520220, -1, 23090, 1, 4, 4, 1, 2, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Shadow Spectre (23090) (x4 up to max of 4) - Regenerate upon Destruction - Location to (re)Generate: Scatter */;
+VALUES (520220, -1, 520223, 1, 5, 5, 1, 2, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Shadow Phantom (520223) (x5 up to max of 5) - Regenerate upon Destruction - Location to (re)Generate: Scatter */
+     , (520220, -1, 520224, 1, 4, 4, 1, 2, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Shadow Spectre (520224) (x4 up to max of 4) - Regenerate upon Destruction - Location to (re)Generate: Scatter */;
