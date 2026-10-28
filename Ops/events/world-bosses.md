@@ -49,4 +49,5 @@ Stats are a first pass, to tune on JawnTest. Effective skill = the init value in
 
 Their creature types are ones no slayer weapon targets, so Drudge, Lugian and Shadow slayers do nothing extra to them (the look comes from the model, not the type). Every special announces itself in local chat. Khaz' shields reuse Aerbax's shield spells (4240-4245), the same ones the Olthoi King uses.
 Like the other town bosses, they ignore players' magic armor and magic resistance buffs (IgnoreMagicArmor and IgnoreMagicResist) and have Overpower 10.
-Each token reuses an icon from the older tokens (Fang = Olthoi King Claw, Knucklebone = Blood vial, Shroud = Martine's Cloak) but has its own colored glow (UiEffects) so it stands apart: Fang Fire (red), Knucklebone Frost (blue), Shroud Nether (purple). The older tokens have no glow.
+Token looks: Moloch's Fang uses the Ivory Gromnie Tooth (3675) model and icon, Khaz's Knucklebone the Undead Thighbone (7041), and Death's Shroud the Martine's Cloak icon. Each also has its own colored glow (UiEffects): Fang Fire (red), Knucklebone Frost (blue), Shroud Nether (purple). The older tokens have no glow.
+When assessed, the bosses show a title under their name (PropertyString Template): Moloch Drudge Lord, Khaz' Lugian Patriarch, Death Shadow Emperor.

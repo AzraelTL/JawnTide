@@ -5,7 +5,6 @@ VALUES (520211, 'khazsknucklebone', 1, '2026-10-27 00:00:00') /* Generic */;
 
 INSERT INTO `weenie_properties_int` (`object_Id`, `type`, `value`)
 VALUES (520211,   1,        128) /* ItemType - Misc */
-     , (520211,   3,         14) /* PaletteTemplate - Red */
      , (520211,   5,         10) /* EncumbranceVal */
      , (520211,   8,         10) /* Mass */
      , (520211,  16,          1) /* ItemUseable - No */
@@ -27,10 +26,7 @@ VALUES (520211,   1, 'Khaz''s Knucklebone') /* Name */
      , (520211,  33, 'KhazsKnucklebone') /* Quest */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
-VALUES (520211,   1, 0x02000E74) /* Setup */
+VALUES (520211,   1, 0x02000871) /* Setup (Undead Thighbone 7041) */
      , (520211,   3, 0x20000014) /* SoundTable */
-     , (520211,   6, 0x04000BEF) /* PaletteBase */
-     , (520211,   7, 0x10000168) /* ClothingBase */
-     , (520211,   8, 0x06001F5E) /* Icon */
-     , (520211,  52, 0x06005B0C) /* IconUnderlay */
-     , (520211,  22, 0x34000074) /* PhysicsEffectTable */;
+     , (520211,   8, 0x06001CD9) /* Icon (Undead Thighbone) */
+     , (520211,  22, 0x3400002B) /* PhysicsEffectTable */;

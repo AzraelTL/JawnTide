@@ -26,8 +26,9 @@ VALUES (520201,   1, 'Moloch''s Fang') /* Name */
      , (520201,  33, 'MolochsFang') /* Quest */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
-VALUES (520201,   1, 0x02000E74) /* Setup */
+VALUES (520201,   1, 0x02000181) /* Setup (Ivory Gromnie Tooth 3675) */
      , (520201,   3, 0x20000014) /* SoundTable */
-     , (520201,   8, 0x06002AF4) /* Icon */
-     , (520201,  52, 0x06005B0C) /* IconUnderlay */
-     , (520201,  22, 0x34000074) /* PhysicsEffectTable */;
+     , (520201,   6, 0x04000BEF) /* PaletteBase */
+     , (520201,   7, 0x10000178) /* ClothingBase */
+     , (520201,   8, 0x06003497) /* Icon (Ivory Gromnie Tooth) */
+     , (520201,  22, 0x3400002B) /* PhysicsEffectTable */;
