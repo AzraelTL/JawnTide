@@ -1356,6 +1356,18 @@ namespace ACE.Server.WorldObjects.Managers
                             }
                             else // position is relative to WorldObject's current location
                             {
+                                // JawnTide: a boss "pull" special (relative TeleportTarget in a Taunt, e.g. Moloch's Seize, Death's Shadow Grasp)
+                                // only pulls a target that is at least 15 m away, so it punishes kiting instead of portaling players who are
+                                // already in melee range; the special's message (if any) goes out only when the pull happens
+                                if (emoteSet.Category == EmoteCategory.Taunt)
+                                {
+                                    if (WorldObject.Location == null || player.Location == null || player.Location.DistanceTo(WorldObject.Location) < 15.0f)
+                                        break;
+
+                                    if (!string.IsNullOrEmpty(emote.Message))
+                                        WorldObject.EnqueueBroadcast(new GameMessageSystemChat(Replace(emote.Message, WorldObject, targetObject, emoteSet.Quest), ChatMessageType.Broadcast));
+                                }
+
                                 var relativeDestination = new Position(WorldObject.Location);
                                 relativeDestination.Pos += new Vector3(emote.OriginX.Value, emote.OriginY.Value, emote.OriginZ.Value);
                                 relativeDestination.Rotation = new Quaternion(emote.AnglesX.Value, emote.AnglesY.Value, emote.AnglesZ.Value, emote.AnglesW.Value);
