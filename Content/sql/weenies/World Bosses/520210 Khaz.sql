@@ -68,7 +68,8 @@ VALUES (520210,   1,        5) /* HeartbeatInterval */
      , (520210, 166,        1) /* ResistNether */;
 
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
-VALUES (520210,   1, 'Khaz''') /* Name */;
+VALUES (520210,   1, 'Khaz''') /* Name */
+     , (520210,   5, 'Lugian Patriarch') /* Template - shown under the name when assessed */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
 VALUES (520210,   1, 0x02000A0B) /* Setup */
