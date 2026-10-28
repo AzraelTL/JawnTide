@@ -633,6 +633,7 @@ namespace ACE.Server.Managers
                 ("force_login_materialization", new Property<bool>(true, "forces players to materialize on login")),
                 ("disable_pvp_cleave", new Property<bool>(false, "disables melee cleave attacks from targeting players")),
                 ("disable_world_bosses", new Property<bool>(true, "disables spawning of world bosses")),
+                ("disable_low_level_world_bosses", new Property<bool>(true, "JawnTide: disables spawning of the lower-level world bosses (Moloch, Khaz', Death); disable_world_bosses covers all the others")),
                 ("jump_cancels_melee", new Property<bool>(false, "cancels melee attacks when the target is jumping")),
                 ("vendor_disable_resell", new Property<bool>(false, "disables all vendor reselling of items bought from players; i.e. all items a players sells to a vendor are destroyed")),
                 ("turnto_use_heading_stealth", new Property<bool>(false, "If TRUE, uses TurnToHeading (0x09) instead of TurnToObject (0x08) to prevent war detect plugins from detecting target ID (preserves visual, hides target info)")),

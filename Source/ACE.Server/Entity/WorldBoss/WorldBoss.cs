@@ -1,6 +1,7 @@
 using ACE.Common;
 using ACE.Entity;
 using ACE.Server.Entity.TownControl;
+using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
 using System;
 using System.Collections.Generic;
@@ -181,6 +182,7 @@ namespace ACE.Server.Entity.WorldBoss
                     moloch.Name = "Moloch";
                     moloch.SpawnMsg = "The distant hills shake with the beating of a thousand crude drums. Wild, guttural chanting rolls across the land as every drudge in Dereth takes up the same name, over and over, louder and louder. Moloch, the Drudge Warlord, has come down from the high places at the head of his horde, and he hungers for the ears of the brave.";
                     moloch.SpawnLocations = townSpawnLocations;
+                    moloch.IsLowLevel = true;
                     _worldBossMap.Add(520200, moloch);
 
                     //JawnTide: Khaz', roams the towns like Bael'Zharon, Martine and the Olthoi King, balanced for levels 100-120
@@ -189,6 +191,7 @@ namespace ACE.Server.Entity.WorldBoss
                     khaz.Name = "Khaz'";
                     khaz.SpawnMsg = "A deep, rhythmic thunder rolls across Dereth, but there is not a cloud in the sky. Rocks tumble from the cliffs and the rivers jump in their beds as something vast strides down from the mountain fastness. Khaz', the Lugian Titan, has left his halls to prove that no human can stand against him. The ground itself trembles at his approach.";
                     khaz.SpawnLocations = townSpawnLocations;
+                    khaz.IsLowLevel = true;
                     _worldBossMap.Add(520210, khaz);
 
                     //JawnTide: Death, roams the towns like Bael'Zharon, Martine and the Olthoi King, balanced for levels 100-120
@@ -197,6 +200,7 @@ namespace ACE.Server.Entity.WorldBoss
                     death.Name = "Death";
                     death.SpawnMsg = "Without warning the sun dims, as if a great hand had passed across it. Every torch in Dereth gutters, every hearth grows cold, and a whisper slides through the mind of every living soul, patient and certain. It speaks only one word, and that word is a name. Death, an Umbris Shadow older than the Empyrean, walks among the living, and it has come to collect.";
                     death.SpawnLocations = townSpawnLocations;
+                    death.IsLowLevel = true;
                     _worldBossMap.Add(520220, death);
 
                     //Aerbax in Lesser Battle Dungeon
@@ -262,20 +266,35 @@ namespace ACE.Server.Entity.WorldBoss
             return WorldBossTrophies.Contains(weenieId);
         }
 
+        /// <summary>
+        /// JawnTide: true when the boss's group is switched on: disable_low_level_world_bosses for the
+        /// lower-level bosses (IsLowLevel), disable_world_bosses for all the others.
+        /// </summary>
+        public static bool IsEnabled(WorldBoss boss)
+        {
+            return boss.IsLowLevel
+                ? !PropertyManager.GetBool("disable_low_level_world_bosses").Item
+                : !PropertyManager.GetBool("disable_world_bosses").Item;
+        }
+
+        /// <summary>
+        /// Picks a random boss from the groups that are switched on (60% indoor, 40% town, as before,
+        /// falling back to the other kind when one kind has none switched on). With both groups switched
+        /// off (only reachable from @worldbossspawn with no wcid) it picks from every boss.
+        /// </summary>
         public static WorldBoss GetRandomWorldBoss()
         {
-            IEnumerable<WorldBoss> bossList = new List<WorldBoss>();
+            var pool = WorldBosses.WorldBossMap.Values.Where(IsEnabled).ToList();
+            if (pool.Count == 0)
+                pool = WorldBosses.WorldBossMap.Values.ToList();
+
+            var indoor = pool.Where(x => x.StatueWeenieId.HasValue).ToList();
+            var outdoor = pool.Where(x => !x.StatueWeenieId.HasValue).ToList();
+
             var isIndoor = ThreadSafeRandom.Next(0f, 1f) > 0.4f;
-            if(isIndoor)
-            {
-                bossList = WorldBosses.WorldBossMap.Values.Where(x => x.StatueWeenieId.HasValue);
-            }
-            else
-            {
-                bossList = WorldBosses.WorldBossMap.Values.Where(x => !x.StatueWeenieId.HasValue);
-            }
-            var i = ThreadSafeRandom.Next(0, Math.Max((bossList?.Count() ?? 0) - 1, 0) );
-            return bossList?.ElementAt(i);
+            var bossList = (isIndoor && indoor.Count > 0) || outdoor.Count == 0 ? indoor : outdoor;
+
+            return bossList[ThreadSafeRandom.Next(0, bossList.Count - 1)];
         }
     }
 
@@ -296,6 +315,9 @@ namespace ACE.Server.Entity.WorldBoss
         public Position IndoorLocation { get; set; }
 
         public uint? StatueWeenieId { get; set; }
+
+        /// <summary>JawnTide: lower-level boss, switched on and off by disable_low_level_world_bosses</summary>
+        public bool IsLowLevel { get; set; }
 
         public WorldObject StatueWorldObject { get; set; }
 

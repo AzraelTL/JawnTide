@@ -1,8 +1,12 @@
 # World bosses
 
-The world boss manager (`Source/ACE.Server/Managers/WorldBossManager.cs`) is off while `disable_world_bosses` is true.
-When on, it spawns one boss every 3 to 11 hours. 40% of spawns are a roaming town boss (picked from the six below) and 60% an indoor boss with a statue (Aerbax or Tusker Queen).
-`@worldbossspawn <wcid>` spawns one right away, even when world bosses are switched off. `@worldbossinfo` shows the active boss.
+The world bosses are in two groups, each with its own switch (a live setting, no restart):
+
+* `disable_world_bosses` (default true) covers Bael'Zharon, Martine, the Olthoi King, Aerbax and the Tusker Queen. Turn them on with `@modifybool disable_world_bosses false`.
+* `disable_low_level_world_bosses` (default true) covers Moloch, Khaz' and Death. Turn them on with `@modifybool disable_low_level_world_bosses false`.
+
+While either group is on, the manager spawns one boss at a time, every 3 to 11 hours, picked only from the groups that are on. 60% of picks are an indoor boss with a statue and 40% a roaming town boss; when the groups that are on have only one kind (for example only the low-level group, which is all town bosses), it always picks that kind.
+`@worldbossspawn <wcid>` spawns that boss right away, even when its group is switched off; with no wcid it picks from the groups that are on, or from every boss when both are off. `@worldbossinfo` shows the active boss.
 
 | Boss | WCID | Kind | Balanced for | Token (9 drop) | Loot generator | Turn-in timer |
 |---|---|---|---|---|---|---|
