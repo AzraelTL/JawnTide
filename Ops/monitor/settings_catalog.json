@@ -210,6 +210,14 @@
    "area": "World bosses & events"
   },
   {
+   "key": "world_boss_tokens_per_ip",
+   "type": "long",
+   "default": "2",
+   "jawntide": true,
+   "desc": "world boss tokens (Claw, Blood, Cloak, Fang, Knucklebone, Shroud) one IP address can pick up from the ground per world boss kill; 0 = no limit. Admins are exempt",
+   "area": "World bosses & events"
+  },
+  {
    "key": "world_boss_webhook",
    "type": "string",
    "default": "",

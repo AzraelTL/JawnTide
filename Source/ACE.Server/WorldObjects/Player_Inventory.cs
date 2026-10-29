@@ -1079,8 +1079,21 @@ namespace ACE.Server.WorldObjects
                             return;
                         }
 
+                        // JawnTide: at most world_boss_tokens_per_ip world boss tokens per IP address per kill (picked up from the ground; admins exempt)
+                        var tokenClaimIp = WorldBosses.IsWorldBossTrophy(item.WeenieClassId) && itemRootOwner == null && !IsAdmin ? Session?.EndPointC2S?.Address?.ToString() : null;
+                        if (tokenClaimIp != null && !WorldBossManager.CanClaimToken(tokenClaimIp, item.Guid.Full, out var tokenLimit))
+                        {
+                            Session.Network.EnqueueSend(new GameMessageSystemChat($"Your connection has already claimed {tokenLimit} world boss token{(tokenLimit == 1 ? "" : "s")} from this kill. Leave the rest for others.", ChatMessageType.Broadcast));
+                            Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full, WeenieError.None));
+                            EnqueuePickupDone(pickupMotion);
+                            return;
+                        }
+
                         if (DoHandleActionPutItemInContainer(item, itemRootOwner, itemWasEquipped, container, containerRootOwner, placement))
                         {
+                            if (tokenClaimIp != null)
+                                WorldBossManager.RecordTokenClaim(tokenClaimIp, item.Guid.Full);
+
                             Session.Network.EnqueueSend(new GameMessagePrivateUpdatePropertyInt(this, PropertyInt.EncumbranceVal, EncumbranceVal ?? 0));
 
                             if (item.WeenieType == WeenieType.Coin || item.WeenieType == WeenieType.Container)

@@ -24,7 +24,7 @@ The town bosses all work the same way:
 * Only red (PK) players and their own attacks can hurt them.
 * There's no corpse. The loot generator scatters 9 tokens, 9 Darkbeat's Lost Storage Keys and 10 piles of treasure (profile 10025).
 * Every player in the landblock gets 5 PK Trophies. XpOverride is 400,000,000.
-* Only PKs can pick up tokens, and each pickup has a 3-minute timer.
+* Only PKs can pick up tokens, and each pickup has a 3-minute timer per character. On top of that, one IP address can pick up at most `world_boss_tokens_per_ip` tokens (default 2, 0 = no limit) per world boss kill; the count resets when the next world boss dies. Admins are exempt, and re-picking a token already counted does not count again.
 * Once a boss is below 90% health its position is announced every 2 minutes. A town boss dragged into a building or dungeon (no map coordinates) is announced as "near <town> (<town coords>)" for the town it spawned at, instead of "NULL".
 * Aidoneus (490076) takes one token of each kind per 20 hours. He gives luminance, level-proportional XP (up to 5 billion), 2 Darkbeat keys, 40 Trade Notes, 100 PK Trophies and 5 Phials of Bloody Tears, plus one roll on `WorldBoss_random_reward`.
 

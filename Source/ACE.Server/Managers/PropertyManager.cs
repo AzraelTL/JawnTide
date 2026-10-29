@@ -633,6 +633,7 @@ namespace ACE.Server.Managers
                 ("force_login_materialization", new Property<bool>(true, "forces players to materialize on login")),
                 ("disable_pvp_cleave", new Property<bool>(false, "disables melee cleave attacks from targeting players")),
                 ("disable_world_bosses", new Property<bool>(true, "disables spawning of world bosses")),
+                ("world_boss_tokens_per_ip", new Property<long>(2, "JawnTide: world boss tokens (Claw, Blood, Cloak, Fang, Knucklebone, Shroud) one IP address can pick up from the ground per world boss kill; 0 = no limit. Admins are exempt")),
                 ("disable_low_level_world_bosses", new Property<bool>(true, "JawnTide: disables spawning of the lower-level world bosses (Moloch, Khaz', Death); disable_world_bosses covers all the others")),
                 ("jump_cancels_melee", new Property<bool>(false, "cancels melee attacks when the target is jumping")),
                 ("vendor_disable_resell", new Property<bool>(false, "disables all vendor reselling of items bought from players; i.e. all items a players sells to a vendor are destroyed")),

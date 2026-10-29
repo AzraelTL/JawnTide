@@ -266,6 +266,45 @@ namespace ACE.Server.Managers
         public static void HandleBossDeath()
         {
             activeWorldBoss = null;
+
+            // a new kill: every IP may claim world_boss_tokens_per_ip tokens again
+            lock (tokenClaimsLock)
+                tokenClaimsByIp.Clear();
+        }
+
+        // JawnTide: world boss tokens (the Claw, Blood, Cloak, Fang, Knucklebone, Shroud) picked up from the ground,
+        // per IP address, since the last world boss died. Keyed by item so picking the same token up again doesn't count twice.
+        private static readonly object tokenClaimsLock = new object();
+        private static readonly Dictionary<string, HashSet<uint>> tokenClaimsByIp = new Dictionary<string, HashSet<uint>>();
+
+        /// <summary>
+        /// JawnTide: true if this IP may pick up this token. world_boss_tokens_per_ip (default 2, 0 = no limit) tokens per IP per kill.
+        /// </summary>
+        public static bool CanClaimToken(string ip, uint itemGuid, out long limit)
+        {
+            limit = PropertyManager.GetLong("world_boss_tokens_per_ip").Item;
+            if (limit <= 0 || string.IsNullOrEmpty(ip))
+                return true;
+
+            lock (tokenClaimsLock)
+            {
+                if (!tokenClaimsByIp.TryGetValue(ip, out var claimed))
+                    return true;
+                return claimed.Contains(itemGuid) || claimed.Count < limit;
+            }
+        }
+
+        public static void RecordTokenClaim(string ip, uint itemGuid)
+        {
+            if (string.IsNullOrEmpty(ip))
+                return;
+
+            lock (tokenClaimsLock)
+            {
+                if (!tokenClaimsByIp.TryGetValue(ip, out var claimed))
+                    tokenClaimsByIp[ip] = claimed = new HashSet<uint>();
+                claimed.Add(itemGuid);
+            }
         }
     }
 }
