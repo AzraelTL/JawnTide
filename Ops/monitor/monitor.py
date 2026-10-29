@@ -291,7 +291,7 @@ def page(title, body, refresh=True):
         status += f' <span class="err">Last error: {e(err)}</span>'
     return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 {'<meta http-equiv="refresh" content="300">' if refresh else ""}<title>{e(title)} - JawnTide monitor</title><style>{STYLE}</style></head><body>
-<header><b>JawnTide monitor</b><nav><a href="/">Accounts</a><a href="/levels">Levels</a><a href="/allegiances">Allegiances</a><a href="/top">Top holders</a><a href="/ips">Shared IPs</a><a href="/settings">Settings</a></nav>
+<header><b>JawnTide monitor</b><nav><a href="/">Accounts</a><a href="/levels">Levels</a><a href="/allegiances">Allegiances</a><a href="/top">Top holders</a><a href="/ips">Shared IPs</a><a href="/settings">Settings</a><a href="/casting">Casting</a></nav>
 <span class="muted">{status}</span></header><main>{body}</main></body></html>"""
 
 
@@ -665,6 +665,63 @@ Change with <code>@modifybool</code>, <code>@modifylong</code>, <code>@modifydou
     return page("Settings", body, refresh=False)
 
 
+# Settings that change how casting reacts to movement, turning and position (all live, changeable in game).
+CASTING_SETTINGS = [
+    ("spellcast_max_angle", "How far off-target (degrees) a caster may face and still release without the server turning them. Above 5, a caster already within the angle skips the turn entirely (GDLE feel). Retail was about 20."),
+    ("spellcast_recoil_queue", "true lets a player queue the next spell during the recoil animation of the last one (faster chain-casting)."),
+    ("turnto_use_heading_stealth", "Packet used for the automatic turn toward the target while casting; true hides the target from war-detect plugins. Timing is unchanged."),
+    ("persist_movement", "true keeps a player's own turns and sidesteps going through server-driven actions such as the cast turn. Retail did not."),
+    ("client_movement_formula", "How the server applies the player's own movement, which affects how movement and turning line up with casting."),
+    ("enforce_player_movement", "Server-side verification of player movement (anti-cheat); applies while casting too."),
+    ("jump_limit", "Jumps allowed inside jump_second_timer before a penalty; limits jump-casting tricks."),
+    ("jump_second_timer", "Window in seconds for jump_limit."),
+    ("jump_penalty_length", "Seconds of penalty after going over jump_limit."),
+    ("require_spell_comps", "false means no spell components are needed to cast."),
+    ("safe_spell_comps", "true means spell components are never burned."),
+]
+
+# Fixed in the server code (Source/ACE.Server/WorldObjects/Player_Magic.cs, Player_Tick.cs); changing them needs a code change and deploy.
+CASTING_FIXED = [
+    ("Windup_MaxMove", "6.0 m", "A red player who ends up more than 6 m from where the cast started fizzles: \"Your movement disrupted spell casting!\". Mana and components are still used. White players are exempt."),
+    ("CastSpeed", "2.0", "Animation speed of the windup and the first half of the cast motion (from retail). Higher is faster for everyone."),
+    ("Recoil delay", "1.0 s", "Wait after a cast when there is no recoil animation (marked in the code as a guess at retail timing)."),
+    ("Fast-tick casting", "red players only", "Red players use the retail-accurate, tick-based casting and turning; white players use ACE's older, simpler path."),
+    ("Spell range at release", "base range + skill x range factor, capped at outdoor radar range", "The target must still be in range when the spell releases, so moving apart during the cast can put it out of range."),
+    ("Stance change or death", "cancels the cast", "Switching combat mode or dying ends the cast."),
+]
+
+
+def casting_page():
+    cat = {r["key"]: r for r in load_catalog()["settings"]}
+    try:
+        stored = live_settings()
+        err = ""
+    except Exception as ex:
+        stored, err = {}, f'<p class="err">Could not read the live settings: {e(ex)}</p>'
+    rows = []
+    for key, what in CASTING_SETTINGS:
+        r = cat.get(key)
+        if not r:
+            continue
+        typ = r["type"]
+        default = norm(typ, r["default"])
+        current = norm(typ, stored[key][1]) if key in stored else default
+        changed = key in stored and current != default
+        mod, fetch = COMMANDS[typ]
+        rows.append(f'<tr class="{"changed" if changed else ""}"><td><code>{e(key)}</code><br><span class="muted">{typ}</span></td>'
+                    f'<td class="n"><b>{e(current)}</b></td><td class="n muted">{e(default)}</td><td class="wrapd">{e(what)}</td>'
+                    f'<td><code>@{fetch} {e(key)}<br>@{mod} {e(key)} <i>value</i></code></td></tr>')
+    fixed = "".join(f'<tr><td><code>{e(n)}</code></td><td><b>{e(v)}</b></td><td class="wrapd">{e(w)}</td></tr>' for n, v, w in CASTING_FIXED)
+    body = f"""<h2>Casting and movement</h2>
+<p class="muted">Everything that changes how spell casting reacts to moving, turning and position. <b>Current</b> is the live value read from the database just now; highlighted rows differ from the default.</p>
+{err}
+<div class="wrap"><table><thead><tr><th>Live setting</th><th class="n">Current</th><th class="n">Default</th><th>What it does</th><th>Commands</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>
+<h2>Fixed in the server code</h2>
+<p class="muted">Not settings: changing these needs a code change and a deploy.</p>
+<div class="wrap"><table><thead><tr><th>Rule</th><th>Value</th><th>What it does</th></tr></thead><tbody>{fixed}</tbody></table></div>"""
+    return page("Casting", body, refresh=False)
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         url = urlparse(self.path)
@@ -684,6 +741,8 @@ class Handler(BaseHTTPRequestHandler):
                 body = ips_page()
             elif url.path == "/ip":
                 body = ip_page(q.get("addr", [""])[0])
+            elif url.path == "/casting":
+                body = casting_page()
             elif url.path == "/settings":
                 body = settings_page()
             elif url.path == "/health":
