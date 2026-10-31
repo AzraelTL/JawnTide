@@ -589,7 +589,8 @@ def levels_page(snap, query):
     live = [c for c in snap["chars"].values() if not c["deleted"]]
     earned = lambda c: max(0, c["xp"] - c.get("passup", 0))
     if sort == "earned":
-        top = sorted(live, key=lambda c: (-earned(c), -c["level"], c["name"]))[:limit]
+        # same earned XP (everyone capped with no pass-up ties): whoever reached their level first ranks higher
+        top = sorted(live, key=lambda c: (-earned(c), -c["level"], c.get("reached") or NEVER, c["name"]))[:limit]
     else:
         # same level: whoever got there first ranks higher; no recorded time yet goes after, by total XP
         top = sorted(live, key=lambda c: (-c["level"], c.get("reached") or NEVER, -c["xp"], c["name"]))[:limit]
