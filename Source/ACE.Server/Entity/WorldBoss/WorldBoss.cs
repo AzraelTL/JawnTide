@@ -282,6 +282,70 @@ namespace ACE.Server.Entity.WorldBoss
         };
 
         /// <summary>
+        /// JawnTide: which wing of the Town Network each town spawn spot is reached from (north = Aluvian, east = Sho,
+        /// west = Gharu'ndim). Anything not listed, the south wing and towns with no Network portal, is Other.
+        /// </summary>
+        public enum SpawnRegion { Aluvian, Sho, Gharu, Other }
+
+        private static readonly Dictionary<uint, SpawnRegion> TownRegions = new Dictionary<uint, SpawnRegion>()
+        {
+            { 0xA9B4, SpawnRegion.Aluvian },
+            { 0xC5A9, SpawnRegion.Aluvian },
+            { 0xBC9F, SpawnRegion.Aluvian },
+            { 0xA1A4, SpawnRegion.Aluvian },
+            { 0xCE95, SpawnRegion.Aluvian },
+            { 0xC88C, SpawnRegion.Aluvian },
+            { 0xBF80, SpawnRegion.Aluvian },
+            { 0xDA75, SpawnRegion.Aluvian },
+            { 0x64D5, SpawnRegion.Aluvian },
+            { 0x2581, SpawnRegion.Aluvian },
+            { 0xDA55, SpawnRegion.Sho },
+            { 0xB470, SpawnRegion.Sho },
+            { 0xC95B, SpawnRegion.Sho },
+            { 0xF659, SpawnRegion.Sho },
+            { 0xE74E, SpawnRegion.Sho },
+            { 0xCD41, SpawnRegion.Sho },
+            { 0xE63D, SpawnRegion.Sho },
+            { 0xDB3B, SpawnRegion.Sho },
+            { 0xE532, SpawnRegion.Sho },
+            { 0xBA17, SpawnRegion.Sho },
+            { 0xE721, SpawnRegion.Sho },
+            { 0x8090, SpawnRegion.Gharu },
+            { 0x8588, SpawnRegion.Gharu },
+            { 0x987B, SpawnRegion.Gharu },
+            { 0x7D64, SpawnRegion.Gharu },
+            { 0xA25F, SpawnRegion.Gharu },
+            { 0x9058, SpawnRegion.Gharu },
+            { 0x934B, SpawnRegion.Gharu },
+            { 0x9E43, SpawnRegion.Gharu },
+            { 0x9722, SpawnRegion.Gharu },
+        };
+
+        /// <summary>
+        /// JawnTide: a one-line hint, sent after the spawn message, saying which kind of town the boss spawned at
+        /// </summary>
+        public static string GetSpawnRegionHint(WorldBoss boss)
+        {
+            if (boss?.Location == null)
+                return null;
+
+            if (!TownRegions.TryGetValue(boss.Location.Cell >> 16, out var region))
+                region = SpawnRegion.Other;
+
+            switch (region)
+            {
+                case SpawnRegion.Aluvian:
+                    return "Word reaches the heartland: the beast was last seen near an Aluvian town.";
+                case SpawnRegion.Sho:
+                    return "Lantern-bearers carry the warning: the beast prowls near a Sho town.";
+                case SpawnRegion.Gharu:
+                    return "Desert riders spread the alarm: the beast stalks near a Gharu'ndim town.";
+                default:
+                    return "Scouts whisper that the beast's trail leads beyond the southern doors of the Town Network.";
+            }
+        }
+
+        /// <summary>
         /// JawnTide: "near Holtburg (42.1N, 33.6E)" for the town this boss spawned at, or null if unknown
         /// </summary>
         public static string GetSpawnTownDisplay(WorldBoss boss)

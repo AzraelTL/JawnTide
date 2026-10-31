@@ -236,13 +236,18 @@ namespace ACE.Server.Managers
             //Send global message
             PlayerManager.BroadcastToAll(new GameMessageSystemChat(boss.SpawnMsg, ChatMessageType.Broadcast));
 
+            // JawnTide: hint which kind of town (Aluvian, Sho, Gharu'ndim, or the Town Network's south wing) the boss spawned at
+            var regionHint = WorldBosses.GetSpawnRegionHint(boss);
+            if (regionHint != null)
+                PlayerManager.BroadcastToAll(new GameMessageSystemChat(regionHint, ChatMessageType.Broadcast));
+
             //Send global to webhook
             try
             {
                 var webhookUrl = PropertyManager.GetString("world_boss_webhook").Item;
                 if (!string.IsNullOrEmpty(webhookUrl))
                 {
-                    _ = TurbineChatHandler.SendWebhookedChat("World Boss", boss.SpawnMsg, webhookUrl, "Global");
+                    _ = TurbineChatHandler.SendWebhookedChat("World Boss", regionHint != null ? $"{boss.SpawnMsg}\n{regionHint}" : boss.SpawnMsg, webhookUrl, "Global");
                 }
             }
             catch (Exception ex)
