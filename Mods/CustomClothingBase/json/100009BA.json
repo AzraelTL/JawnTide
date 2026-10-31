@@ -1,0 +1,5166 @@
+{
+  "ClothingBaseEffects": {
+    "33554433": {
+      "CloObjectEffects": [
+        {
+          "Index": "0",
+          "ModelId": "16796675",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "1",
+          "ModelId": "16795527",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "2",
+          "ModelId": "16796677",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "3",
+          "ModelId": "16795529",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "4",
+          "ModelId": "16795530",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "5",
+          "ModelId": "16795531",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "6",
+          "ModelId": "16796681",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "7",
+          "ModelId": "16795533",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "8",
+          "ModelId": "16795534",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "9",
+          "ModelId": "16795535",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898518",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898543",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898550",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "10",
+          "ModelId": "16795536",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "11",
+          "ModelId": "16796686",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "12",
+          "ModelId": "16795538",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "13",
+          "ModelId": "16795539",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "14",
+          "ModelId": "16796689",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "15",
+          "ModelId": "16795541",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "16",
+          "ModelId": "16795542",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898538",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            },
+            {
+              "OldTexture": "83898526",
+              "NewTexture": "83899211"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            }
+          ]
+        },
+        {
+          "Index": "17",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "18",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "19",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "20",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "21",
+          "ModelId": "16796999",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83899143",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "22",
+          "ModelId": "16797003",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899147",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "29",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "30",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        }
+      ]
+    },
+    "33554510": {
+      "CloObjectEffects": [
+        {
+          "Index": "0",
+          "ModelId": "16796675",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "1",
+          "ModelId": "16795527",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "2",
+          "ModelId": "16796677",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "3",
+          "ModelId": "16795529",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "4",
+          "ModelId": "16795530",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "5",
+          "ModelId": "16795531",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "6",
+          "ModelId": "16796681",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "7",
+          "ModelId": "16795533",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "8",
+          "ModelId": "16795534",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "9",
+          "ModelId": "16795535",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898518",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898543",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898550",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "10",
+          "ModelId": "16795536",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "11",
+          "ModelId": "16796686",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "12",
+          "ModelId": "16795538",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "13",
+          "ModelId": "16795539",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "14",
+          "ModelId": "16796689",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "15",
+          "ModelId": "16795541",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "16",
+          "ModelId": "16795542",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898538",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            },
+            {
+              "OldTexture": "83898526",
+              "NewTexture": "83899211"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            }
+          ]
+        },
+        {
+          "Index": "17",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "18",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "19",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "20",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "21",
+          "ModelId": "16796999",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83899143",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "22",
+          "ModelId": "16797003",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899147",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "29",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "30",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        }
+      ]
+    },
+    "33561110": {
+      "CloObjectEffects": [
+        {
+          "Index": "0",
+          "ModelId": "16796675",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "1",
+          "ModelId": "16795527",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "2",
+          "ModelId": "16796677",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "3",
+          "ModelId": "16795529",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "4",
+          "ModelId": "16795530",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "5",
+          "ModelId": "16795531",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "6",
+          "ModelId": "16796681",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "7",
+          "ModelId": "16795533",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "8",
+          "ModelId": "16795534",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "9",
+          "ModelId": "16795535",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898518",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898543",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898550",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "10",
+          "ModelId": "16795536",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "11",
+          "ModelId": "16796686",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "12",
+          "ModelId": "16795538",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "13",
+          "ModelId": "16795539",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "14",
+          "ModelId": "16796689",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "15",
+          "ModelId": "16795541",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "16",
+          "ModelId": "16795542",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898538",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            },
+            {
+              "OldTexture": "83898526",
+              "NewTexture": "83899211"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            }
+          ]
+        },
+        {
+          "Index": "17",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "18",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "19",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "20",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "21",
+          "ModelId": "16796999",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83899143",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "22",
+          "ModelId": "16797003",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899147",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "29",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "30",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        }
+      ]
+    },
+    "33561104": {
+      "CloObjectEffects": [
+        {
+          "Index": "0",
+          "ModelId": "16796675",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "1",
+          "ModelId": "16795527",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "2",
+          "ModelId": "16796677",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "3",
+          "ModelId": "16795529",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "4",
+          "ModelId": "16795530",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "5",
+          "ModelId": "16795531",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "6",
+          "ModelId": "16796681",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "7",
+          "ModelId": "16795533",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "8",
+          "ModelId": "16795534",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "9",
+          "ModelId": "16795535",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898518",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898543",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898550",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "10",
+          "ModelId": "16795536",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "11",
+          "ModelId": "16796686",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "12",
+          "ModelId": "16795538",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "13",
+          "ModelId": "16795539",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "14",
+          "ModelId": "16796689",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "15",
+          "ModelId": "16795541",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "16",
+          "ModelId": "16795542",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898538",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            },
+            {
+              "OldTexture": "83898526",
+              "NewTexture": "83899211"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            }
+          ]
+        },
+        {
+          "Index": "17",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "18",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "19",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "20",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "21",
+          "ModelId": "16796999",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83899143",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "22",
+          "ModelId": "16797003",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899147",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "29",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "30",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        }
+      ]
+    },
+    "33561112": {
+      "CloObjectEffects": [
+        {
+          "Index": "0",
+          "ModelId": "16796675",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "1",
+          "ModelId": "16795527",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "2",
+          "ModelId": "16796677",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "3",
+          "ModelId": "16795529",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "4",
+          "ModelId": "16795530",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "5",
+          "ModelId": "16795531",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "6",
+          "ModelId": "16796681",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "7",
+          "ModelId": "16795533",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "8",
+          "ModelId": "16795534",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "9",
+          "ModelId": "16795535",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898518",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898543",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898550",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "10",
+          "ModelId": "16795536",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "11",
+          "ModelId": "16796686",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "12",
+          "ModelId": "16795538",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "13",
+          "ModelId": "16795539",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "14",
+          "ModelId": "16796689",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "15",
+          "ModelId": "16795541",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "16",
+          "ModelId": "16795542",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898538",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            },
+            {
+              "OldTexture": "83898526",
+              "NewTexture": "83899211"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            }
+          ]
+        },
+        {
+          "Index": "17",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "18",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "19",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "20",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "21",
+          "ModelId": "16796999",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83899143",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "22",
+          "ModelId": "16797003",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899147",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "29",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "30",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        }
+      ]
+    },
+    "33561106": {
+      "CloObjectEffects": [
+        {
+          "Index": "0",
+          "ModelId": "16796675",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "1",
+          "ModelId": "16795527",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "2",
+          "ModelId": "16796677",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "3",
+          "ModelId": "16795529",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "4",
+          "ModelId": "16795530",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "5",
+          "ModelId": "16795531",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "6",
+          "ModelId": "16796681",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "7",
+          "ModelId": "16795533",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "8",
+          "ModelId": "16795534",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "9",
+          "ModelId": "16795535",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898518",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898543",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898550",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "10",
+          "ModelId": "16795536",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "11",
+          "ModelId": "16796686",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "12",
+          "ModelId": "16795538",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "13",
+          "ModelId": "16795539",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "14",
+          "ModelId": "16796689",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "15",
+          "ModelId": "16795541",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "16",
+          "ModelId": "16795542",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898538",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            },
+            {
+              "OldTexture": "83898526",
+              "NewTexture": "83899211"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            }
+          ]
+        },
+        {
+          "Index": "17",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "18",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "19",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "20",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "21",
+          "ModelId": "16796999",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83899143",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "22",
+          "ModelId": "16797003",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899147",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "29",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "30",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        }
+      ]
+    },
+    "33560943": {
+      "CloObjectEffects": [
+        {
+          "Index": "0",
+          "ModelId": "16796675",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "1",
+          "ModelId": "16795527",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "2",
+          "ModelId": "16796677",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "3",
+          "ModelId": "16795529",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "4",
+          "ModelId": "16795530",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "5",
+          "ModelId": "16795531",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "6",
+          "ModelId": "16796681",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "7",
+          "ModelId": "16795533",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "8",
+          "ModelId": "16795534",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "9",
+          "ModelId": "16795535",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898518",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898543",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898550",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "10",
+          "ModelId": "16795536",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "11",
+          "ModelId": "16796686",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "12",
+          "ModelId": "16795538",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "13",
+          "ModelId": "16795539",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "14",
+          "ModelId": "16796689",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "15",
+          "ModelId": "16795541",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "16",
+          "ModelId": "16795542",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898538",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            },
+            {
+              "OldTexture": "83898526",
+              "NewTexture": "83899211"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            }
+          ]
+        },
+        {
+          "Index": "17",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "18",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "19",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "20",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "21",
+          "ModelId": "16796999",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83899143",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "22",
+          "ModelId": "16797003",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899147",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "29",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "30",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        }
+      ]
+    },
+    "33560944": {
+      "CloObjectEffects": [
+        {
+          "Index": "0",
+          "ModelId": "16796675",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "1",
+          "ModelId": "16795527",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "2",
+          "ModelId": "16796677",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "3",
+          "ModelId": "16795529",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "4",
+          "ModelId": "16795530",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "5",
+          "ModelId": "16795531",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "6",
+          "ModelId": "16796681",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "7",
+          "ModelId": "16795533",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "8",
+          "ModelId": "16795534",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "9",
+          "ModelId": "16795535",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898518",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898543",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898550",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "10",
+          "ModelId": "16795536",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "11",
+          "ModelId": "16796686",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "12",
+          "ModelId": "16795538",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "13",
+          "ModelId": "16795539",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "14",
+          "ModelId": "16796689",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "15",
+          "ModelId": "16795541",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "16",
+          "ModelId": "16795542",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898538",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            },
+            {
+              "OldTexture": "83898526",
+              "NewTexture": "83899211"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            }
+          ]
+        },
+        {
+          "Index": "17",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "18",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "19",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "20",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "21",
+          "ModelId": "16796999",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83899143",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "22",
+          "ModelId": "16797003",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899147",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "29",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "30",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        }
+      ]
+    },
+    "33561114": {
+      "CloObjectEffects": [
+        {
+          "Index": "0",
+          "ModelId": "16796675",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "1",
+          "ModelId": "16795527",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "2",
+          "ModelId": "16796677",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "3",
+          "ModelId": "16795529",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "4",
+          "ModelId": "16795530",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "5",
+          "ModelId": "16795531",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "6",
+          "ModelId": "16796681",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "7",
+          "ModelId": "16795533",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "8",
+          "ModelId": "16795534",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "9",
+          "ModelId": "16795535",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898518",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898543",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898550",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "10",
+          "ModelId": "16795536",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "11",
+          "ModelId": "16796686",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "12",
+          "ModelId": "16795538",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "13",
+          "ModelId": "16795539",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "14",
+          "ModelId": "16796689",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "15",
+          "ModelId": "16795541",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "16",
+          "ModelId": "16795542",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898538",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            },
+            {
+              "OldTexture": "83898526",
+              "NewTexture": "83899211"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            }
+          ]
+        },
+        {
+          "Index": "17",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "18",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "19",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "20",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "21",
+          "ModelId": "16796999",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83899143",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "22",
+          "ModelId": "16797003",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899147",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "29",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "30",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        }
+      ]
+    },
+    "33561108": {
+      "CloObjectEffects": [
+        {
+          "Index": "0",
+          "ModelId": "16796675",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "1",
+          "ModelId": "16795527",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "2",
+          "ModelId": "16796677",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "3",
+          "ModelId": "16795529",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "4",
+          "ModelId": "16795530",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "5",
+          "ModelId": "16795531",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "6",
+          "ModelId": "16796681",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "7",
+          "ModelId": "16795533",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "8",
+          "ModelId": "16795534",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "9",
+          "ModelId": "16795535",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898518",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898543",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898550",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "10",
+          "ModelId": "16795536",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "11",
+          "ModelId": "16796686",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "12",
+          "ModelId": "16795538",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "13",
+          "ModelId": "16795539",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "14",
+          "ModelId": "16796689",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "15",
+          "ModelId": "16795541",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "16",
+          "ModelId": "16795542",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898538",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            },
+            {
+              "OldTexture": "83898526",
+              "NewTexture": "83899211"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            }
+          ]
+        },
+        {
+          "Index": "17",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "18",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "19",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "20",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "21",
+          "ModelId": "16796999",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83899143",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "22",
+          "ModelId": "16797003",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899147",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "29",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "30",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        }
+      ]
+    },
+    "33560942": {
+      "CloObjectEffects": [
+        {
+          "Index": "0",
+          "ModelId": "16796675",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "1",
+          "ModelId": "16795527",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "2",
+          "ModelId": "16796677",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "3",
+          "ModelId": "16795529",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "4",
+          "ModelId": "16795530",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "5",
+          "ModelId": "16795531",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "6",
+          "ModelId": "16796681",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "7",
+          "ModelId": "16795533",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "8",
+          "ModelId": "16795534",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "9",
+          "ModelId": "16795535",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898518",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898543",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898550",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "10",
+          "ModelId": "16795536",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "11",
+          "ModelId": "16796686",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "12",
+          "ModelId": "16795538",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "13",
+          "ModelId": "16795539",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "14",
+          "ModelId": "16796689",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "15",
+          "ModelId": "16795541",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "16",
+          "ModelId": "16795542",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898538",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            },
+            {
+              "OldTexture": "83898526",
+              "NewTexture": "83899211"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            }
+          ]
+        },
+        {
+          "Index": "17",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "18",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "19",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "20",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "21",
+          "ModelId": "16796999",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83899143",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "22",
+          "ModelId": "16797003",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899147",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "29",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "30",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        }
+      ]
+    },
+    "33560941": {
+      "CloObjectEffects": [
+        {
+          "Index": "0",
+          "ModelId": "16796675",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "1",
+          "ModelId": "16795527",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "2",
+          "ModelId": "16796677",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "3",
+          "ModelId": "16795529",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "4",
+          "ModelId": "16795530",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "5",
+          "ModelId": "16795531",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "6",
+          "ModelId": "16796681",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "7",
+          "ModelId": "16795533",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "8",
+          "ModelId": "16795534",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "9",
+          "ModelId": "16795535",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898518",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898543",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898550",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "10",
+          "ModelId": "16795536",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "11",
+          "ModelId": "16796686",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "12",
+          "ModelId": "16795538",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "13",
+          "ModelId": "16795539",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "14",
+          "ModelId": "16796689",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "15",
+          "ModelId": "16795541",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "16",
+          "ModelId": "16795542",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898538",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            },
+            {
+              "OldTexture": "83898526",
+              "NewTexture": "83899211"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            }
+          ]
+        },
+        {
+          "Index": "17",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "18",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "19",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "20",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "21",
+          "ModelId": "16796999",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83899143",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "22",
+          "ModelId": "16797003",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899147",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "29",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "30",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        }
+      ]
+    },
+    "33561100": {
+      "CloObjectEffects": [
+        {
+          "Index": "0",
+          "ModelId": "16796675",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "1",
+          "ModelId": "16795527",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "2",
+          "ModelId": "16796677",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "3",
+          "ModelId": "16795529",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "4",
+          "ModelId": "16795530",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "5",
+          "ModelId": "16795531",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "6",
+          "ModelId": "16796681",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "7",
+          "ModelId": "16795533",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "8",
+          "ModelId": "16795534",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "9",
+          "ModelId": "16795535",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898518",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898543",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898550",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "10",
+          "ModelId": "16795536",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "11",
+          "ModelId": "16796686",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "12",
+          "ModelId": "16795538",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "13",
+          "ModelId": "16795539",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "14",
+          "ModelId": "16796689",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "15",
+          "ModelId": "16795541",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "16",
+          "ModelId": "16795542",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898538",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            },
+            {
+              "OldTexture": "83898526",
+              "NewTexture": "83899211"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            }
+          ]
+        },
+        {
+          "Index": "17",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "18",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "19",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "20",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "21",
+          "ModelId": "16796999",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83899143",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "22",
+          "ModelId": "16797003",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899147",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "29",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "30",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        }
+      ]
+    },
+    "33561102": {
+      "CloObjectEffects": [
+        {
+          "Index": "0",
+          "ModelId": "16796675",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "1",
+          "ModelId": "16795527",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "2",
+          "ModelId": "16796677",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "3",
+          "ModelId": "16795529",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "4",
+          "ModelId": "16795530",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "5",
+          "ModelId": "16795531",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "6",
+          "ModelId": "16796681",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "7",
+          "ModelId": "16795533",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "8",
+          "ModelId": "16795534",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "9",
+          "ModelId": "16795535",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898518",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898543",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898550",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "10",
+          "ModelId": "16795536",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "11",
+          "ModelId": "16796686",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "12",
+          "ModelId": "16795538",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "13",
+          "ModelId": "16795539",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "14",
+          "ModelId": "16796689",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "15",
+          "ModelId": "16795541",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "16",
+          "ModelId": "16795542",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898538",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            },
+            {
+              "OldTexture": "83898526",
+              "NewTexture": "83899211"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            }
+          ]
+        },
+        {
+          "Index": "17",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "18",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "19",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "20",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "21",
+          "ModelId": "16796999",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83899143",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "22",
+          "ModelId": "16797003",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899147",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "29",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "30",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        }
+      ]
+    },
+    "33561069": {
+      "CloObjectEffects": [
+        {
+          "Index": "0",
+          "ModelId": "16796675",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "1",
+          "ModelId": "16795527",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "2",
+          "ModelId": "16796677",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "3",
+          "ModelId": "16795529",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "4",
+          "ModelId": "16795530",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "5",
+          "ModelId": "16795531",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "6",
+          "ModelId": "16796681",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "7",
+          "ModelId": "16795533",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "8",
+          "ModelId": "16795534",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "9",
+          "ModelId": "16795535",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898518",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898543",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898550",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "10",
+          "ModelId": "16795536",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "11",
+          "ModelId": "16796686",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "12",
+          "ModelId": "16795538",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "13",
+          "ModelId": "16795539",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "14",
+          "ModelId": "16796689",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "15",
+          "ModelId": "16795541",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "16",
+          "ModelId": "16795542",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898538",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            },
+            {
+              "OldTexture": "83898526",
+              "NewTexture": "83899211"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            }
+          ]
+        },
+        {
+          "Index": "17",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "18",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "19",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "20",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "21",
+          "ModelId": "16796999",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83899143",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "22",
+          "ModelId": "16797003",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899147",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "29",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "30",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        }
+      ]
+    },
+    "33560839": {
+      "CloObjectEffects": [
+        {
+          "Index": "0",
+          "ModelId": "16796675",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "1",
+          "ModelId": "16795527",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "2",
+          "ModelId": "16796677",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "3",
+          "ModelId": "16795529",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "4",
+          "ModelId": "16795530",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "5",
+          "ModelId": "16795531",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898541",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "6",
+          "ModelId": "16796681",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "7",
+          "ModelId": "16795533",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898537",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "8",
+          "ModelId": "16795534",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898545",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "9",
+          "ModelId": "16795535",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898518",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898543",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898550",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "10",
+          "ModelId": "16795536",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "11",
+          "ModelId": "16796686",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "12",
+          "ModelId": "16795538",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "13",
+          "ModelId": "16795539",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898544",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898549",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "14",
+          "ModelId": "16796689",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899054",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "15",
+          "ModelId": "16795541",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898529",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "16",
+          "ModelId": "16795542",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83898538",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            },
+            {
+              "OldTexture": "83898526",
+              "NewTexture": "83899211"
+            },
+            {
+              "OldTexture": "83898525",
+              "NewTexture": "0"
+            }
+          ]
+        },
+        {
+          "Index": "17",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "18",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "19",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "20",
+          "ModelId": "16777708",
+          "CloTextureEffects": []
+        },
+        {
+          "Index": "21",
+          "ModelId": "16796999",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            },
+            {
+              "OldTexture": "83899143",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "22",
+          "ModelId": "16797003",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899147",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "29",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        },
+        {
+          "Index": "30",
+          "ModelId": "16797048",
+          "CloTextureEffects": [
+            {
+              "OldTexture": "83899141",
+              "NewTexture": "83898552"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "ClothingSubPalEffects": {
+    "2": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661118"
+        }
+      ]
+    },
+    "4": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661110"
+        }
+      ]
+    },
+    "39": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661113"
+        }
+      ]
+    },
+    "8": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661120"
+        }
+      ]
+    },
+    "9": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661116"
+        }
+      ]
+    },
+    "13": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661117"
+        }
+      ]
+    },
+    "14": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661114"
+        }
+      ]
+    },
+    "19": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661111"
+        }
+      ]
+    },
+    "84": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661120"
+        }
+      ]
+    },
+    "20": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661115"
+        }
+      ]
+    },
+    "85": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661114"
+        }
+      ]
+    },
+    "21": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661112"
+        }
+      ]
+    },
+    "86": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661112"
+        }
+      ]
+    },
+    "22": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661119"
+        }
+      ]
+    },
+    "87": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661111"
+        }
+      ]
+    },
+    "88": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661118"
+        }
+      ]
+    },
+    "89": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661119"
+        }
+      ]
+    },
+    "90": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661115"
+        }
+      ]
+    },
+    "91": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661118"
+        }
+      ]
+    },
+    "92": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661117"
+        }
+      ]
+    },
+    "93": {
+      "Icon": "0",
+      "CloSubPalettes": [
+        {
+          "Ranges": [
+            {
+              "Offset": "512",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "576",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "320",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "736",
+              "NumColors": "32"
+            }
+          ],
+          "PaletteSet": "251661109"
+        },
+        {
+          "Ranges": [
+            {
+              "Offset": "0",
+              "NumColors": "192"
+            },
+            {
+              "Offset": "192",
+              "NumColors": "64"
+            },
+            {
+              "Offset": "256",
+              "NumColors": "64"
+            }
+          ],
+          "PaletteSet": "251661113"
+        }
+      ]
+    }
+  },
+  "Id": "268437946"
+}
