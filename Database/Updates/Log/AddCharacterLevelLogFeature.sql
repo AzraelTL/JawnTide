@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS `character_level_log` (
   `totalExperience` BIGINT NOT NULL DEFAULT 0 COMMENT 'total XP right after the level up',
   `ageSeconds` INT NOT NULL DEFAULT 0 COMMENT 'played time (seconds) at the level up',
   `reachedAtUtc` DATETIME NOT NULL,
+  `estimated` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1 = filled in afterwards from backups and monitor history',
+  `windowMinutes` INT NULL COMMENT 'estimated rows: minutes between the two samples the time falls between',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uidx_character_level` (`characterId`, `level`),
   KEY `idx_level_time` (`level`, `reachedAtUtc`)
