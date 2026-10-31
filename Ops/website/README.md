@@ -34,13 +34,14 @@ It cannot see account names, passwords, IP addresses or login history. The conta
 
 `wiki.py` serves the wiki: articles about JawnTide's custom content. Anyone can read; contributors edit.
 
-- **Contributors**: staff tick one character per player in the **Wiki** column of the LAN monitor's Levels page
-  (`ace_wiki.contributor`, keyed by game account, so ticking another character on the same account replaces it). Only
-  that character can link, and unticking it signs the player out of the wiki right away. The column flags a contributor
+- **Contributors**: anyone can register one character per game account (registering another moves their wiki name to
+  it). To edit, staff tick that character in the **Wiki** column of the LAN monitor's Levels page, which marks registered
+  characters "registered, waiting" (`ace_wiki.contributor`, keyed by game account). Unticking takes editing away right
+  away. Staff accounts can always edit. The column flags a contributor
   whose account shares an IP with another contributor's (likely the same person on two accounts).
 
-- **Linking**: /wiki/link makes an 8-character code (10 minutes, only usable in the browser that made it). The contributor
-  types `/wiki CODE` in game with that character (`Source/ACE.Server/Command/Handlers/WikiCommands.cs`), which fills in the account and
+- **Linking**: /wiki/link makes an 8-character code (10 minutes, only usable in the browser that made it). The player
+  types `/wiki CODE` in game with the character they want on the wiki (`Source/ACE.Server/Command/Handlers/WikiCommands.cs`), which fills in the account and
   character on that code; the site then asks for a wiki password (scrypt-hashed). Later sign-ins are character name +
   password. Doing the code step again resets the password and signs out other sessions.
 - **Staff** (game access level above 0 when linking) can restore old versions, lock articles and block editors.

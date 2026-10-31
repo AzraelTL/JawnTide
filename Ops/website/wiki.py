@@ -1,9 +1,9 @@
 """
 JawnTide wiki: articles about the server's custom content, edited by players who have linked their game account.
 
-Contributors: staff tick one character per game account on the LAN monitor's Levels page (table contributor). Only
-that character can link, and a login stops working as soon as it is unticked or another character is ticked.
-Linking: /wiki/link makes a short code; the contributor types /wiki CODE in game (WikiCommands.cs fills in the account and
+Contributors: anyone can register one character per game account (a wiki login), but editing needs staff to tick that
+character on the LAN monitor's Levels page (table contributor); unticking takes editing away right away.
+Linking: /wiki/link makes a short code; the player types /wiki CODE in game (WikiCommands.cs fills in the account and
 character); the site then lets them set a wiki password. Later logins use character name + password. Running the code
 step again resets the password. Staff (game accounts with an access level above 0) can revert, lock and block.
 
@@ -28,6 +28,8 @@ SEED_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wiki-seed")
 SESSION_DAYS = 30
 CODE_MINUTES = 10
 MAX_BODY = 100_000
+WAITING = ("<h1>Waiting for contributor approval</h1><p>You're registered. Before you can edit, an admin has to flag your "
+           "character as a contributor. Ask on Discord.</p>")
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"   # no 0/O or 1/I
 
 _db_args = None
@@ -198,18 +200,16 @@ def _current_user(h):
     m = re.search(r"(?:^|;\s*)jtw=([0-9a-f]{64})", cookie)
     if not m:
         return None
-    # signed in only while the linked character is still its account's contributor (unticking it signs them out)
-    row = _q("SELECT u.id, u.name, u.is_admin, u.blocked, s.csrf, s.token FROM session s JOIN wiki_user u ON u.id = s.user_id "
-             "JOIN contributor c ON c.account_id = u.account_id AND c.char_id = u.char_id "
+    # anyone registered can sign in; editing needs their linked character ticked as the account's contributor
+    # (checked on every request, so ticking or unticking takes effect right away). Staff can always edit.
+    row = _q("SELECT u.id, u.name, u.is_admin, u.blocked, s.csrf, s.token, c.char_id FROM session s JOIN wiki_user u ON u.id = s.user_id "
+             "LEFT JOIN contributor c ON c.account_id = u.account_id AND c.char_id = u.char_id "
              "WHERE s.token = %s AND s.expires_at > UTC_TIMESTAMP()", (m.group(1),), one=True)
     if not row:
         return None
-    return dict(id=row[0], name=row[1], admin=bool(row[2]), blocked=bool(row[3]), csrf=row[4], token=row[5])
-
-
-def _is_contributor(account_id, char_id):
-    return bool(account_id and char_id and _q("SELECT 1 FROM contributor WHERE account_id = %s AND char_id = %s",
-                                             (account_id, char_id), one=True))
+    admin, blocked, contributor = bool(row[2]), bool(row[3]), row[6] is not None
+    return dict(id=row[0], name=row[1], admin=admin, blocked=blocked, csrf=row[4], token=row[5], contributor=contributor,
+                editor=(contributor or admin) and not blocked)
 
 
 def _client_ip(h):
@@ -254,7 +254,7 @@ def _page(h, title, body, user, status=200):
     bar = (f'<div class="wikibar"><a href="/wiki">Wiki home</a><a href="/wiki/recent">Recent changes</a>'
            f'<a href="/wiki/new">New article</a>'
            f'<form class="wsearch" action="/wiki" method="get"><input name="q" placeholder="Search the wiki" aria-label="Search the wiki"></form>'
-           + (f'<span class="who">Signed in as <b>{e(user["name"])}</b>{" (staff)" if user["admin"] else ""}'
+           + (f'<span class="who">Signed in as <b>{e(user["name"])}</b>{" (staff)" if user["admin"] else "" if user["editor"] else " (waiting for contributor approval)"}'
               f'<form method="post" action="/wiki/logout"><input type="hidden" name="csrf" value="{user["csrf"]}"><button class="link">Sign out</button></form></span>'
               if user else '<span class="who"><a href="/wiki/login">Sign in</a> or <a href="/wiki/link">link your game account</a></span>')
            + '</div>')
@@ -303,7 +303,7 @@ def _index(h, user, query):
     plist = "".join(f'<li><a href="/wiki/{e(s)}">{e(t)}</a></li>' for s, t in pages) or "<li class=muted>No articles yet.</li>"
     rlist = "".join(f'<li><a href="/wiki/{e(s)}">{e(t)}</a> <span class="muted">by {e(n)}, {_ago(c)}</span></li>' for s, t, c, n in recent)
     intro = ('<p class="lede">The JawnTide wiki covers the server\'s custom content: world bosses, Town Control, the arena, '
-             'loot stages and more. Contributors chosen by staff can edit.</p>')
+             'loot stages and more. Register a character, and once an admin flags it as a contributor you can edit.</p>')
     _page(h, "Wiki", f'<h1>JawnTide Wiki</h1>{intro}<div class="cols"><section><h2>Articles</h2><ul class="wlist">{plist}</ul></section>'
                      f'<section><h2>Recent changes</h2><ul class="wlist">{rlist}</ul></section></div>', user)
 
@@ -311,7 +311,7 @@ def _index(h, user, query):
 def _view(h, user, slug, rev_id=None):
     page = _q("SELECT title, current_rev, locked, updated_at FROM page WHERE slug = %s", (slug,), one=True)
     if not page:
-        create = (f'<p><a class="btn" href="/wiki/{e(slug)}/edit">Create this article</a></p>' if user and not user["blocked"]
+        create = (f'<p><a class="btn" href="/wiki/{e(slug)}/edit">Create this article</a></p>' if user and user["editor"]
                   else '<p><a href="/wiki/login">Sign in</a> to create it.</p>')
         return _page(h, "Not found", f'<h1>No article here yet</h1><p class="lede">There is no article called “{e(slug)}”.</p>{create}', user, 404)
     title, current, locked, updated = page
@@ -325,7 +325,7 @@ def _view(h, user, slug, rev_id=None):
            f'<a href="/wiki/{e(slug)}">See the current article</a>.'
            + (f' <form class="inline" method="post" action="/wiki/{e(slug)}/revert/{rid}">{_hidden(user)}<button class="link">Restore this version</button></form>'
               if user and user["admin"] else '') + '</aside>') if rid != current else ''
-    can_edit = user and not user["blocked"] and (not locked or user["admin"])
+    can_edit = user and user["editor"] and (not locked or user["admin"])
     tools = [f'<a href="/wiki/{e(slug)}/history">History</a>']
     if can_edit: tools.insert(0, f'<a href="/wiki/{e(slug)}/edit">Edit</a>')
     if user and user["admin"]:
@@ -352,6 +352,8 @@ def _edit_form(h, user, slug, title, body, summary="", error=""):
 def _edit(h, user, slug, method):
     if not user:
         return _redirect(h, "/wiki/login?next=" + quote(f"/wiki/{slug}/edit"))
+    if not user["editor"] and not user["blocked"]:
+        return _page(h, "Waiting for approval", WAITING, user, 403)
     if user["blocked"]:
         return _page(h, "Editing blocked", "<h1>Editing is blocked for your account</h1><p>Ask staff on Discord if you think this is a mistake.</p>", user, 403)
     page = _q("SELECT title, current_rev, locked FROM page WHERE slug = %s", (slug,), one=True)
@@ -418,6 +420,8 @@ def _recent(h, user):
 def _new(h, user, query):
     if not user:
         return _redirect(h, "/wiki/login?next=/wiki/new")
+    if not user["editor"]:
+        return _page(h, "Waiting for approval", WAITING, user, 403)
     title = (query.get("title", [""])[0] or "").strip()[:120]
     if title:
         return _redirect(h, f"/wiki/{slugify(title)}/edit")
@@ -449,10 +453,11 @@ def _link_page(h, user, query):
     code = re.sub(r"[^A-Z0-9]", "", (query.get("code", [""])[0] or "").upper())[:8]
     if not code:
         return _page(h, "Link your game account",
-                     '<h1>Link your game account</h1><p class="lede">Anyone can read the wiki. Editing is for contributors: staff pick one character per player. '
-                     'If you\'re a contributor, prove it by typing a code in game with that character, then pick a password for the wiki. '
-                     'Already linked but forgot your password? Do the same steps to set a new one.</p>'
-                     '<ol class="steps"><li>Get a code below.</li><li>Log in to JawnTide with your contributor character and type <code>/wiki CODE</code>.</li>'
+                     '<h1>Link your game account</h1><p class="lede">Anyone can read the wiki. To edit, register one character: type a code in game with it, then pick a wiki password. '
+                     'After you register, an admin must flag your character as a contributor before you can edit. '
+                     'Already registered but forgot your password? Do the same steps to set a new one (registering a different character '
+                     'moves your wiki name to it, and it needs flagging again).</p>'
+                     '<ol class="steps"><li>Get a code below.</li><li>Log in to JawnTide with the character you want on the wiki and type <code>/wiki CODE</code>.</li>'
                      '<li>Come back here and pick your wiki password.</li></ol>'
                      '<form method="post" action="/wiki/link/start"><button class="btn">Get a code</button></form>', user)
     row = _q("SELECT expires_at, account_id, char_name, confirmed_at, used_at, char_id FROM link_code WHERE code = %s", (code,), one=True)
@@ -464,12 +469,9 @@ def _link_page(h, user, query):
         mins = max(1, int((row[0] - datetime.utcnow()).total_seconds() // 60))
         return _page(h, "Type the code in game",
                      f'<h1>Type this in game</h1><div class="codebox linkcode">/wiki {code}</div>'
-                     f'<p class="lede">Log in to JawnTide with your contributor character and type the line above in chat. '
+                     f'<p class="lede">Log in to JawnTide with the character you want on the wiki and type the line above in chat. '
                      f'The code works for about {mins} more minute{"s" if mins != 1 else ""}. This page checks automatically.</p>'
                      f'<p class="muted">Waiting for the game server…</p><meta http-equiv="refresh" content="4">', user)
-    if not _is_contributor(row[1], row[5]):
-        return _page(h, "Not a contributor", f'<h1>{e(row[2])} isn\'t a wiki contributor</h1><p>Staff choose one character per player '
-                     f'who can edit. Ask on Discord.</p>', user, 403)
     existing = _q("SELECT name FROM wiki_user WHERE account_id = %s", (row[1],), one=True)
     name = row[2]
     what = "set a new password" if existing else "pick a wiki password"
@@ -494,8 +496,6 @@ def _link_finish(h, user):
         return _page(h, "Try again", f'<h1>Passwords didn\'t match</h1><p>Passwords must match and be at least 10 characters. '
                                      f'<a href="/wiki/link?code={code}">Try again</a>.</p>', user, 400)
     account_id, char_name, access_level, char_id = row[0], row[1], int(row[2] or 0), row[5]
-    if not _is_contributor(account_id, char_id):
-        return _page(h, "Not a contributor", f'<h1>{e(char_name)} isn\'t a wiki contributor</h1><p>Ask staff on Discord.</p>', user, 403)
     salt = secrets.token_bytes(16)
     ph = _hash(pw, salt)
     admin = 1 if access_level > 0 else 0
@@ -533,13 +533,9 @@ def _login(h, user, method, query):
         return form("That form expired. Try again.")
     if _limited("login:" + _client_ip(h), 10, 600):
         return form("Too many sign-in attempts. Wait a few minutes.")
-    row = _q("SELECT u.id, u.pass_hash, u.pass_salt, c.char_id FROM wiki_user u "
-             "LEFT JOIN contributor c ON c.account_id = u.account_id AND c.char_id = u.char_id WHERE u.name = %s",
-             (f.get("name", "").strip()[:32],), one=True)
+    row = _q("SELECT id, pass_hash, pass_salt FROM wiki_user WHERE name = %s", (f.get("name", "").strip()[:32],), one=True)
     if not row or not hmac.compare_digest(_hash(f.get("password", "")[:200], bytes(row[2])), bytes(row[1])):
         return form("That name and password don't match.")
-    if row[3] is None:
-        return form("That character isn't a wiki contributor right now. Ask staff on Discord.")
     _redirect(h, nxt, cookie=_new_session(row[0]))
 
 

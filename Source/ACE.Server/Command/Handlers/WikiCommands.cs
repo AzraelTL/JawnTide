@@ -15,8 +15,9 @@ namespace ACE.Server.Command.Handlers
     /// <summary>
     /// JawnTide: /wiki CODE links this game account to the jawntide.com wiki. The website makes a short code in
     /// ace_wiki.link_code; typing it in game fills in this account and character, which proves the person on the
-    /// website owns the account. Only the account's wiki contributor character (ace_wiki.contributor, ticked by staff on
-    /// the monitor's Levels page) can link. The game server only reads contributor and UPDATEs pending, unexpired codes.
+    /// website owns the account. Any character can register; editing also needs staff to tick it as the account's
+    /// contributor (ace_wiki.contributor, on the monitor's Levels page). The game server only reads contributor and
+    /// UPDATEs pending, unexpired codes.
     /// </summary>
     public static class WikiCommands
     {
@@ -52,11 +53,7 @@ namespace ACE.Server.Command.Handlers
                     check.CommandText = "SELECT COUNT(*) FROM contributor WHERE account_id = @a AND char_id = @i";
                     check.Parameters.AddWithValue("@a", accountId);
                     check.Parameters.AddWithValue("@i", charId);
-                    if (Convert.ToInt64(check.ExecuteScalar()) == 0)
-                    {
-                        session.Network.EnqueueSend(new GameMessageSystemChat($"{charName} isn't a wiki contributor. Staff choose one character per player who can edit; ask on Discord.", ChatMessageType.Broadcast));
-                        return;
-                    }
+                    var contributor = Convert.ToInt64(check.ExecuteScalar()) > 0;
 
                     using var cmd = conn.CreateCommand();
                     cmd.CommandText = "UPDATE link_code SET account_id = @a, char_id = @i, char_name = @n, access_level = @l, confirmed_at = UTC_TIMESTAMP() " +
@@ -67,7 +64,10 @@ namespace ACE.Server.Command.Handlers
                     cmd.Parameters.AddWithValue("@l", accessLevel);
                     cmd.Parameters.AddWithValue("@c", code);
                     reply = cmd.ExecuteNonQuery() == 1
-                        ? $"Wiki linked to {charName}. Go back to the website to finish. (Only type codes you made yourself: whoever made this code can now sign in to the wiki as you.)"
+                        ? $"Wiki registration for {charName} confirmed. Go back to the website to pick your wiki password. " +
+                          (contributor ? "You're already a contributor, so you can edit right away. "
+                                       : "After registering your character with the wiki, an admin must flag it as a contributor before you can edit. ") +
+                          "(Only type codes you made yourself: whoever made this code can now sign in to the wiki as you.)"
                         : "That wiki code has expired or was already used. Get a new one at jawntide.com/wiki.";
                 }
                 catch (Exception ex)

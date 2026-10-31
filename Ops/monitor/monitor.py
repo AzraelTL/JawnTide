@@ -460,8 +460,9 @@ def wiki_cell(snap, c, wiki):
     mine = contrib.get(c["account"])
     on = bool(mine and mine[0] == c["id"])
     note = ""
-    if on:
-        note = " <span class=muted>signed up</span>" if c["id"] in linked else ""
+    if c["id"] in linked:
+        note = " <span class=muted>registered</span>" if on else ' <b title="Registered on the wiki, waiting for you to tick it">registered, waiting</b>'
+    if on or c["id"] in linked:     # flag second accounts for the ticked and the waiting
         a = snap["accounts"].get(c["account"])
         ips = (set(a["ips"]) | {a["last_ip"]}) - {""} if a else set()
         by_name = {o["name"]: o["id"] for o in snap["accounts"].values()}
@@ -469,8 +470,8 @@ def wiki_cell(snap, c, wiki):
                          if by_name.get(n) not in (None, c["account"]) and by_name[n] in contrib})
         if others:
             note += f' <span class="err" title="Same IP as another contributor\'s account">same IP as {e(", ".join(others))}</span>'
-    elif mine:
-        note = f' <span class=muted title="Ticking this replaces {e(mine[1])}">(account: {e(mine[1])})</span>'
+    if mine and not on:
+        note += f' <span class=muted title="Ticking this replaces {e(mine[1])}">(account: {e(mine[1])})</span>'
     return (f'<td><form method="post" action="/wiki-contributor" class="inline"><input type="hidden" name="id" value="{c["id"]}">'
             f'<input type="hidden" name="on" value="{0 if on else 1}">'
             f'<input type="checkbox" aria-label="Wiki contributor: {e(c["name"])}" onchange="this.form.submit()"{" checked" if on else ""}>'
@@ -523,8 +524,9 @@ def levels_page(sort, hours):
             f'to the landblock where the character was next saved, so they lag the game by a few minutes. Landblocks '
             f'are the first four hex digits of a location (0xB54A is the start of @teleloc 0xB54A002C).</p>'
             f'<p class="muted"><b>Wiki</b>: tick the one character per player who may edit the wiki (one per account; ticking '
-            f'another character on the same account replaces it, and unticking signs them out of the wiki right away). '
-            f'"signed up" means they finished linking; "same IP as" flags a second account of the same person.'
+            f'another character on the same account replaces it, and unticking takes editing away right away). '
+            f'Players register a character on the wiki first; "registered, waiting" marks the ones waiting for you to tick them. '
+            f'"same IP as" flags a second account of the same person.'
             f'{"" if wiki is not None else " <span class=err>The wiki database isn&#x27;t reachable, so this column is off.</span>"}</p>{table}{spot}')
     return page("Levels", body)
 

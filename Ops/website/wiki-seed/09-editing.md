@@ -1,10 +1,13 @@
 # Editing the wiki
-Anyone can read the wiki. Editing is for **contributors**: staff pick one character per player who can edit. Want to help? Ask on Discord. Every save is kept in the page history, so mistakes can be undone.
+Anyone can read the wiki. Editing is for **contributors**. Every save is kept in the page history, so mistakes can be undone.
 
-## Getting an account
-1. Once staff have made your character a contributor, go to [link your game account](/wiki/link) and get a code.
-2. Log in to JawnTide with your contributor character and type `/wiki CODE` in chat.
+## Becoming a contributor
+1. Go to [register](/wiki/link) and get a code.
+2. Log in to JawnTide with the character you want on the wiki and type `/wiki CODE` in chat.
 3. Back on the website, pick a wiki password. You sign in with your character name and that password.
+4. After registering your character, an admin must flag it as a contributor before you can edit. Ask on Discord.
+
+One character per player: registering a different character moves your wiki name to it, and it has to be flagged again.
 
 Forgot your password? Do the same steps again to set a new one.
 

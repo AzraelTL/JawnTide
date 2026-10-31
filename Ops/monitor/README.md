@@ -20,9 +20,9 @@ A small web page for the LAN that shows, per account:
   saved; sort by level, XP gained, XP per hour played or played time. Below it, the landblocks where the most XP
   was earned in that window and who earned it. A character with a far higher XP per hour than others at its level
   is worth a look (exploit, or a spot whose XP needs turning down). XP history starts when this version first runs.
-  The **Wiki** column picks wiki contributors: tick one character per player (one per account; ticking another character
-  on that account replaces it, unticking signs them out of the wiki). "signed up" = they finished linking; "same IP as"
-  flags another contributor's account on the same IP. This is the monitor's only write (`ace_wiki.contributor`, granted by
+  The **Wiki** column picks wiki contributors. Players register a character on the wiki first ("registered, waiting"),
+  then you tick it to let them edit (one per account; ticking another character on that account replaces it, unticking
+  takes editing away). "same IP as" flags another contributor's account on the same IP. This is the monitor's only write (`ace_wiki.contributor`, granted by
   `Ops/website/wiki-setup.sh`).
 
 - **Casting** (`/casting`): the live settings that change how spell casting reacts to moving, turning and position, with their
