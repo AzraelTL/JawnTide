@@ -1,0 +1,80 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!--
+	JawnTide build of OptimShi's CustomClothingBase mod (https://github.com/OptimShi/CustomClothingBase).
+	The mod's source is not copied into this repo: clone it next to JawnTide (C:\Users\kylei\source\repos\CustomClothingBase),
+	build ACE.Server first (Debug, x64), then build this project. The mod is written straight into Mods\CustomClothingBase,
+	which the live server mounts as its mods folder. See README.md here.
+	-->
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<AssemblyName>CustomClothingBase</AssemblyName>
+		<RootNamespace>CustomClothingBase</RootNamespace>
+		<NoWarn>0436;1073;8509;NU1510;NU1603;NU1608</NoWarn>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<PlatformTarget>x64</PlatformTarget>
+		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+		<GenerateDependencyFile>false</GenerateDependencyFile>
+		<DebugType>none</DebugType>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+		<PublicizerClearCacheOnClean>true</PublicizerClearCacheOnClean>
+
+		<CcbSource>$(MSBuildThisFileDirectory)..\..\..\..\CustomClothingBase\</CcbSource>
+		<AceBin>$(MSBuildThisFileDirectory)..\..\..\Source\ACE.Server\bin\x64\Debug\net10.0\</AceBin>
+		<OutputPath>$(MSBuildThisFileDirectory)..\..\..\Mods\CustomClothingBase\</OutputPath>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="$(CcbSource)**\*.cs" Exclude="$(CcbSource)obj\**;$(CcbSource)bin\**;$(CcbSource).template.config\**" />
+		<None Include="$(CcbSource)Meta.json" Link="Meta.json" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Publicize Include="ACE.Server" />
+		<Publicize Include="ACE.DatLoader" />
+		<Publicize Include="ACE.Database" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="ACEmulator.ACE.Shared" Version="1.0.9" />
+		<PackageReference Include="Krafs.Publicizer" Version="2.3.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="JsonNet.ContractResolvers" Version="2.0.0" />
+		<PackageReference Include="Lib.Harmony" Version="2.3.5" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+	</ItemGroup>
+
+	<!-- the server's own assemblies, from JawnTide's build; not copied (the server already has them) -->
+	<ItemGroup>
+		<Reference Include="ACE.Adapter"><HintPath>$(AceBin)ACE.Adapter.dll</HintPath><Private>False</Private></Reference>
+		<Reference Include="ACE.Common"><HintPath>$(AceBin)ACE.Common.dll</HintPath><Private>False</Private></Reference>
+		<Reference Include="ACE.Database"><HintPath>$(AceBin)ACE.Database.dll</HintPath><Private>False</Private></Reference>
+		<Reference Include="ACE.DatLoader"><HintPath>$(AceBin)ACE.DatLoader.dll</HintPath><Private>False</Private></Reference>
+		<Reference Include="ACE.Entity"><HintPath>$(AceBin)ACE.Entity.dll</HintPath><Private>False</Private></Reference>
+		<Reference Include="ACE.Server"><HintPath>$(AceBin)ACE.Server.dll</HintPath><Private>False</Private></Reference>
+		<Reference Include="Microsoft.EntityFrameworkCore"><HintPath>$(AceBin)Microsoft.EntityFrameworkCore.dll</HintPath><Private>False</Private></Reference>
+		<Reference Include="Microsoft.EntityFrameworkCore.Abstractions"><HintPath>$(AceBin)Microsoft.EntityFrameworkCore.Abstractions.dll</HintPath><Private>False</Private></Reference>
+		<Reference Include="Microsoft.EntityFrameworkCore.Relational"><HintPath>$(AceBin)Microsoft.EntityFrameworkCore.Relational.dll</HintPath><Private>False</Private></Reference>
+	</ItemGroup>
+
+	<Target Name="CheckInputs" BeforeTargets="Build">
+		<Error Condition="!Exists('$(CcbSource)PatchClass.cs')" Text="CustomClothingBase source not found at $(CcbSource). Clone https://github.com/OptimShi/CustomClothingBase next to JawnTide." />
+		<Error Condition="!Exists('$(AceBin)ACE.Server.dll')" Text="ACE.Server.dll not found at $(AceBin). Build ACE.Server first: dotnet build Source\ACE.Server -c Debug -p:Platform=x64" />
+	</Target>
+
+	<!-- keep only the mod's own files in Mods\CustomClothingBase: the server already has ACE, Harmony, EF Core and the framework -->
+	<Target Name="CleanupFiles" AfterTargets="Build">
+		<ItemGroup>
+			<FilesToDelete Include="$(OutDir)0Harmony.dll;$(OutDir)Humanizer.dll" />
+			<FilesToDelete Include="$(OutDir)ACE.*.dll" Exclude="$(OutDir)ACE.Shared.dll" />
+			<FilesToDelete Include="$(OutDir)Microsoft.*.dll;$(OutDir)Mono.*.dll;$(OutDir)MonoMod.*.dll;$(OutDir)System.*.dll" />
+			<FilesToDelete Include="$(OutDir)*.deps.json;$(OutDir)*.runtimeconfig.json;$(OutDir)*.pdb" />
+		</ItemGroup>
+		<Delete Files="@(FilesToDelete)" />
+		<RemoveDir Directories="$(OutDir)runtimes" />
+	</Target>
+</Project>
