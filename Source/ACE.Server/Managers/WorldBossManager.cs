@@ -236,8 +236,10 @@ namespace ACE.Server.Managers
             //Send global message
             PlayerManager.BroadcastToAll(new GameMessageSystemChat(boss.SpawnMsg, ChatMessageType.Broadcast));
 
-            // JawnTide: hint which kind of town (Aluvian, Sho, Gharu'ndim, or the Town Network's south wing) the boss spawned at
-            var regionHint = WorldBosses.GetSpawnRegionHint(boss);
+            // JawnTide: hint which kind of town (Aluvian, Sho, Gharu'ndim, or the Town Network's south wing) the boss spawned at;
+            // town bosses only, not the indoor bosses with a statue (Aerbax, Tusker Queen)
+            var isIndoorBoss = boss.StatueWeenieId.HasValue && boss.IndoorLocation != null;
+            var regionHint = isIndoorBoss ? null : WorldBosses.GetSpawnRegionHint(boss);
             if (regionHint != null)
                 PlayerManager.BroadcastToAll(new GameMessageSystemChat(regionHint, ChatMessageType.Broadcast));
 
