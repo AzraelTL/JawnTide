@@ -27,6 +27,7 @@ DB = dict(host=os.environ.get("DB_HOST", "ace-db"), port=int(os.environ.get("DB_
 INTERVAL = max(60, int(os.environ.get("INTERVAL_SECONDS", "300")))
 PORT = int(os.environ.get("PORT", "8080"))
 HOME_FILE = os.environ.get("HOME_FILE", os.path.join(os.path.dirname(os.path.abspath(__file__)), "home.html"))
+EMBLEM_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "emblem.webp")
 
 PROP_INT_LEVEL = 25
 PROP_INT_AGE = 125          # seconds played
@@ -251,16 +252,17 @@ FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com">'
 
 CSS = """
 :root{
-  --night:#1B1530;--deep:#140F25;--panel:#241B3E;--line:#3A2E5C;
-  --bone:#EDE6D6;--dim:#A99FBF;--portal:#9C7BEA;--blood:#D9434C;--gold:#D9B45E;
+  /* palette taken from the Asheron's Call emblem painting: night-blue sky, cloud white, sky cyan, orchid, sun-gold grass */
+  --night:#0F1430;--deep:#0A0E24;--panel:#18204A;--line:#2C3570;
+  --bone:#F3EEF6;--dim:#A8B3D9;--portal:#65B8FB;--blood:#C885F6;--gold:#DFCC7C;--royal:#324DF7;--on-accent:#0A0E24;
   --display:"Pirata One","UnifrakturMaguntia",Georgia,serif;
   --body:"Alegreya Sans","Segoe UI",system-ui,sans-serif;
   color-scheme:dark;box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:light){
-  :root:not([data-theme="dark"]){--night:#EEEAF4;--deep:#E2DCEC;--panel:#FFFFFF;--line:#CFC6E0;
-    --bone:#1E1830;--dim:#5E5574;--portal:#5B3AB0;--blood:#B0262F;--gold:#8E6A12;color-scheme:light}
+  :root:not([data-theme="dark"]){--night:#EEF3FF;--deep:#DDE6FB;--panel:#FFFFFF;--line:#C6D0EE;
+    --bone:#141A3A;--dim:#4E5A86;--portal:#2440D8;--blood:#8A3FC2;--gold:#7A6620;--royal:#2440D8;--on-accent:#FFFFFF;color-scheme:light}
 }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px);overflow-x:clip}
@@ -313,11 +315,12 @@ td.wrapcell{white-space:normal;min-width:12rem}
 /* home */
 .hero{position:relative;padding:3.5rem 0 2.5rem}
 .hero::before{content:"";position:absolute;width:min(34rem,90vw);height:min(34rem,90vw);right:-9rem;top:-7rem;border-radius:50%;
-  background:conic-gradient(from 0deg,transparent 0 12%,var(--portal) 22%,transparent 34% 48%,var(--blood) 60%,transparent 72% 84%,var(--portal) 94%,transparent);
+  background:conic-gradient(from 0deg,transparent 0 12%,var(--royal) 22%,transparent 34% 48%,var(--blood) 60%,transparent 72% 84%,var(--portal) 94%,transparent);
   filter:blur(46px);opacity:.38;animation:turn 90s linear infinite;pointer-events:none}
 @keyframes turn{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.hero::before{animation:none}}
-.hero h1{position:relative;font-size:clamp(4rem,14vw,8.5rem);line-height:.9;margin:0}
+.hero h1{position:relative;font-size:clamp(4rem,14vw,8.5rem);line-height:.9;margin:0;display:flex;align-items:center;gap:.18em}
+.hero h1 .emblem{width:1.05em;height:1.05em;flex:none;border-radius:50%;filter:drop-shadow(0 .06em .12em rgba(0,0,0,.45))}
 .hero p{position:relative;font-size:1.3rem;margin:.9rem 0 0;max-width:34rem}
 .connect{position:relative;margin-top:2rem;display:inline-flex;flex-wrap:wrap;align-items:center;gap:.6rem 1.2rem;
   padding:1rem 1.2rem;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--blood);border-radius:6px}
@@ -334,7 +337,7 @@ dl.facts dt{color:var(--dim)}
 dl.facts dd{margin:0}
 .rules{max-width:42rem}
 .discord{display:inline-block;margin-top:.4rem;padding:.55rem 1.1rem;border-radius:4px;background:var(--portal);
-  color:#fff;text-decoration:none;font-weight:700}
+  color:var(--on-accent);text-decoration:none;font-weight:700}
 /* levels */
 .bars{max-width:40rem;display:grid;grid-template-columns:auto 1fr auto;gap:.35rem .8rem;align-items:center}
 .bars .bar{height:.75rem;background:var(--portal);border-radius:2px;min-width:2px}
@@ -622,6 +625,17 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         url = urlparse(self.path)
         try:
+            if url.path == "/emblem.webp":
+                with open(EMBLEM_FILE, "rb") as f:
+                    data = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "image/webp")
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "public, max-age=86400")
+                self.send_header("X-Content-Type-Options", "nosniff")
+                self.end_headers()
+                self.wfile.write(data)
+                return
             if url.path == "/health":
                 body, ctype = "ok", "text/plain"
             else:
