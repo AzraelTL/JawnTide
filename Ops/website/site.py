@@ -27,6 +27,7 @@ DB = dict(host=os.environ.get("DB_HOST", "ace-db"), port=int(os.environ.get("DB_
 INTERVAL = max(60, int(os.environ.get("INTERVAL_SECONDS", "300")))
 PORT = int(os.environ.get("PORT", "8080"))
 HOME_FILE = os.environ.get("HOME_FILE", os.path.join(os.path.dirname(os.path.abspath(__file__)), "home.html"))
+TANKS_URL = os.environ.get("TANKS_URL", "http://play.jawntide.com:8088/")  # the JawnTanks browser game
 EMBLEM_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "emblem.webp")
 
 PROP_INT_LEVEL = 25
@@ -278,6 +279,8 @@ nav{display:flex;gap:.25rem 1.1rem;flex-wrap:wrap}
 nav a{color:var(--dim);text-decoration:none;padding:.2rem 0;border-bottom:2px solid transparent}
 nav a:hover{color:var(--bone)}
 nav a[aria-current]{color:var(--bone);border-bottom-color:var(--blood)}
+nav a.play{color:var(--portal);font-weight:700}
+.tanks{display:flex;flex-wrap:wrap;align-items:center;gap:.8rem 1.4rem;margin-top:.4rem}
 main{max-width:68rem;margin:0 auto;padding:2rem 1.25rem 4rem}
 h1{font:400 clamp(2.2rem,5vw,3.2rem)/1.05 var(--display);margin:0 0 .4rem;letter-spacing:.01em}
 h2{font:400 1.9rem/1.1 var(--display);margin:2.6rem 0 .8rem}
@@ -355,6 +358,7 @@ PAGES = [("/", "Home"), ("/pk", "PK kills"), ("/towns", "Town Control"), ("/aren
 
 def layout(path, title, body, snap):
     nav = "".join(f'<a href="{p}"{" aria-current=page" if p == path else ""}>{t}</a>' for p, t in PAGES)
+    nav += f'<a class="play" href="{e(TANKS_URL)}">JawnTanks</a>'
     stamp = f'<p class="stamp">Updated {e(snap["taken"].strftime("%b %d, %I:%M %p"))} server time. Refreshes every {INTERVAL // 60} minutes.</p>' if snap else ""
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
@@ -375,7 +379,7 @@ def layout(path, title, body, snap):
 def home_page(snap):
     try:
         with open(HOME_FILE, encoding="utf-8") as f:
-            return f.read()
+            return f.read().replace("{{TANKS_URL}}", e(TANKS_URL))
     except OSError:
         return "<h1>JawnTide</h1><p>play.jawntide.com, port 9000</p>"
 
