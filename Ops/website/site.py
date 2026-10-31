@@ -76,6 +76,18 @@ def take_snapshot():
             chars[int(cid)] = dict(id=int(cid), name=name, level=int(level), xp=int(xp), age=int(age), passup=int(passup),
                                    deleted=bool(deleted and deleted not in (b"\x00", 0)))
 
+        # when each character reached its current level (ace_log.character_level_log: written by the game server,
+        # older ones estimated from backups). Times are converted to server time. Missing table or grant = no times.
+        try:
+            for cid, level, at, est in q("""
+                    SELECT characterId, level, reachedAtUtc + INTERVAL TIMESTAMPDIFF(MINUTE, UTC_TIMESTAMP(), NOW()) MINUTE, estimated
+                    FROM ace_log.character_level_log"""):
+                c = chars.get(int(cid))
+                if c and int(level) == c["level"]:
+                    c["reached"], c["reached_est"] = at, bool(est)
+        except Exception as ex:
+            print(f"level times unavailable: {ex}", flush=True)
+
         for cid, ptype, value in q("""
                 SELECT p.object_Id, p.type, p.value FROM ace_shard.biota_properties_i_i_d p
                 JOIN ace_shard.`character` c ON c.id = p.object_Id WHERE p.type IN (%s, %s)""",
@@ -558,7 +570,16 @@ def arena_page(snap, etype, query):
             f'<h2>Recent matches</h2><ul class="feed">{"".join(matches) or "<li class=muted>No finished matches yet.</li>"}</ul>')
 
 
-LEVEL_SORTS = [("total", "By level and total XP"), ("earned", "By earned XP (no pass-up)")]
+LEVEL_SORTS = [("total", "By level, first to reach it first"), ("earned", "By earned XP (no pass-up)")]
+NEVER = datetime(9999, 1, 1)
+
+
+def reached(c):
+    at = c.get("reached")
+    if not at:
+        return ""
+    text = at.strftime("%b %d, %I:%M %p").replace(" 0", " ")
+    return f'<span title="Estimated from backups">~{e(text)}</span>' if c.get("reached_est") else e(text)
 
 
 def levels_page(snap, query):
@@ -570,13 +591,14 @@ def levels_page(snap, query):
     if sort == "earned":
         top = sorted(live, key=lambda c: (-earned(c), -c["level"], c["name"]))[:limit]
     else:
-        top = sorted(live, key=lambda c: (-c["level"], -c["xp"], c["name"]))[:limit]
+        # same level: whoever got there first ranks higher; no recorded time yet goes after, by total XP
+        top = sorted(live, key=lambda c: (-c["level"], c.get("reached") or NEVER, -c["xp"], c["name"]))[:limit]
     tabs = "".join(f'<a href="/levels?sort={k}&amp;show={show_key}"{" aria-current=page" if k == sort else ""}>{t}</a>'
                    for k, t in LEVEL_SORTS)
     rows = "".join(
         f'<tr>{rank_cell(i)}<td>{e(c["name"])}</td><td class="n k">{c["level"]}</td><td class="n">{n(c["xp"])}</td>'
         f'<td class="n">{n(earned(c))}</td><td class="n">{n(c.get("passup", 0))}</td>'
-        f'<td class="n">{played(c.get("age", 0))}</td><td class="muted">{e(allegiance_name(snap, c["id"]))}</td></tr>'
+        f'<td class="n">{played(c.get("age", 0))}</td><td class="n muted">{reached(c)}</td><td class="muted">{e(allegiance_name(snap, c["id"]))}</td></tr>'
         for i, c in enumerate(top, 1))
     brackets = {}
     for c in live:
@@ -587,9 +609,10 @@ def levels_page(snap, query):
                    for b, v in sorted(brackets.items()))
     shown = f"The {n(len(top))} highest characters" if len(top) < len(live) else "Every character"
     return (f'<h1>Levels</h1><p class="lede">{shown} on the server, out of {n(len(live))}. Pass-up XP is what a '
-            f'character has received from its vassals; earned XP is the rest of its total.</p><div class="tabs">{tabs}</div>'
+            f'character has received from its vassals; earned XP is the rest of its total. Characters at the same level '
+            f'are ordered by when they reached it; times marked ~ are estimated from backups (to within minutes for most).</p><div class="tabs">{tabs}</div>'
             f'<div class="wrap"><table><tr><th></th><th>Character</th><th class="n">Level</th><th class="n">Total XP</th>'
-            f'<th class="n">Earned XP</th><th class="n">Pass-up XP</th><th class="n">Time played</th><th>Allegiance</th></tr>{rows}</table></div>{show_links("/levels", {"sort": sort}, show_key)}'
+            f'<th class="n">Earned XP</th><th class="n">Pass-up XP</th><th class="n">Time played</th><th class="n">Reached level</th><th>Allegiance</th></tr>{rows}</table></div>{show_links("/levels", {"sort": sort}, show_key)}'
             f'<h2>Everyone by level</h2><div class="bars">{bars}</div>')
 
 
@@ -723,6 +746,8 @@ def sample_snapshot():
         lvl = rnd.choice([126, 126, 126, 124, 119, 112, 98, 87, 75, 60, 44, 30])
         chars[1000 + i] = dict(id=1000 + i, name=nm, level=lvl, xp=lvl * lvl * 270000 + rnd.randint(0, 9_000_000), deleted=False,
                                age=lvl * 1100 + rnd.randint(0, 40000), passup=rnd.choice([0, 0, 0, 12_000_000, 250_000_000]))
+    for k, c in enumerate(c for c in chars.values() if c["level"] == 126):
+        c.update(reached=now - timedelta(days=5) + timedelta(hours=7 * k + rnd.randint(0, 5)), reached_est=k % 2 == 0)
     for cid in (1001, 1002, 1003, 1004, 1005):
         chars[cid].update(patron=1000, monarch=1000)
     for cid in (1006, 1007):

@@ -22,6 +22,7 @@ The `web` user can read only what the site shows:
 - `ace_log.pk_kills_log`, `ace_log.arena_event`, `ace_log.arena_character_stats`
 - `ace_log.arena_player` without `player_ip`
 - `ace_town_control.town`, `ace_town_control.town_control_event` (the Town Control page)
+- `ace_log.character_level_log` (when each character reached its level: orders the Levels page)
 - `ace_web.town_control_whitelist`: a view showing only the `town_control_alleglist` setting (for the Town Control flag on
   the Allegiances page); the web user cannot read any other server setting
 
