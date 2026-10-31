@@ -203,7 +203,7 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            if (!checkAngle || IsWithinAngle(target))
+            if (!checkAngle || IsWithinAngle(target, SpellcastStartMaxAngle))
             {
                 if (!CreatePlayerSpell(target, targetCategory, windupParams.SpellId, windupParams.CasterItem))
                     MagicState.OnCastDone();
@@ -715,7 +715,27 @@ namespace ACE.Server.WorldObjects
             DoCastSpell(state.Spell, state.Caster, state.MagicSkill, state.ManaUsed, state.Target, state.Status, checkAngle);
         }
 
-        public bool IsWithinAngle(WorldObject target)
+        /// <summary>
+        /// JawnTide: the angle allowed when starting a cast (windup, and skipping the first turn).
+        /// spellcast_start_max_angle, or spellcast_max_angle when that is below 0.
+        /// </summary>
+        public static double SpellcastStartMaxAngle
+        {
+            get
+            {
+                var start = PropertyManager.GetDouble("spellcast_start_max_angle").Item;
+                return start >= 0 ? start : PropertyManager.GetDouble("spellcast_max_angle").Item;
+            }
+        }
+
+        /// <summary>
+        /// JawnTide: the angle for the current phase: spellcast_max_angle once the cast motion is done (releasing), the start angle before that.
+        /// </summary>
+        public double CurrentCastMaxAngle => MagicState.CastMotionDone ? PropertyManager.GetDouble("spellcast_max_angle").Item : SpellcastStartMaxAngle;
+
+        public bool IsWithinAngle(WorldObject target) => IsWithinAngle(target, PropertyManager.GetDouble("spellcast_max_angle").Item);
+
+        public bool IsWithinAngle(WorldObject target, double maxAngle)
         {
             // TODO: investigate this more, difference for GetAngle() between ACE and ac physics engine
             var angle = 0.0f;
@@ -738,8 +758,6 @@ namespace ACE.Server.WorldObjects
             }
 
             //Console.WriteLine($"Angle: " + angle);
-            var maxAngle = PropertyManager.GetDouble("spellcast_max_angle").Item;
-
             if (RecordCast.Enabled)
                 RecordCast.Log($"DoCastSpell(angle={angle} vs. {maxAngle})");
 
@@ -816,7 +834,9 @@ namespace ACE.Server.WorldObjects
 
             if (FastTick)
             {
-                if (PropertyManager.GetDouble("spellcast_max_angle").Item > 5.0f && IsWithinAngle(target))
+                var maxAngle = CurrentCastMaxAngle;
+
+                if (maxAngle > 5.0f && IsWithinAngle(target, maxAngle))
                 {
                     // emulate current gdle TurnTo - doesn't match retail, but some players may prefer this
                     OnMoveComplete_Magic(WeenieError.None);
@@ -1374,7 +1394,8 @@ namespace ACE.Server.WorldObjects
             // So we'll skip the continuous radius check here
 
             // Only release the spell when the turn is complete AND we're within the required angle
-            if (TurnTarget != null && IsWithinAngle(TurnTarget) && !PhysicsObj.IsMovingOrAnimating)
+            // JawnTide: before the cast motion is done this is the start angle, after it the release angle
+            if (TurnTarget != null && IsWithinAngle(TurnTarget, CurrentCastMaxAngle) && !PhysicsObj.IsMovingOrAnimating)
             {
                 if (MagicState.PendingTurnRelease)
                     OnTurnRelease();

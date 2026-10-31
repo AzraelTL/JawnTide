@@ -667,7 +667,8 @@ Change with <code>@modifybool</code>, <code>@modifylong</code>, <code>@modifydou
 
 # Settings that change how casting reacts to movement, turning and position (all live, changeable in game).
 CASTING_SETTINGS = [
-    ("spellcast_max_angle", "How far off-target (degrees) a caster may face and still release without the server turning them. Above 5, a caster already within the angle skips the turn entirely (GDLE feel). Retail was about 20."),
+    ("spellcast_max_angle", "How far off-target (degrees) a caster may face and still RELEASE the spell; outside it the server turns them first. Retail was about 20."),
+    ("spellcast_start_max_angle", "How far off-target (degrees) a caster may face and still START a cast (windup) without the server turning them first. Above 5, a caster within it skips the first turn (GDLE feel). Below 0 = same as spellcast_max_angle."),
     ("spellcast_recoil_queue", "true lets a player queue the next spell during the recoil animation of the last one (faster chain-casting)."),
     ("turnto_use_heading_stealth", "Packet used for the automatic turn toward the target while casting; true hides the target from war-detect plugins. Timing is unchanged."),
     ("persist_movement", "true keeps a player's own turns and sidesteps going through server-driven actions such as the cast turn. Retail did not."),

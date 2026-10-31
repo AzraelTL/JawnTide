@@ -2682,6 +2682,14 @@
    "area": "Combat & magic"
   },
   {
+   "key": "spellcast_start_max_angle",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "the maximum angle to target for starting a cast (windup, and skipping the server's first turn when above 5); spellcast_max_angle still controls release. Below 0 = use spellcast_max_angle",
+   "area": "Combat & magic"
+  },
+  {
    "key": "suicide_instant_death",
    "type": "bool",
    "default": "false",
