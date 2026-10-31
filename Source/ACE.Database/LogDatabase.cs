@@ -95,6 +95,32 @@ namespace ACE.Database
 
         #endregion Account Session Log
 
+        #region Character Level Log
+
+        /// <summary>
+        /// JawnTide: records the time a character reached each level from fromLevel + 1 to toLevel (one row per level).
+        /// INSERT IGNORE keeps the first time if a character reaches a level again.
+        /// </summary>
+        public void LogLevelsReached(uint characterId, string characterName, uint accountId, int fromLevel, int toLevel, long totalExperience, int ageSeconds, DateTime reachedAtUtc)
+        {
+            try
+            {
+                using (var context = new LogDbContext())
+                {
+                    for (var level = fromLevel + 1; level <= toLevel; level++)
+                        context.Database.ExecuteSql(
+                            @$"INSERT IGNORE INTO character_level_log (characterId, characterName, accountId, level, totalExperience, ageSeconds, reachedAtUtc)
+                                VALUES ({characterId}, {characterName}, {accountId}, {level}, {totalExperience}, {ageSeconds}, {reachedAtUtc});");
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error($"Exception in LogLevelsReached for CharacterId = {characterId}, levels {fromLevel + 1}-{toLevel}. Ex: {ex}");
+            }
+        }
+
+        #endregion Character Level Log
+
         #region Character Login Log
 
         public void LogCharacterLogin(uint accountId, string accountName, string sessionIP, uint characterId, string characterName)

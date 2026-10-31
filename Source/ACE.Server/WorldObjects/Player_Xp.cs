@@ -649,6 +649,11 @@ namespace ACE.Server.WorldObjects
 
             if (Level > startingLevel)
             {
+                // JawnTide: record when each level was reached (ace_log.character_level_log), off the world thread
+                var (logId, logName, logAccount, logFrom, logTo, logXp, logAge, logAt) =
+                    (Guid.Full, Name, Character.AccountId, startingLevel ?? 0, Level ?? 0, TotalExperience ?? 0, Age ?? 0, DateTime.UtcNow);
+                System.Threading.Tasks.Task.Run(() => new ACE.Database.LogDatabase().LogLevelsReached(logId, logName, logAccount, logFrom, logTo, logXp, logAge, logAt));
+
                 var message = (Level == maxLevel) ? $"You have reached the maximum level of {Level}!" : $"You are now level {Level}!";
 
                 message += (AvailableSkillCredits > 0) ? $"\nYou have {AvailableExperience:#,###0} experience points and {AvailableSkillCredits} skill credits available to raise skills and attributes." : $"\nYou have {AvailableExperience:#,###0} experience points available to raise skills and attributes.";
