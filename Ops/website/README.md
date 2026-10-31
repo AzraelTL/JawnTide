@@ -25,7 +25,26 @@ The `web` user can read only what the site shows:
 - `ace_web.town_control_whitelist`: a view showing only the `town_control_alleglist` setting (for the Town Control flag on
   the Allegiances page); the web user cannot read any other server setting
 
+- `ace_wiki.*`: read and write, for the wiki (below); this is the only database it can change
+
 It cannot see account names, passwords, IP addresses or login history. The container runs read-only as `nobody`.
+
+## Wiki (/wiki)
+
+`wiki.py` serves the wiki: articles about JawnTide's custom content, edited by players who linked their game account.
+
+- **Linking**: /wiki/link makes an 8-character code (10 minutes, only usable in the browser that made it). The player
+  types `/wiki CODE` in game (`Source/ACE.Server/Command/Handlers/WikiCommands.cs`), which fills in the account and
+  character on that code; the site then asks for a wiki password (scrypt-hashed). Later sign-ins are character name +
+  password. Doing the code step again resets the password and signs out other sessions.
+- **Staff** (game access level above 0 when linking) can restore old versions, lock articles and block editors.
+- **Editing** is live. Every save is a new row in `revision`; nothing is overwritten. The markup is small and escaped
+  first (see `render()` and the Editing the wiki article).
+- **Starter articles**: `wiki-seed/*.md` (first line `# Title`) are added the first time the site reaches `ace_wiki`,
+  and only for articles that don't exist yet, so later edits are never overwritten.
+- **Database**: `ace_wiki` (`wiki-schema.sql`). `wiki-setup.sh` creates it and grants `web` full use of `ace_wiki` and
+  the game's `ace` user SELECT, UPDATE on `ace_wiki.link_code` only. Run it once on Linux before the first deploy.
+- Limits: 8 saves a minute per editor, 6 codes per 10 minutes and 10 sign-ins per 10 minutes per IP, 100 KB per article.
 
 ## Going public: Cloudflare Tunnel
 

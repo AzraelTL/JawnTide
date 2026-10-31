@@ -21,6 +21,8 @@ from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
+import wiki
+
 DB = dict(host=os.environ.get("DB_HOST", "ace-db"), port=int(os.environ.get("DB_PORT", "3306")),
           user=os.environ.get("DB_USER", "web"), password=os.environ.get("DB_PASSWORD", ""),
           charset="utf8mb4", connect_timeout=10, read_timeout=60)
@@ -351,6 +353,35 @@ summary b{font:400 1.35rem/1.2 var(--display)}
 .badge{font-size:.85rem;font-weight:500;color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:.05rem .55rem;white-space:nowrap}
 ul.tree{list-style:none;margin:.4rem 0 .2rem;padding-left:1.1rem;border-left:1px solid var(--line)}
 ul.tree li{padding:.12rem 0}
+/* wiki */
+.wikibar{display:flex;flex-wrap:wrap;gap:.5rem 1.1rem;align-items:center;padding:.6rem 0 1rem;margin-bottom:1.2rem;border-bottom:1px solid var(--line);font-size:.95rem}
+.wikibar>a{color:var(--dim);text-decoration:none}.wikibar>a:hover{color:var(--bone)}
+.wsearch input{font:inherit;color:var(--bone);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:.25rem .6rem;width:12rem}
+.who{margin-left:auto;color:var(--dim);display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.who form,form.inline{display:inline}
+button.link{font:inherit;color:var(--portal);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
+.btn{display:inline-block;font:700 1rem var(--body);color:var(--on-accent);background:var(--portal);border:0;border-radius:4px;padding:.5rem 1.1rem;cursor:pointer;text-decoration:none}
+.btn.quiet{background:transparent;color:var(--bone);border:1px solid var(--line);font-weight:500}
+.wlist{list-style:none;padding:0;margin:0;max-width:44rem}
+.wlist li{display:flex;justify-content:space-between;gap:1rem;padding:.5rem 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.wtools{display:flex;gap:.6rem 1rem;flex-wrap:wrap;align-items:center;margin:.2rem 0 1rem;font-size:.95rem}
+.wmeta{color:var(--dim);font-size:.9rem}
+.toc{display:block;float:right;margin:0 0 1rem 1.5rem;padding:.8rem 1.1rem;background:var(--panel);border:1px solid var(--line);border-radius:6px;max-width:16rem;font-size:.95rem}
+.toc b{display:block;margin-bottom:.3rem}.toc a{display:block;padding:.1rem 0;border:0;color:var(--portal)}
+@media (max-width:40rem){.toc{float:none;margin:0 0 1rem}}
+.wiki{max-width:46rem}.wiki h2{clear:none}.wiki table{min-width:0;width:auto}.wiki td,.wiki th{white-space:normal}
+.wiki li{margin:.2rem 0}.wiki code{background:var(--panel);padding:.05rem .3rem;border-radius:3px}
+.wiki a.missing{color:var(--blood)}
+.note{border-left:4px solid var(--gold);background:var(--panel);padding:.6rem 1rem;margin:1rem 0;max-width:42rem}
+.codebox{background:var(--deep);border:1px solid var(--line);border-radius:4px;padding:.7rem 1rem;overflow-x:auto}
+.wedit{max-width:46rem;display:grid;gap:.9rem}
+.wedit label{display:grid;gap:.3rem;color:var(--dim)}
+.wedit input,.wedit textarea{font:inherit;color:var(--bone);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:.45rem .6rem;width:100%}
+.wedit textarea{min-height:24rem;font:.95rem/1.5 ui-monospace,Consolas,monospace}
+.row{display:flex;gap:.8rem;flex-wrap:wrap;align-items:center}
+.err{color:var(--blood);font-weight:700}
+.help{color:var(--dim);font-size:.92rem;max-width:46rem}
+.linkcode{font:700 clamp(1.4rem,5vw,2.2rem)/1.2 ui-monospace,Consolas,monospace;letter-spacing:.08em;color:var(--gold);margin:.6rem 0 1rem}
 """
 
 PAGES = [("/", "Home"), ("/pk", "PK kills"), ("/towns", "Town Control"), ("/arena", "Arena"), ("/levels", "Levels"), ("/allegiances", "Allegiances")]
@@ -358,6 +389,7 @@ PAGES = [("/", "Home"), ("/pk", "PK kills"), ("/towns", "Town Control"), ("/aren
 
 def layout(path, title, body, snap):
     nav = "".join(f'<a href="{p}"{" aria-current=page" if p == path else ""}>{t}</a>' for p, t in PAGES)
+    nav += f'<a href="/wiki"{" aria-current=page" if path == "/wiki" else ""}>Wiki</a>'
     nav += f'<a class="play" href="{e(TANKS_URL)}">JawnTanks</a>'
     stamp = f'<p class="stamp">Updated {e(snap["taken"].strftime("%b %d, %I:%M %p"))} server time. Refreshes every {INTERVAL // 60} minutes.</p>' if snap else ""
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8">'
@@ -626,9 +658,20 @@ def render(path, query, snap):
 
 
 class Handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        try:
+            if wiki.handle(self, "POST"):
+                return
+            self.send_error(405)
+        except Exception:
+            traceback.print_exc()
+            self.send_error(500)
+
     def do_GET(self):
         url = urlparse(self.path)
         try:
+            if wiki.handle(self, "GET"):
+                return
             if url.path == "/emblem.webp":
                 with open(EMBLEM_FILE, "rb") as f:
                     data = f.read()
@@ -755,5 +798,6 @@ if __name__ == "__main__":
         write_sample(sys.argv[2])
         sys.exit(0)
     threading.Thread(target=collector, daemon=True).start()
+    wiki.init(DB, layout)
     print(f"JawnTide website on port {PORT}, data refresh every {INTERVAL}s", flush=True)
     ThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
