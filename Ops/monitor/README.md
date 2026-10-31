@@ -20,6 +20,10 @@ A small web page for the LAN that shows, per account:
   saved; sort by level, XP gained, XP per hour played or played time. Below it, the landblocks where the most XP
   was earned in that window and who earned it. A character with a far higher XP per hour than others at its level
   is worth a look (exploit, or a spot whose XP needs turning down). XP history starts when this version first runs.
+  The **Wiki** column picks wiki contributors: tick one character per player (one per account; ticking another character
+  on that account replaces it, unticking signs them out of the wiki). "signed up" = they finished linking; "same IP as"
+  flags another contributor's account on the same IP. This is the monitor's only write (`ace_wiki.contributor`, granted by
+  `Ops/website/wiki-setup.sh`).
 
 - **Casting** (`/casting`): the live settings that change how spell casting reacts to moving, turning and position, with their
   current values, plus the rules fixed in the server code (6 m movement fizzle for red players, cast animation speed and so on).
@@ -40,7 +44,7 @@ currency, `/ips` IPs shared by several accounts, `/settings` server settings, `/
 (`INTERVAL_SECONDS`) it runs a few indexed SELECT queries as the MariaDB user `monitor`, which can only read
 `ace_auth.account`, `ace_shard`, `ace_log.character_login_log` and the two `ace_world` tables that list vendor
 currencies and item names. It never writes to the game databases and
-does not need the game server. ACE saves characters to the database every few minutes and on logout, so the
+does not need the game server (the one exception is the Wiki column above, which writes `ace_wiki.contributor`). ACE saves characters to the database every few minutes and on logout, so the
 numbers lag the game by up to that much.
 
 The extra items tracked besides vendor currencies are `EXTRA_ITEMS` in `monitor.py` (WCID:label pairs); an

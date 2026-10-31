@@ -1,7 +1,9 @@
 """
 JawnTide wiki: articles about the server's custom content, edited by players who have linked their game account.
 
-Linking: /wiki/link makes a short code; the player types /wiki CODE in game (WikiCommands.cs fills in the account and
+Contributors: staff tick one character per game account on the LAN monitor's Levels page (table contributor). Only
+that character can link, and a login stops working as soon as it is unticked or another character is ticked.
+Linking: /wiki/link makes a short code; the contributor types /wiki CODE in game (WikiCommands.cs fills in the account and
 character); the site then lets them set a wiki password. Later logins use character name + password. Running the code
 step again resets the password. Staff (game accounts with an access level above 0) can revert, lock and block.
 
@@ -196,11 +198,18 @@ def _current_user(h):
     m = re.search(r"(?:^|;\s*)jtw=([0-9a-f]{64})", cookie)
     if not m:
         return None
+    # signed in only while the linked character is still its account's contributor (unticking it signs them out)
     row = _q("SELECT u.id, u.name, u.is_admin, u.blocked, s.csrf, s.token FROM session s JOIN wiki_user u ON u.id = s.user_id "
+             "JOIN contributor c ON c.account_id = u.account_id AND c.char_id = u.char_id "
              "WHERE s.token = %s AND s.expires_at > UTC_TIMESTAMP()", (m.group(1),), one=True)
     if not row:
         return None
     return dict(id=row[0], name=row[1], admin=bool(row[2]), blocked=bool(row[3]), csrf=row[4], token=row[5])
+
+
+def _is_contributor(account_id, char_id):
+    return bool(account_id and char_id and _q("SELECT 1 FROM contributor WHERE account_id = %s AND char_id = %s",
+                                             (account_id, char_id), one=True))
 
 
 def _client_ip(h):
@@ -294,7 +303,7 @@ def _index(h, user, query):
     plist = "".join(f'<li><a href="/wiki/{e(s)}">{e(t)}</a></li>' for s, t in pages) or "<li class=muted>No articles yet.</li>"
     rlist = "".join(f'<li><a href="/wiki/{e(s)}">{e(t)}</a> <span class="muted">by {e(n)}, {_ago(c)}</span></li>' for s, t, c, n in recent)
     intro = ('<p class="lede">The JawnTide wiki covers the server\'s custom content: world bosses, Town Control, the arena, '
-             'loot stages and more. Anyone with a game account can edit after linking it.</p>')
+             'loot stages and more. Contributors chosen by staff can edit.</p>')
     _page(h, "Wiki", f'<h1>JawnTide Wiki</h1>{intro}<div class="cols"><section><h2>Articles</h2><ul class="wlist">{plist}</ul></section>'
                      f'<section><h2>Recent changes</h2><ul class="wlist">{rlist}</ul></section></div>', user)
 
@@ -440,12 +449,13 @@ def _link_page(h, user, query):
     code = re.sub(r"[^A-Z0-9]", "", (query.get("code", [""])[0] or "").upper())[:8]
     if not code:
         return _page(h, "Link your game account",
-                     '<h1>Link your game account</h1><p class="lede">Editing the wiki needs a JawnTide game account. You prove which one is yours '
-                     'by typing a code in game, then pick a password for the wiki. Already linked but forgot your password? Do the same steps to set a new one.</p>'
-                     '<ol class="steps"><li>Get a code below.</li><li>Log in to JawnTide with any character on your account and type <code>/wiki CODE</code>.</li>'
+                     '<h1>Link your game account</h1><p class="lede">Anyone can read the wiki. Editing is for contributors: staff pick one character per player. '
+                     'If you\'re a contributor, prove it by typing a code in game with that character, then pick a password for the wiki. '
+                     'Already linked but forgot your password? Do the same steps to set a new one.</p>'
+                     '<ol class="steps"><li>Get a code below.</li><li>Log in to JawnTide with your contributor character and type <code>/wiki CODE</code>.</li>'
                      '<li>Come back here and pick your wiki password.</li></ol>'
                      '<form method="post" action="/wiki/link/start"><button class="btn">Get a code</button></form>', user)
-    row = _q("SELECT expires_at, account_id, char_name, confirmed_at, used_at FROM link_code WHERE code = %s", (code,), one=True)
+    row = _q("SELECT expires_at, account_id, char_name, confirmed_at, used_at, char_id FROM link_code WHERE code = %s", (code,), one=True)
     if not row or row[4] or (not row[3] and row[0] < datetime.utcnow()):
         return _page(h, "Code expired", '<h1>That code expired</h1><p><a href="/wiki/link">Get a new code</a>.</p>', user, 410)
     if not _same_browser(h, code):
@@ -454,11 +464,14 @@ def _link_page(h, user, query):
         mins = max(1, int((row[0] - datetime.utcnow()).total_seconds() // 60))
         return _page(h, "Type the code in game",
                      f'<h1>Type this in game</h1><div class="codebox linkcode">/wiki {code}</div>'
-                     f'<p class="lede">Log in to JawnTide with any character on your account and type the line above in chat. '
+                     f'<p class="lede">Log in to JawnTide with your contributor character and type the line above in chat. '
                      f'The code works for about {mins} more minute{"s" if mins != 1 else ""}. This page checks automatically.</p>'
                      f'<p class="muted">Waiting for the game server…</p><meta http-equiv="refresh" content="4">', user)
+    if not _is_contributor(row[1], row[5]):
+        return _page(h, "Not a contributor", f'<h1>{e(row[2])} isn\'t a wiki contributor</h1><p>Staff choose one character per player '
+                     f'who can edit. Ask on Discord.</p>', user, 403)
     existing = _q("SELECT name FROM wiki_user WHERE account_id = %s", (row[1],), one=True)
-    name = existing[0] if existing else row[2]
+    name = row[2]
     what = "set a new password" if existing else "pick a wiki password"
     _page(h, "Pick a password",
           f'<h1>Linked to {e(row[2])}</h1><p class="lede">Your account is confirmed. Now {what}. You will sign in as <b>{e(name)}</b>.</p>'
@@ -474,26 +487,31 @@ def _link_finish(h, user):
         return _page(h, "Expired", "<h1>That form expired</h1>", user, 400)
     code = re.sub(r"[^A-Z0-9]", "", form.get("code", "").upper())[:8]
     pw, pw2 = form.get("password", ""), form.get("password2", "")
-    row = _q("SELECT account_id, char_name, access_level, confirmed_at, used_at FROM link_code WHERE code = %s", (code,), one=True)
+    row = _q("SELECT account_id, char_name, access_level, confirmed_at, used_at, char_id FROM link_code WHERE code = %s", (code,), one=True)
     if not row or not row[3] or row[4] or row[3] < datetime.utcnow() - timedelta(minutes=30) or not _same_browser(h, code):
         return _page(h, "Code expired", '<h1>That code expired</h1><p><a href="/wiki/link">Start again</a>.</p>', user, 410)
     if len(pw) < 10 or pw != pw2:
         return _page(h, "Try again", f'<h1>Passwords didn\'t match</h1><p>Passwords must match and be at least 10 characters. '
                                      f'<a href="/wiki/link?code={code}">Try again</a>.</p>', user, 400)
-    account_id, char_name, access_level = row[0], row[1], int(row[2] or 0)
+    account_id, char_name, access_level, char_id = row[0], row[1], int(row[2] or 0), row[5]
+    if not _is_contributor(account_id, char_id):
+        return _page(h, "Not a contributor", f'<h1>{e(char_name)} isn\'t a wiki contributor</h1><p>Ask staff on Discord.</p>', user, 403)
     salt = secrets.token_bytes(16)
     ph = _hash(pw, salt)
+    admin = 1 if access_level > 0 else 0
     existing = _q("SELECT id FROM wiki_user WHERE account_id = %s", (account_id,), one=True)
+    name = char_name
+    if _q("SELECT 1 FROM wiki_user WHERE name = %s AND account_id <> %s", (name, account_id), one=True):
+        name = f"{char_name[:26]}-{account_id % 10000}"     # a deleted character's name reused by someone else
     if existing:
+        # same account: the login follows the account's current contributor character (its name may have changed)
         uid = existing[0]
-        _x("UPDATE wiki_user SET pass_hash = %s, pass_salt = %s, is_admin = %s WHERE id = %s", (ph, salt, 1 if access_level > 0 else 0, uid))
+        _x("UPDATE wiki_user SET char_id = %s, name = %s, pass_hash = %s, pass_salt = %s, is_admin = %s WHERE id = %s",
+           (char_id, name, ph, salt, admin, uid))
         _x("DELETE FROM session WHERE user_id = %s", (uid,))    # a password reset signs out everywhere else
     else:
-        name = char_name
-        if _q("SELECT 1 FROM wiki_user WHERE name = %s", (name,), one=True):
-            name = f"{char_name[:26]}-{account_id % 10000}"
-        uid = _x("INSERT INTO wiki_user (account_id, name, pass_hash, pass_salt, is_admin) VALUES (%s, %s, %s, %s, %s)",
-                 (account_id, name, ph, salt, 1 if access_level > 0 else 0))
+        uid = _x("INSERT INTO wiki_user (account_id, char_id, name, pass_hash, pass_salt, is_admin) VALUES (%s, %s, %s, %s, %s, %s)",
+                 (account_id, char_id, name, ph, salt, admin))
     _x("UPDATE link_code SET used_at = UTC_TIMESTAMP() WHERE code = %s", (code,))
     _redirect(h, "/wiki", cookie=_new_session(uid))
 
@@ -515,9 +533,13 @@ def _login(h, user, method, query):
         return form("That form expired. Try again.")
     if _limited("login:" + _client_ip(h), 10, 600):
         return form("Too many sign-in attempts. Wait a few minutes.")
-    row = _q("SELECT id, pass_hash, pass_salt FROM wiki_user WHERE name = %s", (f.get("name", "").strip()[:32],), one=True)
+    row = _q("SELECT u.id, u.pass_hash, u.pass_salt, c.char_id FROM wiki_user u "
+             "LEFT JOIN contributor c ON c.account_id = u.account_id AND c.char_id = u.char_id WHERE u.name = %s",
+             (f.get("name", "").strip()[:32],), one=True)
     if not row or not hmac.compare_digest(_hash(f.get("password", "")[:200], bytes(row[2])), bytes(row[1])):
         return form("That name and password don't match.")
+    if row[3] is None:
+        return form("That character isn't a wiki contributor right now. Ask staff on Discord.")
     _redirect(h, nxt, cookie=_new_session(row[0]))
 
 

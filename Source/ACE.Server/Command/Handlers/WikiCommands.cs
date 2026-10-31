@@ -15,7 +15,8 @@ namespace ACE.Server.Command.Handlers
     /// <summary>
     /// JawnTide: /wiki CODE links this game account to the jawntide.com wiki. The website makes a short code in
     /// ace_wiki.link_code; typing it in game fills in this account and character, which proves the person on the
-    /// website owns the account. The game server only ever UPDATEs pending, unexpired codes in that one table.
+    /// website owns the account. Only the account's wiki contributor character (ace_wiki.contributor, ticked by staff on
+    /// the monitor's Levels page) can link. The game server only reads contributor and UPDATEs pending, unexpired codes.
     /// </summary>
     public static class WikiCommands
     {
@@ -36,6 +37,7 @@ namespace ACE.Server.Command.Handlers
 
             var accountId = session.AccountId;
             var charName = session.Player.Name;
+            var charId = session.Player.Guid.Full;
             var accessLevel = (int)session.AccessLevel;
             var cfg = ConfigManager.Config.MySql.Shard;
 
@@ -46,10 +48,21 @@ namespace ACE.Server.Command.Handlers
                 {
                     using var conn = new MySqlConnection($"server={cfg.Host};port={cfg.Port};user={cfg.Username};password={cfg.Password};database=ace_wiki;{cfg.ConnectionOptions}");
                     conn.Open();
+                    using var check = conn.CreateCommand();
+                    check.CommandText = "SELECT COUNT(*) FROM contributor WHERE account_id = @a AND char_id = @i";
+                    check.Parameters.AddWithValue("@a", accountId);
+                    check.Parameters.AddWithValue("@i", charId);
+                    if (Convert.ToInt64(check.ExecuteScalar()) == 0)
+                    {
+                        session.Network.EnqueueSend(new GameMessageSystemChat($"{charName} isn't a wiki contributor. Staff choose one character per player who can edit; ask on Discord.", ChatMessageType.Broadcast));
+                        return;
+                    }
+
                     using var cmd = conn.CreateCommand();
-                    cmd.CommandText = "UPDATE link_code SET account_id = @a, char_name = @n, access_level = @l, confirmed_at = UTC_TIMESTAMP() " +
+                    cmd.CommandText = "UPDATE link_code SET account_id = @a, char_id = @i, char_name = @n, access_level = @l, confirmed_at = UTC_TIMESTAMP() " +
                                       "WHERE code = @c AND confirmed_at IS NULL AND expires_at > UTC_TIMESTAMP()";
                     cmd.Parameters.AddWithValue("@a", accountId);
+                    cmd.Parameters.AddWithValue("@i", charId);
                     cmd.Parameters.AddWithValue("@n", charName);
                     cmd.Parameters.AddWithValue("@l", accessLevel);
                     cmd.Parameters.AddWithValue("@c", code);

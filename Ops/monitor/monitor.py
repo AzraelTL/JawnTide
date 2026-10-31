@@ -8,7 +8,8 @@ Every INTERVAL_SECONDS it reads the game databases with a SELECT-only user and k
     (main pack and side packs; anything not on a character counts as "elsewhere")
 It stores per-account currency totals and per-character XP/played-time/location changes in a small SQLite file
 for history (XP gain rates and leveling spots come from that), and serves web pages on PORT.
-It never writes to the game databases.
+It never writes to the game databases. Its one write is the wiki contributor list (ace_wiki.contributor), set with
+the Wiki checkboxes on the Levels page.
 """
 import html
 import json
@@ -279,7 +280,7 @@ tr.shared td { background: var(--hl); } ul.tree { margin: 4px 0 4px 18px; paddin
 details { background: var(--card); border: 1px solid var(--line); border-radius: 6px; margin-bottom: 8px; padding: 6px 10px; } summary { cursor: pointer; }
 code { font: 12.5px ui-monospace, Menlo, monospace; } td.wrapd { white-space: normal; min-width: 260px; max-width: 520px; } tr.changed td { background: var(--hl); }
 .filters { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin: 0 0 12px; } .filters input[type=search] { flex: 1 1 280px; min-width:0; padding:6px 9px; font:inherit; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--fg); } .filters select { font:inherit; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--fg); }
-.yes { color: #1e8e3e; font-weight: 600; } .no { color: #c0392b; font-weight: 600; } .muted { color: var(--muted); } .err { color: #c0392b; } h2 { font-size: 16px; margin: 18px 0 8px; }
+.yes { color: #1e8e3e; font-weight: 600; } .no { color: #c0392b; font-weight: 600; } .muted { color: var(--muted); } .err { color: #c0392b; } form.inline { display: inline; } h2 { font-size: 16px; margin: 18px 0 8px; }
 """
 
 
@@ -415,6 +416,67 @@ def xp_window(hours):
     return gains, spots
 
 
+# ---------------------------------------------------------------- wiki contributors
+
+def wiki_contributors():
+    """{account_id: (char_id, char_name)} and the set of char ids that finished signing up, or None if ace_wiki
+    isn't there (or the monitor user has no access to it yet)."""
+    try:
+        conn = pymysql.connect(database="ace_wiki", **DB)
+        try:
+            cur = conn.cursor()
+            contrib = {int(a): (int(c), n) for a, c, n in query(cur, "SELECT account_id, char_id, char_name FROM contributor")}
+            linked = {int(c) for (c,) in query(cur, "SELECT char_id FROM wiki_user")}
+            return contrib, linked
+        finally:
+            conn.close()
+    except Exception as ex:
+        print(f"[wiki] contributor list unavailable: {ex}", flush=True)
+        return None
+
+
+def set_contributor(char_id, on):
+    """Ticks or unticks a character. One contributor per account: ticking another character replaces the old one."""
+    snap = snapshot_or_wait()
+    c = snap and snap["characters"].get(char_id)
+    if not c or c["deleted"]:
+        return
+    conn = pymysql.connect(database="ace_wiki", autocommit=True, **DB)
+    try:
+        cur = conn.cursor()
+        if on:
+            cur.execute("REPLACE INTO contributor (account_id, char_id, char_name) VALUES (%s, %s, %s)", (c["account"], c["id"], c["name"]))
+        else:
+            cur.execute("DELETE FROM contributor WHERE char_id = %s", (c["id"],))
+    finally:
+        conn.close()
+    print(f"[wiki] contributor {'added' if on else 'removed'}: {c['name']}", flush=True)
+
+
+def wiki_cell(snap, c, wiki):
+    if wiki is None:
+        return '<td class="muted">-</td>'
+    contrib, linked = wiki
+    mine = contrib.get(c["account"])
+    on = bool(mine and mine[0] == c["id"])
+    note = ""
+    if on:
+        note = " <span class=muted>signed up</span>" if c["id"] in linked else ""
+        a = snap["accounts"].get(c["account"])
+        ips = (set(a["ips"]) | {a["last_ip"]}) - {""} if a else set()
+        by_name = {o["name"]: o["id"] for o in snap["accounts"].values()}
+        others = sorted({contrib[by_name[n]][1] for ip in ips for n in snap["ip_accounts"].get(ip, [])
+                         if by_name.get(n) not in (None, c["account"]) and by_name[n] in contrib})
+        if others:
+            note += f' <span class="err" title="Same IP as another contributor\'s account">same IP as {e(", ".join(others))}</span>'
+    elif mine:
+        note = f' <span class=muted title="Ticking this replaces {e(mine[1])}">(account: {e(mine[1])})</span>'
+    return (f'<td><form method="post" action="/wiki-contributor" class="inline"><input type="hidden" name="id" value="{c["id"]}">'
+            f'<input type="hidden" name="on" value="{0 if on else 1}">'
+            f'<input type="checkbox" aria-label="Wiki contributor: {e(c["name"])}" onchange="this.form.submit()"{" checked" if on else ""}>'
+            f'<noscript><button>{"Remove" if on else "Add"}</button></noscript></form>{note}</td>')
+
+
 def levels_page(sort, hours):
     snap = snapshot_or_wait()
     if not snap:
@@ -422,6 +484,7 @@ def levels_page(sort, hours):
     hours = int(hours) if hours and hours.isdigit() and int(hours) in WINDOWS else 24
     sort = sort if sort in ("level", "gain", "rate", "played") else "level"
     gains, spots = xp_window(hours)
+    wiki = wiki_contributors()
     rows = []
     for c in snap["characters"].values():
         if c["deleted"]:
@@ -442,12 +505,12 @@ def levels_page(sort, hours):
                    f'<td>{account_link(a["name"]) if a else ""}</td><td class="n">{c["level"]}</td><td class="n">{fmt_n(c["xp"])}</td>'
                    f'<td class="n">{fmt_age(c["age"])}</td><td class="n">{fmt_n(gxp)}</td>'
                    f'<td class="n">{fmt_age(gage) if gage else ""}</td><td class="n">{fmt_n(rate) if rate else ""}</td>'
-                   f'<td>{fmt_lb(c["landblock"])}</td></tr>')
+                   f'<td>{fmt_lb(c["landblock"])}</td>{wiki_cell(snap, c, wiki)}</tr>')
     th = lambda s, label: f'<th class="n">{link(s, hours, label) if s != sort else "<u>" + label + "</u>"}</th>'
     table = (f'<div class="wrap"><table><tr><th>Character</th><th>Account</th>{th("level", "Level")}<th class="n">Total XP</th>'
              f'{th("played", "Played")}{th("gain", f"XP last {hours}h")}<th class="n">Played last {hours}h</th>'
-             f'{th("rate", "XP per hour played")}<th>Last saved at</th></tr>'
-             f'{"".join(out) or "<tr><td colspan=9 class=muted>No characters</td></tr>"}</table></div>')
+             f'{th("rate", "XP per hour played")}<th>Last saved at</th><th>Wiki</th></tr>'
+             f'{"".join(out) or "<tr><td colspan=10 class=muted>No characters</td></tr>"}</table></div>')
     srows = "".join(f'<tr><td>{fmt_lb(lb)}</td><td class="n">{fmt_n(x)}</td><td class="n">{len(cs)}</td>'
                     f'<td>{e(", ".join(sorted(snap["characters"][i]["name"] for i in cs if i in snap["characters"])[:12]))}</td></tr>'
                     for lb, (x, cs) in sorted(spots.items(), key=lambda kv: -kv[1][0])[:30])
@@ -458,7 +521,11 @@ def levels_page(sort, hours):
             f'by the time played in it (shown once a character played 10+ minutes in the window): an unusually high value '
             f'next to others at the same level is the thing to look at. Gains are measured between snapshots and credited '
             f'to the landblock where the character was next saved, so they lag the game by a few minutes. Landblocks '
-            f'are the first four hex digits of a location (0xB54A is the start of @teleloc 0xB54A002C).</p>{table}{spot}')
+            f'are the first four hex digits of a location (0xB54A is the start of @teleloc 0xB54A002C).</p>'
+            f'<p class="muted"><b>Wiki</b>: tick the one character per player who may edit the wiki (one per account; ticking '
+            f'another character on the same account replaces it, and unticking signs them out of the wiki right away). '
+            f'"signed up" means they finished linking; "same IP as" flags a second account of the same person.'
+            f'{"" if wiki is not None else " <span class=err>The wiki database isn&#x27;t reachable, so this column is off.</span>"}</p>{table}{spot}')
     return page("Levels", body)
 
 
@@ -724,6 +791,28 @@ def casting_page():
 
 
 class Handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        url = urlparse(self.path)
+        try:
+            origin = self.headers.get("Origin")
+            if url.path != "/wiki-contributor" or (origin and urlparse(origin).netloc != self.headers.get("Host", "")):
+                self.send_error(403)
+                return
+            n = min(int(self.headers.get("Content-Length") or 0), 2000)
+            form = parse_qs(self.rfile.read(n).decode("utf-8", "replace"))
+            cid = form.get("id", [""])[0]
+            if cid.isdigit():
+                set_contributor(int(cid), form.get("on", [""])[0] == "1")
+            back = self.headers.get("Referer") or "/levels"
+            back = urlparse(back)
+            self.send_response(303)
+            self.send_header("Location", (back.path or "/levels") + (f"?{back.query}" if back.query else ""))
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+        except Exception:
+            traceback.print_exc()
+            self.send_error(500)
+
     def do_GET(self):
         url = urlparse(self.path)
         q = parse_qs(url.query)
