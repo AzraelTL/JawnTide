@@ -341,7 +341,7 @@ namespace ACE.Server.Entity.WorldBoss
                 case SpawnRegion.Gharu:
                     return "Desert riders spread the alarm: the beast stalks near a Gharu'ndim town.";
                 default:
-                    return "Scouts whisper that the beast's trail leads beyond the southern doors of the Town Network.";
+                    return "Scouts whisper that the beast's trail leads to a town accessible from the southern doors of the Town Network.";
             }
         }
 
