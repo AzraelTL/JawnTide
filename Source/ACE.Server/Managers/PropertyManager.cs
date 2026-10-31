@@ -666,6 +666,7 @@ namespace ACE.Server.Managers
         public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties =
             DictOf(
                 ("world_boss_tokens_per_ip", new Property<long>(2, "JawnTide: world boss tokens (Claw, Blood, Cloak, Fang, Knucklebone, Shroud) one IP address can pick up from the ground per world boss kill; 0 = no limit. Admins are exempt")),
+                ("town_control_reentries", new Property<long>(3, "JawnTide: how many times a character may re-enter a town control area after its first entry, per town control event (0 = one entry only). Re-entries do not count again toward town_control_allegiance_player_limit or the IP restriction")),
                 ("char_delete_time", new Property<long>(3600, "the amount of time in seconds a deleted character can be restored")),
                 ("event_boss_look_setup", new Property<long>(0x02000001, "JawnTide live events: model (Setup) the event boss character is given by @eventboss on/make (default: human body, as the Sinister Shadow uses)")),
                 ("event_boss_look_clothing_base", new Property<long>(0x100000B0, "JawnTide live events: body skin (ClothingBase) for the event boss (default 0x100000B0: the Shadow look); 0 = keep the character's own look")),

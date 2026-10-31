@@ -402,6 +402,14 @@
    "area": "Town Control"
   },
   {
+   "key": "town_control_reentries",
+   "type": "long",
+   "default": "3",
+   "jawntide": true,
+   "desc": "how many times a character may re-enter a town control area after its first entry, per town control event (0 = one entry only). Re-entries do not count again toward town_control_allegiance_player_limit or the IP restriction",
+   "area": "Town Control"
+  },
+  {
    "key": "town_control_reward_defender_lum_amount",
    "type": "long",
    "default": "500",

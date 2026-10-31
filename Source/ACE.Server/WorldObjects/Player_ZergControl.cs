@@ -14,6 +14,7 @@ namespace ACE.Server.WorldObjects
     {
         private static bool IsTownControlIpRestricted => PropertyManager.GetBool("town_control_ip_restricted", false).Item;
         public static long TownControlAllegiancePlayerLimit => PropertyManager.GetLong("town_control_allegiance_player_limit", 13).Item;
+        public static long TownControlReentries => PropertyManager.GetLong("town_control_reentries", 3).Item;
 
         public enum ZergEntryStatus
         {
@@ -81,11 +82,21 @@ namespace ACE.Server.WorldObjects
             if (latestEvent == null)
                 return new ZergEntryResult { Status = ZergEntryStatus.TcEventEnded };
 
+            // JawnTide: a character may enter once plus town_control_reentries more times per event. A re-entry is not
+            // checked against the IP restriction or the allegiance limit again, since its first entry already counted there.
+            var entries = latestEvent.CharacterEntries.GetValueOrDefault(Guid.Full);
+            var isReentry = entries > 0;
+
+            if (isReentry)
+            {
+                if (entries > TownControlReentries)
+                    return new ZergEntryResult { Status = ZergEntryStatus.TcCharacterEntryLimitReached };
+
+                return new ZergEntryResult { Status = ZergEntryStatus.TcAllowed };
+            }
+
             if (IsTownControlIpRestricted && latestEvent.IpAddresses.Contains(ip))
                 return new ZergEntryResult { Status = ZergEntryStatus.TcIpRestricted };
-
-            if (latestEvent.CharacterEntries.Contains(Guid.Full))
-                return new ZergEntryResult { Status = ZergEntryStatus.TcCharacterEntryLimitReached };
 
             var count = latestEvent.AllegianceEntries.GetValueOrDefault(monarchId);
 
@@ -174,7 +185,7 @@ namespace ACE.Server.WorldObjects
             if (result.Status == ZergEntryStatus.TcCharacterEntryLimitReached)
             {
                 Session.Network.EnqueueSend(
-                    new GameMessageSystemChat($"You have attempted to enter a town control reward area.  You have already entered this area with this character for the current town control event.  You have been redirected to your lifestone.", ChatMessageType.System));
+                    new GameMessageSystemChat($"You have attempted to enter a town control reward area.  You have already used this character's entry and all {TownControlReentries} re-entries for the current town control event.  You have been redirected to your lifestone.", ChatMessageType.System));
                 return;
             }
 
@@ -222,16 +233,24 @@ namespace ACE.Server.WorldObjects
             if (latestEvent == null)
                 return;
 
-            latestEvent.IpAddresses.Add(ip);
-            latestEvent.CharacterEntries.Add(Guid.Full);
+            var entries = latestEvent.CharacterEntries.GetValueOrDefault(Guid.Full) + 1;
+            latestEvent.CharacterEntries[Guid.Full] = entries;
 
-            if (latestEvent.AllegianceEntries.ContainsKey(allegiance.MonarchId.Value))
-                latestEvent.AllegianceEntries[allegiance.MonarchId.Value]++;
-             else
-                latestEvent.AllegianceEntries.Add(allegiance.MonarchId.Value, 1);
+            // JawnTide: only a character's first entry counts toward the IP list and its allegiance's limit
+            if (entries == 1)
+            {
+                latestEvent.IpAddresses.Add(ip);
+
+                if (latestEvent.AllegianceEntries.ContainsKey(allegiance.MonarchId.Value))
+                    latestEvent.AllegianceEntries[allegiance.MonarchId.Value]++;
+                else
+                    latestEvent.AllegianceEntries.Add(allegiance.MonarchId.Value, 1);
+            }
+
+            var reentriesLeft = Math.Max(0, TownControlReentries - (entries - 1));
 
             Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"You have entered the town control area for {clanName}.  Good luck!", ChatMessageType.System));
+                new GameMessageSystemChat($"You have entered the town control area for {clanName}.  Re-entries left for this character this event: {reentriesLeft}.  Good luck!", ChatMessageType.System));
         }
 
         private void HandleZergWorldBossEntrySuccess(ZergControlArea area, Position pos)

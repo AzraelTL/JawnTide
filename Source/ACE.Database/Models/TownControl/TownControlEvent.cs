@@ -29,7 +29,8 @@ namespace ACE.Database.Models.TownControl
         public HashSet<string> IpAddresses { get; set; } = new HashSet<string>();
 
         [NotMapped]
-        public HashSet<uint> CharacterEntries { get; set; } = new HashSet<uint>();
+        // JawnTide: character guid -> how many times it has entered during this event (first entry + re-entries)
+        public Dictionary<uint, int> CharacterEntries { get; set; } = new Dictionary<uint, int>();
 
         [NotMapped]
         public Dictionary<uint, uint> AllegianceEntries { get; set; } = new Dictionary<uint, uint>();
