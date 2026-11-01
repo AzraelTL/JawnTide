@@ -71,6 +71,7 @@ namespace ACE.Server.WorldObjects
         private readonly List<SidePack> sidePacks = new List<SidePack>();
         private long burden;
         private long burdenLimit;
+        private bool burdenIgnored;
         private readonly Dictionary<uint, int> wcidCounts = new Dictionary<uint, int>();
 
         public int ItemsTransferred { get; private set; }
@@ -351,6 +352,10 @@ namespace ACE.Server.WorldObjects
                 mule.BiotaDatabaseLock.ExitReadLock();
             }
 
+            // same rule as Player.IsBurdenIgnored: characters below ignore_burden_below_character_level carry without burden
+            var muleLevel = mule.Level ?? 1;
+            burdenIgnored = muleLevel < PropertyManager.GetLong("ignore_burden_below_character_level").Item;
+
             var carryAugs = mule.GetProperty(PropertyInt.AugmentationIncreasedCarryingCapacity) ?? 0;
 
             var capacity = (150L * strength) + (carryAugs * 30L * strength);
@@ -368,7 +373,7 @@ namespace ACE.Server.WorldObjects
             placement = 0;
             error = null;
 
-            if (burden + itemBurden > burdenLimit)
+            if (!burdenIgnored && burden + itemBurden > burdenLimit)
             {
                 error = $"{MuleName} is too encumbered to carry that!";
                 return false;
@@ -505,7 +510,8 @@ namespace ACE.Server.WorldObjects
             return $"{Name} carries for {MuleName}:\n" +
                    $"  Main pack: {mainPackItems} / {mainPackItemCapacity} items, {mainPackContainers} / {mainPackContainerCapacity} packs\n" +
                    $"  Side packs: {sideCap - sideFree} / {sideCap} items\n" +
-                   $"  Burden: {burden:N0} / {burdenLimit:N0}";
+                   (burdenIgnored ? $"  Burden: not counted ({MuleName} is below level {PropertyManager.GetLong("ignore_burden_below_character_level").Item})"
+                                  : $"  Burden: {burden:N0} / {burdenLimit:N0}");
         }
 
         // ---------------------------------------------------------------------
