@@ -213,6 +213,14 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            // no stashing loot mid-fight: the ghost can't be called while PK tagged
+            if (PKTimerActive)
+            {
+                SendWeenieError(WeenieError.YouHaveBeenInPKBattleTooRecently);
+                SendMuleImprintMessage($"The spirit of {mule.Name} will not come near the fighting. Wait until you have been out of player combat for a while.");
+                return;
+            }
+
             if (CurrentActivePet is CombatPet)
             {
                 SendTransientError($"{CurrentActivePet.Name} is already active");
@@ -259,6 +267,12 @@ namespace ACE.Server.WorldObjects
             if (CurrentActivePet is MuleGhost)
                 return;
 
+            if (PKTimerActive)
+            {
+                SendWeenieError(WeenieError.YouHaveBeenInPKBattleTooRecently);
+                return;
+            }
+
             var mule = PlayerManager.FindByGuid(muleGuid, out var muleOnline) as OfflinePlayer;
             if (mule == null || muleOnline)
             {
@@ -291,6 +305,19 @@ namespace ACE.Server.WorldObjects
             }
 
             SendMuleImprintMessage($"The {ghost.Name} rises beside you. Hand it anything you want carried to {mule.Name}. Use the token again to send it away.");
+        }
+
+        /// <summary>
+        /// Called whenever this player is PK tagged (lands or takes a PvP hit): an active mule ghost is sent away.
+        /// </summary>
+        public void OnPkTaggedMuleGhost()
+        {
+            if (CurrentActivePet is MuleGhost ghost)
+            {
+                var ghostName = ghost.Name;
+                ghost.Destroy();
+                SendMuleImprintMessage($"The {ghostName} flees from the fighting.");
+            }
         }
 
         // ---------------------------------------------------------------------
@@ -585,6 +612,14 @@ namespace ACE.Server.WorldObjects
             if (IsArenaObserver)
             {
                 Fail("You cannot give items while you are an observer of an arena match!");
+                return;
+            }
+
+            if (PKTimerActive)
+            {
+                var ghostName = ghost.Name;
+                ghost.Destroy();
+                Fail($"The {ghostName} flees from the fighting.");
                 return;
             }
 
