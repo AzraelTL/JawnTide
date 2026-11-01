@@ -1168,7 +1168,7 @@ namespace ACE.Server.Command.Handlers
 
         // muleimprint [character name]
         [CommandHandler("muleimprint", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
-            "Imprints a level 1, logged-out character on your account as this character's mule, using your Mule Imprint Token. " +
+            "Imprints a logged-out character of level 5 or lower on your account as this character's mule, using your Mule Imprint Token. " +
             "With no name, shows this character's mule status. The imprint is permanent.",
             "muleimprint <character name>")]
         public static void HandleMuleImprint(Session session, params string[] parameters)
@@ -1200,7 +1200,7 @@ namespace ACE.Server.Command.Handlers
                 }
 
                 if (player.GetMuleImprintToken() != null)
-                    player.SendMessage("You have a Mule Imprint Token but no mule yet. Use /muleimprint <character name> to imprint a level 1, logged-out character on your account.");
+                    player.SendMessage($"You have a Mule Imprint Token but no mule yet. Use /muleimprint <character name> to imprint a logged-out character of level {MuleImprintToken.MaxMuleLevel} or lower on your account.");
                 else if (player.ReceivedMuleImprintToken)
                     player.SendMessage("You have no mule.");
                 else

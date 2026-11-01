@@ -131,7 +131,7 @@ namespace ACE.Server.WorldObjects
                 Tell(greeting);
 
             Tell("Take this Mule Imprint Token. It is bound to your soul and will never leave you.");
-            Tell("Use it to imprint a level 1 companion from your own account as your mule. The imprint is permanent, so choose with care.");
+            Tell($"Use it to imprint a companion of level {MuleImprintToken.MaxMuleLevel} or lower from your own account as your mule. The imprint is permanent, so choose with care.");
             Tell("Once imprinted, use the token to call your mule's ghost. Hand the ghost anything and it will be waiting in your mule's pack.");
 
             Session.Network.EnqueueSend(new GameMessageSystemChat($"{npc.Name} gives you {token.Name}.", ChatMessageType.Broadcast));
@@ -306,7 +306,7 @@ namespace ACE.Server.WorldObjects
 
             SendMuleImprintMessage(
                 "The Mule Imprint Token grows warm in your hand, waiting for a name.\n" +
-                $"Say the name of the level 1 character on your account you want to imprint as your mule (just type it in chat within {MuleImprintPromptSeconds} seconds), " +
+                $"Say the name of the character (level {MuleImprintToken.MaxMuleLevel} or lower) on your account you want to imprint as your mule (just type it in chat within {MuleImprintPromptSeconds} seconds), " +
                 "or use /muleimprint <character name>.");
         }
 
@@ -423,7 +423,7 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
-        /// A mule must be: another character on the same account, logged out, not deleted, level 1,
+        /// A mule must be: another character on the same account, logged out, not deleted, level MuleImprintToken.MaxMuleLevel or lower,
         /// not already a mule, and not the owner of a mule itself.
         /// </summary>
         private bool ValidateMuleCandidate(string muleName, out IPlayer mule, out string error)
@@ -473,9 +473,9 @@ namespace ACE.Server.WorldObjects
             }
 
             var level = mule.Level ?? 1;
-            if (level != 1)
+            if (level > MuleImprintToken.MaxMuleLevel)
             {
-                error = $"Only a level 1 character can accept a mule imprint. {mule.Name} is level {level}.";
+                error = $"Only a character of level {MuleImprintToken.MaxMuleLevel} or lower can accept a mule imprint. {mule.Name} is level {level}.";
                 return false;
             }
 

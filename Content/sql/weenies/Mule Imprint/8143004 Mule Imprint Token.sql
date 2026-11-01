@@ -27,8 +27,8 @@ VALUES (8143004,  22, False) /* Inscribable */
 
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
 VALUES (8143004,   1, 'Mule Imprint Token') /* Name */
-     , (8143004,  14, 'Use this token to imprint a level 1 character on your account as your mule. Once imprinted, use it to call or dismiss the Ghost of your mule.') /* Use */
-     , (8143004,  16, 'A small token humming with spirit magic. Use it to imprint a level 1 character on your account as your mule. The imprint is permanent. Once imprinted, using the token calls the Ghost of your mule, which will carry anything you hand it to your mule''s pack. This token is bound to your soul and can never be given away, sold, dropped or destroyed.') /* LongDesc */;
+     , (8143004,  14, 'Use this token to imprint a character of level 5 or lower on your account as your mule. Once imprinted, use it to call or dismiss the Ghost of your mule.') /* Use */
+     , (8143004,  16, 'A small token humming with spirit magic. Use it to imprint a character of level 5 or lower on your account as your mule. The imprint is permanent. Once imprinted, using the token calls the Ghost of your mule, which will carry anything you hand it to your mule''s pack. This token is bound to your soul and can never be given away, sold, dropped or destroyed.') /* LongDesc */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
 VALUES (8143004,   1,   33554802) /* Setup */
