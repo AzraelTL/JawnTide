@@ -555,7 +555,7 @@ namespace ACE.Server.WorldObjects
 
             SendMuleImprintMessage(
                 $"{Name} is now a mule. It will no longer gain experience, and its extra pack slot opens the next time you log in on it.\n" +
-                "Now log out, log in on another character on this account, use its Mule Imprint Token and name this character.");
+                $"{Name} can now be claimed as a Ghost Mule.");
 
             log.Info($"[MuleImprint] {Name} (0x{Guid}) flagged itself as a mule with /muleflag");
         }
