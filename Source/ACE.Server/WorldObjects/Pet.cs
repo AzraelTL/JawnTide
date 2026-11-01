@@ -195,7 +195,7 @@ namespace ACE.Server.WorldObjects
         }
 
         private const double slowTickSeconds = 1.0;
-        private double nextSlowTickTime;
+        protected double nextSlowTickTime; // protected so MuleGhost can start the passive-pet slow tick
 
         /// <summary>
         /// Called 1x per second

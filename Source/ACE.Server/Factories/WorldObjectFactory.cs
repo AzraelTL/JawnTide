@@ -140,6 +140,8 @@ namespace ACE.Server.Factories
                     return new LightSource(weenie, guid);
                 case WeenieType.BountyContract:
                     return new BountyContract(weenie, guid);
+                case WeenieType.MuleImprintToken:
+                    return new MuleImprintToken(weenie, guid);
                 default:
                     return new GenericObject(weenie, guid);
             }
@@ -257,6 +259,8 @@ namespace ACE.Server.Factories
                     return new LightSource(biota);
                 case WeenieType.BountyContract:
                     return new BountyContract(biota);
+                case WeenieType.MuleImprintToken:
+                    return new MuleImprintToken(biota);
                 default:
                     return new GenericObject(biota);
             }

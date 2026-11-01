@@ -74,6 +74,7 @@ namespace ACE.Entity.Enum
         Pet,
         PetDevice,
         CombatPet,  
-        BountyContract
+        BountyContract,
+        MuleImprintToken
     }
 }

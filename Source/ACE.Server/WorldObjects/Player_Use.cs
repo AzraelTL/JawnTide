@@ -56,6 +56,14 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            // JawnTide: nothing can be used on a Mule Imprint Token, and it can't be used on anything
+            if (sourceItem is MuleImprintToken || target is MuleImprintToken)
+            {
+                Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "The Mule Imprint Token cannot be altered."));
+                SendUseDoneEvent();
+                return;
+            }
+
             // handle objects with built-in spells
             if (sourceItem.SpellDID != null)
             {
@@ -283,6 +291,10 @@ namespace ACE.Server.WorldObjects
             {
                 this.HandlePKQuestInquiry();
             }
+
+            // JawnTide: Mule Imprint Token NPCs (Holtburg, Shoushi, Yaraq)
+            if (success && MuleImprintToken.IsImprinterNpc(item.WeenieClassId))
+                HandleMuleImprinterNpc(item);
         }
 
         /// <summary>

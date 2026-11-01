@@ -1118,6 +1118,13 @@ namespace ACE.Server.Command.Handlers
             if (player == null)
                 return;
 
+            // Mules can't become Tinkers (and Tinkers can't become mules)
+            if (player.IsMule)
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat("A mule cannot be designated as a Tinker.", ChatMessageType.Broadcast));
+                return;
+            }
+
             // Already a Tinker: refresh (re-max the crafting skills and upgrade the Tinkering Trinket in
             // place with any spells added since it was made). FlagAsTinker is idempotent and grants a new
             // trinket only if the character holds none; the trinket is attuned, so it can't be passed on.
@@ -1157,6 +1164,129 @@ namespace ACE.Server.Command.Handlers
             }
 
             player.FlagAsTinker();
+        }
+
+        // muleimprint [character name]
+        [CommandHandler("muleimprint", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
+            "Imprints a level 1, logged-out character on your account as this character's mule, using your Mule Imprint Token. " +
+            "With no name, shows this character's mule status. The imprint is permanent.",
+            "muleimprint <character name>")]
+        public static void HandleMuleImprint(Session session, params string[] parameters)
+        {
+            var player = session.Player;
+
+            if (player == null)
+                return;
+
+            var name = string.Join(" ", parameters).Trim();
+
+            if (string.IsNullOrEmpty(name))
+            {
+                if (player.IsMule)
+                {
+                    var owner = player.MuleImprintOwner.HasValue ? PlayerManager.FindByGuid(player.MuleImprintOwner.Value) : null;
+                    if (owner == null || owner.IsDeleted)
+                        player.SendMessage($"{player.Name} is a mule whose owner no longer exists. Another character on your account can claim it with their Mule Imprint Token.");
+                    else
+                        player.SendMessage($"{player.Name} is the mule of {owner.Name}.");
+                    return;
+                }
+
+                if (player.MuleImprintMule.HasValue)
+                {
+                    var mule = PlayerManager.FindByGuid(player.MuleImprintMule.Value);
+                    player.SendMessage($"Your mule is {mule?.Name ?? "a character that no longer exists"}. Use your Mule Imprint Token to call its ghost.");
+                    return;
+                }
+
+                if (player.GetMuleImprintToken() != null)
+                    player.SendMessage("You have a Mule Imprint Token but no mule yet. Use /muleimprint <character name> to imprint a level 1, logged-out character on your account.");
+                else if (player.ReceivedMuleImprintToken)
+                    player.SendMessage("You have no mule.");
+                else
+                    player.SendMessage("You have no Mule Imprint Token yet. Speak with the Imprinter in Holtburg, Shoushi or Yaraq.");
+                return;
+            }
+
+            var token = player.GetMuleImprintToken();
+
+            if (token == null)
+            {
+                player.SendMessage("You need a Mule Imprint Token to do that. Speak with the Imprinter in Holtburg, Shoushi or Yaraq.");
+                return;
+            }
+
+            if (token.IsBound)
+            {
+                player.SendMessage($"Your token already carries the imprint of {token.BoundMuleName}.");
+                return;
+            }
+
+            player.TryMuleImprint(token, name, false);
+        }
+
+        // mulegive [amount] <item name>
+        [CommandHandler("mulegive", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 1,
+            "Hands an item from your inventory to your active Ghost of [Mule], which carries it to your mule's pack. " +
+            "The item is matched by name (exact name first, then the first item whose name starts with what you typed). " +
+            "Give an amount first to send part of a stack.",
+            "mulegive [amount] <item name>")]
+        public static void HandleMuleGive(Session session, params string[] parameters)
+        {
+            var player = session.Player;
+
+            if (player == null)
+                return;
+
+            if (player.CurrentActivePet is not MuleGhost ghost || ghost.IsDestroyed)
+            {
+                player.SendMessage("You need your mule's ghost beside you. Use your Mule Imprint Token to call it.");
+                return;
+            }
+
+            int? amount = null;
+            var nameParts = parameters.ToList();
+
+            if (nameParts.Count > 1 && int.TryParse(nameParts[0], out var parsedAmount))
+            {
+                amount = parsedAmount;
+                nameParts.RemoveAt(0);
+            }
+
+            var itemName = string.Join(" ", nameParts).Trim();
+
+            if (string.IsNullOrEmpty(itemName))
+            {
+                player.SendMessage("Usage: /mulegive [amount] <item name>");
+                return;
+            }
+
+            // only things carried in the pack (not what is being worn or wielded)
+            var candidates = player.GetAllPossessions()
+                .Where(i => i.WielderId == null && i is not MuleImprintToken)
+                .ToList();
+
+            var item = candidates.FirstOrDefault(i => string.Equals(i.Name, itemName, StringComparison.OrdinalIgnoreCase))
+                    ?? candidates.FirstOrDefault(i => i.Name != null && i.Name.StartsWith(itemName, StringComparison.OrdinalIgnoreCase));
+
+            if (item == null)
+            {
+                player.SendMessage($"You aren't carrying anything called \"{itemName}\".");
+                return;
+            }
+
+            var giveAmount = amount ?? (item.StackSize ?? 1);
+
+            if (giveAmount <= 0)
+            {
+                player.SendMessage("The amount must be at least 1.");
+                return;
+            }
+
+            if (giveAmount > (item.StackSize ?? 1))
+                giveAmount = item.StackSize ?? 1;
+
+            player.HandleActionGiveObjectRequest(ghost.Guid.Full, item.Guid.Full, giveAmount);
         }
 
         // OfflineSwear <PatronName>

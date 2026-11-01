@@ -98,6 +98,7 @@ namespace ACE.Entity.Enum.Properties
         ArenaRewardsByOpponent         = 9009,                
         MorphGemLog                    = 9010,
         PKQuestInfo                    = 9011,
+        MuleImprintMuleName            = 9012,
         CurrentRareEnchantmentIds      = 52029,
 
 

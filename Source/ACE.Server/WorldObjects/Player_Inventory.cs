@@ -856,6 +856,14 @@ namespace ACE.Server.WorldObjects
                 return false;
             }
 
+            // JawnTide: the Ghost of [Mule] never holds items itself; items are handed (given) to it instead
+            if (container is MuleGhost)
+            {
+                Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, $"Hand {item.Name} to the ghost instead."));
+                Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, itemGuid));
+                return false;
+            }
+
             if (container is Corpse)
             {
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, $"You cannot put {item.Name} in that.")); // Custom error message
@@ -2341,6 +2349,14 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            // JawnTide: the Ghost of [Mule] never holds items itself; items are handed (given) to it instead
+            if (container is MuleGhost)
+            {
+                Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, $"Hand {stack.Name} to the ghost instead."));
+                Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
+                return;
+            }
+
             if (stack.StackSize == null || stack.StackSize == 0)
             {
                 log.WarnFormat("Player 0x{0:X8}:{1} tried to split invalid item 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
@@ -3449,6 +3465,20 @@ namespace ACE.Server.WorldObjects
         private void GiveObjectToNPC(WorldObject target, WorldObject item, Container itemFoundInContainer, Container itemRootOwner, bool itemWasEquipped, int amount)
         {
             if (target == null || item == null) return;
+
+            // JawnTide: the Ghost of [Mule] carries items to the offline mule
+            if (target is MuleGhost muleGhost)
+            {
+                GiveObjectToMuleGhost(muleGhost, item, itemFoundInContainer, itemRootOwner, itemWasEquipped, amount);
+                return;
+            }
+
+            // JawnTide: a Mule Imprint Token (or a pack holding one) can never be handed to an NPC
+            if (MuleImprintToken.IsOrContainsToken(item))
+            {
+                Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full, WeenieError.AttunedItem));
+                return;
+            }
 
             if (item.Name == "IOU" && item.WeenieType == WeenieType.Book && target.Name == "Town Crier")
             {

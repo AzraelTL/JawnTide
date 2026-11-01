@@ -290,8 +290,8 @@ namespace ACE.Server.WorldObjects
                 if (!bypassSeasonCap)
                     addAmount = ApplyRollingXpCap(addAmount, xpType);
 
-                // Tinkers stay level 1 forever: they never gain experience.
-                if (IsTinker)
+                // Tinkers and mules stay level 1 forever: they never gain experience.
+                if (IsTinker || IsMule)
                     addAmount = 0;
 
                 AvailableExperience += addAmount;
@@ -463,8 +463,8 @@ namespace ACE.Server.WorldObjects
         {
             if (!HasAllegiance) return;
 
-            // Tinker-flagged characters never pass XP up the allegiance chain
-            if (IsTinker) return;
+            // Tinker-flagged characters and mules never pass XP up the allegiance chain
+            if (IsTinker || IsMule) return;
 
             AllegianceManager.PassXP(AllegianceNode, (ulong)amount, true);
         }
