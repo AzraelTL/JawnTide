@@ -1600,6 +1600,55 @@ namespace ACE.Server.Command.Handlers
             }
         }
 
+        // namecase <Same Name With Different Capitals>
+        [CommandHandler("namecase", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 1,
+            "Changes only the capital letters in your character's name, for free (for example Muletester to MuleTester). " +
+            "The letters themselves must stay the same. You are logged out so the new name shows everywhere.",
+            "< Name >")]
+        public static void HandleNameCase(Session session, params string[] parameters)
+        {
+            if (!CheckPlayerCommandRateLimit(session))
+                return;
+
+            var player = session.Player;
+            if (player == null)
+                return;
+
+            var oldName = player.Name;
+            var newName = string.Join(" ", parameters).Trim();
+
+            if (oldName.StartsWith("+"))
+                oldName = oldName.Substring(1);
+            if (newName.StartsWith("+"))
+                newName = newName.Substring(1);
+
+            if (!string.Equals(oldName, newName, StringComparison.OrdinalIgnoreCase))
+            {
+                CommandHandlerHelper.WriteOutputInfo(session, $"/namecase only changes capital letters. \"{newName}\" is not the same name as \"{oldName}\". Use /buyrename to pick a different name.", ChatMessageType.Broadcast);
+                return;
+            }
+
+            if (string.Equals(oldName, newName, StringComparison.Ordinal))
+            {
+                CommandHandlerHelper.WriteOutputInfo(session, $"Your name is already \"{oldName}\".", ChatMessageType.Broadcast);
+                return;
+            }
+
+            // keep any admin "+" prefix the character already had
+            var storedName = player.Name.StartsWith("+") ? "+" + newName : newName;
+
+            player.Character.Name = storedName;
+            player.CharacterChangesDetected = true;
+            player.Name = storedName;
+            player.SavePlayerToDatabase();
+
+            CommandHandlerHelper.WriteOutputInfo(session, $"Your name is now \"{newName}\". You will be logged out so it shows everywhere.", ChatMessageType.Broadcast);
+
+            PlayerManager.BroadcastToAuditChannel(player, $"Player {oldName} used /namecase to change their name to {newName}.");
+
+            player.Session.LogOffPlayer();
+        }
+
         private static int CalculateRenameCost(int renameCount)
         {
             return renameCount == 0 ? 0
