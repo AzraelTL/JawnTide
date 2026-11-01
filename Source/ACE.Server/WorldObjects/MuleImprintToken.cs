@@ -27,6 +27,12 @@ namespace ACE.Server.WorldObjects
         /// <summary>Highest level a character can be when it is imprinted as a mule (the training hall alone gets new characters to 5)</summary>
         public const int MaxMuleLevel = 5;
 
+        /// <summary>Inventory icon: the stock "Pack" (30936) picture</summary>
+        public const uint TokenIcon = 0x06005D15;
+
+        /// <summary>Name of a token that has no mule yet. Once bound it is renamed "Ghost of [Mule]".</summary>
+        public const string UnboundName = "Mule Imprint Token";
+
         /// <summary>Class id of the creature template used for the Ghost of [Mule] pet</summary>
         public const uint GhostWcid = 8143005;
 
@@ -86,6 +92,10 @@ namespace ACE.Server.WorldObjects
 
             if (Inscribable)
                 Inscribable = false;
+
+            // tokens handed out before the icon change pick up the current icon
+            if (IconId != TokenIcon)
+                IconId = TokenIcon;
         }
 
         /// <summary>The character this token was given to</summary>
@@ -127,6 +137,11 @@ namespace ACE.Server.WorldObjects
 
         public void UpdateDescription()
         {
+            // bound: "Ghost of [Mule]", unbound: "Mule Imprint Token"
+            var name = IsBound && !string.IsNullOrEmpty(BoundMuleName) ? $"Ghost of {BoundMuleName}" : UnboundName;
+            if (Name != name)
+                Name = name;
+
             if (IsBound)
                 LongDesc = $"This token carries the imprint of {BoundMuleName}. Use it to call the Ghost of {BoundMuleName}; anything you hand the ghost is carried to {BoundMuleName}'s pack. Use the token again to send the ghost away. " +
                            "This token is bound to your soul and can never be given away, sold, dropped or destroyed.";

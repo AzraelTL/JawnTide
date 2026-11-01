@@ -34,4 +34,4 @@ INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
 VALUES (8143004,   1,   33554802) /* Setup */
      , (8143004,   6,   67111919) /* PaletteBase */
      , (8143004,   7,  268435747) /* ClothingBase */
-     , (8143004,   8,  100676408) /* Icon */;
+     , (8143004,   8, 0x06005D15) /* Icon - the stock Pack (30936) picture */;

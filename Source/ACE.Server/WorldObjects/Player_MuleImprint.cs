@@ -186,6 +186,7 @@ namespace ACE.Server.WorldObjects
                 SendMuleImprintMessage($"The spirit of {token.BoundMuleName} has passed beyond reach. The token is ready to take a new imprint.");
 
                 token.ClearBinding();
+                UpdateProperty(token, PropertyString.Name, token.Name);
                 MuleImprintMule = null;
 
                 BeginMuleImprintPrompt(token);
@@ -294,7 +295,10 @@ namespace ACE.Server.WorldObjects
 
             // keep the token's description current if the mule was renamed
             if (token.BoundMuleName != mule.Name)
+            {
                 token.Bind(muleGuid, mule.Name);
+                UpdateProperty(token, PropertyString.Name, token.Name);
+            }
 
             var ghost = MuleGhost.Summon(this, token, mule, possessions);
 
@@ -437,6 +441,7 @@ namespace ACE.Server.WorldObjects
 
             token.TokenOwner = Guid.Full;
             token.Bind(offlineMule.Guid.Full, offlineMule.Name);
+            UpdateProperty(token, PropertyString.Name, token.Name);
 
             RushNextPlayerSave(5);
 
