@@ -14,7 +14,7 @@ namespace ACE.Server.WorldObjects
     /// The token is attuned and bonded and can never leave the character (no drop, give, trade, sell, NPC hand-in,
     /// salvage, tinkering, recipes, or death drop).
     /// <para/>
-    /// Unbound: using it asks for the name of a character (level MaxMuleLevel or lower) on the same account. On confirmation that
+    /// Unbound: using it asks for the name of a character flagged with /muleflag (level MaxMuleLevel or lower) on the same account. On confirmation that
     /// character is permanently flagged as this character's mule.
     /// Bound: using it summons (or dismisses) the "Ghost of [Mule]", a passive pet that accepts items from
     /// its summoner and places them straight into the offline mule's inventory.
@@ -44,7 +44,7 @@ namespace ACE.Server.WorldObjects
         public static bool IsImprinterNpc(uint wcid) => ImprinterNpcs.ContainsKey(wcid);
 
         public static readonly string UnboundDescription =
-            $"A small token humming with spirit magic. Use it to imprint a character of level {MaxMuleLevel} or lower on your account as your mule. " +
+            $"A small token humming with spirit magic. Log in on a character of level {MaxMuleLevel} or lower on your account and type /muleflag, then use this token and name that character to imprint it as your mule. " +
             "The imprint is permanent. Once imprinted, using the token calls the Ghost of your mule, which will carry anything you hand it to your mule's pack. " +
             "This token is bound to your soul and can never be given away, sold, dropped or destroyed.";
 

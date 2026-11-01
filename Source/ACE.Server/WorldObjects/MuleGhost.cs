@@ -290,7 +290,8 @@ namespace ACE.Server.WorldObjects
         private void BuildPackModel(OfflinePlayer mule, PossessedBiotas possessions)
         {
             mainPackItemCapacity = mule.GetProperty(PropertyInt.ItemsCapacity) ?? 102;
-            mainPackContainerCapacity = mule.GetProperty(PropertyInt.ContainersCapacity) ?? 7;
+            // same as Player: 7 pack slots plus the extra pack slot augmentation (which /muleflag grants)
+            mainPackContainerCapacity = 7 + (mule.GetProperty(PropertyInt.AugmentationExtraPackSlot) ?? 0);
 
             // first pass: what sits directly in the mule's main pack
             foreach (var biota in possessions.Inventory)

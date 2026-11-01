@@ -1166,9 +1166,55 @@ namespace ACE.Server.Command.Handlers
             player.FlagAsTinker();
         }
 
+        // muleflag
+        [CommandHandler("muleflag", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
+            "Permanently flags this character as a mule, so a Mule Imprint Token held by another character on your account can imprint it. " +
+            "Requirements: level 5 or lower, not a Tinker, and no mule of its own. " +
+            "A mule never gains experience again, and gets an extra pack slot after relogging. This is irreversible.")]
+        public static void HandleMuleFlag(Session session, params string[] parameters)
+        {
+            HandleMuleFlag(session, false);
+        }
+
+        private static void HandleMuleFlag(Session session, bool confirmed)
+        {
+            var player = session.Player;
+
+            if (player == null)
+                return;
+
+            // a mule imprinted before /muleflag existed: just open its extra pack slot
+            if (player.IsMule && player.AugmentationExtraPackSlot == 0)
+            {
+                player.FlagAsMule();
+                return;
+            }
+
+            var error = player.GetMuleFlagError();
+            if (error != null)
+            {
+                player.SendMessage(error);
+                return;
+            }
+
+            if (!confirmed)
+            {
+                var msg = $"Make {player.Name} a mule? This is PERMANENT and cannot be undone.\n\n" +
+                          $"{player.Name} will never gain experience again and stays at level {player.Level ?? 1}. " +
+                          "It gets an extra pack slot the next time you log in on it.\n\n" +
+                          "Afterwards, another character on this account can imprint it with a Mule Imprint Token and send it items through its ghost.";
+
+                if (!player.ConfirmationManager.EnqueueSend(new Confirmation_Custom(player.Guid, () => HandleMuleFlag(session, true)), msg))
+                    player.SendWeenieError(WeenieError.ConfirmationInProgress);
+                return;
+            }
+
+            player.FlagAsMule();
+        }
+
         // muleimprint [character name]
         [CommandHandler("muleimprint", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
-            "Imprints a logged-out character of level 5 or lower on your account as this character's mule, using your Mule Imprint Token. " +
+            "Imprints a logged-out character on your account that was flagged with /muleflag as this character's mule, using your Mule Imprint Token. " +
             "With no name, shows this character's mule status. The imprint is permanent.",
             "muleimprint <character name>")]
         public static void HandleMuleImprint(Session session, params string[] parameters)
@@ -1185,7 +1231,9 @@ namespace ACE.Server.Command.Handlers
                 if (player.IsMule)
                 {
                     var owner = player.MuleImprintOwner.HasValue ? PlayerManager.FindByGuid(player.MuleImprintOwner.Value) : null;
-                    if (owner == null || owner.IsDeleted)
+                    if (!player.MuleImprintOwner.HasValue)
+                        player.SendMessage($"{player.Name} is a mule with no owner yet. Log in on another character on your account and use its Mule Imprint Token to imprint {player.Name}.");
+                    else if (owner == null || owner.IsDeleted)
                         player.SendMessage($"{player.Name} is a mule whose owner no longer exists. Another character on your account can claim it with their Mule Imprint Token.");
                     else
                         player.SendMessage($"{player.Name} is the mule of {owner.Name}.");
@@ -1200,7 +1248,7 @@ namespace ACE.Server.Command.Handlers
                 }
 
                 if (player.GetMuleImprintToken() != null)
-                    player.SendMessage($"You have a Mule Imprint Token but no mule yet. Use /muleimprint <character name> to imprint a logged-out character of level {MuleImprintToken.MaxMuleLevel} or lower on your account.");
+                    player.SendMessage($"You have a Mule Imprint Token but no mule yet. Use /muleimprint <character name> to imprint a logged-out character on your account that has been flagged with /muleflag.");
                 else if (player.ReceivedMuleImprintToken)
                     player.SendMessage("You have no mule.");
                 else

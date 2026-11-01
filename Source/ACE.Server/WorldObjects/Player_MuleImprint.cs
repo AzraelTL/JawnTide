@@ -131,7 +131,7 @@ namespace ACE.Server.WorldObjects
                 Tell(greeting);
 
             Tell("Take this Mule Imprint Token. It is bound to your soul and will never leave you.");
-            Tell($"Use it to imprint a companion of level {MuleImprintToken.MaxMuleLevel} or lower from your own account as your mule. The imprint is permanent, so choose with care.");
+            Tell($"First log in on the companion you want as your mule (level {MuleImprintToken.MaxMuleLevel} or lower, from your own account) and have it type /muleflag. Then come back here, use the token and name it. Both steps are permanent, so choose with care.");
             Tell("Once imprinted, use the token to call your mule's ghost. Hand the ghost anything and it will be waiting in your mule's pack.");
 
             Session.Network.EnqueueSend(new GameMessageSystemChat($"{npc.Name} gives you {token.Name}.", ChatMessageType.Broadcast));
@@ -306,7 +306,7 @@ namespace ACE.Server.WorldObjects
 
             SendMuleImprintMessage(
                 "The Mule Imprint Token grows warm in your hand, waiting for a name.\n" +
-                $"Say the name of the character (level {MuleImprintToken.MaxMuleLevel} or lower) on your account you want to imprint as your mule (just type it in chat within {MuleImprintPromptSeconds} seconds), " +
+                $"Say the name of the character on your account you flagged with /muleflag (just type it in chat within {MuleImprintPromptSeconds} seconds), " +
                 "or use /muleimprint <character name>.");
         }
 
@@ -423,7 +423,7 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
-        /// A mule must be: another character on the same account, logged out, not deleted, level MuleImprintToken.MaxMuleLevel or lower,
+        /// A mule must be: another character on the same account, flagged with /muleflag, logged out, not deleted, level MuleImprintToken.MaxMuleLevel or lower,
         /// not already a mule, and not the owner of a mule itself.
         /// </summary>
         private bool ValidateMuleCandidate(string muleName, out IPlayer mule, out string error)
@@ -485,8 +485,13 @@ namespace ACE.Server.WorldObjects
                 return false;
             }
 
+            if (!(mule.GetProperty(PropertyBool.IsMuleCharacter) ?? false))
+            {
+                error = $"{mule.Name} isn't flagged as a mule yet. Log in on {mule.Name} and type /muleflag first.";
+                return false;
+            }
+
             // a mule stays a mule for good, but if its owner has been deleted another character can claim it
-            if (mule.GetProperty(PropertyBool.IsMuleCharacter) ?? false)
             {
                 var ownerGuid = mule.GetProperty(PropertyInstanceId.MuleImprintOwner);
                 var owner = ownerGuid.HasValue ? PlayerManager.FindByGuid(ownerGuid.Value) : null;
@@ -505,6 +510,54 @@ namespace ACE.Server.WorldObjects
             }
 
             return true;
+        }
+
+        // ---------------------------------------------------------------------
+        // /muleflag: a character makes itself a mule (before any token is bound to it)
+        // ---------------------------------------------------------------------
+
+        /// <summary>
+        /// Returns null if this character can be flagged as a mule, otherwise the reason it can't.
+        /// </summary>
+        public string GetMuleFlagError()
+        {
+            if (IsMule)
+                return $"{Name} is already a mule.";
+
+            if ((Level ?? 1) > MuleImprintToken.MaxMuleLevel)
+                return $"Only a character of level {MuleImprintToken.MaxMuleLevel} or lower can become a mule. {Name} is level {Level ?? 1}.";
+
+            if (IsTinker)
+                return "A Tinker cannot become a mule.";
+
+            if (MuleImprintMule.HasValue)
+                return "You have imprinted a mule of your own, so you cannot become one.";
+
+            if (IsOlthoiPlayer)
+                return "The Olthoi cannot become mules.";
+
+            return null;
+        }
+
+        /// <summary>
+        /// Permanently flags this character as a mule: it stops gaining experience, opens the extra pack slot
+        /// (after relogging), and can then be imprinted by a Mule Imprint Token held by another character on the account.
+        /// </summary>
+        public void FlagAsMule()
+        {
+            IsMule = true;
+
+            // the extra (8th) pack slot; ContainerCapacity is worked out from this at login
+            if (AugmentationExtraPackSlot == 0)
+                AugmentationExtraPackSlot = 1;
+
+            RushNextPlayerSave(5);
+
+            SendMuleImprintMessage(
+                $"{Name} is now a mule. It will no longer gain experience, and its extra pack slot opens the next time you log in on it.\n" +
+                "Now log out, log in on another character on this account, use its Mule Imprint Token and name this character.");
+
+            log.Info($"[MuleImprint] {Name} (0x{Guid}) flagged itself as a mule with /muleflag");
         }
 
         // ---------------------------------------------------------------------
