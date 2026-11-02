@@ -1393,9 +1393,11 @@ namespace ACE.Server.WorldObjects
             // The position check only happened at spell release
             // So we'll skip the continuous radius check here
 
-            // Only release the spell when the turn is complete AND we're within the required angle
-            // JawnTide: before the cast motion is done this is the start angle, after it the release angle
-            if (TurnTarget != null && IsWithinAngle(TurnTarget, CurrentCastMaxAngle) && !PhysicsObj.IsMovingOrAnimating)
+            // Release as soon as the caster faces within the angle (stock ACE / retail). JawnTide: no longer also waits for the
+            // caster to stop moving and animating: a mage turning onto the target while running or strafing never stopped,
+            // so the spell hung until they cancelled it with more movement. Before the cast motion is done this is the start
+            // angle, after it the release angle.
+            if (TurnTarget != null && IsWithinAngle(TurnTarget, CurrentCastMaxAngle))
             {
                 if (MagicState.PendingTurnRelease)
                     OnTurnRelease();
