@@ -739,6 +739,7 @@ CASTING_SETTINGS = [
     ("spellcast_max_angle", "How far off-target (degrees) a caster may face and still RELEASE the spell; outside it the server turns them first. Retail was about 20."),
     ("spellcast_start_max_angle", "How far off-target (degrees) a caster may face and still START a cast (windup) without the server turning them first. Above 5, a caster within it skips the first turn (GDLE feel). Below 0 = same as spellcast_max_angle."),
     ("spellcast_recoil_queue", "true lets a player queue the next spell during the recoil animation of the last one (faster chain-casting)."),
+    ("spellcast_release_requires_stop", "When the server is holding a spell for a turn: false (default) releases it as soon as the caster faces within the release angle, even while moving; true also waits until the caster has completely stopped (the old behavior, which could leave spells hanging for mages who keep moving)."),
     ("turnto_use_heading_stealth", "Packet used for the automatic turn toward the target while casting; true hides the target from war-detect plugins. Timing is unchanged."),
     ("persist_movement", "true keeps a player's own turns and sidesteps going through server-driven actions such as the cast turn. Retail did not."),
     ("client_movement_formula", "How the server applies the player's own movement, which affects how movement and turning line up with casting."),
