@@ -76,6 +76,9 @@ namespace ACE.Server.WorldObjects
 
         public int ItemsTransferred { get; private set; }
 
+        /// <summary>Set once a PK tag has queued the ghost's removal, so repeated hits don't queue it again</summary>
+        public bool FleeQueued { get; set; }
+
         /// <summary>
         /// Creates the ghost for the player's mule and puts it in the world next to the player.
         /// Must be called on the player's action thread.

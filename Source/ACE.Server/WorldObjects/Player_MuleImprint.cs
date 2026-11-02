@@ -316,12 +316,22 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public void OnPkTaggedMuleGhost()
         {
-            if (CurrentActivePet is MuleGhost ghost)
+            if (CurrentActivePet is not MuleGhost ghost || ghost.IsDestroyed || ghost.FleeQueued)
+                return;
+
+            // This runs inside the attacker's combat code, which may be on another landblock's thread.
+            // Removing the ghost there directly is unsafe, so it is queued onto the ghost's own landblock.
+            ghost.FleeQueued = true;
+
+            ghost.EnqueueAction(new ActionEventDelegate(() =>
             {
+                if (ghost.IsDestroyed)
+                    return;
+
                 var ghostName = ghost.Name;
                 ghost.Destroy();
                 SendMuleImprintMessage($"The {ghostName} flees from the fighting.");
-            }
+            }));
         }
 
         // ---------------------------------------------------------------------
