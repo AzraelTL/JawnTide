@@ -107,6 +107,14 @@ namespace ACE.Server.WorldObjects
                 }
             }
 
+            // JawnTide My Mule: the mule gem summons right away, with no eating/drinking animation
+            // (also covers gems created before its weenie dropped UseUserAnimation)
+            if (WeenieClassId == MuleInfo.GemWeenieClassId)
+            {
+                UseGem(player);
+                return;
+            }
+
             if (UseUserAnimation != MotionCommand.Invalid)
             {
                 // some gems have UseUserAnimation and UseSound, similar to food

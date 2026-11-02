@@ -34,5 +34,4 @@ VALUES (8144001,   1, 0x02000179) /* Setup */
      , (8144001,   6, 0x04000BEF) /* PaletteBase */
      , (8144001,   8, 100674444) /* Icon - Gem of Greater Protection */
      , (8144001,  22, 0x3400002B) /* PhysicsEffectTable */
-     , (8144001,  27, 0x13000081) /* UseUserAnimation - MimeEat */
      , (8144001,  52, 0x06005B0C) /* IconUnderlay */;
