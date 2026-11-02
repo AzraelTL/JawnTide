@@ -1062,10 +1062,7 @@ namespace ACE.Server.WorldObjects
 
             DispelPkRares();
 
-            LastPkAttackTimestamp = Time.GetUnixTime();
-
-            // JawnTide: a mule ghost can't stay out (or be used to stash loot) during player combat
-            OnPkTaggedMuleGhost();            
+            LastPkAttackTimestamp = Time.GetUnixTime();            
         }
 
         //Since this may be called very frequently, this is an attempt at a more efficient means to dispel rare spells by using a cached HashSet of rare spell enchantments

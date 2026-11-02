@@ -914,10 +914,6 @@ namespace ACE.Server.WorldObjects
 
         public void HandleActionTalk(string message)
         {
-            // JawnTide: right after using an unbound Mule Imprint Token, the next thing said is the mule's name
-            if (TryHandleMuleImprintSpeech(message))
-                return;
-
             if (!IsGagged)
             {
                 EnqueueBroadcast(new GameMessageHearSpeech(message, GetNameWithSuffix(), Guid.Full, ChatMessageType.Speech), LocalBroadcastRange, ChatMessageType.Speech);

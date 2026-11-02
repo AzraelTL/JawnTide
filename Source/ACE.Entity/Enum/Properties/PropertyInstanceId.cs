@@ -75,10 +75,5 @@ namespace ACE.Entity.Enum.Properties
         /* Custom Properties */
         PCAPRecordedObjectIID            = 8000,
         PCAPRecordedParentIID            = 8008,
-
-        /// <summary>On an owner character and on its Mule Imprint Token: the character imprinted as the mule</summary>
-        MuleImprintMule                  = 9001,
-        /// <summary>On a mule character and on a Mule Imprint Token: the character the token / mule belongs to</summary>
-        MuleImprintOwner                 = 9002,
     }
 }

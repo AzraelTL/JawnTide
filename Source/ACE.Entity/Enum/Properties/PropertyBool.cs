@@ -193,10 +193,6 @@ namespace ACE.Entity.Enum.Properties
         SplitArrows = 19017,
         IsSplitArrow = 19018,
         IsBountyHighPriorityTarget = 19019,
-        IsTinkerCharacter = 19020,
-        /// <summary>This character has been imprinted as a Mule (see Mule Imprint Token). Permanent.</summary>
-        IsMuleCharacter = 19021,
-        /// <summary>This character has already been given its one Mule Imprint Token. Permanent.</summary>
-        ReceivedMuleImprintToken = 19022
+        IsTinkerCharacter = 19020
     }
 }
