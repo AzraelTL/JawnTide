@@ -1276,8 +1276,8 @@ namespace ACE.Server.Command.Handlers
         // mulegive [amount] <item name>
         [CommandHandler("mulegive", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 1,
             "Hands an item from your inventory to your active Ghost of [Mule], which carries it to your mule's pack. " +
-            "The item is matched by name (exact name first, then the first item whose name starts with what you typed). " +
-            "Give an amount first to send part of a stack.",
+            "The item is matched by name (exact name first, then items whose name starts with what you typed). " +
+            "Give an amount first to send part of a stack; a stack holding at least that many is used.",
             "mulegive [amount] <item name>")]
         public static void HandleMuleGive(Session session, params string[] parameters)
         {
@@ -1314,25 +1314,42 @@ namespace ACE.Server.Command.Handlers
                 .Where(i => i.WielderId == null && i is not MuleImprintToken)
                 .ToList();
 
-            var item = candidates.FirstOrDefault(i => string.Equals(i.Name, itemName, StringComparison.OrdinalIgnoreCase))
-                    ?? candidates.FirstOrDefault(i => i.Name != null && i.Name.StartsWith(itemName, StringComparison.OrdinalIgnoreCase));
+            // exact name matches first; if there are none, items whose name starts with what was typed
+            var matches = candidates.Where(i => string.Equals(i.Name, itemName, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (matches.Count == 0)
+                matches = candidates.Where(i => i.Name != null && i.Name.StartsWith(itemName, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            if (item == null)
+            if (matches.Count == 0)
             {
                 player.SendMessage($"You aren't carrying anything called \"{itemName}\".");
                 return;
             }
 
-            var giveAmount = amount ?? (item.StackSize ?? 1);
-
-            if (giveAmount <= 0)
+            if (amount.HasValue && amount.Value <= 0)
             {
                 player.SendMessage("The amount must be at least 1.");
                 return;
             }
 
-            if (giveAmount > (item.StackSize ?? 1))
-                giveAmount = item.StackSize ?? 1;
+            // With an amount, pick a stack of the same item that holds at least that many (the smallest such stack, so a big
+            // stack isn't split when a small one would do). If no single stack is big enough, use the biggest one.
+            var item = matches[0];
+            if (amount.HasValue)
+            {
+                var first = matches[0];
+                var sameItem = matches.Where(i => i.WeenieClassId == first.WeenieClassId && i.Name == first.Name).ToList();
+                item = sameItem.Where(i => (i.StackSize ?? 1) >= amount.Value).OrderBy(i => i.StackSize ?? 1).FirstOrDefault()
+                    ?? sameItem.OrderByDescending(i => i.StackSize ?? 1).First();
+            }
+
+            var stackSize = item.StackSize ?? 1;
+            var giveAmount = amount ?? stackSize;
+
+            if (giveAmount > stackSize)
+            {
+                player.SendMessage($"Your biggest stack of {item.Name} holds {stackSize:N0}, so that's what goes to the ghost (a hand-off moves one stack at a time).");
+                giveAmount = stackSize;
+            }
 
             player.HandleActionGiveObjectRequest(ghost.Guid.Full, item.Guid.Full, giveAmount);
         }
