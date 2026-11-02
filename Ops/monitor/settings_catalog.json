@@ -2690,6 +2690,14 @@
    "area": "Combat & magic"
   },
   {
+   "key": "spellcast_release_requires_stop",
+   "type": "bool",
+   "default": "false",
+   "jawntide": true,
+   "desc": "if true, a spell held for a turn only releases once the caster faces within the angle AND has completely stopped moving and animating (the old behavior, which could leave the spell hanging while a mage kept moving). false = release as soon as the caster faces within the angle, even while moving (stock ACE)",
+   "area": "Combat & magic"
+  },
+  {
    "key": "spellcast_start_max_angle",
    "type": "double",
    "default": "-1.0",
