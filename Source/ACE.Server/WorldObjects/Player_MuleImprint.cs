@@ -677,6 +677,13 @@ namespace ACE.Server.WorldObjects
             if (!RemoveItemForGive(item, itemFoundInContainer, itemWasEquipped, itemRootOwner, amount, out var itemToGive))
                 return;
 
+            // Part of a stack: the rest stays with the giver as a smaller stack. Save that smaller stack first, so it reaches the
+            // database before the split-off part is saved into the mule's pack (both go through the same save queue, in order).
+            // Otherwise a server crash between the two saves would bring the giver back with the whole stack AND leave the part
+            // in the mule's pack. Debit before credit: a crash in between can only lose the part, never duplicate it.
+            if (itemToGive != item)
+                item.SaveBiotaToDatabase();
+
             // move it to the mule right away, so the next hand-off sees the updated pack
             ghost.CommitTransfer(itemToGive, containerGuid, placement);
 
