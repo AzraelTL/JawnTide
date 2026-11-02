@@ -5,6 +5,9 @@ USE `ace_log`;
 -- One row per character per level; if a character somehow reaches a level again, the first time is kept.
 -- "Who hit 126 first": SELECT characterName, reachedAtUtc FROM character_level_log WHERE level = 126 ORDER BY reachedAtUtc;
 --
+-- NOT applied automatically: ACE's auto-patching covers Authentication, Shard and World only, not Log. Run it once by hand
+-- against each server's ace_log (live already has it, made by Ops/tools/level-backfill). Safe to run again.
+--
 
 CREATE TABLE IF NOT EXISTS `character_level_log` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
