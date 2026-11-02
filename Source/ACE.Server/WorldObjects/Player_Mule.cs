@@ -81,12 +81,33 @@ namespace ACE.Server.WorldObjects
             LoadMuleContainerChain(SpawnMuleVendor);
         }
 
+        private bool muleGemLookChecked;
+
+        /// <summary>JawnTide: the gem's glow while the mule is out (it keeps its name). Normal look is MuleInfo.GemIdleUiEffects.</summary>
+        private void SetMuleGemLook(bool muleOut)
+        {
+            var look = (int)(muleOut ? MuleInfo.GemActiveUiEffects : MuleInfo.GemIdleUiEffects);
+
+            foreach (var gem in GetAllPossessions().Where(i => i.WeenieClassId == MuleInfo.GemWeenieClassId))
+            {
+                if ((gem.GetProperty(PropertyInt.UiEffects) ?? 0) != look)
+                    UpdateProperty(gem, PropertyInt.UiEffects, look);
+            }
+        }
+
         /// <summary>
         /// JawnTide: called from the player heartbeat. The mule only stays while its owner is on the same landblock,
         /// close by and not PK tagged; it is removed from the owner's own thread here (never from another player's).
         /// </summary>
         public void MuleTick()
         {
+            // the gem may have been saved with its "mule out" look (server stopped with a mule out): fix it once per login
+            if (!muleGemLookChecked)
+            {
+                muleGemLookChecked = true;
+                SetMuleGemLook(ActiveMule != null);
+            }
+
             if (ActiveMule == null)
                 return;
 
@@ -136,6 +157,7 @@ namespace ACE.Server.WorldObjects
             // The search filter now lives on the vendor (MuleSearchRegex), which is about to be
             // destroyed above, so there's nothing else to clear for it here.
             ActiveMule = null;
+            SetMuleGemLook(false);
         }
 
         /// <summary>
@@ -358,6 +380,7 @@ namespace ACE.Server.WorldObjects
             }
 
             ActiveMule = vendor;
+            SetMuleGemLook(true);
             ActiveMuleContainers = containers;
 
             Session.Network.EnqueueSend(new GameMessageSystemChat("You summon your mule.", ChatMessageType.Broadcast));

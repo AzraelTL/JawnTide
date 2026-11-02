@@ -15,6 +15,10 @@ namespace ACE.Server.Entity
         public const uint StorageContainerWeenieClassId = 8144002;
         public const uint VendorWeenieClassId = 8144003;
 
+        /// <summary>JawnTide: the gem's icon glow while the mule is out (gold), and normally (blue magic glow, as in its weenie).</summary>
+        public const UiEffects GemActiveUiEffects = UiEffects.Lightning;
+        public const UiEffects GemIdleUiEffects = UiEffects.Magical;
+
         /// <summary>JawnTide: the mule heads home if its owner moves farther than this (meters) from it.</summary>
         public const float MaxDistance = 40.0f;
 
