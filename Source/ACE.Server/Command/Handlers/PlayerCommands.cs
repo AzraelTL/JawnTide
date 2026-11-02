@@ -1702,5 +1702,44 @@ namespace ACE.Server.Command.Handlers
         }
 
         #endregion
-    }
+        // JawnTide My Mule (ported from ClassicPvP feature/my-mule)
+        [CommandHandler("mule", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
+            "Grants you a My Mule summon gem, or searches your mule storage for items matching a spell regex.",
+            "search <pattern>\n" +
+            "Searches your open mule window for items whose spells match <pattern>, a .NET regular expression matched case-insensitively against the item's spell names. That mule's buy window is filtered down to just the matches. Run with no pattern (\"/mule search\"), or just double-click the mule to reopen it, to clear the filter and go back to the normal listing.\n" +
+            "Examples: \"/mule search legendary.*legendary\" (double legendary gear), \"/mule search legendary (frost|flame|acid)\" (any of several cantrips), \"/mule search legendary frost.*legendary acid\" (both cantrips present).\n" +
+            "With no parameters, grants a My Mule summon gem if you don't already have one.")]
+        public static void HandleMule(Session session, params string[] parameters)
+        {
+            var player = session.Player;
+
+            if (parameters.Length > 0 && parameters[0].Equals("search", StringComparison.OrdinalIgnoreCase))
+            {
+                var pattern = string.Join(" ", parameters.Skip(1));
+                player.SearchMuleInventory(pattern);
+                return;
+            }
+
+            if (player.GetNumInventoryItemsOfWCID(MuleInfo.GemWeenieClassId) > 0)
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat("You already have your My Mule gem.", ChatMessageType.Broadcast));
+                return;
+            }
+
+            var gem = ACE.Server.Factories.WorldObjectFactory.CreateNewWorldObject(MuleInfo.GemWeenieClassId);
+
+            if (gem == null)
+            {
+                log.Error($"[MULE] /mule: couldn't create gem weenie {MuleInfo.GemWeenieClassId} for {player.Name}");
+                return;
+            }
+
+            if (player.TryCreateInInventoryWithNetworking(gem, out _))
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat("You receive your My Mule gem.", ChatMessageType.Broadcast));
+            else
+                gem.Destroy();
+        }
+
+
+}
 }

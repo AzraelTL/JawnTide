@@ -596,6 +596,56 @@ namespace ACE.Database
 
         private static readonly ConditionalWeakTable<Character, ShardDbContext> CharacterContexts = new ConditionalWeakTable<Character, ShardDbContext>();
 
+        /// <summary>My Mule: the head container GUID of this account's shared mule storage chain, or null if no character on the account has ever summoned one.</summary>
+        public uint? GetAccountMuleContainerId(uint accountId)
+        {
+            using var context = new ShardDbContext();
+
+            var result = context.AccountMule.AsNoTracking().FirstOrDefault(r => r.AccountId == accountId);
+
+            return result != null && result.ContainerId != 0 ? result.ContainerId : (uint?)null;
+        }
+
+        /// <summary>My Mule: records the head container GUID for this account's shared mule storage chain. Set once, the first time any character on the account summons a mule.</summary>
+        public void SetAccountMuleContainerId(uint accountId, uint containerId)
+        {
+            using var context = new ShardDbContext();
+
+            var existing = context.AccountMule.FirstOrDefault(r => r.AccountId == accountId);
+
+            if (existing == null)
+                context.AccountMule.Add(new AccountMule { AccountId = accountId, ContainerId = containerId, VisualVariant = -1 });
+            else
+                existing.ContainerId = containerId;
+
+            context.SaveChanges();
+        }
+
+        /// <summary>My Mule: the sticky visual variant index shared by every character on this account, or null if not rolled yet.</summary>
+        public int? GetAccountMuleVisualVariant(uint accountId)
+        {
+            using var context = new ShardDbContext();
+
+            var result = context.AccountMule.AsNoTracking().FirstOrDefault(r => r.AccountId == accountId);
+
+            return result != null && result.VisualVariant >= 0 ? result.VisualVariant : (int?)null;
+        }
+
+        /// <summary>My Mule: records the sticky visual variant index for this account.</summary>
+        public void SetAccountMuleVisualVariant(uint accountId, int visualVariant)
+        {
+            using var context = new ShardDbContext();
+
+            var existing = context.AccountMule.FirstOrDefault(r => r.AccountId == accountId);
+
+            if (existing == null)
+                context.AccountMule.Add(new AccountMule { AccountId = accountId, ContainerId = 0, VisualVariant = visualVariant });
+            else
+                existing.VisualVariant = visualVariant;
+
+            context.SaveChanges();
+        }
+
         public List<Character> GetCharacters(uint accountId, bool includeDeleted)
         {
             return GetCharacterList(accountId, includeDeleted);

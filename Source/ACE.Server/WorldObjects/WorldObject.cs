@@ -874,11 +874,22 @@ namespace ACE.Server.WorldObjects
 
             if (this is Vendor vendor)
             {
-                foreach (var wo in vendor.DefaultItemsForSale.Values)
-                    wo.Destroy();
+                if (vendor.MuleOwnerId.HasValue)
+                {
+                    // JawnTide My Mule: a mule's sale lists ARE the player's stored items (they live on in the account's
+                    // storage containers). Never destroy them with the mule, however it goes away (dismissed, server
+                    // shutdown, landblock unload, an admin deleting it): only let go of the references.
+                    vendor.DefaultItemsForSale.Clear();
+                    vendor.UniqueItemsForSale.Clear();
+                }
+                else
+                {
+                    foreach (var wo in vendor.DefaultItemsForSale.Values)
+                        wo.Destroy();
 
-                foreach (var wo in vendor.UniqueItemsForSale.Values)
-                    wo.Destroy();
+                    foreach (var wo in vendor.UniqueItemsForSale.Values)
+                        wo.Destroy();
+                }
             }
 
             if (raiseNotifyOfDestructionEvent)

@@ -47,6 +47,13 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            // JawnTide My Mule: buying from your mule withdraws from storage
+            if (vendor.MuleOwnerId.HasValue)
+            {
+                HandleMuleWithdraw(vendor, items);
+                return;
+            }
+
             //If the vendor is a Town Control vendor, check to see if the purchaser is part of the clan who owns the town
             if (TownControlVendors.IsTownControlVendor(vendor.WeenieClassId))
             {
@@ -166,6 +173,13 @@ namespace ACE.Server.WorldObjects
             {
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, Guid.Full));
                 SendUseDoneEvent(WeenieError.YoureTooBusy);
+                return;
+            }
+
+            // JawnTide My Mule: selling to your mule deposits into storage (no sale limits, no rate limit)
+            if (CurrentLandblock?.GetObject(vendorGuid) is Vendor muleVendor && muleVendor.MuleOwnerId.HasValue)
+            {
+                HandleMuleDeposit(muleVendor, itemProfiles ?? new List<ItemProfile>());
                 return;
             }
 

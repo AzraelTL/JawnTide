@@ -35,6 +35,18 @@ namespace ACE.Server.WorldObjects
         // unique items purchased from other players
         public readonly Dictionary<ObjectGuid, WorldObject> UniqueItemsForSale = new Dictionary<ObjectGuid, WorldObject>();
 
+        /// <summary>JawnTide My Mule: when set, this Vendor is an ephemeral personal-storage shell summoned by this player guid. Never persisted.</summary>
+        public uint? MuleOwnerId;
+
+        /// <summary>JawnTide My Mule: the summoning player's account. Only characters on this account may open or use the mule.</summary>
+        public uint? MuleOwnerAccountId;
+
+        /// <summary>JawnTide My Mule: the live off-world container chain backing this mule's storage.</summary>
+        public List<Container> MuleContainers;
+
+        /// <summary>JawnTide My Mule: the active /mule search filter for this mule's buy window, if any.</summary>
+        public System.Text.RegularExpressions.Regex MuleSearchRegex;
+
         private bool inventoryloaded { get; set; }
 
         /// <summary>
@@ -131,6 +143,7 @@ namespace ACE.Server.WorldObjects
 
             var itemsForSale = new Dictionary<(uint weenieClassId, int paletteTemplate, double shade), uint>();
 
+            if (Biota.PropertiesCreateList != null)  // JawnTide My Mule: the mule vendor shell has no shop list
             foreach (var item in Biota.PropertiesCreateList.Where(x => x.DestinationType == DestinationType.Shop))
                 LoadInventoryItem(itemsForSale, item.WeenieClassId, item.Palette, item.Shade, item.StackSize);
 
@@ -245,6 +258,19 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            // JawnTide My Mule: only the owner's account can open a mule; reopening it clears an active /mule search
+            if (MuleOwnerId.HasValue)
+            {
+                if (!player.CanUseMule(this))
+                {
+                    player.Session.Network.EnqueueSend(new GameEventCommunicationTransientString(player.Session, $"{Name} ignores you."));
+                    return;
+                }
+
+                player.ClearMuleSearchFilter(this);
+                player.SendMuleCapacityStatus(this);
+            }
+
             //If this is a Town Control vendor, don't allow it to open inventory unless player's clan owns the town
             if (TownControlVendors.IsTownControlVendor(this.WeenieClassId))
             {
@@ -330,7 +356,9 @@ namespace ACE.Server.WorldObjects
 
             player.LastOpenedContainerId = Guid;
 
-            PrepareResetToHome();
+            // JawnTide My Mule: a mule has no home to walk back to; it only leaves with its owner (Player_Mule.MuleTick)
+            if (!MuleOwnerId.HasValue)
+                PrepareResetToHome();
         }
 
         public void DoVendorEmote(VendorType vendorType, WorldObject player)
@@ -749,6 +777,11 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         private void RotUniques()
         {
+            // JawnTide My Mule: a mule's "unique items" are the player's stored items. JawnTide rots sold items after
+            // vendor_unique_rot_time (5 minutes) and destroys them, which would delete stored items from the database.
+            if (MuleOwnerId.HasValue)
+                return;
+
             List<WorldObject> itemsToRemove = null;
 
             foreach (var uniqueItem in UniqueItemsForSale.Values)

@@ -75,5 +75,8 @@ namespace ACE.Entity.Enum.Properties
         /* Custom Properties */
         PCAPRecordedObjectIID            = 8000,
         PCAPRecordedParentIID            = 8008,
+
+        /* JawnTide My Mule: on a mule storage container, the GUID of the next container in the account's overflow chain */
+        MuleNextContainerId              = 20003,
     }
 }

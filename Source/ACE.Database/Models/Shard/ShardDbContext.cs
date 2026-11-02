@@ -96,6 +96,9 @@ public partial class ShardDbContext : DbContext
 
     public virtual DbSet<HousePermission> HousePermission { get; set; }
 
+    // JawnTide: My Mule (account_mule table, Database/Updates/Shard/2026-11-02-00-Add-Account-Mule.sql)
+    public virtual DbSet<AccountMule> AccountMule { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
@@ -967,6 +970,18 @@ public partial class ShardDbContext : DbContext
             entity.HasOne(d => d.Object).WithMany(p => p.BiotaPropertiesTextureMap)
                 .HasForeignKey(d => d.ObjectId)
                 .HasConstraintName("wcid_texturemap");
+        });
+
+        modelBuilder.Entity<AccountMule>(entity =>
+        {
+            entity.HasKey(e => e.AccountId)
+                .HasName("PRIMARY");
+
+            entity.ToTable("account_mule");
+
+            entity.Property(e => e.AccountId).HasColumnName("account_Id");
+            entity.Property(e => e.ContainerId).HasColumnName("container_Id");
+            entity.Property(e => e.VisualVariant).HasColumnName("visual_Variant");
         });
 
         modelBuilder.Entity<Character>(entity =>

@@ -125,6 +125,8 @@ namespace ACE.Server.WorldObjects
 
             PK_DeathTick();
 
+            MuleTick();     // JawnTide My Mule: leaves on PK tag, landblock change or distance
+
             GagsTick();
 
             TownControlTick();

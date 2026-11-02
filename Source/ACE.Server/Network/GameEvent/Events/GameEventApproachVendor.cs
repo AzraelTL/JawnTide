@@ -57,7 +57,21 @@ namespace ACE.Server.Network.GameEvent.Events
                 // pwdType: flag indicating whether the new or old PublicWeenieDesc is used; -1 = PublicWeenieDesc, 1 = OldPublicWeenieDesc; -1 always used.
                 Writer.Write(stackSize & 0xFFFFFF | -1 << 24);
 
+                // JawnTide My Mule: the client prices Trade Notes (PromissoryNote) at a fixed rate whatever the vendor's
+                // rates are, so on a mule (everything free) they'd show a price. Showing them as Misc avoids that.
+                var originalItemType = obj.ItemType;
+                var isMuleNote = vendor.MuleOwnerId.HasValue && originalItemType == ACE.Entity.Enum.ItemType.PromissoryNote;
+
+                if (isMuleNote)
+                {
+                    obj.ItemType = ACE.Entity.Enum.ItemType.Misc;
+                    obj.CalculateObjDesc();
+                }
+
                 obj.SerializeGameDataOnly(Writer);
+
+                if (isMuleNote)
+                    obj.ItemType = originalItemType;
             });
 
             Writer.Align();

@@ -136,6 +136,13 @@ namespace ACE.Server.WorldObjects
             }
 
             #region custom gems
+            // JawnTide My Mule: the My Mule gem summons (or dismisses) the account's mule
+            if (WeenieClassId == MuleInfo.GemWeenieClassId)
+            {
+                player.SummonMule();
+                return;
+            }
+
             //Custom XP gems
             if (WeenieClassId == 490070)
             {

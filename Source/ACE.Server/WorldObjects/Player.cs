@@ -683,6 +683,9 @@ namespace ACE.Server.WorldObjects
             if (CurrentActivePet != null)
                 CurrentActivePet.Destroy();
 
+            if (ActiveMule != null)
+                DespawnMule();
+
             // If we're in the dying animation process, we cannot logout until that animation completes..
             if (IsInDeathProcess)
                 return;
