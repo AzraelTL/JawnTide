@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Nightly backup of the JawnTide databases when MariaDB runs in Docker (container ace-db).
+# Backup of the JawnTide databases (every 15 minutes, see jawntide-backup.cron) when MariaDB runs in Docker (container ace-db).
 # Install to /usr/local/bin/jawntide-backup.sh (same path as the native script, so
 # jawntide-backup.cron works unchanged). Runs as root. The root password is read inside
 # the container from its own environment, so no password is stored here.
 set -euo pipefail
 
 BACKUP_DIR=/var/backups/jawntide
-KEEP_DAYS=14
+KEEP_MINUTES=4320   # 3 days
 CONTAINER=ace-db
 DATABASES="ace_auth ace_shard ace_world ace_log ace_town_control"
 STAMP=$(date +%Y-%m-%d_%H%M)
@@ -37,7 +37,8 @@ docker exec "$CONTAINER" sh -c "mariadb-dump -uroot -p\"\$MARIADB_ROOT_PASSWORD\
 mv "$OUT.tmp" "$OUT"
 chmod 600 "$OUT"
 
-# Keep the last KEEP_DAYS days of backups
-find "$BACKUP_DIR" -name 'jawntide-*.sql.gz' -mtime +"$KEEP_DAYS" -delete
+# Keep the last 3 days of backups (and clear out any half-written ones from an interrupted run)
+find "$BACKUP_DIR" -name 'jawntide-*.sql.gz' -mmin +"$KEEP_MINUTES" -delete
+find "$BACKUP_DIR" -name 'jawntide-*.sql.gz.tmp' -mmin +60 -delete
 
 echo "$(date -Is) Backup written: $OUT ($(du -h "$OUT" | cut -f1)) databases:$existing"
