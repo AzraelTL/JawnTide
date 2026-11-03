@@ -20,6 +20,11 @@ On yes the purchase is re-checked, the bank is debited (logged `vendor`, with th
 and the items are handed over. If anything changed in between (vendor gone, unique item sold, pack currency moved), the purchase
 is cancelled and the bank amount refunded (`refund`). Code: `Vendor.BuyItems_ValidateTransaction` (bankApproved) and `Player_Bank.cs`.
 
+## Vendor sales
+Sale proceeds go into the bank by default (logged `sale`, with the vendor and item count). The sold items' removal is saved
+first, then the credit is queued behind it. If the credit fails, the player gets coins instead. Falls back to coins while the
+bank is closed (PK tagged, arena, ...). Per character opt-out: `/bank sales coins` (PropertyBool 20001 BankSaleProceedsToPack).
+
 ## Admin
 - `/bankcheck <character>` (Sentinel and up): balances and the last 20 log entries for that character's account.
 - Find problems: `docker logs ace-server 2>&1 | grep "\[BANK\]"`

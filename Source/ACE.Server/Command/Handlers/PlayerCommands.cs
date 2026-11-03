@@ -1709,7 +1709,8 @@ namespace ACE.Server.Command.Handlers
             "/bank - your balances\n" +
             "/bank deposit - deposit all pyreals, trade notes, PK Trophies and keys (not luminance)\n" +
             "/bank deposit <currency> [amount] - e.g. /bank deposit trophies, /bank deposit pyreals 50000, /bank deposit luminance 1m\n" +
-            "/bank withdraw <currency> <amount> [coins] - e.g. /bank withdraw pyreals 2m (250k trade notes plus coins), /bank withdraw pyreals 50k coins, /bank withdraw hera 2\n" +
+            "/bank withdraw <currency> <amount> [coins | notes <size>] - e.g. /bank withdraw pyreals 2m (250k trade notes plus coins), /bank withdraw pyreals 50k coins, /bank withdraw pyreals 500k notes 100k, /bank withdraw hera 2\n" +
+            "/bank sales bank|coins - whether vendor sales pay into your bank (the default) or give you coins\n" +
             "/bank send <currency> <amount> <character> - e.g. /bank send trophies 25 Some Name (logged; asks you to confirm)\n" +
             "/bank log [count] - your recent bank history\n" +
             "Currencies: pyreals, trophies, luminance, darkbeat, hera, skeleton. Amounts take k/m/b (5k, 2.5m).\n" +
@@ -1720,7 +1721,7 @@ namespace ACE.Server.Command.Handlers
 
             void Say(string text) => session.Network.EnqueueSend(new GameMessageSystemChat(text, ChatMessageType.Broadcast));
 
-            void Help() => Say("Bank: /bank, /bank deposit [currency] [amount], /bank withdraw <currency> <amount> [coins], /bank send <currency> <amount> <character>, /bank log. " +
+            void Help() => Say("Bank: /bank, /bank deposit [currency] [amount], /bank withdraw <currency> <amount> [coins | notes <size>], /bank send <currency> <amount> <character>, /bank sales bank|coins, /bank log. " +
                 "Currencies: pyreals, trophies, luminance, darkbeat, hera, skeleton.");
 
             if (parameters.Length == 0 || parameters[0].Equals("balance", StringComparison.OrdinalIgnoreCase) || parameters[0].Equals("b", StringComparison.OrdinalIgnoreCase))
@@ -1802,8 +1803,21 @@ namespace ACE.Server.Command.Handlers
                         return;
 
                     var coinsOnly = parameters.Length > 3 && parameters[3].StartsWith("coin", StringComparison.OrdinalIgnoreCase);
+                    long noteValue = 0;
 
-                    player.BankWithdraw(currency, amount, coinsOnly);
+                    if (parameters.Length > 3 && parameters[3].StartsWith("note", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (parameters.Length < 5)
+                        {
+                            Say("Which note size? e.g. /bank withdraw pyreals 500k notes 100k");
+                            return;
+                        }
+
+                        if (!ParseAmount(4, out noteValue))
+                            return;
+                    }
+
+                    player.BankWithdraw(currency, amount, coinsOnly, noteValue);
                     return;
                 }
 
@@ -1821,6 +1835,29 @@ namespace ACE.Server.Command.Handlers
                     }
 
                     player.BankSend(currency, amount, string.Join(" ", parameters.Skip(3)));
+                    return;
+                }
+
+                case "sales":
+                case "sale":
+                {
+                    if (parameters.Length < 2)
+                    {
+                        var toPack = player.GetProperty(ACE.Entity.Enum.Properties.PropertyBool.BankSaleProceedsToPack) ?? false;
+                        Say(toPack
+                            ? "Vendor sales pay you in coins. /bank sales bank sends them to your bank."
+                            : "Vendor sales go into your bank. /bank sales coins pays you in coins instead.");
+                        return;
+                    }
+
+                    var choice = parameters[1].ToLowerInvariant();
+
+                    if (choice.StartsWith("coin") || choice == "pack" || choice == "off")
+                        player.BankSetSaleProceeds(true);
+                    else if (choice == "bank" || choice == "on")
+                        player.BankSetSaleProceeds(false);
+                    else
+                        Say("Use /bank sales bank or /bank sales coins.");
                     return;
                 }
 

@@ -77,6 +77,9 @@ namespace ACE.Server.Entity
 
         public static BankCurrency ByCode(string code) => Currencies.FirstOrDefault(c => c.Code == code);
 
+        /// <summary>The standard trade note worth exactly this many pyreals, or 0.</summary>
+        public static uint TradeNoteWcidForValue(long value) => TradeNoteValues.FirstOrDefault(kv => kv.Value == value).Key;
+
         /// <summary>The bank currency a vendor's purchases can be paid from (null alternate currency = pyreals), or null if none.</summary>
         public static BankCurrency ForVendorCurrency(uint? alternateCurrency)
         {

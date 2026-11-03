@@ -193,6 +193,9 @@ namespace ACE.Entity.Enum.Properties
         SplitArrows = 19017,
         IsSplitArrow = 19018,
         IsBountyHighPriorityTarget = 19019,
-        IsTinkerCharacter = 19020
+        IsTinkerCharacter = 19020,
+
+        /// <summary>JawnTide Bank: true = vendor sale proceeds come as coins (default: they go into the bank)</summary>
+        BankSaleProceedsToPack = 20001
     }
 }

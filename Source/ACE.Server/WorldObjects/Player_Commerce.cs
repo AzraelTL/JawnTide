@@ -249,10 +249,15 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            // JawnTide Bank: sale proceeds go straight into the bank unless the player turned it off (/bank sales coins)
+            // or the bank is closed to them right now (PK tagged, arena, ...), in which case they get coins as usual
+            var proceedsToBank = payoutCoinAmount > 0 && !(GetProperty(PropertyBool.BankSaleProceedsToPack) ?? false) && BankClosedReason() == null;
+
             // verify player has enough pack slots / burden to receive these pyreals
             var itemsToReceive = new ItemsToReceive(this);
 
-            itemsToReceive.Add((uint)ACE.Entity.Enum.WeenieClassName.W_COINSTACK_CLASS, payoutCoinAmount);
+            if (!proceedsToBank)
+                itemsToReceive.Add((uint)ACE.Entity.Enum.WeenieClassName.W_COINSTACK_CLASS, payoutCoinAmount);
 
             if (itemsToReceive.PlayerExceedsLimits)
             {
@@ -266,7 +271,7 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            var payoutCoinStacks = CreatePayoutCoinStacks(payoutCoinAmount);
+            var payoutCoinStacks = proceedsToBank ? new List<WorldObject>() : CreatePayoutCoinStacks(payoutCoinAmount);
 
             vendor.MoneyOutflow += payoutCoinAmount;
 
@@ -282,6 +287,9 @@ namespace ACE.Server.WorldObjects
             // send the list of items to the vendor
             // for the vendor to determine what to do with each item (resell, destroy)
             vendor.ProcessItemsForPurchase(this, sellList);
+
+            if (proceedsToBank)
+                BankDepositSaleProceeds(vendor, payoutCoinAmount, sellList.Count);
 
             // add coins to player inventory
             foreach (var item in payoutCoinStacks)

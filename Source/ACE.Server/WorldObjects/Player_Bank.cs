@@ -318,7 +318,7 @@ namespace ACE.Server.WorldObjects
         // ---------------------------------------------------------------- withdraw
 
         /// <summary>Builds (but doesn't place) the items for a withdrawal.</summary>
-        private List<WorldObject> BankBuildItems(BankCurrency currency, long amount, bool coinsOnly)
+        private List<WorldObject> BankBuildItems(BankCurrency currency, long amount, bool coinsOnly, uint noteWcid = 0, long noteValue = 0)
         {
             var items = new List<WorldObject>();
 
@@ -351,7 +351,17 @@ namespace ACE.Server.WorldObjects
             switch (currency.Kind)
             {
                 case BankCurrencyKind.Pyreals:
-                    if (!coinsOnly && amount >= BankInfo.MMDValue)
+                    if (noteWcid != 0 && noteValue > 0)
+                    {
+                        // a chosen trade note size; whatever doesn't divide evenly comes as coins
+                        if (amount >= noteValue)
+                        {
+                            AddStacks(noteWcid, amount / noteValue);
+                            if (items == null) return null;
+                            amount %= noteValue;
+                        }
+                    }
+                    else if (!coinsOnly && amount >= BankInfo.MMDValue)
                     {
                         AddStacks(BankInfo.MMDWcid, amount / BankInfo.MMDValue);
                         if (items == null) return null;
@@ -375,13 +385,14 @@ namespace ACE.Server.WorldObjects
         {
             var stack = (long)(item.StackSize ?? 1);
 
-            if (currency.Kind == BankCurrencyKind.Pyreals && item.WeenieClassId == BankInfo.MMDWcid)
-                return stack * BankInfo.MMDValue;
+            if (currency.Kind == BankCurrencyKind.Pyreals && BankInfo.TradeNoteValues.TryGetValue(item.WeenieClassId, out var noteValue))
+                return stack * noteValue;
 
             return stack;
         }
 
-        public void BankWithdraw(BankCurrency currency, long amount, bool coinsOnly)
+        /// <param name="noteValue">Pyreals only: the trade note size to pay out in (0 = 250,000 notes plus coins, or coins only).</param>
+        public void BankWithdraw(BankCurrency currency, long amount, bool coinsOnly, long noteValue = 0)
         {
             if (!BankCheckOpen())
                 return;
@@ -425,7 +436,32 @@ namespace ACE.Server.WorldObjects
                     return;
                 }
 
-                items = BankBuildItems(currency, amount, coinsOnly);
+                uint noteWcid = 0;
+
+                if (noteValue > 0)
+                {
+                    noteWcid = BankInfo.TradeNoteWcidForValue(noteValue);
+
+                    if (currency.Kind != BankCurrencyKind.Pyreals || noteWcid == 0)
+                    {
+                        BankMessage($"There's no {noteValue:N0} trade note. Sizes: {string.Join(", ", BankInfo.TradeNoteValues.Values.OrderBy(v => v).Select(v => v.ToString("N0")))}.");
+                        return;
+                    }
+
+                    if (amount / noteValue > 2_000)
+                    {
+                        BankMessage("That's more than 2,000 notes at once. Use a bigger note size.");
+                        return;
+                    }
+
+                    if (amount % noteValue > 2_500_000)
+                    {
+                        BankMessage("The part that doesn't fit the note size is too much to take as coins.");
+                        return;
+                    }
+                }
+
+                items = BankBuildItems(currency, amount, coinsOnly, noteWcid, noteValue);
 
                 if (items == null || items.Count == 0)
                 {
@@ -639,6 +675,68 @@ namespace ACE.Server.WorldObjects
             FinalizeBuyTransaction(vendor, genericItems, uniqueItems, totalPrice, packSpend);
 
             BankMessage($"Paid {BankInfo.Format(currency, shortfall)} from your bank. Bank balance: {result.Balance:N0}.");
+        }
+
+        // ---------------------------------------------------------------- vendor sales
+
+        /// <summary>
+        /// JawnTide Bank: a vendor sale's pyreals go into the bank instead of the pack. Called after the sold items have left
+        /// the player (their removal is already queued for saving); the player is saved, then the credit is queued behind it,
+        /// so a crash can't leave both the items and the pyreals. If the credit fails, the player gets coins instead.
+        /// </summary>
+        public void BankDepositSaleProceeds(Vendor vendor, int amount, int itemCount)
+        {
+            SavePlayerToDatabase();
+
+            bankPending++;
+
+            var currency = BankInfo.ByCode("pyreals");
+            var details = $"sold {itemCount} item(s) to {vendor.Name} (wcid {vendor.WeenieClassId})";
+
+            DatabaseManager.Shard.BankChange(Account.AccountId, currency.Code, amount, BankLogFor("sale", details), result => BankOnPlayer(() =>
+            {
+                bankPending = Math.Max(0, bankPending - 1);
+
+                if (result.Status == BankResultStatus.Ok)
+                {
+                    BankMessage($"{amount:N0} pyreals from the sale went into your bank. Bank balance: {result.Balance:N0}. (/bank sales coins to get coins instead)");
+                    return;
+                }
+
+                // couldn't record it: hand over coins instead
+                var stacks = CreatePayoutCoinStacks(amount);
+                long missed = 0;
+
+                foreach (var stack in stacks)
+                {
+                    if (!TryCreateInInventoryWithNetworking(stack))
+                    {
+                        missed += stack.StackSize ?? 0;
+                        stack.Destroy();
+                    }
+                }
+
+                if (missed > 0)
+                {
+                    log.Error($"[BANK] Sale proceeds of {amount} for {Name} (0x{Guid.Full:X8}, account {Account.AccountId}) couldn't be banked ({result.Status}) and {missed} didn't fit as coins. Restore it by hand.");
+                    BankMessage($"The bank couldn't be reached, and {missed:N0} pyreals from the sale didn't fit in your pack. It has been logged; please tell an admin.");
+                }
+                else
+                    BankMessage("The bank couldn't be reached, so the sale's pyreals were given to you as coins.");
+            }));
+        }
+
+        /// <summary>JawnTide Bank: where this character's vendor sale proceeds go.</summary>
+        public void BankSetSaleProceeds(bool toPack)
+        {
+            if (toPack)
+                SetProperty(PropertyBool.BankSaleProceedsToPack, true);
+            else
+                RemoveProperty(PropertyBool.BankSaleProceedsToPack);
+
+            BankMessage(toPack
+                ? "Vendor sales now pay you in coins. (/bank sales bank to send them to your bank)"
+                : "Vendor sales now go straight into your bank. (/bank sales coins to get coins instead)");
         }
 
         // ---------------------------------------------------------------- transfer
