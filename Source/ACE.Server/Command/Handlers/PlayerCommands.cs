@@ -1712,7 +1712,7 @@ namespace ACE.Server.Command.Handlers
             "/bank deposit <currency> [amount] - e.g. /bank deposit trophies, /bank deposit pyreals 50000, /bank deposit luminance 1m\n" +
             "/bank withdraw <currency> <amount> [coins | notes <size>] - e.g. /bank withdraw pyreals 2m (250k trade notes plus coins), /bank withdraw pyreals 50k coins, /bank withdraw pyreals 500k notes 100k, /bank withdraw hera 2\n" +
             "/bank sales bank|coins - whether vendor sales pay into your bank or give you coins (the default)\n" +
-            "/bank purchases on|off - whether vendors offer (with a popup) to pay what your pack is short from your bank (on by default)\n" +
+            "/bank purchases ask|auto|off - when your pack is short at a vendor: ask with a popup (default), pay from the bank without asking, or never use the bank\n" +
             "/bank send <currency> <amount> <character> - e.g. /bank send trophies 25 Some Name (logged; asks you to confirm)\n" +
             "/bank log [count] - your recent bank history\n" +
             "Currencies: pyreals, trophies, luminance, darkbeat, hera, skeleton. Amounts take k/m/b (5k, 2.5m).\n" +
@@ -1723,7 +1723,7 @@ namespace ACE.Server.Command.Handlers
 
             void Say(string text) => session.Network.EnqueueSend(new GameMessageSystemChat(text, ChatMessageType.Broadcast));
 
-            void Help() => Say("Bank: /bank, /bank deposit [currency] [amount], /bank deposit notes, /bank withdraw <currency> <amount> [coins | notes <size>], /bank send <currency> <amount> <character>, /bank sales bank|coins, /bank purchases on|off, /bank log. " +
+            void Help() => Say("Bank: /bank, /bank deposit [currency] [amount], /bank deposit notes, /bank withdraw <currency> <amount> [coins | notes <size>], /bank send <currency> <amount> <character>, /bank sales bank|coins, /bank purchases ask|auto|off, /bank log. " +
                 "Currencies: pyreals, trophies, luminance, darkbeat, hera, skeleton.");
 
             if (parameters.Length == 0 || parameters[0].Equals("balance", StringComparison.OrdinalIgnoreCase) || parameters[0].Equals("b", StringComparison.OrdinalIgnoreCase))
@@ -1854,19 +1854,23 @@ namespace ACE.Server.Command.Handlers
                     if (parameters.Length < 2)
                     {
                         Say(player.BankPurchasesOff
-                            ? "Vendors don't offer to pay from your bank. /bank purchases on turns it on."
-                            : "When your pack is short at a vendor, you're asked whether to pay the rest from your bank. /bank purchases off turns it off.");
+                            ? "Vendors don't use your bank. /bank purchases ask (with a popup) or /bank purchases auto (no popup) turns it on."
+                            : player.BankPurchasesAuto
+                                ? "When your pack is short at a vendor, the rest is paid from your bank without asking. /bank purchases ask brings the popup back, /bank purchases off stops it."
+                                : "When your pack is short at a vendor, you're asked whether to pay the rest from your bank. /bank purchases auto: no popup, /bank purchases off: never.");
                         return;
                     }
 
                     var choice = parameters[1].ToLowerInvariant();
 
-                    if (choice == "on" || choice == "yes" || choice == "bank")
-                        player.BankSetPurchases(true);
-                    else if (choice == "off" || choice == "no" || choice == "pack")
-                        player.BankSetPurchases(false);
+                    if (choice == "auto" || choice == "always" || choice == "nopopup")
+                        player.BankSetPurchases("auto");
+                    else if (choice == "ask" || choice == "on" || choice == "yes" || choice == "popup")
+                        player.BankSetPurchases("ask");
+                    else if (choice == "off" || choice == "no" || choice == "never" || choice == "pack")
+                        player.BankSetPurchases("off");
                     else
-                        Say("Use /bank purchases on or /bank purchases off.");
+                        Say("Use /bank purchases ask, /bank purchases auto or /bank purchases off.");
                     return;
                 }
 

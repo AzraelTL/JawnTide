@@ -26,13 +26,13 @@ Amounts can use k, m and b: `5k`, `2.5m`, `1b`.
 | `/bank withdraw pyreals 50k coins` | Takes pyreals out as coins only (up to 2,500,000 at a time). |
 | `/bank withdraw pyreals 500k notes 100k` | Takes pyreals out in the trade note size you pick (any standard note from 100 to 250,000). Anything left over comes as coins. |
 | `/bank sales bank` | Vendor sales pay straight into your bank. `/bank sales coins` switches back to the default: coins in your pack. |
-| `/bank purchases off` | Vendors stop offering to pay from your bank when your pack is short. `/bank purchases on` turns it back on. |
+| `/bank purchases auto` | When your pack is short at a vendor, the rest comes from your bank without the popup. `ask` brings the popup back, `off` never uses the bank. |
 | `/bank withdraw hera 2` | Takes out keys (up to 100 at a time). |
 | `/bank send trophies 25 Some Name` | Sends from your bank to another player's bank. You're asked to confirm first. |
 | `/bank log` | Shows your last 10 bank entries (`/bank log 30` for more). |
 
 ## Buying from vendors
-If you buy from a vendor that takes pyreals (or PK Trophies, at the PK Trophy Vendor) and your pack is short, a popup asks whether to pay the rest from your bank. Say yes and your pack pays what it can and the bank pays the rest. Say no and nothing happens. Bank payments show in `/bank log` as `vendor`. Don't want the offer? Type `/bank purchases off` (per character); `/bank purchases on` turns it back on.
+If you buy from a vendor that takes pyreals (or PK Trophies, at the PK Trophy Vendor) and your pack is short, a popup asks whether to pay the rest from your bank. Say yes and your pack pays what it can and the bank pays the rest. Say no and nothing happens. Bank payments show in `/bank log` as `vendor`. Don't want the popup? `/bank purchases auto` pays the rest from your bank without asking. `/bank purchases off` never uses the bank, and `/bank purchases ask` brings the popup back (per character).
 
 ## Selling to vendors
 Vendor sales pay you in coins, as always. To have them go straight into your bank instead (no pack space needed for coins), type `/bank sales bank` (per character); a message tells you how much went in each time. While you're PK tagged or in an arena you always get coins.

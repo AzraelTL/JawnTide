@@ -202,6 +202,9 @@ namespace ACE.Entity.Enum.Properties
         BankPurchasesOff = 20002,
 
         /// <summary>JawnTide Bank: true = vendor sale proceeds go into the bank (default: coins in the pack, /bank sales bank turns this on)</summary>
-        BankSaleProceedsToBank = 20003
+        BankSaleProceedsToBank = 20003,
+
+        /// <summary>JawnTide Bank: true = a vendor shortfall is paid from the bank without the Yes/No popup (/bank purchases auto)</summary>
+        BankPurchasesAuto = 20004
     }
 }
