@@ -59,13 +59,11 @@ namespace ACE.Server.Network.GameEvent.Events
 
                 // JawnTide My Mule: the client prices Trade Notes (PromissoryNote) at a fixed rate whatever the vendor's
                 // rates are, so on a mule (everything free) they'd show a price. Showing them as Misc avoids that.
-                // Salvage (TinkeringMaterial) doesn't show in the mule window; Vendor.MuleSalvageAsMisc and
-                // Vendor.MuleListingStrip (set with the admin command /mulelist) are for finding out why.
-                // Only the listing changes; the stored item keeps its real type.
+                // Salvage (TinkeringMaterial) is left out of a vendor's for-sale list by the client (tested on JawnTest),
+                // so on a mule it is listed as Misc too. Only the listing changes; the stored item keeps its real type.
                 var originalItemType = obj.ItemType;
-                var isMule = vendor.MuleOwnerId.HasValue;
-                var isSalvage = isMule && originalItemType == ACE.Entity.Enum.ItemType.TinkeringMaterial;
-                var isMuleNote = isMule && (originalItemType == ACE.Entity.Enum.ItemType.PromissoryNote || (isSalvage && Vendor.MuleSalvageAsMisc));
+                var isMuleNote = vendor.MuleOwnerId.HasValue
+                    && (originalItemType == ACE.Entity.Enum.ItemType.PromissoryNote || originalItemType == ACE.Entity.Enum.ItemType.TinkeringMaterial);
 
                 if (isMuleNote)
                 {
@@ -73,10 +71,7 @@ namespace ACE.Server.Network.GameEvent.Events
                     obj.CalculateObjDesc();
                 }
 
-                if (isSalvage && Vendor.MuleListingStrip != ACE.Entity.Enum.WeenieHeaderFlag.None)
-                    obj.SerializeGameDataOnly(Writer, Vendor.MuleListingStrip);
-                else
-                    obj.SerializeGameDataOnly(Writer);
+                obj.SerializeGameDataOnly(Writer);
 
                 if (isMuleNote)
                     obj.ItemType = originalItemType;

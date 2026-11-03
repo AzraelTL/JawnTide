@@ -41,12 +41,6 @@ namespace ACE.Server.WorldObjects
             SerializeCreateObject(writer, true, adminvision, false);
         }
 
-        /// <summary>JawnTide My Mule: the same, leaving out the given header fields (testing what the client needs to list an item).</summary>
-        public void SerializeGameDataOnly(BinaryWriter writer, WeenieHeaderFlag stripFlags)
-        {
-            SerializeCreateObject(writer, true, false, false, stripFlags);
-        }
-
         /// <summary>
         /// This is the function used for the GameMessage.ObjDescEvent
         /// </summary>
@@ -59,7 +53,7 @@ namespace ACE.Server.WorldObjects
             writer.Write(Sequences.GetNextSequence(SequenceType.ObjectVisualDesc));
         }
 
-        private void SerializeCreateObject(BinaryWriter writer, bool gamedataonly, bool adminvision = false, bool changenodraw = false, WeenieHeaderFlag stripFlags = WeenieHeaderFlag.None)
+        private void SerializeCreateObject(BinaryWriter writer, bool gamedataonly, bool adminvision = false, bool changenodraw = false)
         {
             writer.WriteGuid(Guid);
 
@@ -69,7 +63,7 @@ namespace ACE.Server.WorldObjects
                 SerializePhysicsData(writer, adminvision, changenodraw);
             }
 
-            var weenieFlags =  CalculateWeenieHeaderFlag() & ~stripFlags;
+            var weenieFlags =  CalculateWeenieHeaderFlag();
             var weenieFlags2 = CalculateWeenieHeaderFlag2();
 
             UpdateObjectDescriptionFlags();
