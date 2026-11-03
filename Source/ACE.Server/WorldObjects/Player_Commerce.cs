@@ -249,9 +249,9 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            // JawnTide Bank: sale proceeds go straight into the bank unless the player turned it off (/bank sales coins)
-            // or the bank is closed to them right now (PK tagged, arena, ...), in which case they get coins as usual
-            var proceedsToBank = payoutCoinAmount > 0 && !(GetProperty(PropertyBool.BankSaleProceedsToPack) ?? false) && BankClosedReason() == null;
+            // JawnTide Bank: sale proceeds come as coins, as always, unless the player chose the bank (/bank sales bank) and the
+            // bank is open to them right now (not PK tagged, not in an arena, ...). Coins by default so auto-vendor tools work.
+            var proceedsToBank = payoutCoinAmount > 0 && BankSalesToBank && BankClosedReason() == null;
 
             // verify player has enough pack slots / burden to receive these pyreals
             var itemsToReceive = new ItemsToReceive(this);

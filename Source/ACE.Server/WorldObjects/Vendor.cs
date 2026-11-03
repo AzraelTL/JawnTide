@@ -351,12 +351,14 @@ namespace ACE.Server.WorldObjects
             // JawnTide Bank: show the client what the bank can add, so it lets the player buy (the server asks before using it)
             uint bankExtra = MuleOwnerId.HasValue ? 0 : player.BankVendorExtra(this);
 
-            player.Session.Network.EnqueueSend(new GameEventApproachVendor(player.Session, this, altCurrencySpent, AlternateCurrency != null ? bankExtra : 0));
-
+            // pyreal vendors: the window's "you have" comes from the player's coin count, so the raised count (pack + bank)
+            // is sent BEFORE the window opens; alternate currency vendors get it inside the window message itself
             if (AlternateCurrency == null)
                 player.BankRaiseCoinDisplay(bankExtra);
             else
                 player.BankRestoreCoinDisplay();
+
+            player.Session.Network.EnqueueSend(new GameEventApproachVendor(player.Session, this, altCurrencySpent, AlternateCurrency != null ? bankExtra : 0));
 
             var rotateTime = Rotate(player); // vendor rotates to player
 

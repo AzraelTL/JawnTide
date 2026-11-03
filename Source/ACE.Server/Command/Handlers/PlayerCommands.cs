@@ -1707,10 +1707,12 @@ namespace ACE.Server.Command.Handlers
         [CommandHandler("bank", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
             "Your account-wide bank: pyreals (coins and trade notes), PK Trophies, keys and luminance.",
             "/bank - your balances\n" +
-            "/bank deposit - deposit all pyreals, trade notes, PK Trophies and keys (not luminance)\n" +
+            "/bank deposit - deposit all pyreal coins, PK Trophies and keys (not trade notes or luminance)\n" +
+            "/bank deposit notes - deposit your trade notes (by pyreal value)\n" +
             "/bank deposit <currency> [amount] - e.g. /bank deposit trophies, /bank deposit pyreals 50000, /bank deposit luminance 1m\n" +
             "/bank withdraw <currency> <amount> [coins | notes <size>] - e.g. /bank withdraw pyreals 2m (250k trade notes plus coins), /bank withdraw pyreals 50k coins, /bank withdraw pyreals 500k notes 100k, /bank withdraw hera 2\n" +
-            "/bank sales bank|coins - whether vendor sales pay into your bank (the default) or give you coins\n" +
+            "/bank sales bank|coins - whether vendor sales pay into your bank or give you coins (the default)\n" +
+            "/bank purchases auto|ask|off - when your pack is short at a vendor: pay the rest from the bank without asking (default), ask with a popup, or never use the bank\n" +
             "/bank send <currency> <amount> <character> - e.g. /bank send trophies 25 Some Name (logged; asks you to confirm)\n" +
             "/bank log [count] - your recent bank history\n" +
             "Currencies: pyreals, trophies, luminance, darkbeat, hera, skeleton. Amounts take k/m/b (5k, 2.5m).\n" +
@@ -1721,7 +1723,7 @@ namespace ACE.Server.Command.Handlers
 
             void Say(string text) => session.Network.EnqueueSend(new GameMessageSystemChat(text, ChatMessageType.Broadcast));
 
-            void Help() => Say("Bank: /bank, /bank deposit [currency] [amount], /bank withdraw <currency> <amount> [coins | notes <size>], /bank send <currency> <amount> <character>, /bank sales bank|coins, /bank log. " +
+            void Help() => Say("Bank: /bank, /bank deposit [currency] [amount], /bank deposit notes, /bank withdraw <currency> <amount> [coins | notes <size>], /bank send <currency> <amount> <character>, /bank sales bank|coins, /bank purchases ask|auto|off, /bank log. " +
                 "Currencies: pyreals, trophies, luminance, darkbeat, hera, skeleton.");
 
             if (parameters.Length == 0 || parameters[0].Equals("balance", StringComparison.OrdinalIgnoreCase) || parameters[0].Equals("b", StringComparison.OrdinalIgnoreCase))
@@ -1775,6 +1777,13 @@ namespace ACE.Server.Command.Handlers
                     if (parameters.Length == 1 || parameters[1].Equals("all", StringComparison.OrdinalIgnoreCase))
                     {
                         player.BankDepositAll();
+                        return;
+                    }
+
+                    var what = parameters[1].ToLowerInvariant();
+                    if (what == "notes" || what == "note" || what == "mmd" || what == "mmds" || what == "tradenotes")
+                    {
+                        player.BankDepositNotes();
                         return;
                     }
 
@@ -1838,15 +1847,41 @@ namespace ACE.Server.Command.Handlers
                     return;
                 }
 
+                case "purchases":
+                case "purchase":
+                case "buy":
+                {
+                    if (parameters.Length < 2)
+                    {
+                        Say(player.BankPurchasesOff
+                            ? "Vendors don't use your bank. /bank purchases ask (with a popup) or /bank purchases auto (no popup) turns it on."
+                            : player.BankPurchasesAuto
+                                ? "When your pack is short at a vendor, the rest is paid from your bank without asking (the default). /bank purchases ask for a popup, /bank purchases off: never."
+                                : "When your pack is short at a vendor, you're asked whether to pay the rest from your bank. /bank purchases auto: no popup, /bank purchases off: never.");
+                        return;
+                    }
+
+                    var choice = parameters[1].ToLowerInvariant();
+
+                    if (choice == "auto" || choice == "always" || choice == "nopopup")
+                        player.BankSetPurchases("auto");
+                    else if (choice == "ask" || choice == "on" || choice == "yes" || choice == "popup")
+                        player.BankSetPurchases("ask");
+                    else if (choice == "off" || choice == "no" || choice == "never" || choice == "pack")
+                        player.BankSetPurchases("off");
+                    else
+                        Say("Use /bank purchases ask, /bank purchases auto or /bank purchases off.");
+                    return;
+                }
+
                 case "sales":
                 case "sale":
                 {
                     if (parameters.Length < 2)
                     {
-                        var toPack = player.GetProperty(ACE.Entity.Enum.Properties.PropertyBool.BankSaleProceedsToPack) ?? false;
-                        Say(toPack
-                            ? "Vendor sales pay you in coins. /bank sales bank sends them to your bank."
-                            : "Vendor sales go into your bank. /bank sales coins pays you in coins instead.");
+                        Say(player.BankSalesToBank
+                            ? "Vendor sales go into your bank. /bank sales coins pays you in coins again."
+                            : "Vendor sales pay you in coins (the default). /bank sales bank sends them to your bank instead.");
                         return;
                     }
 

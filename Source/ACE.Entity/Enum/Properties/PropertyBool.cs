@@ -195,7 +195,17 @@ namespace ACE.Entity.Enum.Properties
         IsBountyHighPriorityTarget = 19019,
         IsTinkerCharacter = 19020,
 
-        /// <summary>JawnTide Bank: true = vendor sale proceeds come as coins (default: they go into the bank)</summary>
-        BankSaleProceedsToPack = 20001
+        /// <summary>JawnTide Bank: old opt-out flag for sale proceeds (no longer read; sales pay coins unless BankSaleProceedsToBank)</summary>
+        BankSaleProceedsToPack = 20001,
+
+        /// <summary>JawnTide Bank: true = vendors never offer to pay a shortfall from the bank (default: they ask with a popup)</summary>
+        BankPurchasesOff = 20002,
+
+        /// <summary>JawnTide Bank: true = vendor sale proceeds go into the bank (default: coins in the pack, /bank sales bank turns this on)</summary>
+        BankSaleProceedsToBank = 20003,
+
+        /// <summary>JawnTide Bank: true = ask with a Yes/No popup before paying a vendor shortfall from the bank (/bank purchases ask).
+        /// Default: paid without asking.</summary>
+        BankPurchasesAsk = 20005
     }
 }
