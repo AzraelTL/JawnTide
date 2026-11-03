@@ -894,19 +894,40 @@ namespace ACE.Server.WorldObjects
             var processedGuids = new HashSet<uint>();
             var touched = new HashSet<WorldObject>();
 
+            // JawnTide: say why an item was skipped, so nothing leaves the sell window without a trace (log and player)
+            void Skip(string why, uint guid, WorldObject item, int amount)
+            {
+                log.Warn($"[MULE] {Name} (0x{Guid}) deposit skipped 0x{guid:X8} {item?.Name ?? "?"} x{amount} (StackSize {item?.StackSize}, ItemType {item?.ItemType}): {why}");
+                Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, $"{item?.Name ?? "That item"} couldn't be stored ({why})."));
+                Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, guid));
+            }
+
+            log.Info($"[MULE] {Name} (0x{Guid}) deposit request: {string.Join(", ", itemProfiles.Select(p => $"0x{p.ObjectGuid:X8} x{p.Amount}"))}");
+
             foreach (var itemProfile in itemProfiles)
             {
                 if (!processedGuids.Add(itemProfile.ObjectGuid))
                     continue;
 
-                if (!itemProfile.IsValidAmount)
-                    continue;
+                allPossessions.TryGetValue(itemProfile.ObjectGuid, out var wo);
 
-                if (!allPossessions.TryGetValue(itemProfile.ObjectGuid, out var wo))
+                if (!itemProfile.IsValidAmount)
+                {
+                    Skip("bad amount", itemProfile.ObjectGuid, wo, itemProfile.Amount);
                     continue;
+                }
+
+                if (wo == null)
+                {
+                    Skip("not in your inventory", itemProfile.ObjectGuid, null, itemProfile.Amount);
+                    continue;
+                }
 
                 if (itemProfile.Amount > (wo.StackSize ?? 1))
+                {
+                    Skip($"asked for {itemProfile.Amount}, stack is {wo.StackSize ?? 1}", itemProfile.ObjectGuid, wo, itemProfile.Amount);
                     continue;
+                }
 
                 if (wo.ItemType == ItemType.Money || wo.WeenieType == WeenieType.Container)
                 {
@@ -953,7 +974,10 @@ namespace ACE.Server.WorldObjects
                 {
                     if (!(TryRemoveFromInventoryWithNetworking(wo.Guid, out toDeposit, RemoveFromInventoryAction.SellItem) ||
                           TryDequipObjectWithNetworking(wo.Guid, out toDeposit, DequipObjectAction.SellItem)))
+                    {
+                        Skip("couldn't be taken from your pack", wo.Guid.Full, wo, itemProfile.Amount);
                         continue;
+                    }
 
                     Session.Network.EnqueueSend(new GameEventItemServerSaysContainId(Session, toDeposit, vendor));
                 }
