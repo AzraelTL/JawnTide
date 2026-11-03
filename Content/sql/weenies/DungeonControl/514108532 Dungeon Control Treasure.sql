@@ -50,22 +50,20 @@ VALUES (514108532,   1, 0x02000BF1) /* Setup */
 
 INSERT INTO `weenie_properties_generator` (`object_Id`, `probability`, `weenie_Class_Id`, `delay`, `init_Create`, `max_Create`, `when_Create`, `where_Create`, `stack_Size`, `palette_Id`, `shade`, `obj_Cell_Id`, `origin_X`, `origin_Y`, `origin_Z`, `angles_W`, `angles_X`, `angles_Y`, `angles_Z`)
 VALUES (514108532, -1, 10004, 1, 1, 1, 1, 72, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate RANDOMLY GENERATED TREASURE from Loot Tier 8 from Death Treasure Table id: 10000 (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: ContainTreasure */
-	 , (514108532, 0.17, 490326, 1, 1, 2, 1, 8, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Essence of Power (490326) (x1 up to max of 5) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (514108532, 0.20, 52797, 1, 1, 1, 1, 8, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Gauntlet Coin (52797) (x1 up to max of 5) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (514108532, 0.24, 38726, 1, 1, 5, 1, 8, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Black Market Gem of Dispelling (38726) (x1 up to max of 5) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (514108532, 0.25, 510000, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate A box (510000) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (514108532, 0.3, 52968, 1, 1, 100, 1, 8, 100, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Infused Amber Shard - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (514108532, 0.325, 52969, 1, 1, 100, 1, 8, 100, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Corrupted Amber Shard (52969) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (514108532, 0.375, 20630, 1, 1, 25, 1, 8, 25, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Trade Note (250,000) (20630) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (514108532, 0.40, 490321, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Luminance Exchange Token (490321) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (514108532, 0.425, 480634, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Duped Gem of Greater Luminance (480634) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (514108532, 0.5, 490364, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Hera Vault Key (490364) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (514108532, 0.65, 1000002, 1, 1, 20, 1, 8, 20, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate PK Trophy (1000002) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (514108532, 0.80, 43901, 1, 1, 50, 1, 8, 50, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Promissory Note (43901) (x1 up to max of 5) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (514108532, 0.85, 1000003, 1, 1, 5, 1, 8, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Phial of Bloody Tears (1000003) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (514108532, 0.90, 480611, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Experience Certificate (480611) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-	 , (514108532, 0.94, 490070, 1, 1, 2, 1, 8, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Water of Enlightenment (490070) (x1 up to max of 1) - Regenerate upon PickUp - Location to (re)Generate: Contain */
-     , (514108532, 0.95, 480612, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Darkbeat's Golem Drawing (480612) (x1 up to max of 1) - Regenerate upon Destruction - Location to (re)Generate: Contain */
-	 , (514108532, 0.975, 600030, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Overpower Morph Gem (600030) (x1 up to max of 1) - Regenerate upon Destruction - Location to (re)Generate: Contain */
-	 , (514108532, 0.999, 600031, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Overpower Resist Morph Gem (600031) (x1 up to max of 1) - Regenerate upon Destruction - Location to (re)Generate: Contain */
+	 , (514108532, 0.1868, 490326, 1, 1, 2, 1, 8, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Essence of Power (490326) (x1 up to max of 5) - Regenerate upon PickUp - Location to (re)Generate: Contain */
+	 , (514108532, 0.2198, 52797, 1, 1, 1, 1, 8, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Gauntlet Coin (52797) (x1 up to max of 5) - Regenerate upon PickUp - Location to (re)Generate: Contain */
+	 , (514108532, 0.2637, 38726, 1, 1, 5, 1, 8, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Black Market Gem of Dispelling (38726) (x1 up to max of 5) - Regenerate upon PickUp - Location to (re)Generate: Contain */
+	 , (514108532, 0.2747, 510000, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate A box (510000) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
+	 , (514108532, 0.3297, 52968, 1, 1, 100, 1, 8, 100, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Infused Amber Shard - Regenerate upon PickUp - Location to (re)Generate: Contain */
+	 , (514108532, 0.3571, 52969, 1, 1, 100, 1, 8, 100, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Corrupted Amber Shard (52969) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
+     , (514108532, 0.4121, 20630, 1, 1, 25, 1, 8, 25, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Trade Note (250,000) (20630) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
+     , (514108532, 0.4396, 490321, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Luminance Exchange Token (490321) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
+	 , (514108532, 0.467, 480634, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Duped Gem of Greater Luminance (480634) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
+	 , (514108532, 0.5495, 490364, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Hera Vault Key (490364) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
+	 , (514108532, 0.7143, 1000002, 1, 1, 20, 1, 8, 20, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate PK Trophy (1000002) (x1 up to max of 4) - Regenerate upon PickUp - Location to (re)Generate: Contain */
+     , (514108532, 0.8791, 43901, 1, 1, 50, 1, 8, 50, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Promissory Note (43901) (x1 up to max of 5) - Regenerate upon PickUp - Location to (re)Generate: Contain */
+     , (514108532, 0.9341, 1000003, 1, 1, 5, 1, 8, 5, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Phial of Bloody Tears (1000003) - Regenerate upon PickUp - Location to (re)Generate: Contain */
+     , (514108532, 0.9451, 480612, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Darkbeat's Golem Drawing (480612) (x1 up to max of 1) - Regenerate upon Destruction - Location to (re)Generate: Contain */
+	 , (514108532, 0.9725, 600030, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Overpower Morph Gem (600030) (x1 up to max of 1) - Regenerate upon Destruction - Location to (re)Generate: Contain */
+	 , (514108532, 0.9989, 600031, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Overpower Resist Morph Gem (600031) (x1 up to max of 1) - Regenerate upon Destruction - Location to (re)Generate: Contain */
 	 , (514108532, 1, 30258, 1, 1, 1, 1, 8, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) /* Generate Shimmering Skeleton Key (30258) (x1 up to max of 1) - Regenerate upon Destruction - Location to (re)Generate: Contain */;
