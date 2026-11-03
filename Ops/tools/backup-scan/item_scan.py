@@ -17,7 +17,7 @@ import re
 import sys
 
 USE_RE = re.compile(r"^USE `([^`]+)`;")
-INSERT_RE = re.compile(r"^INSERT INTO `([^`]+)` VALUES ")
+INSERT_RE = re.compile(r"^INSERT INTO `([^`]+)` VALUES\s?")
 NUM3 = re.compile(r"\((\d+),(\d+),(-?\d+)\)")          # (object_Id,type,value)
 BIOTA = re.compile(r"\((\d+),(\d+),")                  # (id,weenie_Class_Id,...
 ACCOUNT = re.compile(r"\((\d+),'((?:[^'\\]|\\.)*)'")   # (accountId,'accountName',...
@@ -37,53 +37,71 @@ def scan(path, wcid, account_names, bank_code):
     mules = {}          # account_Id -> head container
     bank = {}           # account_Id -> amount
 
+    def handle(table, body):
+        if db == "ace_auth" and table == "account":
+            for a in ACCOUNT.finditer(body):
+                accounts[int(a.group(1))] = a.group(2)
+        elif db != "ace_shard":
+            return
+        elif table == "biota":
+            for b in BIOTA.finditer(body):
+                if int(b.group(2)) == wcid:
+                    item_ids.add(int(b.group(1)))
+        elif table == "biota_properties_int":
+            for p in NUM3.finditer(body):
+                if p.group(2) == "12":
+                    oid = int(p.group(1))
+                    if oid in item_ids:
+                        stack[oid] = int(p.group(3))
+        elif table == "biota_properties_i_i_d":
+            for p in NUM3.finditer(body):
+                t = p.group(2)
+                if t == "2":
+                    container[int(p.group(1))] = int(p.group(3))
+                elif t == "20003":
+                    next_mule[int(p.group(1))] = int(p.group(3))
+        elif table == "character":
+            for c in CHAR.finditer(body):
+                chars[int(c.group(1))] = (int(c.group(2)), c.group(3))
+        elif table == "account_mule":
+            for c in MULE.finditer(body):
+                mules[int(c.group(1))] = int(c.group(2))
+        elif table == "account_bank":
+            for c in BANK.finditer(body):
+                if c.group(2) == bank_code:
+                    bank[int(c.group(1))] = int(c.group(3))
+
+    # mariadb-dump 11 writes "INSERT INTO `t` VALUES" on its own line and each row on the following lines (ending
+    # with ";"); older dumps put every row on the INSERT line. Both are handled: rows belong to the last INSERT
+    # until a line ends with ";".
+    table = None
     with gzip.open(path, "rt", encoding="utf-8", errors="replace") as f:
         for line in f:
-            if line.startswith("USE "):
-                m = USE_RE.match(line)
-                if m:
-                    db = m.group(1)
-                continue
-            if not line.startswith("INSERT INTO"):
-                continue
-            m = INSERT_RE.match(line)
-            if not m:
-                continue
-            table = m.group(1)
-            body = line[m.end():]
+            if table is None:
+                if line.startswith("USE "):
+                    m = USE_RE.match(line)
+                    if m:
+                        db = m.group(1)
+                    continue
+                if not line.startswith("INSERT INTO"):
+                    continue
+                m = INSERT_RE.match(line)
+                if not m:
+                    m2 = re.match(r"^INSERT INTO `([^`]+)`", line)
+                    if not m2:
+                        continue
+                    table = m2.group(1)
+                    body = line[m2.end():]
+                else:
+                    table = m.group(1)
+                    body = line[m.end():]
+            else:
+                body = line
 
-            if db == "ace_auth" and table == "account":
-                for a in ACCOUNT.finditer(body):
-                    accounts[int(a.group(1))] = a.group(2)
-            elif db != "ace_shard":
-                continue
-            elif table == "biota":
-                for b in BIOTA.finditer(body):
-                    if int(b.group(2)) == wcid:
-                        item_ids.add(int(b.group(1)))
-            elif table == "biota_properties_int":
-                for p in NUM3.finditer(body):
-                    if p.group(2) == "12":
-                        oid = int(p.group(1))
-                        if oid in item_ids:
-                            stack[oid] = int(p.group(3))
-            elif table == "biota_properties_i_i_d":
-                for p in NUM3.finditer(body):
-                    t = p.group(2)
-                    if t == "2":
-                        container[int(p.group(1))] = int(p.group(3))
-                    elif t == "20003":
-                        next_mule[int(p.group(1))] = int(p.group(3))
-            elif table == "character":
-                for c in CHAR.finditer(body):
-                    chars[int(c.group(1))] = (int(c.group(2)), c.group(3))
-            elif table == "account_mule":
-                for c in MULE.finditer(body):
-                    mules[int(c.group(1))] = int(c.group(2))
-            elif table == "account_bank":
-                for c in BANK.finditer(body):
-                    if c.group(2) == bank_code:
-                        bank[int(c.group(1))] = int(c.group(3))
+            handle(table, body)
+
+            if body.rstrip().endswith(";"):
+                table = None
 
     wanted = {aid for aid, name in accounts.items() if name.lower() in account_names}
 
