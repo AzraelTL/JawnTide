@@ -59,8 +59,11 @@ namespace ACE.Server.Network.GameEvent.Events
 
                 // JawnTide My Mule: the client prices Trade Notes (PromissoryNote) at a fixed rate whatever the vendor's
                 // rates are, so on a mule (everything free) they'd show a price. Showing them as Misc avoids that.
+                // Salvage (TinkeringMaterial) is left out of a vendor's for-sale list by the client, so on a mule it is
+                // listed as Misc too. Only the listing changes; the stored item keeps its real type.
                 var originalItemType = obj.ItemType;
-                var isMuleNote = vendor.MuleOwnerId.HasValue && originalItemType == ACE.Entity.Enum.ItemType.PromissoryNote;
+                var isMuleNote = vendor.MuleOwnerId.HasValue
+                    && (originalItemType == ACE.Entity.Enum.ItemType.PromissoryNote || originalItemType == ACE.Entity.Enum.ItemType.TinkeringMaterial);
 
                 if (isMuleNote)
                 {
