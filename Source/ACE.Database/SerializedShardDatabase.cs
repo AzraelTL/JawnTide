@@ -12,7 +12,7 @@ using ACE.Entity.Enum;
 
 namespace ACE.Database
 {
-    public class SerializedShardDatabase
+    public partial class SerializedShardDatabase
     {
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 

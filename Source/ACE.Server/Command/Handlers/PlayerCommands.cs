@@ -1703,6 +1703,198 @@ namespace ACE.Server.Command.Handlers
 
         #endregion
         // JawnTide My Mule (ported from ClassicPvP feature/my-mule)
+        // JawnTide Bank: account-wide bank (see Player_Bank.cs)
+        [CommandHandler("bank", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
+            "Your account-wide bank: pyreals (coins and trade notes), PK Trophies, keys and luminance.",
+            "/bank - your balances\n" +
+            "/bank deposit - deposit all pyreals, trade notes, PK Trophies and keys (not luminance)\n" +
+            "/bank deposit <currency> [amount] - e.g. /bank deposit trophies, /bank deposit pyreals 50000, /bank deposit luminance 1m\n" +
+            "/bank withdraw <currency> <amount> [coins] - e.g. /bank withdraw pyreals 2m (250k trade notes plus coins), /bank withdraw pyreals 50k coins, /bank withdraw hera 2\n" +
+            "/bank send <currency> <amount> <character> - e.g. /bank send trophies 25 Some Name (logged; asks you to confirm)\n" +
+            "/bank log [count] - your recent bank history\n" +
+            "Currencies: pyreals, trophies, luminance, darkbeat, hera, skeleton. Amounts take k/m/b (5k, 2.5m).\n" +
+            "The bank is shared by every character on your account. It can't be used while PK tagged or in an arena.")]
+        public static void HandleBank(Session session, params string[] parameters)
+        {
+            var player = session.Player;
+
+            void Say(string text) => session.Network.EnqueueSend(new GameMessageSystemChat(text, ChatMessageType.Broadcast));
+
+            void Help() => Say("Bank: /bank, /bank deposit [currency] [amount], /bank withdraw <currency> <amount> [coins], /bank send <currency> <amount> <character>, /bank log. " +
+                "Currencies: pyreals, trophies, luminance, darkbeat, hera, skeleton.");
+
+            if (parameters.Length == 0 || parameters[0].Equals("balance", StringComparison.OrdinalIgnoreCase) || parameters[0].Equals("b", StringComparison.OrdinalIgnoreCase))
+            {
+                player.BankShowBalance();
+                return;
+            }
+
+            var verb = parameters[0].ToLowerInvariant();
+
+            BankCurrency ParseCurrency(int index)
+            {
+                if (parameters.Length <= index)
+                {
+                    Help();
+                    return null;
+                }
+
+                var currency = BankInfo.Find(parameters[index]);
+
+                if (currency == null)
+                    Say($"Unknown currency {parameters[index]}. Use pyreals, trophies, luminance, darkbeat, hera or skeleton.");
+
+                return currency;
+            }
+
+            bool ParseAmount(int index, out long amount)
+            {
+                amount = 0;
+
+                if (parameters.Length <= index)
+                {
+                    Help();
+                    return false;
+                }
+
+                if (!BankInfo.TryParseAmount(parameters[index], out amount))
+                {
+                    Say($"{parameters[index]} isn't a valid amount.");
+                    return false;
+                }
+
+                return true;
+            }
+
+            switch (verb)
+            {
+                case "deposit":
+                case "d":
+                {
+                    if (parameters.Length == 1 || parameters[1].Equals("all", StringComparison.OrdinalIgnoreCase))
+                    {
+                        player.BankDepositAll();
+                        return;
+                    }
+
+                    var currency = ParseCurrency(1);
+                    if (currency == null)
+                        return;
+
+                    long? amount = null;
+
+                    if (parameters.Length > 2)
+                    {
+                        if (!ParseAmount(2, out var a))
+                            return;
+                        amount = a;
+                    }
+
+                    player.BankDeposit(currency, amount);
+                    return;
+                }
+
+                case "withdraw":
+                case "w":
+                {
+                    var currency = ParseCurrency(1);
+                    if (currency == null || !ParseAmount(2, out var amount))
+                        return;
+
+                    var coinsOnly = parameters.Length > 3 && parameters[3].StartsWith("coin", StringComparison.OrdinalIgnoreCase);
+
+                    player.BankWithdraw(currency, amount, coinsOnly);
+                    return;
+                }
+
+                case "send":
+                case "s":
+                {
+                    var currency = ParseCurrency(1);
+                    if (currency == null || !ParseAmount(2, out var amount))
+                        return;
+
+                    if (parameters.Length < 4)
+                    {
+                        Say("Who to send it to? /bank send <currency> <amount> <character>");
+                        return;
+                    }
+
+                    player.BankSend(currency, amount, string.Join(" ", parameters.Skip(3)));
+                    return;
+                }
+
+                case "log":
+                case "history":
+                {
+                    var count = 10;
+
+                    if (parameters.Length > 1 && (!int.TryParse(parameters[1], out count) || count < 1))
+                        count = 10;
+
+                    player.BankShowLog(Math.Min(count, 50));
+                    return;
+                }
+
+                default:
+                    Help();
+                    return;
+            }
+        }
+
+        // JawnTide Bank: look up any character's account bank and its recent history
+        [CommandHandler("bankcheck", AccessLevel.Sentinel, CommandHandlerFlag.None, 1,
+            "Shows a character's account bank balances and the last 20 entries of its history.",
+            "<character name>")]
+        public static void HandleBankCheck(Session session, params string[] parameters)
+        {
+            void Say(string text)
+            {
+                if (session?.Player != null)
+                    session.Network.EnqueueSend(new GameMessageSystemChat(text, ChatMessageType.Broadcast));
+                else
+                    Console.WriteLine(text);
+            }
+
+            var name = string.Join(" ", parameters);
+            var target = PlayerManager.FindByName(name);
+
+            if (target?.Account == null)
+            {
+                Say($"No character named {name}.");
+                return;
+            }
+
+            var accountId = target.Account.AccountId;
+            var accountName = target.Account.AccountName;
+
+            DatabaseManager.Shard.GetAccountBank(accountId, balances =>
+            {
+                if (balances == null)
+                {
+                    Say("The bank couldn't be read.");
+                    return;
+                }
+
+                var sb = new StringBuilder($"Bank of account {accountName} ({accountId}), via {target.Name}:");
+
+                foreach (var currency in BankInfo.Currencies)
+                {
+                    balances.TryGetValue(currency.Code, out var amount);
+                    sb.Append($"\n  {currency.Name}: {amount:N0}");
+                }
+
+                DatabaseManager.Shard.GetAccountBankLog(accountId, 20, rows =>
+                {
+                    if (rows != null)
+                        foreach (var r in rows)
+                            sb.Append($"\n  {r.time:yyyy-MM-dd HH:mm} {r.characterName}: {r.action} {r.amount:+#,0;-#,0} {BankInfo.ByCode(r.currency)?.Name ?? r.currency} (balance {r.balanceAfter:N0}){(r.otherCharacterName != null ? $" [{r.otherCharacterName}]" : "")}");
+
+                    Say(sb.ToString());
+                });
+            });
+        }
+
         [CommandHandler("mule", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
             "Grants you a My Mule summon gem, or searches your mule storage for items matching a spell regex.",
             "search <pattern>\n" +
