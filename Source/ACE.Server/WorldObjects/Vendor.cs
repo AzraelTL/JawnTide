@@ -492,7 +492,8 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Handles validation for player buying items from vendor
         /// </summary>
-        public bool BuyItems_ValidateTransaction(List<ItemProfile> itemProfiles, Player player)
+        /// <param name="bankApproved">JawnTide Bank: -1 for a normal purchase; otherwise the most the player agreed to pay from their bank.</param>
+        public bool BuyItems_ValidateTransaction(List<ItemProfile> itemProfiles, Player player, long bankApproved = -1)
         {
             // one difference between buy and sell currently
             // is that if *any* items in the buy transactions are detected as invalid,
@@ -623,23 +624,38 @@ namespace ACE.Server.WorldObjects
             }
 
             // verify player has enough currency
-            if (AlternateCurrency == null)
-            {
-                if (player.CoinValue < totalPrice)
-                {
-                    CleanupCreatedItems(defaultItems);
-                    return false;
-                }
-            }
-            else
-            {
-                var playerAltCurrency = player.GetNumInventoryItemsOfWCID(AlternateCurrency.Value);
+            long packHas = AlternateCurrency == null ? (player.CoinValue ?? 0) : player.GetNumInventoryItemsOfWCID(AlternateCurrency.Value);
 
-                if (playerAltCurrency < totalPrice)
+            if (packHas < totalPrice)
+            {
+                CleanupCreatedItems(defaultItems);
+
+                // JawnTide Bank: offer to pay the rest from the bank (pyreal and PK Trophy vendors), after a confirm popup
+                var bankCurrency = BankInfo.ForVendorCurrency(AlternateCurrency);
+                var shortfall = totalPrice - packHas;
+
+                if (bankCurrency == null)
+                    return false;
+
+                if (bankApproved < 0)
                 {
-                    CleanupCreatedItems(defaultItems);
+                    player.BankOfferPurchase(this, itemProfiles, bankCurrency, shortfall);
                     return false;
                 }
+
+                if (shortfall > bankApproved)
+                {
+                    player.SendTransientError("The price changed. Nothing was bought.");
+                    return false;
+                }
+
+                // rebuild the generic items (just cleaned up) and pay: bank first, then the pack, then hand over the items
+                var bankItems = new List<WorldObject>();
+                foreach (var defaultItemProfile in defaultItemProfiles)
+                    bankItems.AddRange(ItemProfileToWorldObjects(defaultItemProfile));
+
+                player.BankPayAndFinalize(this, bankItems, uniqueItems, totalPrice, (uint)packHas, bankCurrency, shortfall);
+                return true;
             }
 
             // everything is verified at this point
@@ -818,7 +834,7 @@ namespace ACE.Server.WorldObjects
             }
         }
 
-        private static void CleanupCreatedItems(List<WorldObject> createdItems)
+        public static void CleanupCreatedItems(List<WorldObject> createdItems)
         {
             foreach (var createdItem in createdItems)
                 createdItem.Destroy();

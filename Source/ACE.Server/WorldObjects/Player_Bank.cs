@@ -527,6 +527,116 @@ namespace ACE.Server.WorldObjects
             }));
         }
 
+        // ---------------------------------------------------------------- vendor purchases
+
+        /// <summary>
+        /// Called when a pyreal or PK Trophy vendor purchase is short. Asks (popup) whether to pay the rest from the bank;
+        /// yes re-runs the purchase with that much approved (HandleActionBuyItem with bankApproved).
+        /// </summary>
+        public void BankOfferPurchase(Vendor vendor, List<ItemProfile> itemProfiles, BankCurrency currency, long shortfall)
+        {
+            var why = BankClosedReason();
+
+            if (why != null)
+            {
+                BankMessage($"You don't have enough {currency.Name}, and your bank can't cover it right now: {why}");
+                return;
+            }
+
+            var vendorGuid = vendor.Guid.Full;
+            var profiles = itemProfiles.Select(p => new ItemProfile(p.Amount, p.ObjectGuid)).ToList();
+
+            var msg = $"You're {BankInfo.Format(currency, shortfall)} short. Pay {shortfall:N0} from your bank to complete this purchase?";
+
+            if (!ConfirmationManager.EnqueueSend(new Confirmation_Custom(Guid, () => HandleActionBuyItem(vendorGuid, profiles, shortfall)), msg))
+                BankMessage("You already have a question waiting. Answer it first.");
+        }
+
+        /// <summary>
+        /// The player approved paying a vendor shortfall from the bank. Debits the bank first; the purchase is finished
+        /// (pack pays the rest, items handed over) once the debit is written. Anything that goes wrong after the debit is refunded.
+        /// </summary>
+        public void BankPayAndFinalize(Vendor vendor, List<WorldObject> genericItems, List<WorldObject> uniqueItems, uint totalPrice, uint packSpend, BankCurrency currency, long shortfall)
+        {
+            if (!BankCheckOpen())
+            {
+                Vendor.CleanupCreatedItems(genericItems);
+                return;
+            }
+
+            bankPending++;
+
+            var accountId = Account.AccountId;
+            var playerGuid = Guid.Full;
+            var playerName = Name;
+            var details = $"{vendor.Name} (wcid {vendor.WeenieClassId}), price {totalPrice:N0}, pack {packSpend:N0}";
+
+            DatabaseManager.Shard.BankChange(accountId, currency.Code, -shortfall, BankLogFor("vendor", details), result =>
+            {
+                if (result.Status == BankResultStatus.Ok && PlayerManager.GetOnlinePlayer(playerGuid) != this)
+                {
+                    DatabaseManager.Shard.BaseDatabase.BankChange(accountId, currency.Code, shortfall, new BankLogInfo { CharacterId = playerGuid, CharacterName = playerName, Action = "refund", Details = "logged out before the purchase finished" });
+                    return;
+                }
+
+                BankOnPlayer(() => BankFinishPurchase(vendor, genericItems, uniqueItems, totalPrice, packSpend, currency, shortfall, result));
+            });
+        }
+
+        private void BankFinishPurchase(Vendor vendor, List<WorldObject> genericItems, List<WorldObject> uniqueItems, uint totalPrice, uint packSpend, BankCurrency currency, long shortfall, BankResult result)
+        {
+            bankPending = Math.Max(0, bankPending - 1);
+
+            if (result.Status != BankResultStatus.Ok)
+            {
+                Vendor.CleanupCreatedItems(genericItems);
+
+                BankMessage(result.Status == BankResultStatus.Insufficient
+                    ? $"Your bank doesn't have {BankInfo.Format(currency, shortfall)}. Nothing was bought."
+                    : "The bank couldn't be reached. Nothing was bought.");
+                return;
+            }
+
+            // things may have changed while the debit was written
+            long packHas = vendor.AlternateCurrency == null ? (CoinValue ?? 0) : GetNumInventoryItemsOfWCID(vendor.AlternateCurrency.Value);
+
+            string problem = null;
+
+            if (vendor.IsDestroyed || vendor.CurrentLandblock == null)
+                problem = "the vendor is gone";
+            else if (uniqueItems.Any(u => !vendor.UniqueItemsForSale.ContainsKey(u.Guid)))
+                problem = "someone else bought it first";
+            else if (packHas < packSpend)
+                problem = $"you no longer have {packSpend:N0} {currency.Name} in your pack";
+            else if (IsTrading)
+                problem = "you're trading";
+
+            if (problem != null)
+            {
+                Vendor.CleanupCreatedItems(genericItems);
+
+                bankPending++;
+
+                DatabaseManager.Shard.BankChange(Account.AccountId, currency.Code, shortfall, BankLogFor("refund", $"purchase cancelled: {problem}"), refund => BankOnPlayer(() =>
+                {
+                    bankPending = Math.Max(0, bankPending - 1);
+
+                    if (refund.Status == BankResultStatus.Ok)
+                        BankMessage($"The purchase was cancelled ({problem}). {BankInfo.Format(currency, shortfall)} went back into your bank.");
+                    else
+                    {
+                        log.Error($"[BANK] Refund of {shortfall} {currency.Code} to account {Account.AccountId} ({Name}) after a cancelled purchase failed ({refund.Status}). Restore it by hand.");
+                        BankMessage("The purchase was cancelled and the refund couldn't be recorded. It has been logged; please tell an admin.");
+                    }
+                }));
+                return;
+            }
+
+            FinalizeBuyTransaction(vendor, genericItems, uniqueItems, totalPrice, packSpend);
+
+            BankMessage($"Paid {BankInfo.Format(currency, shortfall)} from your bank. Bank balance: {result.Balance:N0}.");
+        }
+
         // ---------------------------------------------------------------- transfer
 
         public void BankSend(BankCurrency currency, long amount, string targetName)

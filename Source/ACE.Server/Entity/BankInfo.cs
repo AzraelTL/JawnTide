@@ -77,6 +77,15 @@ namespace ACE.Server.Entity
 
         public static BankCurrency ByCode(string code) => Currencies.FirstOrDefault(c => c.Code == code);
 
+        /// <summary>The bank currency a vendor's purchases can be paid from (null alternate currency = pyreals), or null if none.</summary>
+        public static BankCurrency ForVendorCurrency(uint? alternateCurrency)
+        {
+            if (alternateCurrency == null)
+                return ByCode("pyreals");
+
+            return Currencies.FirstOrDefault(c => c.Kind == BankCurrencyKind.Stack && c.Wcid == alternateCurrency.Value);
+        }
+
         public static string Format(BankCurrency currency, long amount) => $"{amount:N0} {currency.Name}";
 
         /// <summary>Accepts 1000, 1,000, 5k, 2.5m, 1b (k/m/b suffixes).</summary>

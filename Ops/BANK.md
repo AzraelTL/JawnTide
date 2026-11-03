@@ -14,6 +14,12 @@ Player guide: `Ops/website/wiki-seed/11-bank.md`. Code: `Player_Bank.cs`, `BankI
 - A failed credit or refund is logged as an ERROR with `[BANK]` and the amount, to restore by hand.
 - Closed while PK tagged, in arenas, trading, dead, teleporting or logging out.
 
+## Vendor purchases
+A pyreal or PK Trophy vendor purchase that the pack can't cover pops up a Yes/No asking to pay the shortfall from the bank.
+On yes the purchase is re-checked, the bank is debited (logged `vendor`, with the vendor and price), then the pack pays its part
+and the items are handed over. If anything changed in between (vendor gone, unique item sold, pack currency moved), the purchase
+is cancelled and the bank amount refunded (`refund`). Code: `Vendor.BuyItems_ValidateTransaction` (bankApproved) and `Player_Bank.cs`.
+
 ## Admin
 - `/bankcheck <character>` (Sentinel and up): balances and the last 20 log entries for that character's account.
 - Find problems: `docker logs ace-server 2>&1 | grep "\[BANK\]"`

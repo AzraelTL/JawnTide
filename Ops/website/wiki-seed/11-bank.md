@@ -27,6 +27,9 @@ Amounts can use k, m and b: `5k`, `2.5m`, `1b`.
 | `/bank send trophies 25 Some Name` | Sends from your bank to another player's bank. You're asked to confirm first. |
 | `/bank log` | Shows your last 10 bank entries (`/bank log 30` for more). |
 
+## Buying from vendors
+If you buy from a vendor that takes pyreals (or PK Trophies, at the PK Trophy Vendor) and your pack is short, a popup asks whether to pay the rest from your bank. Say yes and your pack pays what it can and the bank pays the rest. Say no and nothing happens. Bank payments show in `/bank log` as `vendor`.
+
 ## Rules
 | Rule | How it works |
 |---|---|

@@ -22,7 +22,8 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Called when player clicks 'Buy Items'
         /// </summary>
-        public void HandleActionBuyItem(uint vendorGuid, List<ItemProfile> items)
+        /// <param name="bankApproved">JawnTide Bank: -1 for a normal click; otherwise the most the player agreed (in the popup) to pay from their bank.</param>
+        public void HandleActionBuyItem(uint vendorGuid, List<ItemProfile> items, long bankApproved = -1)
         {
             if (IsBusy)
             {
@@ -89,7 +90,7 @@ namespace ACE.Server.WorldObjects
             }
 
             // if this succeeds, it automatically calls player.FinalizeBuyTransaction()
-            if (!vendor.BuyItems_ValidateTransaction(items, this))
+            if (!vendor.BuyItems_ValidateTransaction(items, this, bankApproved))
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, Guid.Full));
 
             SendUseDoneEvent();
@@ -100,13 +101,14 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Vendor has validated the transactions and sent a list of items for processing.
         /// </summary>
-        public void FinalizeBuyTransaction(Vendor vendor, List<WorldObject> genericItems, List<WorldObject> uniqueItems, uint cost)
+        /// <param name="spendFromPack">JawnTide Bank: how much of the cost comes from the pack when the bank already paid the rest (null = all of it).</param>
+        public void FinalizeBuyTransaction(Vendor vendor, List<WorldObject> genericItems, List<WorldObject> uniqueItems, uint cost, uint? spendFromPack = null)
         {
             // transaction has been validated by this point
 
             var currencyWcid = vendor.AlternateCurrency ?? coinStackWcid;
 
-            SpendCurrency(currencyWcid, cost, true);
+            SpendCurrency(currencyWcid, spendFromPack ?? cost, true);
 
             vendor.MoneyIncome += (int)cost;
 
