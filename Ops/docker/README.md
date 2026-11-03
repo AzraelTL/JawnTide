@@ -32,10 +32,17 @@ The game database user is `ace`.
 
 ## Deploy a new master
 
-    cd ~/JawnTide && git pull --ff-only origin master && cd ~/jawntide-server && docker compose build ace-server && docker compose up -d && git -C ~/JawnTide log -1 --oneline
+    cd ~/JawnTide && git pull --ff-only origin master && cd ~/jawntide-server && docker compose build ace-server && echo "BUILD DONE: type /shutdown in game now (waiting for the server to stop)" && docker wait ace-server && docker compose up -d && git -C ~/JawnTide log -1 --oneline
 
-`docker compose up -d` replaces the running server with the new image (players are disconnected).
-New `Database/Updates` scripts are applied automatically at startup.
+1. The build runs while the server is still up.
+2. When it prints BUILD DONE, type `/shutdown` in game on an admin character (`@set-shutdown-interval <seconds>`
+   first for a longer countdown). Players get the countdown warnings, then the server logs everyone out and saves them.
+3. `docker wait` returns once the server has stopped, and `docker compose up -d` starts the new image.
+
+Never just run `docker compose up -d` (or restart/stop) on a running server with players on: before
+`stop_grace_period: 3m` was added to compose.yml, Docker killed the server 10 seconds into its shutdown save,
+which rolled players back a few minutes (2026-11-02). If you must stop it from Linux, use
+`docker compose stop -t 180 ace-server`.
 
 ## Import Content/sql by hand
 

@@ -41,4 +41,7 @@ services:
     ports:
       - "9000-9001:9000-9001/udp"
     stdin_open: true
+    # On stop, ACE logs everyone out and saves them; Docker's default 10 seconds kills it part way through
+    # (players lose up to player_save_interval, 5 minutes, of progress). Give it time to finish.
+    stop_grace_period: 3m
     restart: unless-stopped
