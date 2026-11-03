@@ -1712,7 +1712,7 @@ namespace ACE.Server.Command.Handlers
             "/bank deposit <currency> [amount] - e.g. /bank deposit trophies, /bank deposit pyreals 50000, /bank deposit luminance 1m\n" +
             "/bank withdraw <currency> <amount> [coins | notes <size>] - e.g. /bank withdraw pyreals 2m (250k trade notes plus coins), /bank withdraw pyreals 50k coins, /bank withdraw pyreals 500k notes 100k, /bank withdraw hera 2\n" +
             "/bank sales bank|coins - whether vendor sales pay into your bank or give you coins (the default)\n" +
-            "/bank purchases ask|auto|off - when your pack is short at a vendor: ask with a popup (default), pay from the bank without asking, or never use the bank\n" +
+            "/bank purchases auto|ask|off - when your pack is short at a vendor: pay the rest from the bank without asking (default), ask with a popup, or never use the bank\n" +
             "/bank send <currency> <amount> <character> - e.g. /bank send trophies 25 Some Name (logged; asks you to confirm)\n" +
             "/bank log [count] - your recent bank history\n" +
             "Currencies: pyreals, trophies, luminance, darkbeat, hera, skeleton. Amounts take k/m/b (5k, 2.5m).\n" +
@@ -1856,7 +1856,7 @@ namespace ACE.Server.Command.Handlers
                         Say(player.BankPurchasesOff
                             ? "Vendors don't use your bank. /bank purchases ask (with a popup) or /bank purchases auto (no popup) turns it on."
                             : player.BankPurchasesAuto
-                                ? "When your pack is short at a vendor, the rest is paid from your bank without asking. /bank purchases ask brings the popup back, /bank purchases off stops it."
+                                ? "When your pack is short at a vendor, the rest is paid from your bank without asking (the default). /bank purchases ask for a popup, /bank purchases off: never."
                                 : "When your pack is short at a vendor, you're asked whether to pay the rest from your bank. /bank purchases auto: no popup, /bank purchases off: never.");
                         return;
                     }

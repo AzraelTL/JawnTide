@@ -849,14 +849,15 @@ namespace ACE.Server.WorldObjects
         /// <summary>JawnTide Bank: true when this character turned off paying vendors from the bank (/bank purchases off).</summary>
         public bool BankPurchasesOff => GetProperty(PropertyBool.BankPurchasesOff) ?? false;
 
-        /// <summary>JawnTide Bank: true when a vendor shortfall is paid from the bank without asking (/bank purchases auto).</summary>
-        public bool BankPurchasesAuto => GetProperty(PropertyBool.BankPurchasesAuto) ?? false;
+        /// <summary>JawnTide Bank: true when a vendor shortfall is paid from the bank without asking: the default, unless the
+        /// character chose /bank purchases ask (popup) or /bank purchases off.</summary>
+        public bool BankPurchasesAuto => !BankPurchasesOff && !(GetProperty(PropertyBool.BankPurchasesAsk) ?? false);
 
-        /// <summary>JawnTide Bank: how vendors use the bank when the pack is short: "ask" (popup, the default), "auto" (no popup) or "off".</summary>
+        /// <summary>JawnTide Bank: how vendors use the bank when the pack is short: "auto" (no popup, the default), "ask" (popup) or "off".</summary>
         public void BankSetPurchases(string mode)
         {
             RemoveProperty(PropertyBool.BankPurchasesOff);
-            RemoveProperty(PropertyBool.BankPurchasesAuto);
+            RemoveProperty(PropertyBool.BankPurchasesAsk);
 
             if (mode == "off")
             {
@@ -864,13 +865,13 @@ namespace ACE.Server.WorldObjects
                 BankRestoreCoinDisplay(); // the vendor window shows pack + bank only while the bank can be used
                 BankMessage("Vendors won't use your bank; purchases use only what's in your pack. (/bank purchases ask or /bank purchases auto to turn it back on)");
             }
-            else if (mode == "auto")
+            else if (mode == "ask")
             {
-                SetProperty(PropertyBool.BankPurchasesAuto, true);
-                BankMessage("When your pack is short at a vendor, the rest is paid from your bank without asking. (/bank purchases ask for the popup again)");
+                SetProperty(PropertyBool.BankPurchasesAsk, true);
+                BankMessage("When your pack is short at a vendor, you'll be asked whether to pay the rest from your bank. (/bank purchases auto: no popup, /bank purchases off: never)");
             }
             else
-                BankMessage("When your pack is short at a vendor, you'll be asked whether to pay the rest from your bank. (/bank purchases auto: no popup, /bank purchases off: never)");
+                BankMessage("When your pack is short at a vendor, the rest is paid from your bank without asking (the default). (/bank purchases ask for a popup, /bank purchases off: never)");
         }
 
         /// <summary>JawnTide Bank: where this character's vendor sale proceeds go.</summary>
