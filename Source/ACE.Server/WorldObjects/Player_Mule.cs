@@ -748,6 +748,17 @@ namespace ACE.Server.WorldObjects
         private const ushort MuleBoostedStackSize = 1000;
 
         /// <summary>
+        /// JawnTide: true for an item whose copies are all the same, so StackSize alone describes it. False for salvage
+        /// (TinkeringMaterial: each bag has its own units in Structure and its own Workmanship), anything with
+        /// Workmanship, and anything part-used (Structure below MaxStructure).
+        /// </summary>
+        private static bool IsMulePlainStack(WorldObject wo) =>
+            (wo.ItemType & ItemType.TinkeringMaterial) == 0
+            && wo.Workmanship == null
+            && !wo.UnlimitedUse
+            && (wo.Structure == null || wo.Structure == wo.MaxStructure);
+
+        /// <summary>
         /// Stores a detached, already-removed-from-the-player item into mule storage -- merging
         /// into an existing stack across the whole chain if it's stackable in any sense (boosting
         /// its MaxStackSize first if it's an artificially-boostable template item), or adding it to
@@ -760,7 +771,10 @@ namespace ACE.Server.WorldObjects
         {
             var boostable = IsMuleStackBoostable(toDeposit);
 
-            if (boostable || (toDeposit.MaxStackSize ?? 0) > 1)
+            // JawnTide: salvage bags (and anything else with its own workmanship / uses left) never merge. Each bag
+            // keeps its own units and workmanship, so "merging" it just bumped the old bag's StackSize and deleted
+            // the new bag. They are stored one per slot.
+            if (boostable || ((toDeposit.MaxStackSize ?? 0) > 1 && IsMulePlainStack(toDeposit)))
             {
                 if (boostable)
                 {
@@ -797,7 +811,7 @@ namespace ACE.Server.WorldObjects
             {
                 foreach (var existing in container.Inventory.Values)
                 {
-                    if (existing.WeenieClassId != toDeposit.WeenieClassId)
+                    if (existing.WeenieClassId != toDeposit.WeenieClassId || !IsMulePlainStack(existing))
                         continue;
 
                     var room = (existing.MaxStackSize ?? 0) - (existing.StackSize ?? 1);
@@ -1037,8 +1051,10 @@ namespace ACE.Server.WorldObjects
             // a large chain on every transaction is a real cost.
             var touched = new HashSet<WorldObject>();
 
-            foreach (var (item, amount, container) in withdrawals)
+            foreach (var (item, requestedAmount, container) in withdrawals)
             {
+                var amount = requestedAmount;
+
                 if (IsMuleStackBoostable(item))
                 {
                     // This item's MaxStackSize may be boosted (MuleBoostedStackSize) from sitting in
@@ -1095,6 +1111,15 @@ namespace ACE.Server.WorldObjects
                 }
 
                 WorldObject toGive;
+
+                // JawnTide: a salvage bag that was wrongly merged before the fix has StackSize > 1, but only one bag's
+                // units. Hand over the whole object as a single bag (never mint a fresh default bag from the weenie).
+                if (!IsMulePlainStack(item) && (item.StackSize ?? 1) > 1)
+                {
+                    log.Warn($"[MULE] {Name} (0x{Guid}) withdrew {item.Name} (0x{item.Guid}) with StackSize {item.StackSize} (merged before the salvage fix); reset to 1.");
+                    item.StackSize = 1;
+                    amount = 1;
+                }
 
                 if (amount < (item.StackSize ?? 1))
                 {
