@@ -154,6 +154,7 @@ namespace ACE.Server.WorldObjects
             }
 
             SetMuleZeroValueMask(false);
+            BankRestoreCoinDisplay(); // the mule window showed a full coin count
 
             // ActiveMuleContainers is deliberately NOT cleared here -- see LoadMuleContainerChain.
             // The search filter now lives on the vendor (MuleSearchRegex), which is about to be
