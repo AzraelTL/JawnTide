@@ -60,20 +60,28 @@ namespace ACE.Server.Network.GameEvent.Events
                 // JawnTide My Mule: the client prices Trade Notes (PromissoryNote) at a fixed rate whatever the vendor's
                 // rates are, so on a mule (everything free) they'd show a price. Showing them as Misc avoids that.
                 // Salvage (TinkeringMaterial) is left out of a vendor's for-sale list by the client (tested on JawnTest),
-                // so on a mule it is listed as Misc too. Only the listing changes; the stored item keeps its real type.
+                // so on a mule it is listed as a Tinkering Tool, which puts it on that tab with Usts and tinkering tools.
+                // Only the listing changes; the stored item keeps its real type.
                 var originalItemType = obj.ItemType;
-                var isMuleNote = vendor.MuleOwnerId.HasValue
-                    && (originalItemType == ACE.Entity.Enum.ItemType.PromissoryNote || originalItemType == ACE.Entity.Enum.ItemType.TinkeringMaterial);
+                ACE.Entity.Enum.ItemType? listAs = null;
 
-                if (isMuleNote)
+                if (vendor.MuleOwnerId.HasValue)
                 {
-                    obj.ItemType = ACE.Entity.Enum.ItemType.Misc;
+                    if (originalItemType == ACE.Entity.Enum.ItemType.PromissoryNote)
+                        listAs = ACE.Entity.Enum.ItemType.Misc;
+                    else if (originalItemType == ACE.Entity.Enum.ItemType.TinkeringMaterial)
+                        listAs = ACE.Entity.Enum.ItemType.TinkeringTool;
+                }
+
+                if (listAs.HasValue)
+                {
+                    obj.ItemType = listAs.Value;
                     obj.CalculateObjDesc();
                 }
 
                 obj.SerializeGameDataOnly(Writer);
 
-                if (isMuleNote)
+                if (listAs.HasValue)
                     obj.ItemType = originalItemType;
             });
 
