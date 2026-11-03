@@ -44,6 +44,12 @@ namespace ACE.Server.WorldObjects
         /// <summary>JawnTide My Mule: the live off-world container chain backing this mule's storage.</summary>
         public List<Container> MuleContainers;
 
+        /// <summary>JawnTide My Mule (testing, /mulelist): list salvage as Misc in mule windows.</summary>
+        public static bool MuleSalvageAsMisc = true;
+
+        /// <summary>JawnTide My Mule (testing, /mulelist): header fields left out when salvage is listed in a mule window.</summary>
+        public static ACE.Entity.Enum.WeenieHeaderFlag MuleListingStrip = ACE.Entity.Enum.WeenieHeaderFlag.None;
+
         /// <summary>JawnTide My Mule: the active /mule search filter for this mule's buy window, if any.</summary>
         public System.Text.RegularExpressions.Regex MuleSearchRegex;
 

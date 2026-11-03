@@ -1703,6 +1703,53 @@ namespace ACE.Server.Command.Handlers
 
         #endregion
         // JawnTide My Mule (ported from ClassicPvP feature/my-mule)
+        // JawnTide My Mule: testing switches for how salvage is listed in mule windows (they live until the server restarts)
+        [CommandHandler("mulelist", AccessLevel.Admin, CommandHandlerFlag.None, 0,
+            "Testing: how salvage is listed in My Mule windows.",
+            "misc on|off - list salvage as Misc (default on)\n" +
+            "strip <fields> - leave these header fields out of the salvage listing, comma separated (e.g. Workmanship,Structure,MaxStructure), or \"strip none\"\n" +
+            "With no parameters, shows the current settings. Reopen the mule after a change.")]
+        public static void HandleMuleList(Session session, params string[] parameters)
+        {
+            void Say(string text)
+            {
+                if (session?.Player != null)
+                    session.Network.EnqueueSend(new GameMessageSystemChat(text, ChatMessageType.Broadcast));
+                else
+                    Console.WriteLine(text);
+            }
+
+            if (parameters.Length >= 2 && parameters[0].Equals("misc", StringComparison.OrdinalIgnoreCase))
+                Vendor.MuleSalvageAsMisc = parameters[1].Equals("on", StringComparison.OrdinalIgnoreCase) || parameters[1].Equals("true", StringComparison.OrdinalIgnoreCase);
+            else if (parameters.Length >= 2 && parameters[0].Equals("strip", StringComparison.OrdinalIgnoreCase))
+            {
+                var strip = WeenieHeaderFlag.None;
+
+                foreach (var name in string.Join(",", parameters.Skip(1)).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    if (name.Equals("none", StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    if (!Enum.TryParse<WeenieHeaderFlag>(name, true, out var flag))
+                    {
+                        Say($"Unknown field {name}. Fields: {string.Join(", ", Enum.GetNames(typeof(WeenieHeaderFlag)))}");
+                        return;
+                    }
+
+                    strip |= flag;
+                }
+
+                Vendor.MuleListingStrip = strip;
+            }
+            else if (parameters.Length > 0)
+            {
+                Say("Usage: /mulelist, /mulelist misc on|off, /mulelist strip <fields>|none");
+                return;
+            }
+
+            Say($"Mule salvage listing: misc {(Vendor.MuleSalvageAsMisc ? "on" : "off")}, strip {Vendor.MuleListingStrip}. Reopen the mule to see the change.");
+        }
+
         [CommandHandler("mule", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
             "Grants you a My Mule summon gem, or searches your mule storage for items matching a spell regex.",
             "search <pattern>\n" +
