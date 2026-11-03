@@ -155,7 +155,7 @@ namespace ACE.Server.WorldObjects
                 any |= BankDepositInternal(currency, null, quietIfNone: true);
 
             if (!any)
-                BankMessage("You have nothing to deposit. (Luminance is only deposited with /bank deposit luminance.)");
+                BankMessage("You have nothing to deposit. (Trade notes stay in your pack: /bank deposit notes banks them. Luminance: /bank deposit luminance.)");
         }
 
         /// <summary>Deposits one currency. amount null = all of it.</summary>
@@ -167,8 +167,19 @@ namespace ACE.Server.WorldObjects
             BankDepositInternal(currency, amount, quietIfNone: false);
         }
 
-        /// <summary>Takes the currency from the player, then queues the credit behind the deletes / save. Returns true if anything was taken.</summary>
-        private bool BankDepositInternal(BankCurrency currency, long? amount, bool quietIfNone)
+        /// <summary>JawnTide Bank: deposits trade notes only (by pyreal value). Notes are never taken by /bank deposit or
+        /// /bank deposit pyreals, because players and auto-vendor tools keep them in the pack to trade with.</summary>
+        public void BankDepositNotes()
+        {
+            if (!BankCheckOpen())
+                return;
+
+            BankDepositInternal(BankInfo.ByCode("pyreals"), null, quietIfNone: false, notesOnly: true);
+        }
+
+        /// <summary>Takes the currency from the player, then queues the credit behind the deletes / save. Returns true if anything was taken.
+        /// Pyreals: coins only, unless notesOnly (then trade notes only).</summary>
+        private bool BankDepositInternal(BankCurrency currency, long? amount, bool quietIfNone, bool notesOnly = false)
         {
             long taken = 0;
             var details = "";
@@ -185,7 +196,7 @@ namespace ACE.Server.WorldObjects
 
                         if (coins < amount.Value)
                         {
-                            BankMessage($"You only have {coins:N0} pyreal coins. To bank trade notes, use /bank deposit pyreals with no amount.");
+                            BankMessage($"You only have {coins:N0} pyreal coins. To bank trade notes, use /bank deposit notes.");
                             return false;
                         }
 
@@ -202,14 +213,17 @@ namespace ACE.Server.WorldObjects
                     {
                         long coinTotal = 0, noteTotal = 0;
 
-                        foreach (var item in GetInventoryItemsOfWCID(BankInfo.PyrealWcid))
+                        if (!notesOnly)
                         {
-                            var value = (long)(item.StackSize ?? 1);
-                            if (TryConsumeFromInventoryWithNetworking(item))
-                                coinTotal += value;
+                            foreach (var item in GetInventoryItemsOfWCID(BankInfo.PyrealWcid))
+                            {
+                                var value = (long)(item.StackSize ?? 1);
+                                if (TryConsumeFromInventoryWithNetworking(item))
+                                    coinTotal += value;
+                            }
                         }
 
-                        foreach (var (wcid, unit) in BankInfo.TradeNoteValues)
+                        foreach (var (wcid, unit) in notesOnly ? BankInfo.TradeNoteValues : new Dictionary<uint, long>())
                         {
                             foreach (var item in GetInventoryItemsOfWCID(wcid))
                             {
@@ -223,7 +237,7 @@ namespace ACE.Server.WorldObjects
                         details = $"coins {coinTotal:N0}, notes {noteTotal:N0}";
 
                         if (noteTotal > 0)
-                            breakdown = $" ({coinTotal:N0} coins + {noteTotal:N0} in trade notes)";
+                            breakdown = " in trade notes";
                     }
 
                     UpdateCoinValue();
@@ -286,7 +300,7 @@ namespace ACE.Server.WorldObjects
             if (taken <= 0)
             {
                 if (!quietIfNone)
-                    BankMessage($"You have no {currency.Name} to deposit.");
+                    BankMessage(notesOnly ? "You have no trade notes to deposit." : $"You have no {currency.Name} to deposit.");
                 return false;
             }
 
@@ -846,16 +860,21 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>JawnTide Bank: where this character's vendor sale proceeds go.</summary>
+        /// <summary>JawnTide Bank: true when this character chose to have vendor sales pay into the bank (/bank sales bank). Off by default.</summary>
+        public bool BankSalesToBank => GetProperty(PropertyBool.BankSaleProceedsToBank) ?? false;
+
         public void BankSetSaleProceeds(bool toPack)
         {
+            RemoveProperty(PropertyBool.BankSaleProceedsToPack); // the old opt-out flag, no longer used
+
             if (toPack)
-                SetProperty(PropertyBool.BankSaleProceedsToPack, true);
+                RemoveProperty(PropertyBool.BankSaleProceedsToBank);
             else
-                RemoveProperty(PropertyBool.BankSaleProceedsToPack);
+                SetProperty(PropertyBool.BankSaleProceedsToBank, true);
 
             BankMessage(toPack
-                ? "Vendor sales now pay you in coins. (/bank sales bank to send them to your bank)"
-                : "Vendor sales now go straight into your bank. (/bank sales coins to get coins instead)");
+                ? "Vendor sales pay you in coins, in your pack (the default). (/bank sales bank to send them to your bank instead)"
+                : "Vendor sales now go straight into your bank. (/bank sales coins to get coins in your pack again)");
         }
 
         // ---------------------------------------------------------------- transfer

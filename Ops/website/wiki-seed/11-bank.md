@@ -4,7 +4,7 @@ Your account-wide bank. It holds pyreals, PK Trophies, keys and luminance, and e
 ## What it holds
 | Currency | Name in commands | Notes |
 |---|---|---|
-| Pyreals | `pyreals` | Coins and trade notes are banked by their pyreal value. |
+| Pyreals | `pyreals` | Coins, and trade notes by their pyreal value (notes only with `/bank deposit notes`). |
 | PK Trophies | `trophies` | |
 | Luminance | `luminance` | Only deposited when you ask for it by name. |
 | Darkbeat's Lost Storage Key | `darkbeat` | Unused keys only. |
@@ -17,14 +17,15 @@ Amounts can use k, m and b: `5k`, `2.5m`, `1b`.
 | Command | What it does |
 |---|---|
 | `/bank` | Shows your balances. |
-| `/bank deposit` | Deposits all your pyreals, trade notes, PK Trophies and keys (not luminance). |
+| `/bank deposit` | Deposits all your pyreal coins, PK Trophies and keys. Trade notes and luminance stay in your pack. |
+| `/bank deposit notes` | Deposits your trade notes, by their pyreal value. |
 | `/bank deposit trophies` | Deposits all of one currency. |
 | `/bank deposit pyreals 50000` | Deposits a set amount. A set amount of pyreals is taken from coins only. |
 | `/bank deposit luminance 1m` | Deposits luminance. |
 | `/bank withdraw pyreals 2m` | Takes pyreals out as 250,000 trade notes, plus coins for the rest. |
 | `/bank withdraw pyreals 50k coins` | Takes pyreals out as coins only (up to 2,500,000 at a time). |
 | `/bank withdraw pyreals 500k notes 100k` | Takes pyreals out in the trade note size you pick (any standard note from 100 to 250,000). Anything left over comes as coins. |
-| `/bank sales coins` | Vendor sales pay you in coins. `/bank sales bank` switches back to the default: sales pay straight into your bank. |
+| `/bank sales bank` | Vendor sales pay straight into your bank. `/bank sales coins` switches back to the default: coins in your pack. |
 | `/bank purchases off` | Vendors stop offering to pay from your bank when your pack is short. `/bank purchases on` turns it back on. |
 | `/bank withdraw hera 2` | Takes out keys (up to 100 at a time). |
 | `/bank send trophies 25 Some Name` | Sends from your bank to another player's bank. You're asked to confirm first. |
@@ -34,7 +35,7 @@ Amounts can use k, m and b: `5k`, `2.5m`, `1b`.
 If you buy from a vendor that takes pyreals (or PK Trophies, at the PK Trophy Vendor) and your pack is short, a popup asks whether to pay the rest from your bank. Say yes and your pack pays what it can and the bank pays the rest. Say no and nothing happens. Bank payments show in `/bank log` as `vendor`. Don't want the offer? Type `/bank purchases off` (per character); `/bank purchases on` turns it back on.
 
 ## Selling to vendors
-When you sell to a vendor, the pyreals go straight into your bank, so you don't need pack space for coins or a trip to buy trade notes. A message tells you how much went in. While you're PK tagged or in an arena, you get coins as usual. Prefer coins? Type `/bank sales coins` (per character).
+Vendor sales pay you in coins, as always. To have them go straight into your bank instead (no pack space needed for coins), type `/bank sales bank` (per character); a message tells you how much went in each time. While you're PK tagged or in an arena you always get coins.
 
 ## Rules
 | Rule | How it works |
