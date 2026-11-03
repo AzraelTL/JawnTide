@@ -11,6 +11,7 @@ database, and copying a file back does nothing until it is imported (then `clear
 
 | What | WCID | How it is closed | Original | Planned return |
 |---|---|---|---|---|
+| Gem of the Gods (from the Mythic Mystery Box and the Empyrean Backpack) | 1548800 | Removed from the Mythic Mystery Box (510004, was 18.75%: 12.5% + 6.25%) and the Empyrean Backpack (600043, was 10%) on 2026-11-03; the other prizes rescaled evenly. Existing gems untouched. Check: `Ops/sql-snippets/find-gem-of-the-gods-sources.sql` | `git show f11c67be4:"Content/sql/weenies/LootBoxes/510004 MythicMysteryBox.sql"` and `git show f11c67be4:"Content/sql/weenies/EmpyreanVault/600043 Empyrean Backpack.sql"` | Undecided |
 | Fargon (Void/Rending imbue vendor) | 600000 | Placement removed from Marketplace landblock | `originals/landblocks/01C9.sql` | Undecided |
 | Empyrean Storage Vault | 600036 | Placement removed from Marketplace landblock | `originals/landblocks/01C9.sql` | Stage 3 or 4 (undecided) |
 | Bounty Collector | 3000381 | Placement removed from Marketplace landblock | `originals/landblocks/01C9.sql` | Undecided |
