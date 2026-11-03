@@ -611,7 +611,7 @@ namespace ACE.Server.WorldObjects
         {
             var currency = BankInfo.ForVendorCurrency(vendor.AlternateCurrency);
 
-            if (currency == null || BankClosedReason(false) != null)
+            if (currency == null || BankPurchasesOff || BankClosedReason(false) != null)
                 return 0;
 
             if (bankCache == null)
@@ -664,6 +664,10 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public void BankOfferPurchase(Vendor vendor, List<ItemProfile> itemProfiles, BankCurrency currency, long shortfall)
         {
+            // the player turned paying from the bank off (/bank purchases off): a short purchase just fails, as before the bank
+            if (BankPurchasesOff)
+                return;
+
             var why = BankClosedReason();
 
             if (why != null)
@@ -819,6 +823,26 @@ namespace ACE.Server.WorldObjects
                 else
                     BankMessage("The bank couldn't be reached, so the sale's pyreals were given to you as coins.");
             }));
+        }
+
+        /// <summary>JawnTide Bank: true when this character turned off paying vendors from the bank (/bank purchases off).</summary>
+        public bool BankPurchasesOff => GetProperty(PropertyBool.BankPurchasesOff) ?? false;
+
+        /// <summary>JawnTide Bank: whether vendors may offer (with a popup) to pay a shortfall from the bank.</summary>
+        public void BankSetPurchases(bool on)
+        {
+            if (on)
+                RemoveProperty(PropertyBool.BankPurchasesOff);
+            else
+                SetProperty(PropertyBool.BankPurchasesOff, true);
+
+            // the vendor window shows pack + bank only while this is on
+            if (!on)
+                BankRestoreCoinDisplay();
+
+            BankMessage(on
+                ? "When your pack is short at a vendor, you'll be asked whether to pay the rest from your bank. (/bank purchases off to stop)"
+                : "Vendors will no longer offer to pay from your bank; purchases use only what's in your pack. (/bank purchases on to turn it back on)");
         }
 
         /// <summary>JawnTide Bank: where this character's vendor sale proceeds go.</summary>

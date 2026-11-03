@@ -196,6 +196,9 @@ namespace ACE.Entity.Enum.Properties
         IsTinkerCharacter = 19020,
 
         /// <summary>JawnTide Bank: true = vendor sale proceeds come as coins (default: they go into the bank)</summary>
-        BankSaleProceedsToPack = 20001
+        BankSaleProceedsToPack = 20001,
+
+        /// <summary>JawnTide Bank: true = vendors never offer to pay a shortfall from the bank (default: they ask with a popup)</summary>
+        BankPurchasesOff = 20002
     }
 }
