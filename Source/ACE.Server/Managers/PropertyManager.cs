@@ -595,6 +595,7 @@ namespace ACE.Server.Managers
                 ("show_aura_buff", new Property<bool>(false, "shows active aura enchantments on wielded items during appraisal")),
                 ("show_dat_warning", new Property<bool>(false, "if TRUE, will alert player (dat_warning_msg) when client attempts to download from server and boot them from game, disabled by default")),
                 ("show_dot_messages", new Property<bool>(false, "enabled, shows combat messages for DoT damage ticks. defaults to disabled, as in retail")),
+                ("log_corpse_contents", new Property<bool>(false, "JawnTide: if true, every time a player opens a corpse the server logs each item inside ([CORPSE-CONTENTS]: wcid, name, types, icons, palette, spells, value). For finding the item that crashes a client on opening a corpse")),
                 ("show_first_login_gift", new Property<bool>(false, "if TRUE, will show on first login that the player earned bonus item (Blackmoor's Favor and/or Asheron's Benediction), disabled by default because msg is kind of odd on an emulator")),
                 ("show_mana_conv_bonus_0", new Property<bool>(true, "if disabled, only shows mana conversion bonus if not zero, during appraisal of casting items")),
                 ("smite_uses_takedamage", new Property<bool>(false, "if enabled, smite applies damage via TakeDamage")),

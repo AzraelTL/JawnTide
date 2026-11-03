@@ -210,6 +210,14 @@
    "area": "World bosses & events"
   },
   {
+   "key": "log_corpse_contents",
+   "type": "bool",
+   "default": "false",
+   "jawntide": true,
+   "desc": "JawnTide: if true, every time a player opens a corpse the server logs each item inside ([CORPSE-CONTENTS]: wcid, name, types, icons, palette, spells, value). For finding the item that crashes a client on opening a corpse",
+   "area": "Server & everything else"
+  },
+  {
    "key": "world_boss_tokens_per_ip",
    "type": "long",
    "default": "2",

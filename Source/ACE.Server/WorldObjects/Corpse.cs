@@ -138,7 +138,32 @@ namespace ACE.Server.WorldObjects
                     player.Session.Network.EnqueueSend(new GameEventCommunicationTransientString(player.Session, $"You do not yet have the right to loot the {Name}."));
                 return;
             }
+
+            // JawnTide: log what's inside before it's sent, so a client crash on opening a corpse can be traced to the item
+            if (PropertyManager.GetBool("log_corpse_contents").Item)
+                LogCorpseContents(player);
+
             base.Open(player);
+        }
+
+        private void LogCorpseContents(Player player)
+        {
+            try
+            {
+                log.Info($"[CORPSE-CONTENTS] {player.Name} opened {Name} (0x{Guid}) at {Location?.ToLOCString()}: {Inventory.Count} item(s)");
+
+                foreach (var item in Inventory.Values)
+                {
+                    log.Info($"[CORPSE-CONTENTS]   0x{item.Guid} wcid {item.WeenieClassId} \"{item.Name}\" (name length {item.Name?.Length ?? 0}) " +
+                        $"ItemType {item.ItemType} WeenieType {item.WeenieType} Icon 0x{item.IconId:X8} Overlay 0x{item.IconOverlayId ?? 0:X8} Underlay 0x{item.IconUnderlayId ?? 0:X8} " +
+                        $"Setup 0x{item.SetupTableId:X8} PaletteTemplate {item.PaletteTemplate} Shade {item.Shade} Material {item.MaterialType} Workmanship {item.Workmanship} " +
+                        $"Spells {item.Biota.PropertiesSpellBook?.Count ?? 0} Value {item.Value} Stack {item.StackSize} UiEffects {item.UiEffects} ValidLocations {item.ValidLocations}");
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[CORPSE-CONTENTS] logging failed for {Name} (0x{Guid}): {ex}");
+            }
         }
 
         /// <summary>
