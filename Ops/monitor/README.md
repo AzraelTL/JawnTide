@@ -6,12 +6,16 @@ A small web page for the LAN that shows, per account:
   every character login), with the other accounts that used the same IP (shared IPs are highlighted)
 - the most played character (by in-game played time) and its level; each account page lists every character's
   level, total XP and played time
-- how much of each tracked currency the account holds, summed over its characters (main pack and side packs),
-  and which character holds it; anything not on a character is shown as "Elsewhere" (house storage, ground).
-  Tracked: pyreals, MMDs (Trade Note 250k), PK Trophies, Phials, Darkbeat and Hera keys, Amber Shards,
+- how much of each tracked currency the account owns: carried on its characters (main pack and side packs), in its
+  **My Mule** storage and in its **bank** (`account_bank`; hover a number for the split), and which character carries
+  the most; anything else is shown as "Elsewhere" (house storage, ground, vendors). Banked luminance has its own column.
+  Tracked: pyreals, MMDs (Trade Note 250k), PK Trophies, Phials, Darkbeat, Hera and Shimmering Skeleton keys, Amber Shards,
   Luminance Exchange Tokens, A Boxes, plus **every alternate currency any vendor uses** (read from the world
   database on each snapshot, so new ones appear by themselves). Currencies nobody holds are hidden.
 - per-account totals over time (kept 30 days)
+- **Top holders** (`/top`): accounts ranked by carried + mule + bank for each currency.
+- **Bank** (`/bank`): every account's bank balances, and the last 300 bank entries (sends, receives, admin changes and
+  big changes highlighted). Each account page also shows its own bank history.
 - **Allegiances** (`/allegiances`): every allegiance with at least one vassal (largest first) with its monarch, whether the
   monarch is on the Town Control whitelist (`town_control_alleglist`), member and account counts and levels; below it each
   allegiance's full patron/vassal tree. Whitelist IDs that no longer belong to a monarch are listed too.

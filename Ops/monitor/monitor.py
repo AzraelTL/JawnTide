@@ -5,7 +5,8 @@ Every INTERVAL_SECONDS it reads the game databases with a SELECT-only user and k
   - every account: last login, last IP, every IP it logged in from (from ace_log.character_login_log)
   - every character: level, total XP, played time (Age), where it was last saved, and how much of each
     tracked currency it holds
-    (main pack and side packs; anything not on a character counts as "elsewhere")
+    (main pack and side packs), plus each account's My Mule storage and bank (account_bank); anything else
+    (house storage, ground, vendors) counts as "elsewhere"
 It stores per-account currency totals and per-character XP/played-time/location changes in a small SQLite file
 for history (XP gain rates and leveling spots come from that), and serves web pages on PORT.
 It never writes to the game databases. Its one write is the wiki contributor list (ace_wiki.contributor), set with
@@ -36,7 +37,7 @@ HISTORY_DAYS = int(os.environ.get("HISTORY_DAYS", "30"))
 # each snapshot, so a vendor given a new currency is picked up automatically). Columns nobody holds are hidden.
 EXTRA_ITEMS = ("273:Pyreals,20630:MMD (Trade Note 250k),1000002:PK Trophy,1000003:Phial of Bloody Tears,"
                "480608:Darkbeat Key,490364:Hera Key,52968:Infused Amber Shard,52969:Corrupted Amber Shard,"
-               "490321:Lum Exchange Token,510000:A Box")
+               "490321:Lum Exchange Token,510000:A Box,30258:Shimmering Skeleton Key")
 EXTRA = []
 for part in os.environ.get("EXTRA_ITEMS", EXTRA_ITEMS).split(","):
     if ":" in part:
@@ -50,6 +51,13 @@ PROP_INT64_TOTAL_XP = 1
 POSITION_LOCATION = 1
 PROP_IID_CONTAINER = 2
 PROP_IID_PATRON = 25
+PROP_IID_MULE_NEXT = 20003  # JawnTide My Mule: next container in an account's storage chain
+
+# JawnTide Bank: account_bank currency codes -> the tracked WCID they count toward (pyreals are a pyreal value).
+# Luminance isn't an item, so it gets its own pseudo column.
+LUMINANCE = -1
+BANK_CODES = {"pyreals": 273, "pk_trophies": 1000002, "key_darkbeat": 480608, "key_hera": 490364,
+              "key_skeleton": 30258, "luminance": LUMINANCE}
 PROP_IID_MONARCH = 26
 WINDOWS = (1, 6, 24, 72, 168)  # hours offered on the Levels page
 
@@ -81,7 +89,7 @@ def take_snapshot():
             if wcid not in known:
                 currencies.append((int(wcid), name or f"WCID {wcid}"))
                 known.add(wcid)
-        currencies = currencies[:len(EXTRA)] + sorted(currencies[len(EXTRA):], key=lambda c: c[1].lower())
+        currencies = currencies[:len(EXTRA)] + [(LUMINANCE, "Banked luminance")] + sorted(currencies[len(EXTRA):], key=lambda c: c[1].lower())
         WCIDS = [w for w, _ in currencies]
 
         accounts = {}
@@ -91,7 +99,8 @@ def take_snapshot():
                 FROM ace_auth.account"""):
             accounts[aid] = dict(id=aid, name=name, level=level, last_login=last_time, last_ip=last_ip or "",
                                  created=created, created_ip=created_ip or "", logins=logins, banned=banned,
-                                 characters=[], ips={}, totals={w: 0 for w in WCIDS})
+                                 characters=[], ips={}, totals={w: 0 for w in WCIDS},
+                                 carried={w: 0 for w in WCIDS}, mule={w: 0 for w in WCIDS}, bank={w: 0 for w in WCIDS})
 
         chars = {}
         for (cid, aid, name, deleted, age, level, xp, cell) in query(cur, """
@@ -123,6 +132,33 @@ def take_snapshot():
         for (value,) in query(cur, "SELECT value FROM ace_shard.config_properties_string WHERE `key` = 'town_control_alleglist'"):
             whitelist |= {int(x) for x in (value or "").split(",") if x.strip().isdigit()}
 
+        # JawnTide My Mule: every container in each account's storage chain belongs to that account
+        mule_of = {}
+        bank_log = []
+        try:
+            heads = {int(c): int(a) for a, c in query(cur, "SELECT account_Id, container_Id FROM ace_shard.account_mule WHERE container_Id <> 0")}
+            nxt = {int(o): int(v) for o, v in query(cur, "SELECT object_Id, value FROM ace_shard.biota_properties_i_i_d WHERE type = %s", (PROP_IID_MULE_NEXT,))}
+            for head, aid in heads.items():
+                c, seen = head, set()
+                while c and c not in seen:
+                    seen.add(c)
+                    mule_of[c] = aid
+                    c = nxt.get(c)
+        except pymysql.err.ProgrammingError:
+            pass  # no account_mule table yet
+
+        # JawnTide Bank
+        try:
+            for aid, code, amount in query(cur, "SELECT account_Id, currency, amount FROM ace_shard.account_bank WHERE amount <> 0"):
+                w = BANK_CODES.get(code)
+                if w is not None and aid in accounts and w in accounts[aid]["bank"]:
+                    accounts[aid]["bank"][w] += int(amount)
+            bank_log = query(cur, """SELECT logged_At, account_Id, character_Name, action, currency, amount, balance_After,
+                                         other_Account_Id, other_Character_Name, details
+                                  FROM ace_shard.account_bank_log ORDER BY id DESC LIMIT 300""")
+        except pymysql.err.ProgrammingError:
+            pass  # no bank tables yet
+
         elsewhere = {w: 0 for w in WCIDS}
         if WCIDS:
             marks = ",".join(["%s"] * len(WCIDS))
@@ -135,8 +171,11 @@ def take_snapshot():
                     WHERE b.weenie_Class_Id IN ({marks})""", (PROP_INT_STACKSIZE, PROP_IID_CONTAINER, PROP_IID_CONTAINER, *WCIDS)):
                 owner = chars.get(c1) or chars.get(c2)
                 amount = int(stack or 1)
+                mule_account = mule_of.get(c1) or mule_of.get(c2)
                 if owner:
                     owner["holdings"][wcid] += amount
+                elif mule_account in accounts:
+                    accounts[mule_account]["mule"][wcid] += amount
                 else:
                     elsewhere[wcid] += amount
 
@@ -159,7 +198,9 @@ def take_snapshot():
                 ip_accounts.setdefault(ip, set()).add(a["name"])
         for ch in a["characters"]:
             for w in WCIDS:
-                a["totals"][w] += ch["holdings"][w]
+                a["carried"][w] += ch["holdings"][w]
+        for w in WCIDS:
+            a["totals"][w] = a["carried"][w] + a["mule"][w] + a["bank"][w]
         live = [c for c in a["characters"] if not c["deleted"]] or a["characters"]
         a["top_character"] = max(live, key=lambda c: c["age"], default=None)
         a["holders"] = {}
@@ -170,7 +211,7 @@ def take_snapshot():
     held = {w for w in WCIDS if elsewhere[w] or any(a["totals"][w] for a in accounts.values())}
     snap = dict(taken=datetime.now(), accounts=accounts, characters=chars, elsewhere=elsewhere,
                 ip_accounts={k: sorted(v) for k, v in ip_accounts.items()},
-                currencies=currencies, held=held, wcids=WCIDS, whitelist=whitelist)
+                currencies=currencies, held=held, wcids=WCIDS, whitelist=whitelist, bank_log=bank_log)
     save_history(snap)
     return snap, time.time() - started
 
@@ -292,7 +333,7 @@ def page(title, body, refresh=True):
         status += f' <span class="err">Last error: {e(err)}</span>'
     return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 {'<meta http-equiv="refresh" content="300">' if refresh else ""}<title>{e(title)} - JawnTide monitor</title><style>{STYLE}</style></head><body>
-<header><b>JawnTide monitor</b><nav><a href="/">Accounts</a><a href="/levels">Levels</a><a href="/allegiances">Allegiances</a><a href="/top">Top holders</a><a href="/ips">Shared IPs</a><a href="/settings">Settings</a><a href="/casting">Casting</a></nav>
+<header><b>JawnTide monitor</b><nav><a href="/">Accounts</a><a href="/levels">Levels</a><a href="/allegiances">Allegiances</a><a href="/top">Top holders</a><a href="/bank">Bank</a><a href="/ips">Shared IPs</a><a href="/settings">Settings</a><a href="/casting">Casting</a></nav>
 <span class="muted">{status}</span></header><main>{body}</main></body></html>"""
 
 
@@ -304,6 +345,13 @@ def snapshot_or_wait():
 def shown(snap):
     """Currencies at least one character (or 'elsewhere') holds, in tracking order."""
     return [(w, label) for w, label in snap["currencies"] if w in snap["held"]]
+
+
+def split_title(a, w):
+    """Hover text showing where an account's total is: carried / mule / bank (only when not all carried)."""
+    if a["mule"][w] or a["bank"][w]:
+        return f' title="carried {a["carried"][w]:,}, mule {a["mule"][w]:,}, bank {a["bank"][w]:,}"'
+    return ""
 
 
 def overview(sort):
@@ -322,7 +370,7 @@ def overview(sort):
         top = a["top_character"]
         ips = set(a["ips"].keys()) | ({a["last_ip"]} if a["last_ip"] else set())
         is_shared = bool(ips & shared)
-        cells = "".join(f'<td class="n">{fmt_n(a["totals"][w])}</td>' for w in WCIDS)
+        cells = "".join(f'<td class="n"{split_title(a, w)}>{fmt_n(a["totals"][w])}</td>' for w in WCIDS)
         rows.append(f'<tr class="{"shared" if is_shared else ""}"><td>{account_link(a["name"])}</td>'
                     f'<td>{fmt_t(a["last_login"])}</td><td>{ip_link(a["last_ip"])}</td><td class="n">{len(ips)}</td>'
                     f'<td>{e(top["name"]) + " <span class=muted>(level " + str(top["level"]) + ", " + fmt_age(top["age"]) + ")</span>" if top else ""}</td>{cells}</tr>')
@@ -330,7 +378,8 @@ def overview(sort):
     else_cells = "".join(f'<td class="n">{fmt_n(snap["elsewhere"][w])}</td>' for w in WCIDS)
     hidden = len(snap["currencies"]) - len(CURRENCIES)
     body = (f'<p class="muted">{len(accounts)} accounts. Highlighted rows share an IP with another account. '
-            f'Click a currency to sort by it. "Elsewhere" is everything not on a character (house storage, ground, vendors). '
+            f'Click a currency to sort by it. Totals are everything the account owns: carried on its characters, in its My Mule '
+            f'and in its bank (hover a number for the split). "Elsewhere" is everything else (house storage, ground, vendors). '
             f'Tracking {len(snap["currencies"])} currencies (every vendor alternate currency plus pyreals, MMDs and keys); '
             f'{hidden} nobody holds yet are hidden.</p>'
             f'<div class="wrap"><table><tr><th>Account</th><th>Last login</th><th>Last IP</th><th class="n">IPs</th>'
@@ -358,9 +407,19 @@ def account_page(name):
                     f'<td class="n">{c["level"]}</td><td class="n">{fmt_n(c["xp"])}</td>'
                     f'<td class="n">{fmt_age(c["age"])}</td>{cells}</tr>')
     total = "".join(f'<td class="n"><b>{fmt_n(a["totals"][w])}</b></td>' for w in WCIDS)
+    mule = "".join(f'<td class="n">{fmt_n(a["mule"][w])}</td>' for w in WCIDS)
+    bank = "".join(f'<td class="n">{fmt_n(a["bank"][w])}</td>' for w in WCIDS)
     chars = (f'<h2>Characters (by played time)</h2><div class="wrap"><table><tr><th>Character</th><th class="n">Level</th>'
              f'<th class="n">Total XP</th><th class="n">Played</th>{head}</tr>'
-             f'{"".join(crow)}<tr><td><b>Total</b></td><td></td><td></td><td></td>{total}</tr></table></div>')
+             f'{"".join(crow)}'
+             f'<tr><td class="muted">My Mule</td><td></td><td></td><td></td>{mule}</tr>'
+             f'<tr><td class="muted">Bank</td><td></td><td></td><td></td>{bank}</tr>'
+             f'<tr><td><b>Total</b></td><td></td><td></td><td></td>{total}</tr></table></div>')
+    aid = a["id"]
+    lrow = "".join(bank_log_row(snap, r) for r in snap.get("bank_log", []) if r[1] == aid or r[7] == aid)
+    banklog = (f'<h2>Bank history (most recent)</h2><div class="wrap"><table><tr><th>When (UTC)</th><th>Account</th><th>Character</th>'
+               f'<th>Action</th><th>Currency</th><th class="n">Amount</th><th class="n">Balance after</th><th>Other side</th><th>Details</th></tr>'
+               f'{lrow or "<tr><td colspan=9 class=muted>No bank activity in the recent log</td></tr>"}</table></div>')
     irow = []
     for ip, d in sorted(a["ips"].items(), key=lambda kv: str(kv[1]["last"]), reverse=True):
         others = [n for n in snap["ip_accounts"].get(ip, []) if n != a["name"]]
@@ -381,7 +440,7 @@ def account_page(name):
                    for ts, v in list(by_ts.items())[:200])
     history = (f'<h2>Totals over time (last {HISTORY_DAYS} days, newest first)</h2><div class="wrap"><table><tr><th>Snapshot</th>{head}</tr>'
                f'{hrow or "<tr><td class=muted>No history yet</td></tr>"}</table></div>')
-    return page(a["name"], f'<h2>Account {e(a["name"])}</h2>{info}{chars}{ips}{history}')
+    return page(a["name"], f'<h2>Account {e(a["name"])}</h2>{info}{chars}{banklog}{ips}{history}')
 
 
 def xp_window(hours):
@@ -589,14 +648,55 @@ def top_page():
     snap = snapshot_or_wait()
     if not snap:
         return page("Top holders", "<p>Waiting for the first snapshot.</p>")
-    parts = []
+    parts = ['<p class="muted">Ranked by account: carried on its characters + its My Mule + its bank, so moving things into '
+             'storage does not hide anyone. The character shown is the one carrying the most.</p>']
     for w, label in shown(snap):
-        holders = sorted((c for c in snap["characters"].values() if c["holdings"][w] > 0), key=lambda c: -c["holdings"][w])[:15]
-        rows = "".join(f'<tr><td>{e(c["name"])}</td><td>{account_link(snap["accounts"][c["account"]]["name"]) if c["account"] in snap["accounts"] else ""}</td>'
-                       f'<td class="n">{fmt_n(c["holdings"][w])}</td></tr>' for c in holders)
-        parts.append(f'<h2>{e(label)}</h2><div class="wrap"><table><tr><th>Character</th><th>Account</th><th class="n">Holding</th></tr>'
-                     f'{rows or "<tr><td colspan=3 class=muted>Nobody holds any</td></tr>"}</table></div>')
+        top = sorted((a for a in snap["accounts"].values() if a["totals"][w] > 0), key=lambda a: -a["totals"][w])[:15]
+        rows = "".join(f'<tr><td>{account_link(a["name"])}</td><td>{e(a["holders"][w]["name"]) if a["holders"].get(w) else ""}</td>'
+                       f'<td class="n">{fmt_n(a["carried"][w])}</td><td class="n">{fmt_n(a["mule"][w])}</td>'
+                       f'<td class="n">{fmt_n(a["bank"][w])}</td><td class="n"><b>{fmt_n(a["totals"][w])}</b></td></tr>' for a in top)
+        parts.append(f'<h2>{e(label)}</h2><div class="wrap"><table><tr><th>Account</th><th>Carried most by</th><th class="n">Carried</th>'
+                     f'<th class="n">My Mule</th><th class="n">Bank</th><th class="n">Total</th></tr>'
+                     f'{rows or "<tr><td colspan=6 class=muted>Nobody holds any</td></tr>"}</table></div>')
     return page("Top holders", "".join(parts))
+
+
+BANK_NAMES = {"pyreals": "Pyreals", "pk_trophies": "PK Trophies", "luminance": "Luminance", "key_darkbeat": "Darkbeat Key",
+              "key_hera": "Hera Key", "key_skeleton": "Shimmering Skeleton Key"}
+
+
+def bank_log_row(snap, r):
+    when, aid, cname, action, code, amount, balance, other_aid, other_name, details = r
+    acct = snap["accounts"].get(aid)
+    other = snap["accounts"].get(other_aid) if other_aid else None
+    big = action in ("send", "receive", "admin") or abs(int(amount or 0)) >= (1_000_000 if code == "pyreals" else 100)
+    return (f'<tr class="{"changed" if big else ""}"><td>{fmt_t(when)}</td><td>{account_link(acct["name"]) if acct else e(aid)}</td>'
+            f'<td>{e(cname)}</td><td>{e(action)}</td><td>{e(BANK_NAMES.get(code, code))}</td>'
+            f'<td class="n">{int(amount):+,}</td><td class="n">{int(balance):,}</td>'
+            f'<td>{(e(other_name) + " (" + account_link(other["name"]) + ")") if other else e(other_name)}</td>'
+            f'<td class="wrapd">{e(details)}</td></tr>')
+
+
+def bank_page():
+    snap = snapshot_or_wait()
+    if not snap:
+        return page("Bank", "<p>Waiting for the first snapshot.</p>")
+    codes = list(BANK_NAMES.items())
+    banked = [a for a in snap["accounts"].values() if any(a["bank"][BANK_CODES[c]] for c, _ in codes)]
+    banked.sort(key=lambda a: (-a["bank"][273], a["name"].lower()))
+    head = "".join(f'<th class="n">{e(n)}</th>' for _, n in codes)
+    rows = "".join(f'<tr><td>{account_link(a["name"])}</td>' + "".join(f'<td class="n">{fmt_n(a["bank"][BANK_CODES[c]])}</td>' for c, _ in codes) + "</tr>"
+                   for a in banked)
+    totals = "".join(f'<td class="n"><b>{fmt_n(sum(a["bank"][BANK_CODES[c]] for a in banked))}</b></td>' for c, _ in codes)
+    balances = (f'<h2>Balances ({len(banked)} accounts)</h2><div class="wrap"><table><tr><th>Account</th>{head}</tr>{rows}'
+                f'<tr><td><b>All accounts</b></td>{totals}</tr></table></div>')
+    log = "".join(bank_log_row(snap, r) for r in snap.get("bank_log", []))
+    history = (f'<h2>Recent bank activity (last {len(snap.get("bank_log", []))} entries, newest first)</h2>'
+               f'<p class="muted">Highlighted: sends, receives, admin changes, and changes of 1,000,000+ pyreals or 100+ of anything else.</p>'
+               f'<div class="wrap"><table><tr><th>When (UTC)</th><th>Account</th><th>Character</th><th>Action</th><th>Currency</th>'
+               f'<th class="n">Amount</th><th class="n">Balance after</th><th>Other side</th><th>Details</th></tr>'
+               f'{log or "<tr><td colspan=9 class=muted>No bank activity yet</td></tr>"}</table></div>')
+    return page("Bank", balances + history)
 
 
 def ips_page():
@@ -830,6 +930,8 @@ class Handler(BaseHTTPRequestHandler):
                 body = allegiances_page()
             elif url.path == "/top":
                 body = top_page()
+            elif url.path == "/bank":
+                body = bank_page()
             elif url.path == "/ips":
                 body = ips_page()
             elif url.path == "/ip":
