@@ -267,6 +267,7 @@ namespace ACE.Server.WorldObjects
                     return;
                 }
 
+                player.SetMuleZeroValueMask(true);
                 player.ClearMuleSearchFilter(this);
                 player.SendMuleCapacityStatus(this);
             }

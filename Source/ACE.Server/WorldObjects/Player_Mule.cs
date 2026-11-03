@@ -153,11 +153,33 @@ namespace ACE.Server.WorldObjects
                 }));
             }
 
+            SetMuleZeroValueMask(false);
+
             // ActiveMuleContainers is deliberately NOT cleared here -- see LoadMuleContainerChain.
             // The search filter now lives on the vendor (MuleSearchRegex), which is about to be
             // destroyed above, so there's nothing else to clear for it here.
             ActiveMule = null;
             SetMuleGemLook(false);
+        }
+
+        /// <summary>
+        /// JawnTide: the client won't put an item worth 0 pyreals (e.g. Imbuer's Crystal and other rare gems) into a vendor's
+        /// sell window. While the mule is open, the client is told those items are worth 1; when the mule leaves, it is told
+        /// their real value again. Only the client's copy changes: the item's real Value on the server stays 0, so no vendor
+        /// ever pays for it.
+        /// </summary>
+        public void SetMuleZeroValueMask(bool masked)
+        {
+            if (Session == null)
+                return;
+
+            foreach (var item in GetAllPossessions())
+            {
+                if ((item.Value ?? 0) > 0)
+                    continue;
+
+                Session.Network.EnqueueSend(new GameMessagePublicUpdatePropertyInt(item, PropertyInt.Value, masked ? 1 : 0));
+            }
         }
 
         /// <summary>
