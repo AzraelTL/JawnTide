@@ -172,6 +172,7 @@ namespace ACE.Server.WorldObjects
         {
             long taken = 0;
             var details = "";
+            var breakdown = "";
 
             switch (currency.Kind)
             {
@@ -220,6 +221,9 @@ namespace ACE.Server.WorldObjects
 
                         taken = coinTotal + noteTotal;
                         details = $"coins {coinTotal:N0}, notes {noteTotal:N0}";
+
+                        if (noteTotal > 0)
+                            breakdown = $" ({coinTotal:N0} coins + {noteTotal:N0} in trade notes)";
                     }
 
                     UpdateCoinValue();
@@ -300,7 +304,7 @@ namespace ACE.Server.WorldObjects
 
                 if (result.Status == BankResultStatus.Ok)
                 {
-                    BankMessage($"Deposited {BankInfo.Format(currency, deposited)}. Bank balance: {result.Balance:N0}.");
+                    BankMessage($"Deposited {BankInfo.Format(currency, deposited)}{breakdown}. Bank balance: {result.Balance:N0}.");
                     return;
                 }
 
