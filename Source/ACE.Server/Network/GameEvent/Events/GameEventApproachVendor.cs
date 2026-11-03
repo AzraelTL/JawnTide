@@ -70,7 +70,7 @@ namespace ACE.Server.Network.GameEvent.Events
                     if (originalItemType == ACE.Entity.Enum.ItemType.PromissoryNote)
                         listAs = ACE.Entity.Enum.ItemType.Misc;
                     else if (originalItemType == ACE.Entity.Enum.ItemType.TinkeringMaterial)
-                        listAs = ACE.Entity.Enum.ItemType.TinkeringTool;
+                        listAs = Vendor.MuleSalvageListAs;
                 }
 
                 if (listAs.HasValue)
