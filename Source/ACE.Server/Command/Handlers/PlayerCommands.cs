@@ -1703,36 +1703,6 @@ namespace ACE.Server.Command.Handlers
 
         #endregion
         // JawnTide My Mule (ported from ClassicPvP feature/my-mule)
-        // JawnTide My Mule: testing which item type puts salvage on its own tab in the mule window (resets on restart)
-        [CommandHandler("mulesalvagetype", AccessLevel.Admin, CommandHandlerFlag.None, 0,
-            "Testing: the item type salvage is listed as in My Mule windows (which tab it shows on).",
-            "<ItemType> - e.g. CraftAlchemyBase. With no parameters, shows the current type and the ones to try. Reopen the mule after a change.")]
-        public static void HandleMuleSalvageType(Session session, params string[] parameters)
-        {
-            void Say(string text)
-            {
-                if (session?.Player != null)
-                    session.Network.EnqueueSend(new GameMessageSystemChat(text, ChatMessageType.Broadcast));
-                else
-                    Console.WriteLine(text);
-            }
-
-            if (parameters.Length > 0)
-            {
-                if (!Enum.TryParse<ItemType>(parameters[0], true, out var type) || type == ItemType.None || type == ItemType.TinkeringMaterial)
-                {
-                    Say($"Unknown or unusable item type {parameters[0]}.");
-                    return;
-                }
-
-                Vendor.MuleSalvageListAs = type;
-            }
-
-            Say($"Salvage is listed as {Vendor.MuleSalvageListAs} in mule windows. Reopen the mule to see it.\n" +
-                "To try: CraftAlchemyBase, CraftAlchemyIntermediate, CraftFletchingBase, CraftFletchingIntermediate, CraftCookingBase, " +
-                "Food, Gem, SpellComponents, ManaStone, LifeStone, Writable, Gameboard, Useless, Misc, TinkeringTool");
-        }
-
         [CommandHandler("mule", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
             "Grants you a My Mule summon gem, or searches your mule storage for items matching a spell regex.",
             "search <pattern>\n" +

@@ -60,7 +60,8 @@ namespace ACE.Server.Network.GameEvent.Events
                 // JawnTide My Mule: the client prices Trade Notes (PromissoryNote) at a fixed rate whatever the vendor's
                 // rates are, so on a mule (everything free) they'd show a price. Showing them as Misc avoids that.
                 // Salvage (TinkeringMaterial) is left out of a vendor's for-sale list by the client (tested on JawnTest),
-                // so on a mule it is listed as a Tinkering Tool, which puts it on that tab with Usts and tinkering tools.
+                // so on a mule it is listed as a Cooking Base, which gives it a tab mules hardly use (picked on JawnTest;
+                // Tinkering Tool shares "Keys and Tools", and Fletching Base / Gameboard aren't listed at all).
                 // Only the listing changes; the stored item keeps its real type.
                 var originalItemType = obj.ItemType;
                 ACE.Entity.Enum.ItemType? listAs = null;
@@ -70,7 +71,7 @@ namespace ACE.Server.Network.GameEvent.Events
                     if (originalItemType == ACE.Entity.Enum.ItemType.PromissoryNote)
                         listAs = ACE.Entity.Enum.ItemType.Misc;
                     else if (originalItemType == ACE.Entity.Enum.ItemType.TinkeringMaterial)
-                        listAs = Vendor.MuleSalvageListAs;
+                        listAs = ACE.Entity.Enum.ItemType.CraftCookingBase;
                 }
 
                 if (listAs.HasValue)

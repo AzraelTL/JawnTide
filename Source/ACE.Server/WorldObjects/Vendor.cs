@@ -44,9 +44,6 @@ namespace ACE.Server.WorldObjects
         /// <summary>JawnTide My Mule: the live off-world container chain backing this mule's storage.</summary>
         public List<Container> MuleContainers;
 
-        /// <summary>JawnTide My Mule: the item type salvage is listed as in a mule window (the client won't list TinkeringMaterial). Testing: /mulesalvagetype.</summary>
-        public static ACE.Entity.Enum.ItemType MuleSalvageListAs = ACE.Entity.Enum.ItemType.TinkeringTool;
-
         /// <summary>JawnTide My Mule: the active /mule search filter for this mule's buy window, if any.</summary>
         public System.Text.RegularExpressions.Regex MuleSearchRegex;
 
