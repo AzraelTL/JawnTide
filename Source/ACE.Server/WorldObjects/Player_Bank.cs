@@ -304,6 +304,7 @@ namespace ACE.Server.WorldObjects
 
                 if (result.Status == BankResultStatus.Ok)
                 {
+                    BankCacheSet(currency.Code, result.Balance);
                     BankMessage($"Deposited {BankInfo.Format(currency, deposited)}{breakdown}. Bank balance: {result.Balance:N0}.");
                     return;
                 }
@@ -514,6 +515,8 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            BankCacheSet(currency.Code, result.Balance);
+
             long refund = 0;
 
             if (currency.Kind == BankCurrencyKind.Luminance)
@@ -558,6 +561,9 @@ namespace ACE.Server.WorldObjects
                 bankPending = Math.Max(0, bankPending - 1);
 
                 if (refundResult.Status == BankResultStatus.Ok)
+                    BankCacheSet(currency.Code, refundResult.Balance);
+
+                if (refundResult.Status == BankResultStatus.Ok)
                     BankMessage($"Withdrew {BankInfo.Format(currency, handed)}. {refund:N0} didn't fit and went back into the bank. Bank balance: {refundResult.Balance:N0}.");
                 else
                 {
@@ -565,6 +571,89 @@ namespace ACE.Server.WorldObjects
                     BankMessage($"Withdrew {BankInfo.Format(currency, handed)}. {refund:N0} didn't fit and couldn't be put back; it has been logged, please tell an admin.");
                 }
             }));
+        }
+
+        // ---------------------------------------------------------------- balance cache (for vendor windows)
+
+        /// <summary>This account's balances as last seen (null = not loaded yet). Only used to show vendors what the bank can cover; every real change goes through the database.</summary>
+        private Dictionary<string, long> bankCache;
+
+        /// <summary>True while the client is being shown pack coins + banked pyreals (so it lets the player click Buy).</summary>
+        private bool bankCoinDisplayRaised;
+
+        private void BankCacheSet(string code, long balance)
+        {
+            if (bankCache != null)
+                bankCache[code] = balance;
+        }
+
+        /// <summary>Called on the receiving player when someone sends to their bank.</summary>
+        public void BankCacheReceived(string code, long balance) => BankOnPlayer(() => BankCacheSet(code, balance));
+
+        private void BankRefreshCache(Action onLoaded)
+        {
+            DatabaseManager.Shard.GetAccountBank(Account.AccountId, balances => BankOnPlayer(() =>
+            {
+                if (balances == null)
+                    return;
+
+                bankCache = balances;
+                onLoaded?.Invoke();
+            }));
+        }
+
+        /// <summary>
+        /// How much of this vendor's currency the bank could add, for the vendor window (0 if the bank is closed or the vendor's
+        /// currency isn't banked). The client won't even send a purchase it thinks you can't afford, so it is shown pack + bank.
+        /// The first time, the balances are loaded and the window is re-sent.
+        /// </summary>
+        public uint BankVendorExtra(Vendor vendor)
+        {
+            var currency = BankInfo.ForVendorCurrency(vendor.AlternateCurrency);
+
+            if (currency == null || BankClosedReason(false) != null)
+                return 0;
+
+            if (bankCache == null)
+            {
+                var vendorGuid = vendor.Guid;
+                BankRefreshCache(() =>
+                {
+                    if (LastOpenedContainerId == vendorGuid && !vendor.IsDestroyed)
+                        vendor.ApproachVendor(this);
+                });
+                return 0;
+            }
+
+            // keep it fresh for next time (the website or another server action may have changed it)
+            BankRefreshCache(null);
+
+            bankCache.TryGetValue(currency.Code, out var balance);
+            return (uint)Math.Clamp(balance, 0, int.MaxValue / 2);
+        }
+
+        /// <summary>Shows the client pack coins + banked pyreals while a pyreal vendor is open.</summary>
+        public void BankRaiseCoinDisplay(uint extra)
+        {
+            if (extra == 0)
+            {
+                BankRestoreCoinDisplay();
+                return;
+            }
+
+            var shown = (int)Math.Min((long)(CoinValue ?? 0) + extra, int.MaxValue);
+            Session.Network.EnqueueSend(new GameMessagePrivateUpdatePropertyInt(this, PropertyInt.CoinValue, shown));
+            bankCoinDisplayRaised = true;
+        }
+
+        /// <summary>Puts the client's pyreal count back to what's really in the pack.</summary>
+        public void BankRestoreCoinDisplay()
+        {
+            if (!bankCoinDisplayRaised)
+                return;
+
+            bankCoinDisplayRaised = false;
+            Session?.Network.EnqueueSend(new GameMessagePrivateUpdatePropertyInt(this, PropertyInt.CoinValue, CoinValue ?? 0));
         }
 
         // ---------------------------------------------------------------- vendor purchases
@@ -662,6 +751,9 @@ namespace ACE.Server.WorldObjects
                     bankPending = Math.Max(0, bankPending - 1);
 
                     if (refund.Status == BankResultStatus.Ok)
+                        BankCacheSet(currency.Code, refund.Balance);
+
+                    if (refund.Status == BankResultStatus.Ok)
                         BankMessage($"The purchase was cancelled ({problem}). {BankInfo.Format(currency, shortfall)} went back into your bank.");
                     else
                     {
@@ -671,6 +763,8 @@ namespace ACE.Server.WorldObjects
                 }));
                 return;
             }
+
+            BankCacheSet(currency.Code, result.Balance);
 
             FinalizeBuyTransaction(vendor, genericItems, uniqueItems, totalPrice, packSpend);
 
@@ -699,6 +793,7 @@ namespace ACE.Server.WorldObjects
 
                 if (result.Status == BankResultStatus.Ok)
                 {
+                    BankCacheSet(currency.Code, result.Balance);
                     BankMessage($"{amount:N0} pyreals from the sale went into your bank. Bank balance: {result.Balance:N0}. (/bank sales coins to get coins instead)");
                     return;
                 }
@@ -793,6 +888,7 @@ namespace ACE.Server.WorldObjects
                     var notify = PlayerManager.GetOnlinePlayer(targetGuid)
                         ?? PlayerManager.GetAllOnline().FirstOrDefault(p => p.Account?.AccountId == toAccount);
 
+                    notify?.BankCacheReceived(currency.Code, result.OtherBalance);
                     notify?.Session?.Network.EnqueueSend(new GameMessageSystemChat($"{Name} sent {BankInfo.Format(currency, amount)} to your bank. Bank balance: {result.OtherBalance:N0}.", ChatMessageType.Broadcast));
                 }
 
@@ -803,6 +899,7 @@ namespace ACE.Server.WorldObjects
                     switch (result.Status)
                     {
                         case BankResultStatus.Ok:
+                            BankCacheSet(currency.Code, result.Balance);
                             BankMessage($"Sent {BankInfo.Format(currency, amount)} to {targetName}. Bank balance: {result.Balance:N0}.");
                             break;
                         case BankResultStatus.Insufficient:

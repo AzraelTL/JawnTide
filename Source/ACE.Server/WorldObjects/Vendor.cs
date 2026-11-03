@@ -348,7 +348,15 @@ namespace ACE.Server.WorldObjects
         {
             RotUniques();
 
-            player.Session.Network.EnqueueSend(new GameEventApproachVendor(player.Session, this, altCurrencySpent));
+            // JawnTide Bank: show the client what the bank can add, so it lets the player buy (the server asks before using it)
+            uint bankExtra = MuleOwnerId.HasValue ? 0 : player.BankVendorExtra(this);
+
+            player.Session.Network.EnqueueSend(new GameEventApproachVendor(player.Session, this, altCurrencySpent, AlternateCurrency != null ? bankExtra : 0));
+
+            if (AlternateCurrency == null)
+                player.BankRaiseCoinDisplay(bankExtra);
+            else
+                player.BankRestoreCoinDisplay();
 
             var rotateTime = Rotate(player); // vendor rotates to player
 
@@ -418,6 +426,8 @@ namespace ACE.Server.WorldObjects
             {
                 if (lastPlayer.LastOpenedContainerId == Guid)
                     lastPlayer.LastOpenedContainerId = ObjectGuid.Invalid;
+
+                lastPlayer.BankRestoreCoinDisplay();
 
                 EmoteManager.DoVendorEmote(VendorType.Close, lastPlayer);
                 lastPlayerInfo = null;

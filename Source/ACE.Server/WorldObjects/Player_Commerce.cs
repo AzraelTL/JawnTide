@@ -408,8 +408,12 @@ namespace ACE.Server.WorldObjects
             foreach (var coinStack in GetInventoryItemsOfTypeWeenieType(WeenieType.Coin))
                 coins += coinStack.Value ?? 0;
 
-            if (sendUpdateMessageIfChanged && CoinValue == coins)
+            if (sendUpdateMessageIfChanged && CoinValue == coins && !bankCoinDisplayRaised)
                 sendUpdateMessageIfChanged = false;
+
+            // JawnTide Bank: any real change puts the client's count back to the pack's (ApproachVendor raises it again)
+            if (sendUpdateMessageIfChanged)
+                bankCoinDisplayRaised = false;
 
             CoinValue = coins;
 
