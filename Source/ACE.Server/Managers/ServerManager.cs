@@ -39,6 +39,13 @@ namespace ACE.Server.Managers
         public static bool ShutdownInProgress { get; private set; }
 
         /// <summary>
+        /// JawnTide: true once the shutdown has saved everything and the process is exiting. The ProcessExit handler checks it so
+        /// it never runs the whole shutdown a second time (that second run called Environment.Exit from inside ProcessExit,
+        /// which blocks forever: the process hung after "Exiting at" and Docker had to kill it).
+        /// </summary>
+        public static volatile bool ShutdownComplete;
+
+        /// <summary>
         /// The amount of seconds that the server will wait before unloading the application.
         /// </summary>
         public static uint ShutdownInterval { get; private set; }
@@ -83,18 +90,22 @@ namespace ACE.Server.Managers
             ShutdownTime = DateTime.MinValue;
         }
 
-        public static void DoShutdownNow()
+        /// <param name="exitWhenDone">false when called from the ProcessExit handler: the process is already exiting, and calling
+        /// Environment.Exit from inside ProcessExit would block forever</param>
+        public static void DoShutdownNow(bool exitWhenDone = true)
         {
             SetShutdownInterval(0);
             ShutdownInitiated = true;
             PlayerManager.BroadcastToAll(new GameMessageSystemChat("Broadcast from System> ATTENTION - This Asheron's Call Server is shutting down NOW!!!!", ChatMessageType.WorldBroadcast));
-            ShutdownServer();
+            RunShutdown(exitWhenDone);
         }
 
         /// <summary>
         /// Threaded task created when performing a server shutdown
         /// </summary>
-        private static void ShutdownServer()
+        private static void ShutdownServer() => RunShutdown(true);
+
+        private static void RunShutdown(bool exitWhenDone)
         {
             var shutdownTime = DateTime.UtcNow.AddSeconds(ShutdownInterval);
 
@@ -223,8 +234,11 @@ namespace ACE.Server.Managers
             // Write exit to console/log
             log.Info($"Exiting at {DateTime.UtcNow.ToCommonString()}");
 
-            // System exit
-            Environment.Exit(Environment.ExitCode);
+            ShutdownComplete = true;
+
+            // System exit (not from inside ProcessExit, see DoShutdownNow)
+            if (exitWhenDone)
+                Environment.Exit(Environment.ExitCode);
         }
 
         private static DateTime LogStatusUpdate(DateTime logUpdateTS, string logMessage)
