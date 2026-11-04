@@ -86,6 +86,16 @@ namespace ACE.Server.WorldObjects
                 }
             }
 
+            // JawnTide: mansions are only for monarchs of allegiances on the Town Control whitelist
+            if (slumlord.House.HouseType == HouseType.Mansion && PropertyManager.GetBool("mansion_whitelist_only").Item
+                && (Allegiance == null || Allegiance.MonarchId != Guid.Full || !this.IsAllegianceWhitelisted()))
+            {
+                var msg = "Only the monarch of an allegiance on the Town Control whitelist can buy a mansion.";
+                Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, msg), new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
+                log.Info($"[HOUSE] {Name}.HandleActionBuyHouse(): Failed pre-purchase requirement - mansion_whitelist_only");
+                return;
+            }
+
             if (slumlord.House.HouseType != HouseType.Apartment)
             {
                 if (PropertyManager.GetBool("house_15day_account").Item && !HouseAccountAgeReached)

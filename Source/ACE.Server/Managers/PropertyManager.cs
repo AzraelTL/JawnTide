@@ -560,6 +560,7 @@ namespace ACE.Server.Managers
                 ("gateway_ties_summonable", new Property<bool>(true, "if disabled, players cannot summon ties from gateways. defaults to enabled, as in retail")),
                 ("gearknight_core_plating", new Property<bool>(true, "if disabled, Gear Knight players are not required to use core plating devices for armor and clothing. defaults to enabled, as in retail")),
                 ("house_15day_account", new Property<bool>(true, "if disabled, houses can be purchased with accounts created less than 15 days old")),
+                ("mansion_whitelist_only", new Property<bool>(true, "JawnTide: if TRUE, only the monarch of an allegiance on the Town Control whitelist (town_control_alleglist) can buy a mansion")),
                 ("house_30day_cooldown", new Property<bool>(true, "if disabled, houses can be purchased without waiting 30 days between each purchase")),
                 ("house_hook_limit", new Property<bool>(true, "if disabled, house hook limits are ignored")),
                 ("house_hookgroup_limit", new Property<bool>(true, "if disabled, house hook group limits are ignored")),
