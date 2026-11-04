@@ -21,3 +21,12 @@ No fees. Listings run 30 days; unsold ones are hidden ("expired") and wait in ma
 - Problems: `docker logs ace-server 2>&1 | grep "\[MARKET\]"`. Lines with REFUND FAILED or SELLER NOT PAID name the account and amount to
   restore by hand (see BANK.md). A listing left `busy` by a server stop is logged at the next start; check the bank log and the item, then set its status.
 - Testing without the website: `Ops/sql-snippets/market-test.sql`.
+
+## Website (`Ops/website/market.py`)
+`/market` (search, filters), `/market/item/ID`, `/market/mine` (your mule, listings, history), `/market/icon/ID.png`.
+Sign-in is the wiki login. Mule items with no picture yet get one the next time their owner summons the mule.
+
+## Going live (order matters)
+1. Deploy the game server with the marketplace (it creates the tables at start).
+2. Linux, once: `bash ~/JawnTide/Ops/website/market-setup.sh` (the mule view and the website's grants).
+3. Rebuild the website.

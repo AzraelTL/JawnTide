@@ -26,6 +26,8 @@ The `web` user can read only what the site shows:
 - `ace_web.town_control_whitelist`: a view showing only the `town_control_alleglist` setting (for the Town Control flag on
   the Allegiances page); the web user cannot read any other server setting
 
+- Marketplace (`market.py`, `market-setup.sh`): read `ace_shard.market_listing`, `market_icon`, `market_request`, add rows to
+  `market_request` (the game server carries them out), and read the `ace_web.market_mule_item` view (mule contents only)
 - `ace_wiki` wiki tables: read and write, for the wiki (below); `ace_wiki.contributor` read-only. This is the only
   database it can change
 

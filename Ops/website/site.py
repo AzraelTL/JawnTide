@@ -7,7 +7,7 @@ login history), and keeps the result in memory. Pages are rendered from that cop
 the game databases. Admin characters (accessLevel > 0) are left off every page.
 
 Pages: /  home (server info, how to connect, rules), /pk  open-world PK kills, /arena  arena standings and
-matches, /levels  player levels, /allegiances  monarch trees, /health.
+matches, /levels  player levels, /allegiances  monarch trees, /market  the marketplace (market.py), /health.
 
 Preview without a database:  python site.py --sample out.html  writes every page into one file.
 """
@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
+import market
 import wiki
 
 DB = dict(host=os.environ.get("DB_HOST", "ace-db"), port=int(os.environ.get("DB_PORT", "3306")),
@@ -401,6 +402,7 @@ PAGES = [("/", "Home"), ("/pk", "PK kills"), ("/towns", "Town Control"), ("/aren
 
 def layout(path, title, body, snap):
     nav = "".join(f'<a href="{p}"{" aria-current=page" if p == path else ""}>{t}</a>' for p, t in PAGES)
+    nav += f'<a href="/market"{" aria-current=page" if path == "/market" else ""}>Market</a>'
     nav += f'<a href="/wiki"{" aria-current=page" if path == "/wiki" else ""}>Wiki</a>'
     nav += f'<a class="play" href="{e(TANKS_URL)}">JawnTanks</a>'
     stamp = f'<p class="stamp">Updated {e(snap["taken"].strftime("%b %d, %I:%M %p"))} server time. Refreshes every {INTERVAL // 60} minutes.</p>' if snap else ""
@@ -684,6 +686,8 @@ def render(path, query, snap):
 class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
+            if market.handle(self, "POST"):
+                return
             if wiki.handle(self, "POST"):
                 return
             self.send_error(405)
@@ -694,6 +698,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         url = urlparse(self.path)
         try:
+            if market.handle(self, "GET"):
+                return
             if wiki.handle(self, "GET"):
                 return
             if url.path == "/emblem.webp":
@@ -825,5 +831,6 @@ if __name__ == "__main__":
         sys.exit(0)
     threading.Thread(target=collector, daemon=True).start()
     wiki.init(DB, layout)
+    market.init(DB, layout)
     print(f"JawnTide website on port {PORT}, data refresh every {INTERVAL}s", flush=True)
     ThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()

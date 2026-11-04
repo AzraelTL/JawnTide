@@ -518,7 +518,7 @@ def _link_finish(h, user):
 
 def _login(h, user, method, query):
     nxt = (query.get("next", ["/wiki"])[0] or "/wiki")
-    if not nxt.startswith("/wiki"): nxt = "/wiki"
+    if not (nxt.startswith("/wiki") or nxt.startswith("/market")) or nxt.startswith("//"): nxt = "/wiki"
     def form(err=""):
         _page(h, "Sign in", f'<h1>Sign in to the wiki</h1>{f"<p class=err>{e(err)}</p>" if err else ""}'
               f'<form class="wedit" method="post" action="/wiki/login?next={quote(nxt)}">'
