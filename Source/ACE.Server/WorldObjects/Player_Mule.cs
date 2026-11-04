@@ -209,6 +209,13 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            // JawnTide Marketplace: the market is moving an item in or out of this account's mule in the database right now
+            if (Managers.MarketManager.IsAccountBusy(Account.AccountId))
+            {
+                SendTransientError("Your mule is busy with a market order. Try again in a few seconds.");
+                return;
+            }
+
             var headGuid = DatabaseManager.Shard.BaseDatabase.GetAccountMuleContainerId(Account.AccountId);
 
             if (!headGuid.HasValue)
@@ -393,6 +400,9 @@ namespace ACE.Server.WorldObjects
 
             foreach (var item in SortMuleItems(containers.SelectMany(c => c.Inventory.Values)))
                 vendor.UniqueItemsForSale[item.Guid] = item;
+
+            // JawnTide Marketplace: the website shows mule items with their icons
+            Managers.MarketManager.QueueIcons(containers.SelectMany(c => c.Inventory.Values));
 
             if (!vendor.EnterWorld())
             {
