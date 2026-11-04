@@ -397,8 +397,27 @@ def browse(h, user, query):
 
     intro = ('<p class="lede">Buy from other players with the MMDs and PK Trophies in your <a href="/wiki/bank">bank</a>. '
              'Purchases land in your mule. To sell, open <a href="/market/mine">My market</a> and list something from your mule. No fees.</p>')
+    flip = ('<script>document.querySelectorAll(".mcard").forEach(c=>c.addEventListener("mouseenter",()=>{const p=c.querySelector(".idp");'
+            'if(!p)return;p.classList.remove("left","up");const r=p.getBoundingClientRect();if(r.right>innerWidth-8)p.classList.add("left");'
+            'if(r.bottom>innerHeight-8&&c.getBoundingClientRect().top>r.height+16)p.classList.add("up")}))</script>')
     _page(h, "Market", f'<h1>Market</h1>{intro}{form}<p class="muted">{total:,} item{"s" if total != 1 else ""}</p>'
-                       f'<div class="mgrid">{cards}</div>{pager}', user)
+                       f'<div class="mgrid">{cards}</div>{pager}{flip}', user)
+
+
+def id_panel(r):
+    """The hover panel: the item's details laid out like the in-game appraisal (right-click / ID) panel."""
+    d = r["details"]
+    rows = appraise(d)
+    top = [(k, v) for k, v in rows if k in ("Value", "Burden")]
+    rest = [(k, v) for k, v in rows if k not in ("Value", "Burden")]
+    lines = "".join(f"<div><span>{e(k)}:</span> {e(v)}</div>" for k, v in top + rest)
+    spells = [s.get("name") for s in d.get("spells", []) if s.get("name")]
+    spell_html = f'<div class="idsp"><span>Spells:</span> {e(", ".join(spells))}</div>' if spells else ""
+    strings = d.get("string", {})
+    text = "".join(f'<p>{e(strings.get(k))}</p>' for k in ("Use", "LongDesc") if strings.get(k))
+    stack = f" ({r['stack']:,})" if r["stack"] > 1 else ""
+    return (f'<span class="idp" role="tooltip"><b class="idn">{e(r["name"])}{stack}</b>{lines}{spell_html}{text}'
+            f'<span class="idf">Seller: {e(r["seller"])} · ends {e(r["expires"].strftime("%b %d"))}</span></span>')
 
 
 def _card(r):
@@ -408,7 +427,7 @@ def _card(r):
     return (f'<a class="mcard" href="/market/item/{r["id"]}">{icon_html(r["icons"], r["ui"])}'
             f'<span class="mname">{e(r["name"])}{stack}</span>'
             f'<span class="mprice">{price_html(r["mmd"], r["trophies"])}</span>'
-            f'<span class="mmeta">{lvl}{" · " if lvl and extra else ""}{e(extra)}</span></a>')
+            f'<span class="mmeta">{lvl}{" · " if lvl and extra else ""}{e(extra)}</span>{id_panel(r)}</a>')
 
 
 def item_page(h, user, lid, query=None):
@@ -685,6 +704,17 @@ CSS = """
 .mcard{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto auto;gap:.1rem .7rem;align-items:center;padding:.6rem .7rem;
   background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--bone);text-decoration:none}
 .mcard:hover{border-color:var(--portal)}
+.mcard{position:relative}
+.idp{display:none;position:absolute;z-index:20;left:0;top:calc(100% + 6px);width:22rem;max-width:calc(100vw - 2rem);padding:.7rem .85rem;
+  background:var(--deep);color:var(--bone);border:1px solid var(--gold);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.45);
+  font-size:.9rem;line-height:1.4;font-weight:400;pointer-events:none}
+.idp .idn{display:block;font-size:1rem;margin-bottom:.35rem;color:var(--gold)}
+.idp div span{color:var(--dim)}
+.idp .idsp{margin-top:.35rem}
+.idp p{margin:.4rem 0 0;max-width:none}
+.idp .idf{display:block;margin-top:.45rem;color:var(--dim);font-size:.82rem}
+.idp.left{left:auto;right:0}.idp.up{top:auto;bottom:calc(100% + 6px)}
+@media (hover:hover){.mcard:hover .idp,.mcard:focus-visible .idp{display:block}}
 .mcard .micon{grid-row:1/4}
 .mname{font-weight:700;line-height:1.25}.mprice{font-size:.95rem}.mmeta{font-size:.85rem;color:var(--dim)}
 .pm{color:var(--gold);font-weight:700}.pt{color:var(--blood);font-weight:700}
