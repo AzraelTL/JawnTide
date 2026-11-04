@@ -488,6 +488,16 @@ namespace ACE.Server.Managers
                     log.Error($"Exception executing WorldBossManager Tick. ex: {ex}");
                 }
 
+                // JawnTide Marketplace: website requests
+                try
+                {
+                    MarketManager.Tick();
+                }
+                catch (Exception ex)
+                {
+                    log.Error($"Exception executing MarketManager Tick. ex: {ex}");
+                }
+
                 ////Season rolling XP cap
                 try
                 {

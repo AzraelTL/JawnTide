@@ -630,6 +630,7 @@ namespace ACE.Server.Managers
                 ("arena_allow_observers", new Property<bool>(true, "enable this to allow players to watch arena matches as invisible observers")),
                 ("arenas_disable_rewards", new Property<bool>(false, "JawnTide: if TRUE, arena events grant no rewards (no XP, luminance or items) to winners, losers or draws. Stats and rankings are still recorded")),
                 ("tinker_lotto_enabled", new Property<bool>(false, "enables the tinkering lotto feature")),
+                ("market_enabled", new Property<bool>(true, "JawnTide: if FALSE, the game server stops carrying out jawntide.com marketplace requests (they wait until it is turned back on)")),
                 ("force_logout_materialization", new Property<bool>(true, "forces players to materialize on logut")),
                 ("force_teleport_materialization", new Property<bool>(true, "forces players to materialize on teleport")),
                 ("force_login_materialization", new Property<bool>(true, "forces players to materialize on login")),

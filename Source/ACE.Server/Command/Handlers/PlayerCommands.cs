@@ -1915,6 +1915,38 @@ namespace ACE.Server.Command.Handlers
         }
 
         // JawnTide Bank: look up any character's account bank and its recent history
+        [CommandHandler("marketcheck", AccessLevel.Sentinel, CommandHandlerFlag.None, 1,
+            "Shows a character's account marketplace listings and latest website requests.",
+            "<character name>")]
+        public static void HandleMarketCheck(Session session, params string[] parameters)
+        {
+            void Say(string text)
+            {
+                if (session?.Player != null)
+                    session.Network.EnqueueSend(new GameMessageSystemChat(text, ChatMessageType.Broadcast));
+                else
+                    Console.WriteLine(text);
+            }
+
+            var name = string.Join(" ", parameters);
+            var target = PlayerManager.FindByName(name);
+
+            if (target?.Account == null)
+            {
+                Say($"No character named {name}.");
+                return;
+            }
+
+            var accountId = target.Account.AccountId;
+            var accountName = target.Account.AccountName;
+
+            DatabaseManager.Shard.MarketEnqueue(() =>
+            {
+                var lines = DatabaseManager.Shard.BaseDatabase.MarketGetAccountActivity(accountId, 15);
+                Say(lines == null ? "The market tables couldn't be read." : $"Market of account {accountName} ({accountId}), via {target.Name}:\n" + string.Join("\n", lines));
+            });
+        }
+
         [CommandHandler("bankcheck", AccessLevel.Sentinel, CommandHandlerFlag.None, 1,
             "Shows a character's account bank balances and the last 20 entries of its history.",
             "<character name>")]
