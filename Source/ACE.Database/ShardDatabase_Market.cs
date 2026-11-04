@@ -453,6 +453,34 @@ namespace ACE.Database
             return lines;
         }
 
+        /// <summary>Saves (or replaces) the details of mule items, for the website's My Market page.</summary>
+        public void MarketSaveItemDetails(List<(uint itemGuid, string details)> items)
+        {
+            if (items.Count == 0)
+                return;
+
+            try
+            {
+                using var context = new ShardDbContext();
+                var conn = MarketOpen(context);
+                using var tx = conn.BeginTransaction(IsolationLevel.ReadCommitted);
+                var now = DateTime.UtcNow;
+
+                foreach (var (itemGuid, details) in items)
+                {
+                    using var cmd = BankCommand(conn, tx, "REPLACE INTO market_item_detail (item_Guid, details, updated_At) VALUES (@g, @d, @t);",
+                        ("@g", itemGuid), ("@d", details), ("@t", now));
+                    cmd.ExecuteNonQuery();
+                }
+
+                tx.Commit();
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[MARKET] MarketSaveItemDetails failed for {items.Count} item(s): {ex}");
+            }
+        }
+
         // ---------------------------------------------------------------- mule storage, read straight from the database
         // Used only while no character on the account has the mule loaded in memory (see MarketManager).
 

@@ -870,27 +870,60 @@ namespace ACE.Server.Managers
             }
         }
 
+        private static readonly ConcurrentDictionary<uint, byte> knownDetails = new ConcurrentDictionary<uint, byte>();
+
         /// <summary>
-        /// Called when a mule is summoned: exports the icons of everything in it, so the website can show the mule's items
-        /// with their pictures before they're listed.
+        /// Called when a mule is summoned or something is put in it: exports the icons and details of its items, so the website's
+        /// My Market page can show them (with pictures and the ID panel) before they're listed. Each item is done once per server
+        /// run; the work happens on the save queue, not the player's thread.
         /// </summary>
         public static void QueueIcons(IEnumerable<WorldObject> items)
         {
             var ids = new List<uint>();
+            var newItems = new List<WorldObject>();
 
             foreach (var item in items)
             {
+                if (item == null || item is Container)
+                    continue;
+
                 foreach (var id in new[] { item.IconId, item.IconOverlayId ?? 0, item.IconOverlaySecondary ?? 0, item.IconUnderlayId ?? 0 })
                 {
                     if (id != 0 && !knownIcons.ContainsKey(id))
                         ids.Add(id);
                 }
+
+                if (knownDetails.TryAdd(item.Guid.Full, 1))
+                    newItems.Add(item);
             }
 
-            if (ids.Count == 0)
+            if (ids.Count == 0 && newItems.Count == 0)
                 return;
 
-            DatabaseManager.Shard.MarketEnqueue(() => SaveIcons(ids));
+            DatabaseManager.Shard.MarketEnqueue(() =>
+            {
+                SaveIcons(ids);
+
+                var details = new List<(uint, string)>();
+                foreach (var item in newItems)
+                {
+                    try
+                    {
+                        details.Add((item.Guid.Full, BuildItemInfo(item).DetailsJson));
+                    }
+                    catch (Exception ex)
+                    {
+                        log.Warn($"[MARKET] Couldn't read the details of {item.Name} (0x{item.Guid}): {ex.Message}");
+                    }
+
+                    if (details.Count >= 200)
+                    {
+                        Db.MarketSaveItemDetails(details);
+                        details = new List<(uint, string)>();
+                    }
+                }
+                Db.MarketSaveItemDetails(details);
+            });
         }
 
         // ---------------------------------------------------------------- messages

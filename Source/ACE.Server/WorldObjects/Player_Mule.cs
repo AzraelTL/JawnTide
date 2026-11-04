@@ -1028,6 +1028,9 @@ namespace ACE.Server.WorldObjects
                 foreach (var wo in touched)
                     wo.SaveBiotaToDatabase();
 
+                // JawnTide Marketplace: icons and details of the new items, for the website's My Market page
+                ACE.Server.Managers.MarketManager.QueueIcons(touched);
+
                 Session.Network.EnqueueSend(new GameMessageSound(Guid, Sound.PickUpItem));
 
                 RefreshMuleVendorDisplay(vendor, VendorType.Sell);
