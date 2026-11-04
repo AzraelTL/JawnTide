@@ -729,8 +729,6 @@ namespace ACE.Server.Managers
                 return "You can't sell your mule gem.";
             if ((item.GetProperty(PropertyInt.Attuned) ?? 0) == 1)
                 return "Attuned items can't be sold.";
-            if ((item.GetProperty(PropertyInt.Bonded) ?? 0) == 1)
-                return "Bonded items can't be sold.";
             return null;
         }
 

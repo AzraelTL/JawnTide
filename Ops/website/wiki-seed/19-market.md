@@ -11,4 +11,4 @@ Buy and sell items with other players on the [Market page](/market). Sign in wit
 3. When it sells, the payment goes into your bank.
 
 Listings last **30 days**. After that they're hidden until you **Relist** them or take them **Back to mule**. There are no fees.
-Attuned and bonded items can't be sold.
+Attuned items can't be sold.

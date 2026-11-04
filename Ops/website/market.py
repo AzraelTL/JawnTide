@@ -507,8 +507,8 @@ def mine(h, user, query):
     mule = []
     for guid, name, material, stack, itype, icon, ov, ov2, under, ui, attuned, bonded in _mule_items(account):
         full = f"{pretty(material)} {name}" if material and material not in ("Unknown",) and pretty(material) not in name else name
-        if attuned == 1 or bonded == 1:
-            action = f'<span class="muted">{"Attuned" if attuned == 1 else "Bonded"}: can\'t be sold</span>'
+        if attuned == 1:
+            action = '<span class="muted">Attuned: can\'t be sold</span>'
         else:
             action = (f'<form class="mlist" method="post" action="/market/list">{wiki._hidden(user)}<input type="hidden" name="item" value="{guid}">'
                       f'<input name="mmd" inputmode="numeric" placeholder="MMDs" aria-label="Price in MMDs">'
@@ -584,8 +584,8 @@ def act(h, user, kind):
         owned = _q(f"SELECT attuned, bonded FROM {VIEW_DB}.market_mule_item WHERE account_Id = %s AND item_Guid = %s", (account, int(item)), one=True)
         if not owned:
             return fail("That item isn't in your mule.")
-        if owned[0] == 1 or owned[1] == 1:
-            return fail("Attuned and bonded items can't be sold.")
+        if owned[0] == 1:
+            return fail("Attuned items can't be sold.")
         _x("INSERT INTO market_request (created_At, account_Id, character_Name, kind, item_Guid, price_Mmd, price_Trophies) "
            "VALUES (UTC_TIMESTAMP(), %s, %s, 'list', %s, %s, %s)", (account, user["name"], int(item), mmd or None, trophies or None))
     else:
