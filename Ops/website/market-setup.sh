@@ -2,7 +2,7 @@
 # One-time (safe to re-run) marketplace setup on the Linux server, AFTER the game server with the marketplace has started once
 # (that creates the ace_shard market tables). Runs as root inside ace-db and gives the website (web) only what /market needs:
 #   read  ace_shard.market_listing, market_icon, market_request; add rows to market_request (the game server does the rest)
-#   read  ace_web.market_mule_item: a view of mule contents (name, stack, icons, attuned/bonded) and nothing else about items
+#   read  ace_web.market_mule_item: a view of mule contents (name, stack, icons, attuned/bonded, details) and nothing else about items
 # Grants go to every host entry web already has. Prints the grants it made.
 set -euo pipefail
 cd ~/jawntide-server
@@ -28,7 +28,8 @@ SELECT c.account_Id,
        IFNULL(ul.value, 0)                AS icon_Underlay_Id,
        IFNULL(ui.value, 0)                AS ui_Effects,
        IFNULL(at.value, 0)                AS attuned,
-       IFNULL(bo.value, 0)                AS bonded
+       IFNULL(bo.value, 0)                AS bonded,
+       dt.details                         AS details
 FROM chain c
 JOIN ace_shard.biota_properties_i_i_d i       ON i.type = 2 AND i.value = c.container_Id
 JOIN ace_shard.biota_properties_string nm     ON nm.object_Id = i.object_Id AND nm.type = 1
@@ -41,6 +42,7 @@ LEFT JOIN ace_shard.biota_properties_d_i_d ic ON ic.object_Id = i.object_Id AND 
 LEFT JOIN ace_shard.biota_properties_d_i_d o1 ON o1.object_Id = i.object_Id AND o1.type = 50
 LEFT JOIN ace_shard.biota_properties_d_i_d o2 ON o2.object_Id = i.object_Id AND o2.type = 51
 LEFT JOIN ace_shard.biota_properties_d_i_d ul ON ul.object_Id = i.object_Id AND ul.type = 52
+LEFT JOIN ace_shard.market_item_detail dt    ON dt.item_Guid = i.object_Id
 LEFT JOIN (SELECT b.object_Id, CASE b.value
               WHEN 1 THEN 'Ceramic' WHEN 2 THEN 'Porcelain' WHEN 4 THEN 'Linen' WHEN 5 THEN 'Satin' WHEN 6 THEN 'Silk' WHEN 7 THEN 'Velvet' WHEN 8 THEN 'Wool'
               WHEN 10 THEN 'Agate' WHEN 11 THEN 'Amber' WHEN 12 THEN 'Amethyst' WHEN 13 THEN 'Aquamarine' WHEN 14 THEN 'Azurite' WHEN 15 THEN 'Black Garnet'

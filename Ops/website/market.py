@@ -152,8 +152,12 @@ def _account(user):
 
 
 def _mule_items(account_id):
-    return _q(f"SELECT item_Guid, name, material, stack_Size, item_Type, icon_Id, icon_Overlay_Id, icon_Overlay2_Id, icon_Underlay_Id, "
-              f"ui_Effects, attuned, bonded FROM {VIEW_DB}.market_mule_item WHERE account_Id = %s ORDER BY name LIMIT 3000", (account_id,))
+    """The account's mule items. The last column is the item's details (None until the game server has saved them)."""
+    cols = "item_Guid, name, material, stack_Size, item_Type, icon_Id, icon_Overlay_Id, icon_Overlay2_Id, icon_Underlay_Id, ui_Effects, attuned, bonded"
+    try:
+        return _q(f"SELECT {cols}, details FROM {VIEW_DB}.market_mule_item WHERE account_Id = %s ORDER BY name LIMIT 3000", (account_id,))
+    except Exception:   # the view from before market-setup.sh was run again: no details column
+        return [r + (None,) for r in _q(f"SELECT {cols} FROM {VIEW_DB}.market_mule_item WHERE account_Id = %s ORDER BY name LIMIT 3000", (account_id,))]
 
 
 # ---------------------------------------------------------------- formatting
@@ -397,16 +401,26 @@ def browse(h, user, query):
 
     intro = ('<p class="lede">Buy from other players with the MMDs and PK Trophies in your <a href="/wiki/bank">bank</a>. '
              'Purchases land in your mule. To sell, open <a href="/market/mine">My market</a> and list something from your mule. No fees.</p>')
-    flip = ('<script>document.querySelectorAll(".mcard").forEach(c=>c.addEventListener("mouseenter",()=>{const p=c.querySelector(".idp");'
-            'if(!p)return;p.classList.remove("left","up");const r=p.getBoundingClientRect();if(r.right>innerWidth-8)p.classList.add("left");'
-            'if(r.bottom>innerHeight-8&&c.getBoundingClientRect().top>r.height+16)p.classList.add("up")}))</script>')
     _page(h, "Market", f'<h1>Market</h1>{intro}{form}<p class="muted">{total:,} item{"s" if total != 1 else ""}</p>'
-                       f'<div class="mgrid">{cards}</div>{pager}{flip}', user)
+                       f'<div class="mgrid">{cards}</div>{pager}{FLIP}', user)
 
 
 def id_panel(r):
+    """The hover panel for a listing."""
+    return id_panel_for(r["name"], r["stack"], r["details"], f'Seller: {r["seller"]} · ends {r["expires"].strftime("%b %d")}')
+
+
+def _details(text):
+    try:
+        return json.loads(text) if text else None
+    except ValueError:
+        return None
+
+
+def id_panel_for(name, stack, d, footer=None):
     """The hover panel: the item's details laid out like the in-game appraisal (right-click / ID) panel."""
-    d = r["details"]
+    if not d:
+        return ""
     rows = appraise(d)
     top = [(k, v) for k, v in rows if k in ("Value", "Burden")]
     rest = [(k, v) for k, v in rows if k not in ("Value", "Burden")]
@@ -415,16 +429,21 @@ def id_panel(r):
     spell_html = f'<div class="idsp"><span>Spells:</span> {e(", ".join(spells))}</div>' if spells else ""
     strings = d.get("string", {})
     text = "".join(f'<p>{e(strings.get(k))}</p>' for k in ("Use", "LongDesc") if strings.get(k))
-    stack = f" ({r['stack']:,})" if r["stack"] > 1 else ""
-    return (f'<span class="idp" role="tooltip"><b class="idn">{e(r["name"])}{stack}</b>{lines}{spell_html}{text}'
-            f'<span class="idf">Seller: {e(r["seller"])} · ends {e(r["expires"].strftime("%b %d"))}</span></span>')
+    count = f" ({stack:,})" if stack and stack > 1 else ""
+    foot = f'<span class="idf">{e(footer)}</span>' if footer else ""
+    return f'<span class="idp" role="tooltip"><b class="idn">{e(name)}{count}</b>{lines}{spell_html}{text}{foot}</span>'
+
+
+def _hover(label_html, panel):
+    """Wraps something (an item name) so hovering it shows the ID panel."""
+    return f'<span class="hasid">{label_html}{panel}</span>' if panel else label_html
 
 
 def _card(r):
     lvl = f'<span class="muted">Lvl {r["level"]}</span>' if r["level"] else ""
     extra = " · ".join(pretty(x) for x in (r["set"], r["imbue"]) if x)
     stack = f' <span class="muted">x{r["stack"]:,}</span>' if r["stack"] > 1 else ""
-    return (f'<a class="mcard" href="/market/item/{r["id"]}">{icon_html(r["icons"], r["ui"])}'
+    return (f'<a class="mcard hasid" href="/market/item/{r["id"]}">{icon_html(r["icons"], r["ui"])}'
             f'<span class="mname">{e(r["name"])}{stack}</span>'
             f'<span class="mprice">{price_html(r["mmd"], r["trophies"])}</span>'
             f'<span class="mmeta">{lvl}{" · " if lvl and extra else ""}{e(extra)}</span>{id_panel(r)}</a>')
@@ -513,18 +532,20 @@ def mine(h, user, query):
     for r, status in mine_rows:
         live = status == "active" and r["expires"] > now
         stack = f' x{r["stack"]:,}' if r["stack"] > 1 else ""
+        link = f'<a href="/market/item/{r["id"]}">{e(r["name"])}</a>'
         state = (f'{max(0, (r["expires"] - now).days)} days left' if live else "busy" if status == "busy" else "ended, not on the market")
         actions = "" if status == "busy" else (
             _post_button(user, "/market/relist", {"listing": r["id"]}, "Relist 30 days", quiet=True) + " "
             + _post_button(user, "/market/cancel", {"listing": r["id"]}, "Back to mule", f'Take {r["name"]} off the market and put it back in your mule?', quiet=True))
-        lrows.append(f'<tr><td>{icon_html(r["icons"], r["ui"])}</td><td class=wrapcell><a href="/market/item/{r["id"]}">{e(r["name"])}</a>'
+        lrows.append(f'<tr><td>{icon_html(r["icons"], r["ui"])}</td><td class=wrapcell>'
+                     f'{_hover(link, id_panel(r))}'
                      f'{stack}</td>'
                      f'<td>{price_html(r["mmd"], r["trophies"])}</td><td class="{"" if live else "x"}">{e(state)}</td><td>{actions}</td></tr>')
     listings = (f'<div class="wrap"><table><tr><th></th><th>Item</th><th>Price</th><th>Status</th><th></th></tr>{"".join(lrows)}</table></div>'
                 if lrows else '<p class="empty">You have nothing on the market.</p>')
 
     mule = []
-    for guid, name, material, stack, itype, icon, ov, ov2, under, ui, attuned, bonded in _mule_items(account):
+    for guid, name, material, stack, itype, icon, ov, ov2, under, ui, attuned, bonded, details in _mule_items(account):
         full = f"{pretty(material)} {name}" if material and material not in ("Unknown",) and pretty(material) not in name else name
         if attuned == 1:
             action = '<span class="muted">Attuned: can\'t be sold</span>'
@@ -533,21 +554,23 @@ def mine(h, user, query):
                       f'<input name="mmd" inputmode="numeric" placeholder="MMDs" aria-label="Price in MMDs">'
                       f'<input name="trophies" inputmode="numeric" placeholder="PK Trophies" aria-label="Price in PK Trophies">'
                       f'<button class="btn quiet">List</button></form>')
-        mule.append(f'<tr data-n="{e(full.lower())}"><td>{icon_html((under, icon, ov, ov2), ui or 0)}</td><td class=wrapcell>{e(full)}'
+        mule.append(f'<tr data-n="{e(full.lower())}"><td>{icon_html((under, icon, ov, ov2), ui or 0)}</td>'
+                    f'<td class=wrapcell>{_hover(e(full), id_panel_for(full, stack, _details(details), "In your mule"))}'
                     f'{f" x{stack:,}" if stack and stack > 1 else ""}</td><td>{action}</td></tr>')
     mule_html = ((f'<input class="mfind" placeholder="Filter your mule" aria-label="Filter your mule" oninput="'
                   "const t=this.value.toLowerCase();document.querySelectorAll('#mule tr[data-n]').forEach(r=>r.hidden=!r.dataset.n.includes(t))\">"
                   f'<div class="wrap"><table id="mule"><tr><th></th><th>Item</th><th>Sell for (one or both)</th></tr>{"".join(mule)}</table></div>')
                  if mule else '<p class="empty">Your mule is empty (or you have never summoned it).</p>')
 
-    history = _q("SELECT id, name, stack_Size, status, paid_Currency, paid_Amount, closed_At, buyer_Account_Id = %s AS bought, buyer_Name, seller_Name "
+    history = _q("SELECT id, name, stack_Size, status, paid_Currency, paid_Amount, closed_At, buyer_Account_Id = %s AS bought, buyer_Name, seller_Name, details "
                  "FROM market_listing WHERE (seller_Account_Id = %s OR buyer_Account_Id = %s) AND status IN ('sold', 'returned') ORDER BY closed_At DESC LIMIT 30",
                  (account, account, account))
     hrows = []
-    for lid, name, stack, status, cur, amount, closed, bought, buyer, seller in history:
+    for lid, name, stack, status, cur, amount, closed, bought, buyer, seller, details in history:
         paid = (f"{amount // PYREALS_PER_MMD:,} MMDs" if cur == "pyreals" else f"{amount:,} PK Trophies") if amount else ""
         what = (f"Bought from {seller} for {paid}" if bought else f"Sold to {buyer} for {paid}") if status == "sold" else "Taken back to your mule"
-        hrows.append(f'<li><span><a href="/market/item/{lid}">{e(name)}</a>{f" x{stack:,}" if stack > 1 else ""}: {e(what)}</span>'
+        link = _hover(f'<a href="/market/item/{lid}">{e(name)}</a>', id_panel_for(name, stack, _details(details)))
+        hrows.append(f'<li><span>{link}{f" x{stack:,}" if stack > 1 else ""}: {e(what)}</span>'
                      f'<span class="muted">{wiki._ago(closed) if closed else ""}</span></li>')
     hist = f'<ul class="feed">{"".join(hrows)}</ul>' if hrows else '<p class="empty">No sales or purchases yet.</p>'
 
@@ -557,7 +580,7 @@ def mine(h, user, query):
                           f'<h2>Your mule</h2><p class="help">Pick a price in MMDs, PK Trophies, or both (the buyer picks). Listings last {LISTING_DAYS} days, '
                           f'then wait here for you to relist or take back. No fees. Items appear here as they are in your mule; '
                           f'summon your mule in game once if pictures are missing.</p>{mule_html}'
-                          f'<h2>History</h2>{hist}', user, refresh=4 if waiting else None)
+                          f'<h2>History</h2>{hist}{FLIP}', user, refresh=4 if waiting else None)
 
 
 # ---------------------------------------------------------------- actions
@@ -696,6 +719,14 @@ def handle(h, method):
     return True
 
 
+# keeps the hover panel on screen: opens it to the left or upward when it would go past the window edge
+FLIP = ('<script>(()=>{function place(c){const p=c.querySelector(".idp");if(!p)return;c.classList.add("on");'
+        'const r=c.getBoundingClientRect(),w=p.offsetWidth,h=p.offsetHeight;let x=Math.max(8,Math.min(r.left,innerWidth-w-8)),y=r.bottom+6;'
+        'if(y+h>innerHeight-8){if(r.top-h-6>=8)y=r.top-h-6;else{y=Math.max(8,Math.min(r.top,innerHeight-h-8));'
+        'x=r.right+8+w<=innerWidth-8?r.right+8:Math.max(8,r.left-w-8)}}p.style.left=x+"px";p.style.top=y+"px"}'
+        'document.querySelectorAll(".hasid").forEach(c=>{c.addEventListener("mouseenter",()=>place(c));'
+        'c.addEventListener("mouseleave",()=>c.classList.remove("on"))});addEventListener("scroll",()=>document.querySelectorAll(".hasid.on").forEach(place),{passive:true})})()</script>')
+
 CSS = """
 .mfilter{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:0 0 .4rem}
 .mfilter input,.mfilter select,.mlist input,.mfind{font:inherit;color:var(--bone);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:.35rem .55rem}
@@ -704,8 +735,9 @@ CSS = """
 .mcard{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto auto;gap:.1rem .7rem;align-items:center;padding:.6rem .7rem;
   background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--bone);text-decoration:none}
 .mcard:hover{border-color:var(--portal)}
-.mcard{position:relative}
-.idp{display:none;position:absolute;z-index:20;left:0;top:calc(100% + 6px);width:22rem;max-width:calc(100vw - 2rem);padding:.7rem .85rem;
+.mcard,.hasid{position:relative}
+.hasid:not(.mcard){display:inline-block;cursor:help}
+.idp{display:none;position:fixed;z-index:20;left:0;top:0;width:22rem;max-width:calc(100vw - 2rem);max-height:calc(100vh - 16px);overflow:hidden;padding:.7rem .85rem;
   background:var(--deep);color:var(--bone);border:1px solid var(--gold);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.45);
   font-size:.9rem;line-height:1.4;font-weight:400;pointer-events:none}
 .idp .idn{display:block;font-size:1rem;margin-bottom:.35rem;color:var(--gold)}
@@ -713,8 +745,7 @@ CSS = """
 .idp .idsp{margin-top:.35rem}
 .idp p{margin:.4rem 0 0;max-width:none}
 .idp .idf{display:block;margin-top:.45rem;color:var(--dim);font-size:.82rem}
-.idp.left{left:auto;right:0}.idp.up{top:auto;bottom:calc(100% + 6px)}
-@media (hover:hover){.mcard:hover .idp,.mcard:focus-visible .idp{display:block}}
+@media (hover:hover){.hasid.on .idp{display:block}}
 .mcard .micon{grid-row:1/4}
 .mname{font-weight:700;line-height:1.25}.mprice{font-size:.95rem}.mmeta{font-size:.85rem;color:var(--dim)}
 .pm{color:var(--gold);font-weight:700}.pt{color:var(--blood);font-weight:700}
