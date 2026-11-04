@@ -391,6 +391,7 @@ namespace ACE.Server.WorldObjects
             vendor.MuleOwnerId = Guid.Full;
             vendor.MuleOwnerAccountId = Account.AccountId;
             vendor.MuleContainers = containers;
+            vendor.TimeToRot = -1; // JawnTide: never decay (a dynamic object with no TimeToRot is cleaned up after 5 minutes, which made mules "time out")
 
             foreach (var item in SortMuleItems(containers.SelectMany(c => c.Inventory.Values)))
                 vendor.UniqueItemsForSale[item.Guid] = item;
