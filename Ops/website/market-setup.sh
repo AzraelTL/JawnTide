@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One-time (safe to re-run) marketplace setup on the Linux server, AFTER the game server with the marketplace has started once
 # (that creates the ace_shard market tables). Runs as root inside ace-db and gives the website (web) only what /market needs:
-#   read  ace_shard.market_listing, market_icon, market_request; add rows to market_request (the game server does the rest)
+#   read  ace_shard.market_listing, market_icon, market_request, market_bid; add rows to market_request (the game server does the rest)
 #   read  ace_web.market_mule_item: a view of mule contents (name, stack, icons, attuned/bonded, details) and nothing else about items
 # Grants go to every host entry web already has. Prints the grants it made.
 set -euo pipefail
@@ -62,6 +62,7 @@ docker compose exec -T ace-db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -
   SELECT CONCAT(\"GRANT SELECT ON ace_shard.market_listing TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
   UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_shard.market_icon TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
   UNION ALL SELECT CONCAT(\"GRANT SELECT, INSERT ON ace_shard.market_request TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
+  UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_shard.market_bid TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
   UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_web.market_mule_item TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"" > /tmp/market-grants.sql
   cat /tmp/market-grants.sql; mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" < /tmp/market-grants.sql; rm -f /tmp/market-grants.sql'
 echo "marketplace ready for the website"

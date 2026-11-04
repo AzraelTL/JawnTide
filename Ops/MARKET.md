@@ -3,6 +3,14 @@
 Players list items from their mule on jawntide.com/market and buy with their bank (MMDs = bank pyreals at 250,000 each, or PK Trophies).
 No fees. Listings run 30 days; unsold ones are hidden ("expired") and wait in market storage until the seller relists or cancels.
 
+## Auctions
+Seller picks one currency, a starting bid, optional Buy It Now and 1-14 days. A bid takes the amount from the bidder's bank at once (one
+transaction: check, take, refund the previous high bidder, record the bid); outbid bidders are refunded immediately. Minimum raise 5%,
+a bid in the last 5 minutes extends to 5 minutes. Buy It Now stays until bids reach it and refunds the high bidder. At the end the item goes to
+the winner's mule and the winning bid to the seller; if the winner's mule is full the auction waits as `won` and delivery is retried every
+2 minutes. No bids: `expired`, the seller can run it again or take it back. Bank log actions: `market bid`, `market outbid`, `market sale`.
+Table `market_bid` keeps every bid.
+
 ## How it works
 - The website only inserts rows into `market_request` (list, buy, cancel, relist). It never moves items or money.
 - The game server (`MarketManager`, every 3 seconds) carries out requests one at a time and writes the result back on the row.

@@ -44,6 +44,9 @@ namespace ACE.Server.Managers
         public const long PyrealsPerMmd = 250000;
         public const uint MaxPriceMmd = 1000000;
         public const uint MaxPriceTrophies = 100000000;
+        public const int MinAuctionHours = 24;
+        public const int MaxAuctionHours = 14 * 24;
+        public const double MinRaise = 0.05;
 
         private const string StorageKey = "storage_container";
         private const int MuleContainerSlots = 255;
@@ -92,14 +95,15 @@ namespace ACE.Server.Managers
                 }
 
                 var requests = Db.MarketTakePendingRequests(20);
+                var auctions = Db.MarketDueAuctions(10);
 
-                if (requests.Count == 0)
+                if (requests.Count == 0 && auctions.Count == 0)
                 {
                     Interlocked.Exchange(ref running, 0);
                     return;
                 }
 
-                WorldManager.EnqueueAction(new ActionEventDelegate(() => RunNext(requests, 0)));
+                WorldManager.EnqueueAction(new ActionEventDelegate(() => RunNext(requests, 0, () => RunAuctionEnds(auctions, 0))));
             }));
         }
 
@@ -178,15 +182,15 @@ namespace ACE.Server.Managers
             }));
         }
 
-        private static void RunNext(List<MarketRequest> requests, int index)
+        private static void RunNext(List<MarketRequest> requests, int index, Action afterAll)
         {
             if (index >= requests.Count)
             {
-                Stop();
+                afterAll();
                 return;
             }
 
-            void next() => WorldManager.EnqueueAction(new ActionEventDelegate(() => RunNext(requests, index + 1)));
+            void next() => WorldManager.EnqueueAction(new ActionEventDelegate(() => RunNext(requests, index + 1, afterAll)));
 
             var req = requests[index];
 
@@ -198,6 +202,8 @@ namespace ACE.Server.Managers
                     case "buy": DoBuy(req, next); break;
                     case "cancel": DoCancel(req, next); break;
                     case "relist": DoRelist(req, next); break;
+                    case "auction": DoAuction(req, next); break;
+                    case "bid": DoBid(req, next); break;
                     default: Finish(req, false, "Unknown request.", next); break;
                 }
             }
@@ -241,6 +247,54 @@ namespace ACE.Server.Managers
                 return;
             }
 
+            ListItem(req, next, new MarketListing { PriceMmd = priceMmd, PriceTrophies = priceTrophies, ExpiresAt = DateTime.UtcNow.AddDays(ListingDays) },
+                $"for {PriceText(priceMmd, priceTrophies)}");
+        }
+
+        private static void DoAuction(MarketRequest req, Action next)
+        {
+            var currency = req.AuctionCurrency == "trophies" ? "trophies" : req.AuctionCurrency == "mmd" ? "mmd" : null;
+            var max = currency == "trophies" ? MaxPriceTrophies : MaxPriceMmd;
+            var hours = req.AuctionHours ?? 0;
+            var buyNow = req.BuyNow > 0 ? req.BuyNow : null;
+
+            if (!req.ItemGuid.HasValue)
+            {
+                Finish(req, false, "No item was picked.", next);
+                return;
+            }
+            if (currency == null)
+            {
+                Finish(req, false, "Pick MMDs or PK Trophies for the auction.", next);
+                return;
+            }
+            if (!(req.StartBid > 0) || req.StartBid > max || buyNow > max)
+            {
+                Finish(req, false, "Set a starting bid (and an optional Buy It Now price) within the limits.", next);
+                return;
+            }
+            if (buyNow.HasValue && buyNow <= req.StartBid)
+            {
+                Finish(req, false, "Buy It Now has to be higher than the starting bid.", next);
+                return;
+            }
+            if (hours < MinAuctionHours || hours > MaxAuctionHours)
+            {
+                Finish(req, false, "An auction lasts from 1 day to 2 weeks.", next);
+                return;
+            }
+
+            var unit = currency == "trophies" ? "PK Trophies" : "MMDs";
+            ListItem(req, next, new MarketListing
+            {
+                Kind = "auction", AuctionCurrency = currency, AuctionHours = hours, StartBid = req.StartBid, BuyNow = buyNow,
+                ExpiresAt = DateTime.UtcNow.AddHours(hours),
+            }, $"as an auction starting at {req.StartBid:N0} {unit}{(buyNow.HasValue ? $" (Buy It Now {buyNow.Value:N0})" : "")}, for {hours / 24} day{(hours / 24 != 1 ? "s" : "")}");
+        }
+
+        /// <summary>Moves the item from the seller's mule into market storage and makes the listing (fixed price or auction).</summary>
+        private static void ListItem(MarketRequest req, Action next, MarketListing terms, string howText)
+        {
             var itemGuid = req.ItemGuid.Value;
 
             DatabaseManager.Shard.MarketEnqueue(() =>
@@ -259,26 +313,22 @@ namespace ACE.Server.Managers
                         return;
                     }
 
-                    var id = Db.MarketInsertListing(new MarketListing
-                    {
-                        SellerAccountId = req.AccountId,
-                        SellerName = req.CharacterName,
-                        ItemGuid = itemGuid,
-                        Wcid = info.Wcid,
-                        Name = info.Name,
-                        StackSize = info.StackSize,
-                        ItemType = info.ItemType,
-                        IconId = info.IconId,
-                        IconOverlayId = info.IconOverlayId,
-                        IconOverlay2Id = info.IconOverlay2Id,
-                        IconUnderlayId = info.IconUnderlayId,
-                        UiEffects = info.UiEffects,
-                        Details = info.DetailsJson,
-                        SearchText = info.SearchText,
-                        PriceMmd = priceMmd,
-                        PriceTrophies = priceTrophies,
-                        ExpiresAt = DateTime.UtcNow.AddDays(ListingDays),
-                    });
+                    terms.SellerAccountId = req.AccountId;
+                    terms.SellerName = req.CharacterName;
+                    terms.ItemGuid = itemGuid;
+                    terms.Wcid = info.Wcid;
+                    terms.Name = info.Name;
+                    terms.StackSize = info.StackSize;
+                    terms.ItemType = info.ItemType;
+                    terms.IconId = info.IconId;
+                    terms.IconOverlayId = info.IconOverlayId;
+                    terms.IconOverlay2Id = info.IconOverlay2Id;
+                    terms.IconUnderlayId = info.IconUnderlayId;
+                    terms.UiEffects = info.UiEffects;
+                    terms.Details = info.DetailsJson;
+                    terms.SearchText = info.SearchText;
+
+                    var id = Db.MarketInsertListing(terms);
 
                     if (id == null)
                     {
@@ -294,8 +344,8 @@ namespace ACE.Server.Managers
 
                     SaveIcons(new[] { info.IconId, info.IconOverlayId, info.IconOverlay2Id, info.IconUnderlayId });
 
-                    log.Info($"[MARKET] Listing {id}: {req.CharacterName} (account {req.AccountId}) listed {info.Name} x{info.StackSize} (0x{itemGuid:X8}) for {PriceText(priceMmd, priceTrophies)}.");
-                    Finish(req, true, $"{info.Name} is on the market for {PriceText(priceMmd, priceTrophies)}.", next);
+                    log.Info($"[MARKET] Listing {id}: {req.CharacterName} (account {req.AccountId}) listed {info.Name} x{info.StackSize} (0x{itemGuid:X8}) {howText}.");
+                    Finish(req, true, $"{info.Name} is on the market {howText}.", next);
                 }));
             });
         }
@@ -323,7 +373,20 @@ namespace ACE.Server.Managers
                 string currency;
                 long amount;
 
-                if (payTrophies)
+                if (listing.IsAuction)
+                {
+                    // Buy It Now on an auction: in the auction's currency, while the price is still offered
+                    if (!listing.BuyNow.HasValue)
+                    {
+                        Db.MarketReleaseListing(listing.Id, previous);
+                        Finish(req, false, "That auction has no Buy It Now price.", next);
+                        return;
+                    }
+                    payTrophies = listing.AuctionCurrency == "trophies";
+                    currency = payTrophies ? "pk_trophies" : "pyreals";
+                    amount = payTrophies ? listing.BuyNow.Value : listing.BuyNow.Value * PyrealsPerMmd;
+                }
+                else if (payTrophies)
                 {
                     if (!listing.PriceTrophies.HasValue)
                     {
@@ -346,7 +409,7 @@ namespace ACE.Server.Managers
                     amount = listing.PriceMmd.Value * PyrealsPerMmd;
                 }
 
-                var paid = payTrophies ? $"{amount:N0} PK Trophies" : $"{listing.PriceMmd.Value:N0} MMDs";
+                var paid = payTrophies ? $"{amount:N0} PK Trophies" : $"{amount / PyrealsPerMmd:N0} MMDs";
                 var details = $"market listing {listing.Id}: {listing.Name}";
 
                 var debit = Db.BankChange(req.AccountId, currency, -amount, new BankLogInfo
@@ -390,6 +453,20 @@ namespace ACE.Server.Managers
 
                     Db.MarketCloseListing(listing.Id, "sold", req.AccountId, req.CharacterName, currency, amount);
 
+                    // Buy It Now ends the auction: the high bidder gets their bid back
+                    if (listing.IsAuction && listing.HighBidderAccountId.HasValue && listing.HighBid.HasValue)
+                    {
+                        var back = payTrophies ? listing.HighBid.Value : listing.HighBid.Value * PyrealsPerMmd;
+                        var refundBid = Db.BankChange(listing.HighBidderAccountId.Value, currency, back, new BankLogInfo
+                        {
+                            CharacterName = listing.HighBidderName, Action = "market outbid", OtherAccountId = req.AccountId, OtherCharacterName = req.CharacterName, Details = details
+                        });
+                        if (refundBid.Status != BankResultStatus.Ok)
+                            log.Error($"[MARKET] BID REFUND FAILED: account {listing.HighBidderAccountId} ({listing.HighBidderName}) is owed {currency} {back} for auction {listing.Id}. Restore it by hand (Ops/BANK.md).");
+                        Db.MarketSetBidStatus(listing.Id, "high", "refunded");
+                        Notify(listing.HighBidderAccountId.Value, $"{listing.Name} was bought with Buy It Now. Your bid is back in your bank.");
+                    }
+
                     log.Info($"[MARKET] Listing {listing.Id}: {req.CharacterName} (account {req.AccountId}) bought {listing.Name} x{listing.StackSize} from {listing.SellerName} (account {listing.SellerAccountId}) for {paid}.");
 
                     Notify(listing.SellerAccountId, $"Your {listing.Name} sold for {paid}. It's in your bank.");
@@ -413,6 +490,13 @@ namespace ACE.Server.Managers
                 if (listing == null)
                 {
                     Finish(req, false, "That listing isn't yours, or it's already closed.", next);
+                    return;
+                }
+
+                if (listing.IsAuction && listing.BidCount > 0)
+                {
+                    Db.MarketReleaseListing(listing.Id, previous);
+                    Finish(req, false, "An auction can't be taken back once someone has bid on it.", next);
                     return;
                 }
 
@@ -443,7 +527,121 @@ namespace ACE.Server.Managers
             DatabaseManager.Shard.MarketEnqueue(() =>
             {
                 var ok = Db.MarketRelist(req.ListingId.Value, req.AccountId, DateTime.UtcNow.AddDays(ListingDays));
-                Finish(req, ok, ok ? $"Relisted for {ListingDays} more days." : "That listing isn't yours, or it's already closed.", next);
+                Finish(req, ok, ok ? "Relisted." : "That listing isn't yours, it's already closed, or it's an auction that has bids.", next);
+            });
+        }
+
+        private static void DoBid(MarketRequest req, Action next)
+        {
+            if (!req.ListingId.HasValue || !(req.BidAmount > 0))
+            {
+                Finish(req, false, "Pick an auction and an amount.", next);
+                return;
+            }
+
+            DatabaseManager.Shard.MarketEnqueue(() =>
+            {
+                // MMD auctions are paid in bank pyreals; the currency comes from the auction itself
+                var unit = Db.MarketGetAuctionCurrency(req.ListingId.Value) == "trophies" ? 1L : PyrealsPerMmd;
+                var result = Db.MarketPlaceBid(req.ListingId.Value, req.AccountId, req.CharacterName, req.BidAmount.Value, unit, MinRaise);
+
+                if (result.Ok)
+                {
+                    log.Info($"[MARKET] Auction {req.ListingId}: {req.CharacterName} (account {req.AccountId}) bid {req.BidAmount} on {result.ListingName}.");
+                    if (result.OutbidAccountId.HasValue)
+                        Notify(result.OutbidAccountId.Value, $"You were outbid on {result.ListingName}. Your bid of {result.OutbidAmount:N0} is back in your bank.");
+                }
+
+                Finish(req, result.Ok, result.Message, next);
+            });
+        }
+
+        // ---------------------------------------------------------------- auctions ending
+
+        private static void RunAuctionEnds(List<ulong> ids, int index)
+        {
+            if (index >= ids.Count)
+            {
+                Stop();
+                return;
+            }
+
+            void next() => WorldManager.EnqueueAction(new ActionEventDelegate(() => RunAuctionEnds(ids, index + 1)));
+
+            try
+            {
+                EndAuction(ids[index], next);
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[MARKET] Ending auction {ids[index]} failed: {ex}");
+                next();
+            }
+        }
+
+        /// <summary>
+        /// Time is up: with no bids the auction is hidden until the seller relists or takes it back. With bids, the item goes to the
+        /// winner's mule and the winning bid (already taken when it was placed) goes to the seller. If the winner's mule is full the
+        /// auction waits as 'won' and delivery is tried again every 2 minutes.
+        /// </summary>
+        private static void EndAuction(ulong listingId, Action next)
+        {
+            DatabaseManager.Shard.MarketEnqueue(() =>
+            {
+                var listing = Db.MarketClaimEndedAuction(listingId, out var previous);
+
+                if (listing == null)
+                {
+                    next();
+                    return;
+                }
+
+                if (listing.BidCount == 0 || !listing.HighBidderAccountId.HasValue || !listing.HighBid.HasValue)
+                {
+                    Db.MarketSetListingStatus(listing.Id, "expired");
+                    log.Info($"[MARKET] Auction {listing.Id} ({listing.Name}) ended with no bids.");
+                    Notify(listing.SellerAccountId, $"Your auction for {listing.Name} ended with no bids. Relist it or take it back on My Market.");
+                    next();
+                    return;
+                }
+
+                var trophies = listing.AuctionCurrency == "trophies";
+                var currency = trophies ? "pk_trophies" : "pyreals";
+                var amount = trophies ? (long)listing.HighBid.Value : listing.HighBid.Value * PyrealsPerMmd;
+                var paid = $"{listing.HighBid.Value:N0} {(trophies ? "PK Trophies" : "MMDs")}";
+                var winner = listing.HighBidderAccountId.Value;
+
+                GiveToMule(winner, listing.ItemGuid, (delivered, error) => DatabaseManager.Shard.MarketEnqueue(() =>
+                {
+                    if (!delivered)
+                    {
+                        Db.MarketSetAuctionWon(listing.Id, DateTime.UtcNow.AddMinutes(2));
+                        if (previous != "won")
+                        {
+                            log.Info($"[MARKET] Auction {listing.Id} ({listing.Name}) won by {listing.HighBidderName}, but it couldn't be delivered yet: {error}");
+                            Notify(winner, $"You won {listing.Name}! {error} It will be delivered as soon as there's room.");
+                        }
+                        next();
+                        return;
+                    }
+
+                    var credit = Db.BankChange(listing.SellerAccountId, currency, amount, new BankLogInfo
+                    {
+                        CharacterName = listing.SellerName, Action = "market sale", OtherAccountId = winner, OtherCharacterName = listing.HighBidderName,
+                        Details = $"market auction {listing.Id}: {listing.Name}"
+                    });
+
+                    if (credit.Status != BankResultStatus.Ok)
+                        log.Error($"[MARKET] SELLER NOT PAID: account {listing.SellerAccountId} ({listing.SellerName}) is owed {currency} {amount} for auction {listing.Id}. Pay it by hand (Ops/BANK.md).");
+
+                    Db.MarketCloseListing(listing.Id, "sold", winner, listing.HighBidderName, currency, amount);
+                    Db.MarketSetBidStatus(listing.Id, "high", "won");
+
+                    log.Info($"[MARKET] Auction {listing.Id}: {listing.HighBidderName} (account {winner}) won {listing.Name} from {listing.SellerName} for {paid}.");
+                    Notify(winner, $"You won {listing.Name} for {paid}. It's in your mule.");
+                    Notify(listing.SellerAccountId, $"Your auction for {listing.Name} sold for {paid}. It's in your bank.");
+                    next();
+                }));
             });
         }
 
