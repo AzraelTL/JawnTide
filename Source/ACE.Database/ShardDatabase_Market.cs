@@ -22,6 +22,11 @@ namespace ACE.Database
         public uint? PriceMmd;
         public uint? PriceTrophies;
         public string PayWith;
+        public string AuctionCurrency;
+        public int? AuctionHours;
+        public uint? StartBid;
+        public uint? BuyNow;
+        public uint? BidAmount;
     }
 
     /// <summary>JawnTide Marketplace: one listed item (market_listing row).</summary>
@@ -46,6 +51,30 @@ namespace ACE.Database
         public uint? PriceTrophies;
         public string Status;
         public DateTime ExpiresAt;
+
+        // auctions (Kind == "auction")
+        public string Kind = "fixed";
+        public string AuctionCurrency;      // mmd or trophies
+        public int? AuctionHours;
+        public uint? StartBid;
+        public uint? BuyNow;
+        public uint? HighBid;
+        public uint? HighBidderAccountId;
+        public string HighBidderName;
+        public int BidCount;
+
+        public bool IsAuction => Kind == "auction";
+    }
+
+    /// <summary>JawnTide Marketplace: the outcome of a bid.</summary>
+    public class MarketBidResult
+    {
+        public bool Ok;
+        public string Message;
+        public string ListingName;
+        public uint? OutbidAccountId;
+        public string OutbidName;
+        public uint OutbidAmount;
     }
 
     public partial class ShardDatabase
@@ -81,7 +110,8 @@ namespace ACE.Database
                 using var tx = conn.BeginTransaction(IsolationLevel.ReadCommitted);
 
                 using (var cmd = BankCommand(conn, tx,
-                    @"SELECT id, account_Id, character_Name, kind, item_Guid, listing_Id, price_Mmd, price_Trophies, pay_With
+                    @"SELECT id, account_Id, character_Name, kind, item_Guid, listing_Id, price_Mmd, price_Trophies, pay_With,
+                             auction_Currency, auction_Hours, start_Bid, buy_Now, bid_Amount
                       FROM market_request WHERE status = 'pending' ORDER BY id LIMIT @n FOR UPDATE;", ("@n", max)))
                 using (var r = cmd.ExecuteReader())
                 {
@@ -98,6 +128,11 @@ namespace ACE.Database
                             PriceMmd = ReadUIntOrNull(r, 6),
                             PriceTrophies = ReadUIntOrNull(r, 7),
                             PayWith = ReadStringOrNull(r, 8),
+                            AuctionCurrency = ReadStringOrNull(r, 9),
+                            AuctionHours = r.IsDBNull(10) ? (int?)null : Convert.ToInt32(r.GetValue(10)),
+                            StartBid = ReadUIntOrNull(r, 11),
+                            BuyNow = ReadUIntOrNull(r, 12),
+                            BidAmount = ReadUIntOrNull(r, 13),
                         });
                     }
                 }
@@ -185,7 +220,7 @@ namespace ACE.Database
                 using var context = new ShardDbContext();
                 var conn = MarketOpen(context);
                 using var cmd = BankCommand(conn, null,
-                    "UPDATE market_listing SET status = 'expired' WHERE status = 'active' AND expires_At <= @t;", ("@t", DateTime.UtcNow));
+                    "UPDATE market_listing SET status = 'expired' WHERE status = 'active' AND kind = 'fixed' AND expires_At <= @t;", ("@t", DateTime.UtcNow));
                 return cmd.ExecuteNonQuery();
             }
             catch (Exception ex)
@@ -203,7 +238,7 @@ namespace ACE.Database
                 using var context = new ShardDbContext();
                 var conn = MarketOpen(context);
                 using var cmd = BankCommand(conn, null,
-                    "SELECT COUNT(*) FROM market_listing WHERE item_Guid = @g AND status IN ('active', 'expired', 'busy');", ("@g", itemGuid));
+                    "SELECT COUNT(*) FROM market_listing WHERE item_Guid = @g AND status IN ('active', 'expired', 'busy', 'won');", ("@g", itemGuid));
                 return Convert.ToInt64(cmd.ExecuteScalar()) > 0;
             }
             catch (Exception ex)
@@ -221,13 +256,15 @@ namespace ACE.Database
                 var conn = MarketOpen(context);
                 using var cmd = BankCommand(conn, null,
                     @"INSERT INTO market_listing (seller_Account_Id, seller_Name, item_Guid, wcid, name, stack_Size, item_Type, icon_Id, icon_Overlay_Id, icon_Overlay2_Id,
-                        icon_Underlay_Id, ui_Effects, details, search_Text, price_Mmd, price_Trophies, status, listed_At, expires_At)
-                      VALUES (@sa, @sn, @g, @w, @n, @ss, @it, @i, @io, @io2, @iu, @ui, @d, @st, @pm, @pt, 'active', @la, @ea);
+                        icon_Underlay_Id, ui_Effects, details, search_Text, price_Mmd, price_Trophies, status, listed_At, expires_At,
+                        kind, auction_Currency, auction_Hours, start_Bid, buy_Now)
+                      VALUES (@sa, @sn, @g, @w, @n, @ss, @it, @i, @io, @io2, @iu, @ui, @d, @st, @pm, @pt, 'active', @la, @ea, @k, @ac, @ah, @sb, @bn);
                       SELECT LAST_INSERT_ID();",
                     ("@sa", l.SellerAccountId), ("@sn", Truncate(l.SellerName, 64)), ("@g", l.ItemGuid), ("@w", l.Wcid), ("@n", Truncate(l.Name, 128)),
                     ("@ss", l.StackSize), ("@it", l.ItemType), ("@i", l.IconId), ("@io", l.IconOverlayId), ("@io2", l.IconOverlay2Id), ("@iu", l.IconUnderlayId),
                     ("@ui", l.UiEffects), ("@d", l.Details), ("@st", l.SearchText), ("@pm", DbValue(l.PriceMmd)), ("@pt", DbValue(l.PriceTrophies)),
-                    ("@la", DateTime.UtcNow), ("@ea", l.ExpiresAt));
+                    ("@la", DateTime.UtcNow), ("@ea", l.ExpiresAt), ("@k", l.Kind ?? "fixed"), ("@ac", l.AuctionCurrency), ("@ah", DbValue(l.AuctionHours)),
+                    ("@sb", DbValue(l.StartBid)), ("@bn", DbValue(l.BuyNow)));
                 return Convert.ToUInt64(cmd.ExecuteScalar());
             }
             catch (Exception ex)
@@ -254,29 +291,7 @@ namespace ACE.Database
 
                 MarketListing l = null;
 
-                using (var cmd = BankCommand(conn, tx,
-                    @"SELECT id, seller_Account_Id, seller_Name, item_Guid, wcid, name, stack_Size, price_Mmd, price_Trophies, status, expires_At
-                      FROM market_listing WHERE id = @id FOR UPDATE;", ("@id", listingId)))
-                using (var r = cmd.ExecuteReader())
-                {
-                    if (r.Read())
-                    {
-                        l = new MarketListing
-                        {
-                            Id = Convert.ToUInt64(r.GetValue(0)),
-                            SellerAccountId = Convert.ToUInt32(r.GetValue(1)),
-                            SellerName = ReadStringOrNull(r, 2),
-                            ItemGuid = Convert.ToUInt32(r.GetValue(3)),
-                            Wcid = Convert.ToUInt32(r.GetValue(4)),
-                            Name = r.GetString(5),
-                            StackSize = Convert.ToInt32(r.GetValue(6)),
-                            PriceMmd = ReadUIntOrNull(r, 7),
-                            PriceTrophies = ReadUIntOrNull(r, 8),
-                            Status = r.GetString(9),
-                            ExpiresAt = r.GetDateTime(10),
-                        };
-                    }
-                }
+                l = ReadListingForUpdate(conn, tx, listingId);
 
                 if (l == null || Array.IndexOf(fromStatuses, l.Status) < 0
                     || (sellerAccountId.HasValue && l.SellerAccountId != sellerAccountId.Value)
@@ -300,6 +315,281 @@ namespace ACE.Database
             {
                 log.Error($"[MARKET] MarketClaimListing failed for listing {listingId}: {ex}");
                 return null;
+            }
+        }
+
+        private const string ListingColumns =
+            @"id, seller_Account_Id, seller_Name, item_Guid, wcid, name, stack_Size, price_Mmd, price_Trophies, status, expires_At,
+              kind, auction_Currency, auction_Hours, start_Bid, buy_Now, high_Bid, high_Bidder_Account_Id, high_Bidder_Name, bid_Count";
+
+        /// <summary>Reads one listing and locks its row until the transaction ends (null if there is no such listing).</summary>
+        private static MarketListing ReadListingForUpdate(DbConnection conn, DbTransaction tx, ulong listingId)
+        {
+            using var cmd = BankCommand(conn, tx, $"SELECT {ListingColumns} FROM market_listing WHERE id = @id FOR UPDATE;", ("@id", listingId));
+            using var r = cmd.ExecuteReader();
+
+            if (!r.Read())
+                return null;
+
+            return new MarketListing
+            {
+                Id = Convert.ToUInt64(r.GetValue(0)),
+                SellerAccountId = Convert.ToUInt32(r.GetValue(1)),
+                SellerName = ReadStringOrNull(r, 2),
+                ItemGuid = Convert.ToUInt32(r.GetValue(3)),
+                Wcid = Convert.ToUInt32(r.GetValue(4)),
+                Name = r.GetString(5),
+                StackSize = Convert.ToInt32(r.GetValue(6)),
+                PriceMmd = ReadUIntOrNull(r, 7),
+                PriceTrophies = ReadUIntOrNull(r, 8),
+                Status = r.GetString(9),
+                ExpiresAt = r.GetDateTime(10),
+                Kind = r.GetString(11),
+                AuctionCurrency = ReadStringOrNull(r, 12),
+                AuctionHours = r.IsDBNull(13) ? (int?)null : Convert.ToInt32(r.GetValue(13)),
+                StartBid = ReadUIntOrNull(r, 14),
+                BuyNow = ReadUIntOrNull(r, 15),
+                HighBid = ReadUIntOrNull(r, 16),
+                HighBidderAccountId = ReadUIntOrNull(r, 17),
+                HighBidderName = ReadStringOrNull(r, 18),
+                BidCount = Convert.ToInt32(r.GetValue(19)),
+            };
+        }
+
+        /// <summary>
+        /// An auction whose time is up (status 'active'), or a won auction still waiting to be delivered ('won'), moved to 'busy'.
+        /// Null if it isn't one of those (any more).
+        /// </summary>
+        public MarketListing MarketClaimEndedAuction(ulong listingId, out string previousStatus)
+        {
+            previousStatus = null;
+
+            try
+            {
+                using var context = new ShardDbContext();
+                var conn = MarketOpen(context);
+                using var tx = conn.BeginTransaction(IsolationLevel.ReadCommitted);
+
+                var l = ReadListingForUpdate(conn, tx, listingId);
+
+                if (l == null || !l.IsAuction || (l.Status != "active" && l.Status != "won") || l.ExpiresAt > DateTime.UtcNow)
+                {
+                    tx.Rollback();
+                    return null;
+                }
+
+                using (var upd = BankCommand(conn, tx, "UPDATE market_listing SET status = 'busy' WHERE id = @id;", ("@id", listingId)))
+                    upd.ExecuteNonQuery();
+
+                tx.Commit();
+
+                previousStatus = l.Status;
+                l.Status = "busy";
+                return l;
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[MARKET] MarketClaimEndedAuction failed for listing {listingId}: {ex}");
+                return null;
+            }
+        }
+
+        /// <summary>Auctions to finish: time is up, or won but not delivered yet. Oldest first.</summary>
+        public List<ulong> MarketDueAuctions(int max)
+        {
+            var ids = new List<ulong>();
+
+            try
+            {
+                using var context = new ShardDbContext();
+                var conn = MarketOpen(context);
+                using var cmd = BankCommand(conn, null,
+                    @"SELECT id FROM market_listing WHERE kind = 'auction' AND status IN ('active', 'won') AND expires_At <= @t
+                      ORDER BY expires_At LIMIT @n;", ("@t", DateTime.UtcNow), ("@n", max));
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    ids.Add(Convert.ToUInt64(r.GetValue(0)));
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[MARKET] MarketDueAuctions failed: {ex}");
+            }
+
+            return ids;
+        }
+
+        /// <summary>An auction with no bids ends: hidden until the seller relists it or takes it back (like a fixed listing).</summary>
+        public void MarketSetListingStatus(ulong listingId, string status)
+        {
+            try
+            {
+                using var context = new ShardDbContext();
+                var conn = MarketOpen(context);
+                using var cmd = BankCommand(conn, null, "UPDATE market_listing SET status = @s WHERE id = @id;", ("@s", status), ("@id", listingId));
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[MARKET] MarketSetListingStatus failed for listing {listingId} ({status}): {ex}");
+            }
+        }
+
+        /// <summary>A won auction whose item couldn't be delivered yet: waits as 'won' and is tried again after retryAt.</summary>
+        public void MarketSetAuctionWon(ulong listingId, DateTime retryAt)
+        {
+            try
+            {
+                using var context = new ShardDbContext();
+                var conn = MarketOpen(context);
+                using var cmd = BankCommand(conn, null, "UPDATE market_listing SET status = 'won', expires_At = @e WHERE id = @id;", ("@e", retryAt), ("@id", listingId));
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[MARKET] MarketSetAuctionWon failed for listing {listingId}: {ex}");
+            }
+        }
+
+        /// <summary>Marks the winning bid (or every open bid, refunded) when an auction closes.</summary>
+        public void MarketSetBidStatus(ulong listingId, string fromStatus, string toStatus)
+        {
+            try
+            {
+                using var context = new ShardDbContext();
+                var conn = MarketOpen(context);
+                using var cmd = BankCommand(conn, null, "UPDATE market_bid SET status = @to WHERE listing_Id = @id AND status = @from;",
+                    ("@to", toStatus), ("@id", listingId), ("@from", fromStatus));
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[MARKET] MarketSetBidStatus failed for listing {listingId}: {ex}");
+            }
+        }
+
+        /// <summary>An auction's currency (mmd or trophies), or null.</summary>
+        public string MarketGetAuctionCurrency(ulong listingId)
+        {
+            try
+            {
+                using var context = new ShardDbContext();
+                var conn = MarketOpen(context);
+                using var cmd = BankCommand(conn, null, "SELECT auction_Currency FROM market_listing WHERE id = @id;", ("@id", listingId));
+                var v = cmd.ExecuteScalar();
+                return v == null || v is DBNull ? null : Convert.ToString(v);
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[MARKET] MarketGetAuctionCurrency failed for listing {listingId}: {ex}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Places a bid in one transaction: checks the auction and the amount, takes the bid from the bidder's bank (fails if the
+        /// bank can't cover it), gives the previous high bid back to its bidder, records the bid and moves the auction's high bid.
+        /// A bid in the last 5 minutes pushes the end back to 5 minutes from now. pyrealsPerUnit is 250,000 for MMD auctions.
+        /// </summary>
+        public MarketBidResult MarketPlaceBid(ulong listingId, uint bidderAccountId, string bidderName, uint amount, long pyrealsPerUnit, double minRaise)
+        {
+            var result = new MarketBidResult();
+
+            try
+            {
+                using var context = new ShardDbContext();
+                var conn = MarketOpen(context);
+                using var tx = conn.BeginTransaction(IsolationLevel.ReadCommitted);
+
+                var l = ReadListingForUpdate(conn, tx, listingId);
+                var now = DateTime.UtcNow;
+
+                string fail(string message)
+                {
+                    tx.Rollback();
+                    result.Message = message;
+                    return message;
+                }
+
+                if (l == null || !l.IsAuction || l.Status != "active" || l.ExpiresAt <= now)
+                {
+                    fail("That auction has ended.");
+                    return result;
+                }
+                result.ListingName = l.Name;
+
+                if (l.SellerAccountId == bidderAccountId)
+                {
+                    fail("You can't bid on your own auction.");
+                    return result;
+                }
+                if (l.HighBidderAccountId == bidderAccountId)
+                {
+                    fail("You're already the highest bidder.");
+                    return result;
+                }
+
+                var minimum = l.HighBid.HasValue ? l.HighBid.Value + Math.Max(1u, (uint)Math.Ceiling(l.HighBid.Value * minRaise)) : (l.StartBid ?? 1);
+                if (amount < minimum)
+                {
+                    fail($"The lowest bid you can make is {minimum:N0}.");
+                    return result;
+                }
+                if (l.BuyNow.HasValue && amount >= l.BuyNow.Value)
+                {
+                    fail($"That's at or above the Buy It Now price ({l.BuyNow.Value:N0}). Use Buy It Now instead.");
+                    return result;
+                }
+
+                var currency = l.AuctionCurrency == "trophies" ? "pk_trophies" : "pyreals";
+                var details = $"market auction {l.Id}: {l.Name}";
+
+                if (!BankApply(conn, tx, bidderAccountId, currency, -(amount * pyrealsPerUnit), out var bidderBalance))
+                {
+                    fail("Your bank doesn't have enough to cover that bid.");
+                    return result;
+                }
+                BankLog(conn, tx, bidderAccountId, currency, -(amount * pyrealsPerUnit), bidderBalance,
+                    new BankLogInfo { CharacterName = bidderName, Action = "market bid", OtherAccountId = l.SellerAccountId, OtherCharacterName = l.SellerName, Details = details });
+
+                if (l.HighBidderAccountId.HasValue && l.HighBid.HasValue)
+                {
+                    BankApply(conn, tx, l.HighBidderAccountId.Value, currency, l.HighBid.Value * pyrealsPerUnit, out var refundBalance);
+                    BankLog(conn, tx, l.HighBidderAccountId.Value, currency, l.HighBid.Value * pyrealsPerUnit, refundBalance,
+                        new BankLogInfo { CharacterName = l.HighBidderName, Action = "market outbid", OtherAccountId = bidderAccountId, OtherCharacterName = bidderName, Details = details });
+
+                    using var outbid = BankCommand(conn, tx, "UPDATE market_bid SET status = 'outbid' WHERE listing_Id = @id AND status = 'high';", ("@id", l.Id));
+                    outbid.ExecuteNonQuery();
+
+                    result.OutbidAccountId = l.HighBidderAccountId;
+                    result.OutbidName = l.HighBidderName;
+                    result.OutbidAmount = l.HighBid.Value;
+                }
+
+                using (var bid = BankCommand(conn, tx,
+                    "INSERT INTO market_bid (listing_Id, account_Id, character_Name, amount, placed_At, status) VALUES (@id, @a, @n, @amt, @t, 'high');",
+                    ("@id", l.Id), ("@a", bidderAccountId), ("@n", Truncate(bidderName, 64)), ("@amt", amount), ("@t", now)))
+                    bid.ExecuteNonQuery();
+
+                var ends = l.ExpiresAt < now.AddMinutes(5) ? now.AddMinutes(5) : l.ExpiresAt;
+
+                using (var upd = BankCommand(conn, tx,
+                    @"UPDATE market_listing SET high_Bid = @amt, high_Bidder_Account_Id = @a, high_Bidder_Name = @n, bid_Count = bid_Count + 1, expires_At = @e
+                      WHERE id = @id;",
+                    ("@amt", amount), ("@a", bidderAccountId), ("@n", Truncate(bidderName, 64)), ("@e", ends), ("@id", l.Id)))
+                    upd.ExecuteNonQuery();
+
+                tx.Commit();
+
+                result.Ok = true;
+                result.Message = $"You're the highest bidder on {l.Name} at {amount:N0} {(l.AuctionCurrency == "trophies" ? "PK Trophies" : "MMDs")}.";
+                return result;
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[MARKET] MarketPlaceBid failed for listing {listingId}, account {bidderAccountId}, {amount}: {ex}");
+                result.Ok = false;
+                result.Message = "The bid couldn't be placed. Nothing was taken from your bank.";
+                return result;
             }
         }
 
@@ -346,8 +636,9 @@ namespace ACE.Database
                 using var context = new ShardDbContext();
                 var conn = MarketOpen(context);
                 using var cmd = BankCommand(conn, null,
-                    @"UPDATE market_listing SET status = 'active', expires_At = @e
-                      WHERE id = @id AND seller_Account_Id = @a AND status IN ('active', 'expired');",
+                    @"UPDATE market_listing SET status = 'active',
+                        expires_At = CASE WHEN kind = 'auction' THEN DATE_ADD(UTC_TIMESTAMP(), INTERVAL IFNULL(auction_Hours, 24) HOUR) ELSE @e END
+                      WHERE id = @id AND seller_Account_Id = @a AND status IN ('active', 'expired') AND (kind <> 'auction' OR bid_Count = 0);",
                     ("@e", newExpiry), ("@id", listingId), ("@a", sellerAccountId));
                 return cmd.ExecuteNonQuery() > 0;
             }

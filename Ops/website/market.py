@@ -29,6 +29,7 @@ PYREALS_PER_MMD = 250000
 MAX_MMD = 1_000_000
 MAX_TROPHIES = 100_000_000
 LISTING_DAYS = 30
+DAY_OPTIONS = "".join(f'<option value="{d}"{" selected" if d == 7 else ""}>{d} day{"s" if d != 1 else ""}</option>' for d in (1, 2, 3, 5, 7, 10, 14))
 CACHE_SECONDS = 15
 PAGE_SIZE = 60
 
@@ -113,7 +114,13 @@ def _wield_level(d):
 
 
 def _prepare(row):
-    (lid, seller, wcid, name, stack, itype, icon, ov, ov2, under, ui, details, search, pmmd, ptro, listed, expires) = row
+    (lid, seller, wcid, name, stack, itype, icon, ov, ov2, under, ui, details, search, pmmd, ptro, listed, expires,
+     kind, acur, ahours, start, bin_, high, high_name, bids) = row
+    auction = kind == "auction"
+    if auction:
+        # an auction's "price" (for filters and sorting) is its current bid, or the starting bid, in its own currency
+        now_price = high or start
+        pmmd, ptro = (now_price, None) if acur == "mmd" else (None, now_price)
     try:
         d = json.loads(details) if details else {}
     except ValueError:
@@ -121,12 +128,15 @@ def _prepare(row):
     names = d.get("names", {})
     return dict(id=lid, seller=seller or "?", wcid=wcid, name=name, stack=stack, item_type=itype, icons=(under, icon, ov, ov2), ui=ui,
                 details=d, search=(search or name or "").lower(), mmd=pmmd, trophies=ptro, listed=listed, expires=expires,
+                auction=auction, acur=acur, hours=ahours, start=start, bin=bin_, high=high, high_name=high_name, bids=bids or 0,
                 category=_category(itype), level=_wield_level(d), set=names.get("EquipmentSetId"),
                 imbue=names.get("ImbuedEffect") if names.get("ImbuedEffect") not in (None, "Undef") else None)
 
 
 LISTING_COLUMNS = ("id, seller_Name, wcid, name, stack_Size, item_Type, icon_Id, icon_Overlay_Id, icon_Overlay2_Id, icon_Underlay_Id, "
-                   "ui_Effects, details, search_Text, price_Mmd, price_Trophies, listed_At, expires_At")
+                   "ui_Effects, details, search_Text, price_Mmd, price_Trophies, listed_At, expires_At, "
+                   "kind, auction_Currency, auction_Hours, start_Bid, buy_Now, high_Bid, high_Bidder_Name, bid_Count")
+LISTING_WIDTH = 25
 
 
 def active_listings():
@@ -169,6 +179,35 @@ def price_html(mmd, trophies):
     if trophies:
         parts.append(f'<span class="pt">{trophies:,} PK Troph{"ies" if trophies != 1 else "y"}</span>')
     return ' <span class="muted">or</span> '.join(parts)
+
+
+def unit(cur, n=2):
+    return ("PK Troph" + ("y" if n == 1 else "ies")) if cur == "trophies" else ("MMD" + ("" if n == 1 else "s"))
+
+
+def amount_html(n, cur):
+    return f'<span class="{"pt" if cur == "trophies" else "pm"}">{n:,} {unit(cur, n)}</span>'
+
+
+def ends_html(when):
+    """A live countdown (the site's ticking script fills it in)."""
+    return f'<span class="cd" data-end="{when.strftime("%Y-%m-%dT%H:%M:%SZ")}">{when.strftime("%b %d %H:%M")} UTC</span>'
+
+
+def min_bid(r):
+    if r["high"]:
+        return r["high"] + max(1, -(-r["high"] * 5 // 100))
+    return r["start"] or 1
+
+
+def auction_html(r):
+    """Current bid (or starting bid), Buy It Now and time left for an auction."""
+    if r["bids"]:
+        now = f'{amount_html(r["high"], r["acur"])} <span class="muted">({r["bids"]} bid{"s" if r["bids"] != 1 else ""})</span>'
+    else:
+        now = f'<span class="muted">Starting bid</span> {amount_html(r["start"], r["acur"])}'
+    bin_ = f' <span class="muted">· Buy It Now</span> {amount_html(r["bin"], r["acur"])}' if r["bin"] else ""
+    return f'{now}{bin_}'
 
 
 def icon_html(icons, ui, big=False):
@@ -329,6 +368,7 @@ def _int_arg(query, key):
 def browse(h, user, query):
     q = _arg(query, "q")[:80].lower()
     cat, cur, sort = _arg(query, "cat"), _arg(query, "cur"), _arg(query, "sort", "new")
+    kind = _arg(query, "kind")
     lo, hi, lvl = _int_arg(query, "min"), _int_arg(query, "max"), _int_arg(query, "lvl")
     set_, imbue = _arg(query, "set"), _arg(query, "imbue")
     page = max(1, _int_arg(query, "page") or 1)
@@ -346,6 +386,8 @@ def browse(h, user, query):
         out = [r for r in out if all(w in r["search"] for w in words)]
     if cat:
         out = [r for r in out if r["category"] == cat]
+    if kind in ("fixed", "auction"):
+        out = [r for r in out if r["auction"] == (kind == "auction")]
     if cur in ("mmd", "trophies"):
         out = [r for r in out if price(r)]
         if lo is not None:
@@ -377,6 +419,7 @@ def browse(h, user, query):
     form = (f'<form class="mfilter" method="get" action="/market">'
             f'<input name="q" value="{e(_arg(query, "q"))}" placeholder="Name, spell, set, material" aria-label="Search">'
             f'<select name="cat" aria-label="Type">{opt("", "All types", cat)}{"".join(opt(k, l, cat) for k, l, _ in CATEGORIES)}{opt("other", "Other", cat)}</select>'
+            f'<select name="kind" aria-label="Listing type">{opt("", "Buy now and auctions", kind)}{opt("fixed", "Buy now only", kind)}{opt("auction", "Auctions only", kind)}</select>'
             f'<select name="cur" aria-label="Currency">{opt("", "MMDs or trophies", cur)}{opt("mmd", "MMDs", cur)}{opt("trophies", "PK Trophies", cur)}</select>'
             f'<input name="min" value="{e(lo if lo is not None else "")}" inputmode="numeric" placeholder="Min price" aria-label="Min price">'
             f'<input name="max" value="{e(hi if hi is not None else "")}" inputmode="numeric" placeholder="Max price" aria-label="Max price">'
@@ -399,8 +442,8 @@ def browse(h, user, query):
             links.append(f'<a href="/market?{e(urlencode(dict(base, page=page + 1)))}">Next</a>')
         pager = f'<p class="show">{" ".join(links)} <span class="muted">Page {page} of {(total + PAGE_SIZE - 1) // PAGE_SIZE}</span></p>'
 
-    intro = ('<p class="lede">Buy from other players with the MMDs and PK Trophies in your <a href="/wiki/bank">bank</a>. '
-             'Purchases land in your mule. To sell, open <a href="/market/mine">My market</a> and list something from your mule. No fees.</p>')
+    intro = ('<p class="lede">Buy from other players, or bid on their auctions, with the MMDs and PK Trophies in your <a href="/wiki/bank">bank</a>. '
+             'Purchases land in your mule. To sell, open <a href="/market/mine">My market</a> and list or auction something from your mule. No fees.</p>')
     _page(h, "Market", f'<h1>Market</h1>{intro}{form}<p class="muted">{total:,} item{"s" if total != 1 else ""}</p>'
                        f'<div class="mgrid">{cards}</div>{pager}{FLIP}', user)
 
@@ -443,10 +486,12 @@ def _card(r):
     lvl = f'<span class="muted">Lvl {r["level"]}</span>' if r["level"] else ""
     extra = " · ".join(pretty(x) for x in (r["set"], r["imbue"]) if x)
     stack = f' <span class="muted">x{r["stack"]:,}</span>' if r["stack"] > 1 else ""
-    return (f'<a class="mcard hasid" href="/market/item/{r["id"]}">{icon_html(r["icons"], r["ui"])}'
+    auc = f'<span class="mauc">Auction · ends in {ends_html(r["expires"])}</span>' if r["auction"] else ""
+    return (f'<a class="mcard hasid" href="/market/item/{r["id"]}">{icon_html(r["icons"], r["ui"])}<span class="mtext">'
             f'<span class="mname">{e(r["name"])}{stack}</span>'
-            f'<span class="mprice">{price_html(r["mmd"], r["trophies"])}</span>'
-            f'<span class="mmeta">{lvl}{" · " if lvl and extra else ""}{e(extra)}</span>{id_panel(r)}</a>')
+            f'<span class="mprice">{auction_html(r) if r["auction"] else price_html(r["mmd"], r["trophies"])}</span>'
+            f'{auc}'
+            f'<span class="mmeta">{lvl}{" · " if lvl and extra else ""}{e(extra)}</span></span>{id_panel(r)}</a>')
 
 
 def item_page(h, user, lid, query=None):
@@ -454,19 +499,33 @@ def item_page(h, user, lid, query=None):
     row = _q(f"SELECT {LISTING_COLUMNS}, status, seller_Account_Id FROM market_listing WHERE id = %s", (lid,), one=True)
     if not row:
         return _page(h, "Not found", "<h1>That listing doesn't exist</h1>", user, 404)
-    r = _prepare(row[:17])
-    status, seller_account = row[17], row[18]
+    r = _prepare(row[:LISTING_WIDTH])
+    status, seller_account = row[LISTING_WIDTH], row[LISTING_WIDTH + 1]
     d = r["details"]
 
     on_sale = status == "active" and r["expires"] > datetime.utcnow()
     account = _account(user) if user else None
     buy = ""
     if not on_sale:
-        buy = f'<p class="note">This item is no longer for sale ({e("sold" if status == "sold" else "taken off the market")}).</p>'
+        ended = ("sold" if status == "sold" else "won, waiting for delivery" if status == "won" else
+                 "the auction ended" if r["auction"] else "taken off the market")
+        buy = f'<p class="note">This item is no longer for sale ({e(ended)}).</p>'
     elif not user:
-        buy = f'<p><a class="btn" href="/wiki/login?next={quote("/market/item/" + str(lid))}">Sign in to buy</a></p>'
+        buy = f'<p><a class="btn" href="/wiki/login?next={quote("/market/item/" + str(lid))}">Sign in to {"bid" if r["auction"] else "buy"}</a></p>'
     elif account == seller_account:
         buy = '<p class="muted">This is your listing. Manage it on <a href="/market/mine">My market</a>.</p>'
+    elif r["auction"]:
+        low = min_bid(r)
+        top = (r["bin"] - 1) if r["bin"] else (MAX_TROPHIES if r["acur"] == "trophies" else MAX_MMD)
+        mine_high = r["bids"] and r["high_name"] and user and r["high_name"] == user["name"]
+        form = (f'<form class="mlist" method="post" action="/market/bid">{wiki._hidden(user)}<input type="hidden" name="listing" value="{lid}">'
+                f'<input name="amount" inputmode="numeric" value="{low}" aria-label="Your bid"> <span class="muted">{unit(r["acur"])}</span>'
+                f'<button class="btn">Place bid</button></form>') if low <= top else ""
+        bin_btn = (_post_button(user, "/market/buy", {"listing": lid, "pay": r["acur"]}, f'Buy It Now for {r["bin"]:,} {unit(r["acur"], r["bin"])}',
+                                f'Buy {r["name"]} now for {r["bin"]:,} {unit(r["acur"], r["bin"])} from your bank?')) if r["bin"] else ""
+        buy = (f'{"<p class=note>You are the highest bidder.</p>" if mine_high else ""}<div class="row">{form}{bin_btn}</div>'
+               f'<p class="help">The lowest bid you can make is {low:,} {unit(r["acur"], low)}. Your bid is taken from your bank straight away '
+               f'and given back if someone outbids you. A bid in the last 5 minutes adds 5 minutes. The winner gets the item in their mule.</p>')
     else:
         btns = []
         if r["mmd"]:
@@ -491,11 +550,16 @@ def item_page(h, user, lid, query=None):
 
     when = f'Listed by <b>{e(r["seller"])}</b> {wiki._ago(r["listed"])}'
     if on_sale:
-        when += f' · ends {e(r["expires"].strftime("%b %d"))}'
+        when += f' · ends in {ends_html(r["expires"])}' if r["auction"] else f' · ends {e(r["expires"].strftime("%b %d"))}'
     stack = f' <span class="muted">x{r["stack"]:,}</span>' if r["stack"] > 1 else ""
+    history = ""
+    if r["auction"]:
+        bids = _q("SELECT character_Name, amount, placed_At FROM market_bid WHERE listing_Id = %s ORDER BY id DESC LIMIT 50", (lid,))
+        items = "".join(f'<li><span><b>{e(n)}</b> bid {amount_html(a, r["acur"])}</span><span class="muted">{wiki._ago(t)}</span></li>' for n, a, t in bids)
+        history = f'<h2>Bids</h2><ul class="feed">{items or "<li class=muted>No bids yet.</li>"}</ul>'
     _page(h, r["name"], f'<div class="mhead">{icon_html(r["icons"], r["ui"], big=True)}<div><h1>{e(r["name"])}{stack}</h1>'
-                        f'<p class="mbig">{price_html(r["mmd"], r["trophies"])}</p><p class="muted">{when}</p></div></div>'
-                        f'{f"<p class=err>{e(err)}</p>" if err else ""}{buy}'
+                        f'<p class="mbig">{auction_html(r) if r["auction"] else price_html(r["mmd"], r["trophies"])}</p><p class="muted">{when}</p></div></div>'
+                        f'{f"<p class=err>{e(err)}</p>" if err else ""}{buy}{history}'
                         f'<div class="cols"><section><h2>Details</h2><dl class="facts">{facts or "<dt>No details</dt><dd></dd>"}</dl>{text}</section>'
                         f'<section><h2>Spells</h2>{f"<ul class=wlist>{spells}</ul>" if spells else "<p class=muted>None.</p>"}</section></div>{raw_html}', user)
 
@@ -524,8 +588,8 @@ def mine(h, user, query):
     if waiting:
         notices += '<p class="help">This page refreshes by itself until the game server has finished.</p>'
 
-    mine_rows = [(_prepare(r[:17]), r[17]) for r in _q(
-        f"SELECT {LISTING_COLUMNS}, status FROM market_listing WHERE seller_Account_Id = %s AND status IN ('active', 'expired', 'busy') ORDER BY id DESC",
+    mine_rows = [(_prepare(r[:LISTING_WIDTH]), r[LISTING_WIDTH]) for r in _q(
+        f"SELECT {LISTING_COLUMNS}, status FROM market_listing WHERE seller_Account_Id = %s AND status IN ('active', 'expired', 'busy', 'won') ORDER BY id DESC",
         (account,))]
     now = datetime.utcnow()
     lrows = []
@@ -533,14 +597,31 @@ def mine(h, user, query):
         live = status == "active" and r["expires"] > now
         stack = f' x{r["stack"]:,}' if r["stack"] > 1 else ""
         link = f'<a href="/market/item/{r["id"]}">{e(r["name"])}</a>'
-        state = (f'{max(0, (r["expires"] - now).days)} days left' if live else "busy" if status == "busy" else "ended, not on the market")
-        actions = "" if status == "busy" else (
-            _post_button(user, "/market/relist", {"listing": r["id"]}, "Relist 30 days", quiet=True) + " "
-            + _post_button(user, "/market/cancel", {"listing": r["id"]}, "Back to mule", f'Take {r["name"]} off the market and put it back in your mule?', quiet=True))
+        back = _post_button(user, "/market/cancel", {"listing": r["id"]}, "Back to mule", f'Take {r["name"]} off the market and put it back in your mule?', quiet=True)
+        if r["auction"]:
+            days = max(1, (r["hours"] or 24) // 24)
+            if status == "won":
+                state, actions = f'Won by {r["high_name"]}, waiting for room in their mule', ""
+            elif live and r["bids"]:
+                state, actions = f'Auction: high bid {r["high"]:,} by {e(r["high_name"])}', ""
+            elif live:
+                state, actions = "Auction: no bids yet", back
+            elif status == "busy":
+                state, actions = "busy", ""
+            else:
+                state = "auction ended with no bids"
+                actions = _post_button(user, "/market/relist", {"listing": r["id"]}, f"Auction again ({days} day{'s' if days != 1 else ''})", quiet=True) + " " + back
+            if live:
+                state += f' · ends in {ends_html(r["expires"])}'
+        else:
+            state = (f'{max(0, (r["expires"] - now).days)} days left' if live else "busy" if status == "busy" else "ended, not on the market")
+            actions = "" if status == "busy" else (
+                _post_button(user, "/market/relist", {"listing": r["id"]}, "Relist 30 days", quiet=True) + " " + back)
         lrows.append(f'<tr><td>{icon_html(r["icons"], r["ui"])}</td><td class=wrapcell>'
                      f'{_hover(link, id_panel(r))}'
                      f'{stack}</td>'
-                     f'<td>{price_html(r["mmd"], r["trophies"])}</td><td class="{"" if live else "x"}">{e(state)}</td><td>{actions}</td></tr>')
+                     f'<td>{auction_html(r) if r["auction"] else price_html(r["mmd"], r["trophies"])}</td>'
+                     f'<td class="wrapcell {"" if live else "x"}">{state if r["auction"] and live else e(state)}</td><td>{actions}</td></tr>')
     listings = (f'<div class="wrap"><table><tr><th></th><th>Item</th><th>Price</th><th>Status</th><th></th></tr>{"".join(lrows)}</table></div>'
                 if lrows else '<p class="empty">You have nothing on the market.</p>')
 
@@ -553,7 +634,14 @@ def mine(h, user, query):
             action = (f'<form class="mlist" method="post" action="/market/list">{wiki._hidden(user)}<input type="hidden" name="item" value="{guid}">'
                       f'<input name="mmd" inputmode="numeric" placeholder="MMDs" aria-label="Price in MMDs">'
                       f'<input name="trophies" inputmode="numeric" placeholder="PK Trophies" aria-label="Price in PK Trophies">'
-                      f'<button class="btn quiet">List</button></form>')
+                      f'<button class="btn quiet">List</button></form>'
+                      f'<details class="mauction"><summary>or auction it</summary>'
+                      f'<form class="mlist" method="post" action="/market/auction">{wiki._hidden(user)}<input type="hidden" name="item" value="{guid}">'
+                      f'<select name="cur" aria-label="Auction currency"><option value="mmd">MMDs</option><option value="trophies">PK Trophies</option></select>'
+                      f'<input name="start" inputmode="numeric" placeholder="Starting bid" aria-label="Starting bid" required>'
+                      f'<input name="bin" inputmode="numeric" placeholder="Buy It Now (opt.)" aria-label="Buy It Now price (optional)">'
+                      f'<select name="days" aria-label="Length">{DAY_OPTIONS}</select>'
+                      f'<button class="btn quiet">Start auction</button></form></details>')
         mule.append(f'<tr data-n="{e(full.lower())}"><td>{icon_html((under, icon, ov, ov2), ui or 0)}</td>'
                     f'<td class=wrapcell>{_hover(e(full), id_panel_for(full, stack, _details(details), "In your mule"))}'
                     f'{f" x{stack:,}" if stack and stack > 1 else ""}</td><td>{action}</td></tr>')
@@ -561,6 +649,21 @@ def mine(h, user, query):
                   "const t=this.value.toLowerCase();document.querySelectorAll('#mule tr[data-n]').forEach(r=>r.hidden=!r.dataset.n.includes(t))\">"
                   f'<div class="wrap"><table id="mule"><tr><th></th><th>Item</th><th>Sell for (one or both)</th></tr>{"".join(mule)}</table></div>')
                  if mule else '<p class="empty">Your mule is empty (or you have never summoned it).</p>')
+
+    bidding = _q("SELECT l.id, l.name, l.stack_Size, l.auction_Currency, l.high_Bid, l.high_Bidder_Account_Id = %s, l.expires_At, l.status, MAX(b.amount) "
+                 "FROM market_bid b JOIN market_listing l ON l.id = b.listing_Id WHERE b.account_Id = %s AND l.status IN ('active', 'busy', 'won') "
+                 "GROUP BY l.id ORDER BY l.expires_At", (account, account))
+    brows = []
+    for lid, name, stack, cur, high, winning, ends, status, mine_max in bidding:
+        if status == "won":
+            where = "You won! It goes to your mule as soon as there's room." if winning else "Ended."
+        elif winning:
+            where = f'You\'re the highest bidder at {high:,} {unit(cur, high)} · ends in {ends_html(ends)}'
+        else:
+            where = f'Outbid: high bid {high:,} {unit(cur, high)} (yours was {mine_max:,}) · ends in {ends_html(ends)}'
+        brows.append(f'<li><span><a href="/market/item/{lid}">{e(name)}</a>{f" x{stack:,}" if stack > 1 else ""}</span>'
+                     f'<span class="{"" if winning else "x"}">{where}</span></li>')
+    bids_html = f'<h2>Your bids</h2><ul class="feed mbids">{"".join(brows)}</ul>' if brows else ""
 
     history = _q("SELECT id, name, stack_Size, status, paid_Currency, paid_Amount, closed_At, buyer_Account_Id = %s AS bought, buyer_Name, seller_Name, details "
                  "FROM market_listing WHERE (seller_Account_Id = %s OR buyer_Account_Id = %s) AND status IN ('sold', 'returned') ORDER BY closed_At DESC LIMIT 30",
@@ -576,9 +679,9 @@ def mine(h, user, query):
 
     sent = '<p class="note">Sent to the game server. It usually finishes within a few seconds.</p>' if _arg(query, "sent") else ""
     err = f'<p class="err">{e(_arg(query, "err")[:200])}</p>' if _arg(query, "err") else ""
-    _page(h, "My market", f'<h1>My market</h1>{sent}{err}{notices}<h2>Your listings</h2>{listings}'
+    _page(h, "My market", f'<h1>My market</h1>{sent}{err}{notices}{bids_html}<h2>Your listings</h2>{listings}'
                           f'<h2>Your mule</h2><p class="help">Pick a price in MMDs, PK Trophies, or both (the buyer picks). Listings last {LISTING_DAYS} days, '
-                          f'then wait here for you to relist or take back. No fees. Items appear here as they are in your mule; '
+                          f'then wait here for you to relist or take back. Or auction it for 1 to 14 days with an optional Buy It Now price. No fees. Items appear here as they are in your mule; '
                           f'summon your mule in game once if pictures are missing.</p>{mule_html}'
                           f'<h2>History</h2>{hist}{FLIP}', user, refresh=4 if waiting else None)
 
@@ -613,7 +716,33 @@ def act(h, user, kind):
     if busy >= 10:
         return fail("You have too many requests waiting. Give the game server a few seconds.")
 
-    if kind == "list":
+    if kind == "auction":
+        item = (f.get("item") or "").strip()
+        cur = f.get("cur") if f.get("cur") in ("mmd", "trophies") else None
+        days = (f.get("days") or "").strip()
+        if not item.isdigit():
+            return fail("Pick an item.")
+        if not cur:
+            return fail("Pick MMDs or PK Trophies for the auction.")
+        if not days.isdigit() or not 1 <= int(days) <= 14:
+            return fail("An auction lasts from 1 day to 2 weeks.")
+        limit = MAX_TROPHIES if cur == "trophies" else MAX_MMD
+        try:
+            start, bin_ = _num(f, "start", limit), _num(f, "bin", limit)
+        except ValueError:
+            return fail(f"Bids are whole numbers, up to {limit:,}.")
+        if not start:
+            return fail("Set a starting bid.")
+        if bin_ and bin_ <= start:
+            return fail("Buy It Now has to be higher than the starting bid.")
+        owned = _q(f"SELECT attuned FROM {VIEW_DB}.market_mule_item WHERE account_Id = %s AND item_Guid = %s", (account, int(item)), one=True)
+        if not owned:
+            return fail("That item isn't in your mule.")
+        if owned[0] == 1:
+            return fail("Attuned items can't be sold.")
+        _x("INSERT INTO market_request (created_At, account_Id, character_Name, kind, item_Guid, auction_Currency, start_Bid, buy_Now, auction_Hours) "
+           "VALUES (UTC_TIMESTAMP(), %s, %s, 'auction', %s, %s, %s, %s, %s)", (account, user["name"], int(item), cur, start, bin_ or None, int(days) * 24))
+    elif kind == "list":
         item = (f.get("item") or "").strip()
         if not item.isdigit():
             return fail("Pick an item.")
@@ -634,11 +763,33 @@ def act(h, user, kind):
         lid = (f.get("listing") or "").strip()
         if not lid.isdigit():
             return fail("Pick a listing.")
-        row = _q("SELECT seller_Account_Id, status, price_Mmd, price_Trophies FROM market_listing WHERE id = %s", (int(lid),), one=True)
+        row = _q("SELECT seller_Account_Id, status, price_Mmd, price_Trophies, kind, auction_Currency, buy_Now, high_Bid, start_Bid, high_Bidder_Account_Id, "
+                 "expires_At FROM market_listing WHERE id = %s", (int(lid),), one=True)
         if not row:
             return fail("That listing doesn't exist.")
-        seller, status, pmmd, ptro = row
-        if kind == "buy":
+        seller, status, pmmd, ptro, lkind, acur, bin_, high, start, high_acct, expires = row
+        if lkind == "auction":
+            # the auction's own currency and Buy It Now price count; the game server checks everything again
+            pmmd, ptro = (bin_, None) if acur == "mmd" else (None, bin_)
+        if kind == "bid":
+            back = f"/market/item/{lid}"
+            amount = (f.get("amount") or "").replace(",", "").strip()
+            if lkind != "auction" or status != "active" or expires <= datetime.utcnow():
+                return fail("That auction has ended.", back)
+            if seller == account:
+                return fail("You can't bid on your own auction.", back)
+            if high_acct == account:
+                return fail("You're already the highest bidder.", back)
+            if not amount.isdigit() or len(amount) > 12:
+                return fail("Type your bid as a whole number.", back)
+            lowest = min_bid(dict(high=high, start=start))
+            if int(amount) < lowest:
+                return fail(f"The lowest bid you can make is {lowest:,}.", back)
+            if bin_ and int(amount) >= bin_:
+                return fail("That's at or above the Buy It Now price. Use Buy It Now instead.", back)
+            _x("INSERT INTO market_request (created_At, account_Id, character_Name, kind, listing_Id, bid_Amount) VALUES (UTC_TIMESTAMP(), %s, %s, 'bid', %s, %s)",
+               (account, user["name"], int(lid), int(amount)))
+        elif kind == "buy":
             pay = "trophies" if f.get("pay") == "trophies" else "mmd"
             back = f"/market/item/{lid}"
             if seller == account:
@@ -696,7 +847,7 @@ def handle(h, method):
         if method == "POST":
             if h.headers.get("Origin") and urlparse(h.headers["Origin"]).netloc != h.headers.get("Host", ""):
                 _page(h, "Not allowed", "<h1>That request came from another site</h1>", user, 403)
-            elif path in ("/market/list", "/market/buy", "/market/cancel", "/market/relist"):
+            elif path in ("/market/list", "/market/buy", "/market/cancel", "/market/relist", "/market/auction", "/market/bid"):
                 act(h, user, path.rsplit("/", 1)[1])
             else:
                 wiki._send(h, 405, "Method not allowed", "text/plain")
@@ -732,7 +883,7 @@ CSS = """
 .mfilter input,.mfilter select,.mlist input,.mfind{font:inherit;color:var(--bone);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:.35rem .55rem}
 .mfilter input{width:9rem}.mfilter input[name=q]{width:min(100%,18rem)}
 .mgrid{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr));margin-top:.6rem}
-.mcard{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto auto;gap:.1rem .7rem;align-items:center;padding:.6rem .7rem;
+.mcard{display:flex;gap:.7rem;align-items:center;padding:.6rem .7rem;
   background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--bone);text-decoration:none}
 .mcard:hover{border-color:var(--portal)}
 .mcard,.hasid{position:relative}
@@ -746,7 +897,7 @@ CSS = """
 .idp p{margin:.4rem 0 0;max-width:none}
 .idp .idf{display:block;margin-top:.45rem;color:var(--dim);font-size:.82rem}
 @media (hover:hover){.hasid.on .idp{display:block}}
-.mcard .micon{grid-row:1/4}
+.mtext{display:flex;flex-direction:column;gap:.1rem;min-width:0}
 .mname{font-weight:700;line-height:1.25}.mprice{font-size:.95rem}.mmeta{font-size:.85rem;color:var(--dim)}
 .pm{color:var(--gold);font-weight:700}.pt{color:var(--blood);font-weight:700}
 .micon{position:relative;display:inline-block;width:32px;height:32px;flex:none;background:var(--deep);border-radius:3px;vertical-align:middle}
@@ -760,6 +911,10 @@ CSS = """
 .mbig{font-size:1.25rem;margin:.2rem 0}
 .mlist{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}.mlist input{width:7.5rem}
 .mfind{width:min(100%,18rem);margin:.2rem 0 .6rem}
+.mauction{margin-top:.35rem;font-size:.92rem}.mauction summary{display:inline;color:var(--portal);cursor:pointer}
+.mauction form{margin-top:.4rem}.mauction select{font:inherit;color:var(--bone);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:.35rem .4rem}
+.mauc{font-size:.85rem;color:var(--blood)}
+.mbids li>span:last-child{white-space:normal;text-align:right}
 .mraw{margin-top:2rem}.mraw table{min-width:0}
 td .micon{margin:-.2rem 0}
 """
