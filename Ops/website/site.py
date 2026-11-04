@@ -32,6 +32,11 @@ PORT = int(os.environ.get("PORT", "8080"))
 HOME_FILE = os.environ.get("HOME_FILE", os.path.join(os.path.dirname(os.path.abspath(__file__)), "home.html"))
 TANKS_URL = os.environ.get("TANKS_URL", "http://play.jawntide.com:8088/")  # the JawnTanks browser game
 EMBLEM_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "emblem.webp")
+# browser tab and home screen icons (the emblem from the home page), made from emblem.webp
+ICON_FILES = {"/favicon.ico": ("favicon.ico", "image/x-icon"), "/favicon-32.png": ("favicon-32.png", "image/png"),
+              "/favicon-192.png": ("favicon-192.png", "image/png"), "/apple-touch-icon.png": ("apple-touch-icon.png", "image/png")}
+ICON_LINKS = ('<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">'
+              '<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">')
 
 PROP_INT_LEVEL = 25
 PROP_INT_AGE = 125          # seconds played
@@ -409,7 +414,7 @@ def layout(path, title, body, snap):
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
             f'<title>{e(title)} | JawnTide</title><meta name="description" content="JawnTide, a red Asheron\'s Call server. Everyone is a player killer.">'
-            f'{FONTS}<style>{CSS}</style></head><body>'
+            f'{ICON_LINKS}{FONTS}<style>{CSS}</style></head><body>'
             f'<header class="bar"><div class="bar-in"><a class="mark" href="/">JawnTide</a><nav>{nav}</nav></div></header>'
             f'<main>{body}{stamp}</main>'
             '<script>function tick(){const now=Date.now();document.querySelectorAll(".cd").forEach(el=>{'
@@ -701,6 +706,18 @@ class Handler(BaseHTTPRequestHandler):
             if market.handle(self, "GET"):
                 return
             if wiki.handle(self, "GET"):
+                return
+            if url.path in ICON_FILES:
+                name, ctype = ICON_FILES[url.path]
+                with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), name), "rb") as f:
+                    data = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", ctype)
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "public, max-age=604800")
+                self.send_header("X-Content-Type-Options", "nosniff")
+                self.end_headers()
+                self.wfile.write(data)
                 return
             if url.path == "/emblem.webp":
                 with open(EMBLEM_FILE, "rb") as f:

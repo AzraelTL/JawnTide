@@ -21,5 +21,13 @@ JawnTide is a red Asheron's Call server running on ACEmulator, forked from DocTi
 - [[Town Control]]: allegiances fight to own towns.
 - [[Arena]]: queued 1v1, 2v2 and free-for-all matches.
 - [[JawnTanks]]: the browser tank game.
+- [[Bounties]]: hunt marked players, or post a reward on someone.
+- [[PK quests]]: daily PvP tasks from Thorsten.
+- [[Peddler's Outpost]]: the custom island outpost.
+- [[Mercenaries]]: summonable fighters from Artemis.
+- [[Tinker characters]]: one crafting-only character per account.
+- [[Allegiance limits]]: caps on allegiance size in some areas.
+- [[Bank]] and [[My Mule]]: account-wide storage.
+- [[Player commands]]: every custom command.
 
 > New to the wiki? See [[Editing the wiki]].
