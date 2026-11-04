@@ -775,7 +775,38 @@ namespace ACE.Server.WorldObjects
             wo.Workmanship == null
             && !wo.UnlimitedUse
             && (wo.Structure == null || wo.Structure == wo.MaxStructure)
-            && (MuleInfo.BoostableItemTypes & wo.ItemType) != 0;
+            && (MuleInfo.BoostableItemTypes & wo.ItemType) != 0
+            && !IsMuleUniqueItem(wo);
+
+        /// <summary>
+        /// JawnTide: true for an item that is no longer the same as every other copy of its weenie, so it must never be merged
+        /// into a stack (or handed out as a fresh copy of the weenie). Opened aetheria keeps the coalesced aetheria's wcid but
+        /// gets a set, a surge spell and a new icon; a charged mana stone holds mana; a book has its own pages; an inscribed
+        /// or renamed item has its own text. Merging any of these by wcid lost their state, or (withdrawing a mixed stack,
+        /// which hands out fresh copies) turned an opened aetheria back into an unopened one.
+        /// </summary>
+        private static bool IsMuleUniqueItem(WorldObject wo)
+        {
+            if (Aetheria.IsAetheria(wo.WeenieClassId) || wo is Book)
+                return true;
+
+            if (!string.IsNullOrEmpty(wo.GetProperty(PropertyString.Inscription)) || (wo.GetProperty(PropertyInt64.ItemTotalXp) ?? 0) > 0)
+                return true;
+
+            var weenie = DatabaseManager.World.GetCachedWeenie(wo.WeenieClassId);
+            if (weenie == null)
+                return true;
+
+            return wo.IconId != (weenie.GetProperty(PropertyDataId.Icon) ?? 0)
+                || wo.GetProperty(PropertyDataId.ProcSpell) != weenie.GetProperty(PropertyDataId.ProcSpell)
+                || wo.GetProperty(PropertyInt.EquipmentSetId) != weenie.GetProperty(PropertyInt.EquipmentSetId)
+                || wo.GetProperty(PropertyInt.ItemCurMana) != weenie.GetProperty(PropertyInt.ItemCurMana)
+                || wo.GetProperty(PropertyInt.ItemMaxMana) != weenie.GetProperty(PropertyInt.ItemMaxMana)
+                || wo.GetProperty(PropertyInt.ImbuedEffect) != weenie.GetProperty(PropertyInt.ImbuedEffect)
+                || wo.GetProperty(PropertyInt.NumTimesTinkered) != weenie.GetProperty(PropertyInt.NumTimesTinkered)
+                || wo.Name != weenie.GetProperty(PropertyString.Name)
+                || wo.Biota.GetKnownSpellsIds(wo.BiotaDatabaseLock).Count != (weenie.PropertiesSpellBook?.Count ?? 0);
+        }
 
         private const ushort MuleBoostedStackSize = 1000;
 
@@ -788,7 +819,8 @@ namespace ACE.Server.WorldObjects
             (wo.ItemType & ItemType.TinkeringMaterial) == 0
             && wo.Workmanship == null
             && !wo.UnlimitedUse
-            && (wo.Structure == null || wo.Structure == wo.MaxStructure);
+            && (wo.Structure == null || wo.Structure == wo.MaxStructure)
+            && !IsMuleUniqueItem(wo);
 
         /// <summary>
         /// Stores a detached, already-removed-from-the-player item into mule storage -- merging
@@ -1113,6 +1145,53 @@ namespace ACE.Server.WorldObjects
             foreach (var (item, requestedAmount, container) in withdrawals)
             {
                 var amount = requestedAmount;
+
+                // JawnTide: a unique item (opened aetheria, charged mana stone, ...) that was wrongly merged into a stack
+                // before the fix. The stack is this item plus plain copies that were merged into it: the copies come out
+                // as fresh items, and this item itself (with its stats) comes out last, on its own.
+                if ((item.StackSize ?? 1) > 1 && IsMuleUniqueItem(item))
+                {
+                    var stack = item.StackSize ?? 1;
+                    var whole = amount >= stack;
+                    var copies = whole ? stack - 1 : amount;
+
+                    for (var i = 0; i < copies; i++)
+                    {
+                        var copy = WorldObjectFactory.CreateNewWorldObject(item.WeenieClassId);
+                        if (copy == null || !TryCreateInInventoryWithNetworking(copy, out _))
+                        {
+                            log.Error($"[MULE] {Name} (0x{Guid}) couldn't withdraw a copy of {item.Name} (0x{item.Guid}) from a merged stack; {stack - i} left in the stack.");
+                            copy?.Destroy();
+                            copies = i;
+                            whole = false;
+                            break;
+                        }
+                    }
+
+                    if (whole)
+                    {
+                        var weenie = DatabaseManager.World.GetCachedWeenie(item.WeenieClassId);
+                        item.StackSize = null;
+                        item.MaxStackSize = (ushort?)weenie?.GetProperty(PropertyInt.MaxStackSize);
+                        container.TryRemoveFromInventory(item.Guid, out var self);
+                        vendor.UniqueItemsForSale.Remove(item.Guid);
+                        touched.Add(container);
+
+                        if (self != null && !TryCreateInInventoryWithNetworking(self, out _))
+                        {
+                            log.Error($"[MULE] {Name} (0x{Guid}) withdrawal of {self.Name} (0x{self.Guid}) failed after passing validation, returning it to storage.");
+                            container.TryAddToInventory(self, burdenCheck: false);
+                            touched.Add(self);
+                        }
+                    }
+                    else
+                    {
+                        item.StackSize = stack - copies;
+                        touched.Add(item);
+                    }
+
+                    continue;
+                }
 
                 if (IsMuleStackBoostable(item))
                 {
