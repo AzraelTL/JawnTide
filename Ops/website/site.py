@@ -318,6 +318,7 @@ td.k{color:var(--blood);font-weight:700}
 .show a{color:var(--dim);text-decoration:none;padding:0 .1rem;border-bottom:2px solid transparent}
 .show a:hover{color:var(--bone)}
 .show a[aria-current]{color:var(--bone);border-bottom-color:var(--portal)}
+th a.sorter{color:inherit;text-decoration:none;border-bottom:1px dotted var(--line)}th a.sorter[aria-current]{color:var(--bone);border-bottom:2px solid var(--portal)}
 .war{color:var(--blood);font-weight:700}
 .calm{color:var(--dim)}
 .resp{display:block;color:var(--dim);font-size:.95rem}
@@ -434,26 +435,50 @@ WINDOWS = [("24h", "Last 24 hours", timedelta(hours=24)), ("7d", "Last 7 days", 
            ("30d", "Last 30 days", timedelta(days=30)), ("all", "All time", None)]
 
 
+PK_SORTS = [("kills", "Kills"), ("kd", "K/D"), ("deaths", "Deaths"), ("name", "Name")]
+PK_MINS = ["1", "5", "10", "25", "50"]
+
+
 def pk_page(snap, window, query):
     key, label, span = next((w for w in WINDOWS if w[0] == window), WINDOWS[1])
     show_key, limit = parse_show(query, "50")
+    sort = query.get("sort", ["kills"])[0]
+    sort = sort if sort in dict(PK_SORTS) else "kills"
+    least = query.get("min", ["1"])[0]
+    least = least if least in PK_MINS else "1"
     now = snap["taken"]
     kills = [k for k in snap["kills"] if span is None or k["when"] >= now - span]
-    tabs = "".join(f'<a href="/pk?window={k}&amp;show={show_key}"{" aria-current=page" if k == key else ""}>{t}</a>' for k, t, _ in WINDOWS)
+    keep = {"sort": sort if sort != "kills" else "", "min": least if least != "1" else ""}
+    extra = "".join(f"&amp;{k}={v}" for k, v in keep.items() if v)
+    tabs = "".join(f'<a href="/pk?window={k}&amp;show={show_key}{extra}"{" aria-current=page" if k == key else ""}>{t}</a>' for k, t, _ in WINDOWS)
 
     tally = {}
     for k in kills:
         tally.setdefault(k["killer"], [0, 0])[0] += 1
         tally.setdefault(k["victim"], [0, 0])[1] += 1
-    board = sorted(((cid, kd) for cid, kd in tally.items() if kd[0] > 0),
-                   key=lambda r: (-r[1][0], -(r[1][0] / max(r[1][1], 1)), name_of(snap, r[0])))[:limit]
+    order = {
+        "kills": lambda r: (-r[1][0], -(r[1][0] / max(r[1][1], 1)), name_of(snap, r[0]).lower()),
+        "kd": lambda r: (-(r[1][0] / max(r[1][1], 1)), -r[1][0], name_of(snap, r[0]).lower()),
+        "deaths": lambda r: (-r[1][1], -r[1][0], name_of(snap, r[0]).lower()),
+        "name": lambda r: name_of(snap, r[0]).lower(),
+    }[sort]
+    board = sorted(((cid, kd) for cid, kd in tally.items() if kd[0] >= int(least)), key=order)[:limit]
     rows = []
     for i, (cid, (k, d)) in enumerate(board, 1):
         rows.append(f'<tr>{rank_cell(i)}<td>{e(name_of(snap, cid))}</td><td class="muted">{e(allegiance_name(snap, cid))}</td>'
                     f'<td class="n k">{n(k)}</td><td class="n">{n(d)}</td><td class="n">{k / max(d, 1):.2f}</td></tr>')
-    killers = (f'<div class="wrap"><table><tr><th></th><th>Character</th><th>Allegiance</th><th class="n">Kills</th>'
-               f'<th class="n">Deaths</th><th class="n">K/D</th></tr>{"".join(rows)}</table></div>' if rows
-               else '<p class="empty">No kills in this window yet.</p>') + show_links("/pk", {"window": key}, show_key)
+    def head(k, label, cls=""):
+        href = f'/pk?window={key}&amp;show={show_key}' + (f"&amp;sort={k}" if k != "kills" else "") + (f"&amp;min={least}" if least != "1" else "")
+        return f'<th{cls}><a class="sorter" href="{href}"{" aria-current=true" if k == sort else ""}>{label}</a></th>'
+    sorts = "".join(f'<a href="/pk?window={key}&amp;show={show_key}{"&amp;sort=" + k if k != "kills" else ""}{"&amp;min=" + least if least != "1" else ""}"'
+                    f'{" aria-current=page" if k == sort else ""}>{t}</a>' for k, t in PK_SORTS)
+    mins = "".join(f'<a href="/pk?window={key}&amp;show={show_key}{"&amp;sort=" + sort if sort != "kills" else ""}{"&amp;min=" + m if m != "1" else ""}"'
+                   f'{" aria-current=page" if m == least else ""}>{m}+</a>' for m in PK_MINS)
+    controls = (f'<div class="show"><span class="muted">Sort by</span>{sorts}</div>'
+                f'<div class="show"><span class="muted">At least this many kills</span>{mins}</div>')
+    killers = controls + (f'<div class="wrap"><table><tr><th></th>{head("name", "Character")}<th>Allegiance</th>{head("kills", "Kills", " class=n")}'
+               f'{head("deaths", "Deaths", " class=n")}{head("kd", "K/D", " class=n")}</tr>{"".join(rows)}</table></div>' if rows
+               else '<p class="empty">No kills in this window match.</p>') + show_links("/pk", {"window": key, **keep}, show_key)
 
     alleg = {}
     for k in kills:
