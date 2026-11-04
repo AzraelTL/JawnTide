@@ -163,7 +163,8 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
-        /// JawnTide: the client won't put an item worth 0 pyreals (e.g. Imbuer's Crystal and other rare gems) into a vendor's
+        /// JawnTide: the client won't put an item worth 0 pyreals (e.g. Imbuer's Crystal and other rare gems), or one marked not
+        /// sellable or retained, into a vendor's
         /// sell window. While the mule is open, the client is told those items are worth 1; when the mule leaves, it is told
         /// their real value again. Only the client's copy changes: the item's real Value on the server stays 0, so no vendor
         /// ever pays for it.
@@ -175,10 +176,15 @@ namespace ACE.Server.WorldObjects
 
             foreach (var item in GetAllPossessions())
             {
-                if ((item.Value ?? 0) > 0)
-                    continue;
+                if ((item.Value ?? 0) <= 0)
+                    Session.Network.EnqueueSend(new GameMessagePublicUpdatePropertyInt(item, PropertyInt.Value, masked ? 1 : 0));
 
-                Session.Network.EnqueueSend(new GameMessagePublicUpdatePropertyInt(item, PropertyInt.Value, masked ? 1 : 0));
+                // JawnTide: the client also won't offer items marked not sellable (quest food like Elaborate Field Rations)
+                // or retained. Only the client's copy changes; real vendors still check both on the server.
+                if (!item.IsSellable)
+                    Session.Network.EnqueueSend(new GameMessagePublicUpdatePropertyBool(item, PropertyBool.IsSellable, masked));
+                if (item.Retained)
+                    Session.Network.EnqueueSend(new GameMessagePublicUpdatePropertyBool(item, PropertyBool.Retained, !masked));
             }
         }
 
