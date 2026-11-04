@@ -349,7 +349,9 @@ namespace ACE.Server.WorldObjects
             RotUniques();
 
             // JawnTide Bank: show the client what the bank can add, so it lets the player buy (the server asks before using it)
-            uint bankExtra = MuleOwnerId.HasValue ? 0 : player.BankVendorExtra(this);
+            // JawnTide My Mule: withdrawals are free, but the client checks its own coin count before it sends a purchase,
+            // so the mule shows a full count (restored when the mule leaves or the player walks away)
+            uint bankExtra = MuleOwnerId.HasValue ? (uint)int.MaxValue : player.BankVendorExtra(this);
 
             // pyreal vendors: the window's "you have" comes from the player's coin count, so the raised count (pack + bank)
             // is sent BEFORE the window opens; alternate currency vendors get it inside the window message itself
