@@ -210,7 +210,7 @@ namespace ACE.Server.WorldObjects
             }
 
             // JawnTide Marketplace: the market is moving an item in or out of this account's mule in the database right now
-            if (Managers.MarketManager.IsAccountBusy(Account.AccountId))
+            if (ACE.Server.Managers.MarketManager.IsAccountBusy(Account.AccountId))
             {
                 SendTransientError("Your mule is busy with a market order. Try again in a few seconds.");
                 return;
@@ -402,7 +402,7 @@ namespace ACE.Server.WorldObjects
                 vendor.UniqueItemsForSale[item.Guid] = item;
 
             // JawnTide Marketplace: the website shows mule items with their icons
-            Managers.MarketManager.QueueIcons(containers.SelectMany(c => c.Inventory.Values));
+            ACE.Server.Managers.MarketManager.QueueIcons(containers.SelectMany(c => c.Inventory.Values));
 
             if (!vendor.EnterWorld())
             {
