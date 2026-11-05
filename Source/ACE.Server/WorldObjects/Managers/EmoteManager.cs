@@ -1351,6 +1351,11 @@ namespace ACE.Server.WorldObjects.Managers
                             {
                                 var destination = new Position(emote.ObjCellId.Value, emote.OriginX.Value, emote.OriginY.Value, emote.OriginZ.Value, emote.AnglesX.Value, emote.AnglesY.Value, emote.AnglesZ.Value, emote.AnglesW.Value);
 
+                                // JawnTide: a slightly off rotation in the emote data (e.g. the Yaraq Outpost) fails the position check when the
+                                // teleport finishes, and the player is sent to their lifestone. Normalize it here.
+                                if (!destination.Rotation.IsRotationValid())
+                                    destination.Rotation = Quaternion.Normalize(destination.Rotation);
+
                                 // JawnTide instancing: an instanced world boss's statue sends you into that boss's private copy of the lair
                                 var bossRoute = WorldBossManager.GetStatueInstanceRoute(WorldObject, destination.Landblock);
                                 if (bossRoute.HasValue)
