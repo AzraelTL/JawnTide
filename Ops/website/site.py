@@ -36,7 +36,7 @@ EMBLEM_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "emblem.w
 ICON_FILES = {"/favicon.ico": ("favicon.ico", "image/x-icon"), "/favicon-32.png": ("favicon-32.png", "image/png"),
               "/favicon-192.png": ("favicon-192.png", "image/png"), "/apple-touch-icon.png": ("apple-touch-icon.png", "image/png")}
 # ?v= changes whenever the icons change, so browsers and Cloudflare (which keep icons for a week) fetch the new ones
-ICON_VERSION = "2"
+ICON_VERSION = "3"
 ICON_LINKS = (f'<link rel="icon" href="/favicon.ico?v={ICON_VERSION}" sizes="48x48"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v={ICON_VERSION}">'
               f'<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png?v={ICON_VERSION}"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v={ICON_VERSION}">')
 
