@@ -77,20 +77,22 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
-        /// JawnTide: scales a Town Control governor's health and defense skills by the town_control_governor_health_percent and
-        /// town_control_governor_defense_percent settings. The whole value scales (attribute bonus included), so 50 means half.
+        /// JawnTide: scales a Town Control governor's health, stamina, mana and defense skills by the town_control_governor_vitals_percent
+        /// and town_control_governor_defense_percent settings. The whole value scales (attribute bonus included), so 50 means half.
         /// </summary>
         private void ScaleTownControlGovernor()
         {
-            var healthPercent = Math.Clamp(PropertyManager.GetLong("town_control_governor_health_percent").Item, 1, 1000);
+            var vitalsPercent = Math.Clamp(PropertyManager.GetLong("town_control_governor_vitals_percent").Item, 1, 1000);
             var defensePercent = Math.Clamp(PropertyManager.GetLong("town_control_governor_defense_percent").Item, 0, 1000);
 
-            if (healthPercent != 100)
+            if (vitalsPercent != 100)
             {
-                var health = Health;
-                var wanted = health.Base * healthPercent / 100.0;
-                var fromElsewhere = (double)(health.Base - health.StartingValue);
-                health.StartingValue = (uint)Math.Max(1, Math.Round(wanted - fromElsewhere));
+                foreach (var vital in new[] { Health, Stamina, Mana })
+                {
+                    var wanted = vital.Base * vitalsPercent / 100.0;
+                    var fromElsewhere = (double)(vital.Base - vital.StartingValue);
+                    vital.StartingValue = (uint)Math.Max(1, Math.Round(wanted - fromElsewhere));
+                }
             }
 
             if (defensePercent != 100)
