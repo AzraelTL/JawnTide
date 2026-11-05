@@ -213,6 +213,7 @@ namespace ACE.Server.Entity.WorldBoss
                     aerbax.MaxAllegianceEntries = 10;
                     aerbax.IndoorLocation = new Position(0x65430119, 67.597794f, -59.671207f, 0.005000f, 0f, 0f, -0.966396f, -0.257058f); //0x65430119 [67.597794 -59.671207 0.005000] -0.257058 0.000000 0.000000 -0.966396
                     aerbax.StatueWeenieId = 49009100;
+                    aerbax.InstanceContent = 4; // JawnTide instancing: the lair runs in a private copy of 6543 (through the Idol of the Progenitor); the normal world copy is stock
                     _worldBossMap.Add(49009000, aerbax);
 
                     //Tusker Queen in TBD
