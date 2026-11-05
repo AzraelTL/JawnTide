@@ -482,6 +482,28 @@ namespace ACE.Database
             }
         }
 
+        /// <summary>JawnTide: queues a market request like the website does (used by the @marketkey test command). False if it couldn't be saved.</summary>
+        public bool MarketInsertRequest(MarketRequest q)
+        {
+            try
+            {
+                using var context = new ShardDbContext();
+                var conn = MarketOpen(context);
+                using var cmd = BankCommand(conn, null,
+                    @"INSERT INTO market_request (created_At, account_Id, character_Name, kind, item_Guid, listing_Id, price_Mmd, price_Trophies, pay_With)
+                      VALUES (@t, @a, @n, @k, @g, @l, @pm, @pt, @pw);",
+                    ("@t", DateTime.UtcNow), ("@a", q.AccountId), ("@n", Truncate(q.CharacterName, 64)), ("@k", q.Kind), ("@g", DbValue(q.ItemGuid)),
+                    ("@l", DbValue(q.ListingId)), ("@pm", DbValue(q.PriceMmd)), ("@pt", DbValue(q.PriceTrophies)), ("@pw", (object)q.PayWith ?? DBNull.Value));
+                cmd.ExecuteNonQuery();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[MARKET] MarketInsertRequest failed for account {q.AccountId} ({q.Kind}): {ex}");
+                return false;
+            }
+        }
+
         /// <summary>JawnTide: keys waiting for room in a house chest whose next try is due</summary>
         public List<ulong> MarketDueDeliveries(int max)
         {

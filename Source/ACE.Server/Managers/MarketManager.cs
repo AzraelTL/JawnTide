@@ -856,6 +856,20 @@ namespace ACE.Server.Managers
             }));
         }
 
+        /// <summary>The first Darkbeat, Hera or Shimmering Skeleton key in the account's house chests (for @marketkey). Answers the guid and name, or null.</summary>
+        public static void FindChestKey(uint accountId, Action<uint?, string> done)
+        {
+            WithHouseChests(accountId, chests =>
+            {
+                var key = chests.SelectMany(c => c.Inventory.Values).FirstOrDefault(i => IsChestOnly(i.WeenieClassId));
+                if (key == null)
+                    return false;
+                done(key.Guid.Full, key.Name);
+                return true;
+            },
+            error => done(null, error ?? "There's no key in your house chest."));
+        }
+
         /// <summary>Takes a key out of the account's house chest into market storage. Answers with the item's details, or an error.</summary>
         private static void TakeFromChest(uint accountId, uint itemGuid, Action<MarketItemInfo, string> done)
         {
