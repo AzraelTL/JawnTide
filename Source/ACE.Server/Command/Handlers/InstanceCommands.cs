@@ -15,7 +15,7 @@ namespace ACE.Server.Command.Handlers
     /// </summary>
     public static class InstanceCommands
     {
-        [CommandHandler("instance", AccessLevel.Developer, CommandHandlerFlag.RequiresWorld, 0,
+        [CommandHandler("instance", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
             "Shows which copy of the landblock you're in, or moves you between copies for testing.",
             "\n@instance - show where you are and the loaded instances\n" +
             "@instance new [content] - make a new private copy of the landblock you're in and move there (content 1 = arena version, 0 = empty)\n" +
@@ -24,6 +24,19 @@ namespace ACE.Server.Command.Handlers
         {
             var player = session.Player;
             var loc = player.Location;
+
+            // players can see which copy they're in; listing and moving between copies is for staff
+            if (parameters.Length == 0 && session.AccessLevel < AccessLevel.Developer)
+            {
+                session.Network.EnqueueSend(new GameMessageSystemChat($"You are in {InstanceManager.GetDescription(loc.Variation)}, landblock 0x{loc.Landblock:X4}.", ChatMessageType.Broadcast));
+                return;
+            }
+
+            if (session.AccessLevel < AccessLevel.Developer)
+            {
+                session.Network.EnqueueSend(new GameMessageSystemChat("Usage: /instance", ChatMessageType.Broadcast));
+                return;
+            }
 
             if (parameters.Length == 0)
             {

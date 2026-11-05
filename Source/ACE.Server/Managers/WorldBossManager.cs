@@ -187,7 +187,8 @@ namespace ACE.Server.Managers
                 boss.InstanceVariation = boss.InstanceContent.HasValue ? InstanceManager.CreateInstance(boss.InstanceContent.Value, $"{boss.Name} world boss") : (int?)null;
 
                 //Perma load the landblock for the boss location (the normal world one; an instance stays loaded while the boss is up)
-                var bossLandblockID = new LandblockId(boss.IndoorLocation.LandblockId.Raw << 16);
+                // (IndoorLocation already holds the cell; shifting it would point at the wrong landblock)
+                var bossLandblockID = new LandblockId(boss.IndoorLocation.Landblock << 16);
                 var bossLandblock = LandblockManager.GetLandblock(bossLandblockID, boss.InstanceVariation, false, !boss.InstanceVariation.HasValue);
 
                 //Create boss in world
@@ -264,12 +265,13 @@ namespace ACE.Server.Managers
         }
 
         /// <summary>
-        /// JawnTide instancing: the copy a teleport into this landblock should use for the active instanced boss, or null
+        /// JawnTide instancing: when this is the active instanced boss's statue teleporting someone into the lair,
+        /// the copy to use; otherwise null (every other way into that landblock is the normal world)
         /// </summary>
-        public static int? GetBossInstanceRoute(uint landblock)
+        public static int? GetStatueInstanceRoute(WorldObject source, uint landblock)
         {
             var wb = activeWorldBoss;
-            if (wb == null || !wb.InstanceVariation.HasValue || wb.IndoorLocation == null || wb.IndoorLocation.Landblock != landblock)
+            if (wb == null || source == null || wb.StatueWorldObject != source || !wb.InstanceVariation.HasValue || wb.IndoorLocation == null || wb.IndoorLocation.Landblock != landblock)
                 return null;
 
             if (wb.BossWorldObject == null || wb.BossWorldObject.IsDestroyed)

@@ -744,14 +744,6 @@ namespace ACE.Server.WorldObjects
                     newPosition.Variation = TownControlInstances.GetActiveVariationForLandblock(newPosition.Landblock);
             }
 
-            // JawnTide instancing: while an instanced world boss is up, its lair is the boss's private copy
-            if (!newPosition.ExplicitVariation && !newPosition.Variation.HasValue)
-            {
-                var bossRoute = WorldBossManager.GetBossInstanceRoute(newPosition.Landblock);
-                if (bossRoute.HasValue)
-                    newPosition.Variation = bossRoute;
-            }
-
             if (InInstance != newPosition.Variation.HasValue)
                 InInstance = newPosition.Variation.HasValue;
 

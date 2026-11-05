@@ -1351,6 +1351,11 @@ namespace ACE.Server.WorldObjects.Managers
                             {
                                 var destination = new Position(emote.ObjCellId.Value, emote.OriginX.Value, emote.OriginY.Value, emote.OriginZ.Value, emote.AnglesX.Value, emote.AnglesY.Value, emote.AnglesZ.Value, emote.AnglesW.Value);
 
+                                // JawnTide instancing: an instanced world boss's statue sends you into that boss's private copy of the lair
+                                var bossRoute = WorldBossManager.GetStatueInstanceRoute(WorldObject, destination.Landblock);
+                                if (bossRoute.HasValue)
+                                    destination.WithVariation(bossRoute);
+
                                 WorldObject.AdjustDungeon(destination);
                                 WorldManager.ThreadSafeTeleport(player, destination);
                             }
