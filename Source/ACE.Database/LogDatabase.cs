@@ -341,6 +341,23 @@ namespace ACE.Database
                     returnMsg.Append($"  Damage Dealt: {onesStats.TotalDmgDealt.ToString("n0")}\n");
                     returnMsg.Append($"  Damage Received: {onesStats.TotalDmgReceived.ToString("n0")}\n\n");                    
 
+                    var oneTenStats = stats.FirstOrDefault(x => x.EventType.Equals("110"));
+                    if (oneTenStats == null)
+                        oneTenStats = new ArenaCharacterStats();
+
+                    returnMsg.Append($"One Ten (110)\n");
+                    returnMsg.Append($"  Rank: {DatabaseManager.Log.GetArenaRank("110",oneTenStats.RankPoints).ToString("n0")}\n");
+                    returnMsg.Append($"  Rank Points: {oneTenStats.RankPoints.ToString("n0")}\n");
+                    returnMsg.Append($"  Matches: {oneTenStats.TotalMatches.ToString("n0")}\n");
+                    returnMsg.Append($"  Wins: {oneTenStats.TotalWins.ToString("n0")}\n");
+                    returnMsg.Append($"  Draws: {oneTenStats.TotalDraws.ToString("n0")}\n");
+                    returnMsg.Append($"  Losses: {oneTenStats.TotalLosses.ToString("n0")}\n");
+                    returnMsg.Append($"  Disqualified: {oneTenStats.TotalDisqualified.ToString("n0")}\n");
+                    returnMsg.Append($"  Kills: {oneTenStats.TotalKills.ToString("n0")}\n");
+                    returnMsg.Append($"  Deaths: {oneTenStats.TotalDeaths.ToString("n0")}\n");
+                    returnMsg.Append($"  Damage Dealt: {oneTenStats.TotalDmgDealt.ToString("n0")}\n");
+                    returnMsg.Append($"  Damage Received: {oneTenStats.TotalDmgReceived.ToString("n0")}\n\n");                    
+
                     var twosStats = stats.FirstOrDefault(x => x.EventType.Equals("2v2"));
                     if (twosStats == null)
                         twosStats = new ArenaCharacterStats();

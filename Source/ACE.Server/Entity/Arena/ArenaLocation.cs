@@ -49,6 +49,22 @@ namespace ACE.Server.Entity
         /// </summary>
         public List<string> ExclusiveEventTypes { get; set; }
 
+        /// <summary>
+        /// JawnTide: the rank/stats category for this map's own queue (One Ten = "110"). null = the event type.
+        /// </summary>
+        public string StatsCategory { get; set; }
+
+        /// <summary>
+        /// JawnTide: which rank/stats category a match of this event type on this map counts toward
+        /// </summary>
+        public string StatsTypeFor(string eventType)
+        {
+            if (StatsCategory != null && ExclusiveEventTypes != null && eventType != null && ExclusiveEventTypes.Contains(eventType.ToLower()))
+                return StatsCategory;
+
+            return eventType;
+        }
+
         public ArenaEvent ActiveEvent { get; set; }
 
         public bool HasActiveEvent { get { return ActiveEvent != null; } }
@@ -762,8 +778,8 @@ namespace ACE.Server.Entity
                 var loser = losers.FirstOrDefault();
                 if (winner != null && loser != null)
                 {
-                    var winnerCurrentRank = DatabaseManager.Log.GetCharacterArenaStatsByEvent(winner.CharacterId, "1v1")?.RankPoints ?? 1500;
-                    var loserCurrentRank = DatabaseManager.Log.GetCharacterArenaStatsByEvent(loser.CharacterId, "1v1")?.RankPoints ?? 1500;
+                    var winnerCurrentRank = DatabaseManager.Log.GetCharacterArenaStatsByEvent(winner.CharacterId, StatsTypeFor("1v1"))?.RankPoints ?? 1500;
+                    var loserCurrentRank = DatabaseManager.Log.GetCharacterArenaStatsByEvent(loser.CharacterId, StatsTypeFor("1v1"))?.RankPoints ?? 1500;
 
                     var rankChange = ArenaRanking.GetRankChange(winnerCurrentRank, loserCurrentRank, 32);
 
@@ -802,7 +818,7 @@ namespace ACE.Server.Entity
                 DatabaseManager.Log.AddToArenaStats(
                     winner.CharacterId,
                     winner.CharacterName,
-                    winner.EventType,
+                    StatsTypeFor(winner.EventType),
                     1,
                     1,
                     0,
@@ -1092,7 +1108,7 @@ namespace ACE.Server.Entity
                 DatabaseManager.Log.AddToArenaStats(
                     loser.CharacterId,
                     loser.CharacterName,
-                    loser.EventType,
+                    StatsTypeFor(loser.EventType),
                     1,
                     0,
                     isDraw || isOvertime ? 1 : (uint)0,
@@ -1586,7 +1602,7 @@ namespace ACE.Server.Entity
                 DatabaseManager.Log.AddToArenaStats(
                     arenaPlayer.CharacterId,
                     arenaPlayer.CharacterName,
-                    arenaPlayer.EventType,
+                    StatsTypeFor(arenaPlayer.EventType),
                     1,
                     0,
                     isLoss ? 0 : (uint)1,
@@ -1841,6 +1857,7 @@ namespace ACE.Server.Entity
             oneTen.LandblockId = 0x039D;
             oneTen.SupportedEventTypes = new List<string>() { "1v1", "tugak" };
             oneTen.ExclusiveEventTypes = new List<string>() { "1v1" };    // JawnTide: One Ten 1v1 is its own queue (/arena join 110)
+            oneTen.StatsCategory = "110";                                  // ...with its own rank
             oneTen.ArenaName = "One Ten";
             locList.Add(oneTen.LandblockId, oneTen);
 

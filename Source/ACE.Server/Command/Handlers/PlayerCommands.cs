@@ -924,6 +924,7 @@ namespace ACE.Server.Command.Handlers
 
                     bool validParam = false;
                     if(eventTypeParam.ToLower().Equals("1v1") ||
+                        eventTypeParam.ToLower().Equals("110") ||
                         eventTypeParam.ToLower().Equals("2v2") ||
                         eventTypeParam.ToLower().Equals("ffa") ||
                         eventTypeParam.ToLower().Equals("tugak"))
@@ -952,7 +953,7 @@ namespace ACE.Server.Command.Handlers
                     break;
 
                 default:
-                    CommandHandlerHelper.WriteOutputInfo(session, $"Arena Commands...\n\n  To join a 1v1 arena match: /arena join\n\n  To join a specific type of arena match: /arena join eventType\n  (replace eventType with the string code for the type of match you want to join; 1v1, 2v2, FFA, Tugak or Group)\n\n  To join a 1v1 at One Ten only: /arena join 110\n\n  To leave an arena queue or stop observing a match: /arena cancel\n\n  To get info about players in an arena queue and active arena matches: /arena info\n\n  To get your current character's stats: /arena stats\n\n  To get a named character's stats: /arena stats characterName\n  (replace characterName with the target character's name)\n\n  To get rank leaderboard by event type: /arena rank eventType\n  (replace eventType with the string code for the type of match you want ranking for; 1v1, 2v2, Tugak or FFA)\n\n  To watch a match as a silent observer: /arena watch EventID\n  (use /arena info to get the EventID of an active arena match and use that value in the command)\n\n    To get this help file: /arena help\n");
+                    CommandHandlerHelper.WriteOutputInfo(session, $"Arena Commands...\n\n  To join a 1v1 arena match: /arena join\n\n  To join a specific type of arena match: /arena join eventType\n  (replace eventType with the string code for the type of match you want to join; 1v1, 2v2, FFA, Tugak or Group)\n\n  To join a 1v1 at One Ten only: /arena join 110\n\n  To leave an arena queue or stop observing a match: /arena cancel\n\n  To get info about players in an arena queue and active arena matches: /arena info\n\n  To get your current character's stats: /arena stats\n\n  To get a named character's stats: /arena stats characterName\n  (replace characterName with the target character's name)\n\n  To get rank leaderboard by event type: /arena rank eventType\n  (replace eventType with the string code for the type of match you want ranking for; 1v1, 110, 2v2, Tugak or FFA)\n\n  To watch a match as a silent observer: /arena watch EventID\n  (use /arena info to get the EventID of an active arena match and use that value in the command)\n\n    To get this help file: /arena help\n");
                     return;
             }
         }

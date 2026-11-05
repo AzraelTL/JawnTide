@@ -36,6 +36,7 @@ namespace ACE.Server.Managers
         // ── Categories ───────────────────────────────────────────────────────────
 
         public const string Cat_1v1          = "1v1";
+        public const string Cat_110          = "110";
         public const string Cat_2v2          = "2v2";
         public const string Cat_Ffa          = "ffa";
         public const string Cat_Tugak        = "tugak";
@@ -48,7 +49,7 @@ namespace ACE.Server.Managers
         public const string Cat_Bounty       = "bounty";
 
         public static readonly string[] ArenaCategories =
-            { Cat_1v1, Cat_2v2, Cat_Ffa, Cat_Tugak, Cat_Group, Cat_ArenaWins, Cat_ArenaMatches };
+            { Cat_1v1, Cat_110, Cat_2v2, Cat_Ffa, Cat_Tugak, Cat_Group, Cat_ArenaWins, Cat_ArenaMatches };
 
         public static readonly string[] NonArenaCategories =
             { Cat_PkKills, Cat_Kd, Cat_Streak, Cat_Bounty };
@@ -65,6 +66,7 @@ namespace ACE.Server.Managers
             [Cat_Bounty]       = 1.25,
             [Cat_Kd]           = 0.75,
             [Cat_1v1]          = 1.0,
+            [Cat_110]          = 1.0,
             [Cat_2v2]          = 1.0,
             [Cat_Group]        = 1.0,
             [Cat_Ffa]          = 0.5,
@@ -85,6 +87,7 @@ namespace ACE.Server.Managers
         public static string GetCategoryDisplayName(string category) => category switch
         {
             Cat_1v1          => "1v1 Arena",
+            Cat_110          => "One Ten (110) Arena",
             Cat_2v2          => "2v2 Arena",
             Cat_Ffa          => "FFA Arena",
             Cat_Tugak        => "Tugak Arena",
@@ -104,6 +107,7 @@ namespace ACE.Server.Managers
             return input.ToLowerInvariant().Replace(" ", "-") switch
             {
                 "1v1" => Cat_1v1,
+                "110" or "oneten" or "one-ten" => Cat_110,
                 "2v2" => Cat_2v2,
                 "ffa" => Cat_Ffa,
                 "tugak" => Cat_Tugak,
@@ -193,7 +197,7 @@ namespace ACE.Server.Managers
             {
                 var evt = category switch
                 {
-                    Cat_1v1 => "1v1", Cat_2v2 => "2v2", Cat_Ffa => "FFA", Cat_Tugak => "Tugak", Cat_Group => "Group", _ => null
+                    Cat_1v1 => "1v1", Cat_110 => "110", Cat_2v2 => "2v2", Cat_Ffa => "FFA", Cat_Tugak => "Tugak", Cat_Group => "Group", _ => null
                 };
                 ranked = stats.Where(s => string.Equals(s.EventType, evt, StringComparison.OrdinalIgnoreCase))
                     .Select(s => (s.CharacterId, s.CharacterName, (long)s.RankPoints, $"{s.RankPoints} pts ({s.TotalWins}-{s.TotalLosses})"));

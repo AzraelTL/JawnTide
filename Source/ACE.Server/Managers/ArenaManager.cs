@@ -66,6 +66,7 @@ namespace ACE.Server.Managers
                         LandblockId = baseLocation.LandblockId,
                         SupportedEventTypes = baseLocation.SupportedEventTypes,
                         ExclusiveEventTypes = baseLocation.ExclusiveEventTypes,
+                        StatsCategory = baseLocation.StatsCategory,
                         ArenaName = baseLocation.ArenaName,
                     };
                     location.Slot = slot;

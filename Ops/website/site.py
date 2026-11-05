@@ -45,6 +45,9 @@ PROP_INT64_TOTAL_XP = 1
 PROP_IID_PATRON = 25
 PROP_IID_MONARCH = 26
 ARENA_DONE = 6
+ONE_TEN = 0x039D   # One Ten arena landblock: its 1v1s are the "110" queue and rank
+ARENA_TYPE_NAMES = {"110": "One Ten (110)"}
+ARENA_TYPE_ORDER = ["1v1", "110", "2v2"]
 
 e = lambda v: html.escape("" if v is None else str(v))
 snapshot = None
@@ -130,9 +133,12 @@ def take_snapshot():
                                     kills=ks or 0, dealt=dealt or 0, received=recv or 0, points=points or 0))
 
         events = {}
-        for eid, etype, ended, winner in q("""
-                SELECT id, event_type, end_datetime, winning_team_guid FROM ace_log.arena_event
+        for eid, etype, ended, winner, location in q("""
+                SELECT id, event_type, end_datetime, winning_team_guid, location FROM ace_log.arena_event
                 WHERE status = %s AND end_datetime IS NOT NULL ORDER BY end_datetime DESC LIMIT 25""", (ARENA_DONE,)):
+            # One Ten (0x039D) 1v1s are their own queue and rank: "110"
+            if etype == "1v1" and location == ONE_TEN:
+                etype = "110"
             events[eid] = dict(id=eid, type=etype, ended=ended, winner=winner, players=[])
         if events:
             marks = ",".join(["%s"] * len(events))
@@ -569,13 +575,16 @@ def towns_page(snap):
 
 def arena_page(snap, etype, query):
     show_key, limit = parse_show(query, "50")
-    types = sorted({s["type"] for s in snap["arena_stats"] if s["type"]}, key=lambda t: (t != "1v1", t != "2v2", t))
+    found = {s["type"] for s in snap["arena_stats"] if s["type"]}
+    if found:
+        found.add("110")   # One Ten has its own rank; show its tab even before its first match
+    types = sorted(found, key=lambda t: (ARENA_TYPE_ORDER.index(t) if t in ARENA_TYPE_ORDER else len(ARENA_TYPE_ORDER), t))
     now = snap["taken"]
     if not types:
         return ('<h1>Arena</h1><p class="lede">Arena standings and recent matches.</p>'
                 '<p class="empty">No arena matches yet. Join the queue in game with /arena join.</p>')
     etype = etype if etype in types else types[0]
-    tabs = "".join(f'<a href="/arena?type={e(t)}&amp;show={show_key}"{" aria-current=page" if t == etype else ""}>{e(t)}</a>' for t in types)
+    tabs = "".join(f'<a href="/arena?type={e(t)}&amp;show={show_key}"{" aria-current=page" if t == etype else ""}>{e(ARENA_TYPE_NAMES.get(t, t))}</a>' for t in types)
     stats = sorted((s for s in snap["arena_stats"] if s["type"] == etype and s["matches"] > 0),
                    key=lambda s: (-s["points"], -s["wins"], s["name"] or ""))[:limit]
     rows = "".join(
@@ -595,7 +604,7 @@ def arena_page(snap, etype, query):
         others = [p for p in ev["players"] if p not in winners]
         names = lambda ps: ", ".join(e(p["name"]) for p in ps) or "nobody"
         result = (f'<b>{names(winners)}</b> beat {names(others)}' if winners else f'Draw between {names(ev["players"])}')
-        matches.append(f'<li><span><span class="muted">{e(ev["type"])}</span>&ensp;{result}</span>'
+        matches.append(f'<li><span><span class="muted">{e(ARENA_TYPE_NAMES.get(ev["type"], ev["type"]))}</span>&ensp;{result}</span>'
                        f'<span class="muted">{ago(ev["ended"], now)}</span></li>')
     return (f'<h1>Arena</h1><p class="lede">Standings by rank points. Join the queue in game with /arena join.</p>'
             f'<div class="tabs">{tabs}</div>{table}'
