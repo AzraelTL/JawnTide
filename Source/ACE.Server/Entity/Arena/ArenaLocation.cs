@@ -1861,6 +1861,13 @@ namespace ACE.Server.Entity
             oneTen.ArenaName = "One Ten";
             locList.Add(oneTen.LandblockId, oneTen);
 
+            //Desert March - the drop room, with its north and south exits walled off in the arena copy
+            var desertMarch = new ArenaLocation();
+            desertMarch.LandblockId = 0x02AA;
+            desertMarch.SupportedEventTypes = new List<string>() { "1v1" };
+            desertMarch.ArenaName = "Desert March";
+            locList.Add(desertMarch.LandblockId, desertMarch);
+
             return locList;
         }
 
@@ -1884,6 +1891,7 @@ namespace ACE.Server.Entity
                         //0xD50E, //Landing Strip
                         //0x7222  //The Heptagon
                         0x039D, //One Ten
+                        0x02AA, //Desert March (drop room)
                     };
                 }
 
@@ -2113,6 +2121,16 @@ namespace ACE.Server.Entity
                             new Position(0x039D02A4, 95.942345f, -45.941307f, 48.005001f, 0f, 0f, 0.924836f, -0.380366f),
                             //0x039D02A4 [95.942345 -45.941307 48.005001] -0.380366 0.000000 0.000000 0.924836
                         }); //One Ten
+
+                    _arenaLocationStartingPositions.Add(
+                        0x02AA,
+                        new List<Position>()
+                        {
+                            new Position(0x02AA022D, 49.782814f, -478.196381f, 30.004999f, 0f, 0f, -0.999968f, 0.007952f),
+                            //0x02AA022D [49.782814 -478.196381 30.004999] 0.007952 0.000000 0.000000 -0.999968
+                            new Position(0x02AA022F, 50.142357f, -500.629089f, 30.004999f, 0f, 0f, -0.003748f, -0.999993f),
+                            //0x02AA022F [50.142357 -500.629089 30.004999] -0.999993 0.000000 0.000000 -0.003748
+                        }); //Desert March (drop room)
                 }
 
                 return _arenaLocationStartingPositions;
