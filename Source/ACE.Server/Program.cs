@@ -378,7 +378,22 @@ namespace ACE.Server
             }
             else
             {
-                ServerManager.DoShutdownNow();
+                // JawnTide: in Docker, ProcessExit also runs at the end of a normal /shutdown (Environment.Exit), and on
+                // "docker stop" (SIGTERM). Only run the shutdown here if nothing has run it yet; if /shutdown is still saving,
+                // wait for it (Docker gives 3 minutes, compose stop_grace_period) instead of starting a second one.
+                if (ServerManager.ShutdownComplete)
+                {
+                    // the normal /shutdown already saved everything
+                }
+                else if (ServerManager.ShutdownInProgress)
+                {
+                    var waitUntil = DateTime.UtcNow.AddMinutes(2.5);
+                    while (!ServerManager.ShutdownComplete && DateTime.UtcNow < waitUntil)
+                        Thread.Sleep(100);
+                }
+                else
+                    ServerManager.DoShutdownNow(exitWhenDone: false);
+
                 DatabaseManager.Stop();
             }
         }

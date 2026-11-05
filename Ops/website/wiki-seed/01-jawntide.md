@@ -24,7 +24,6 @@ JawnTide is a red Asheron's Call server running on ACEmulator, forked from DocTi
 - [[Bounties]]: hunt marked players, or post a reward on someone.
 - [[PK quests]]: daily PvP tasks from Thorsten.
 - [[Peddler's Outpost]]: the custom island outpost.
-- [[Mercenaries]]: summonable fighters from Artemis.
 - [[Tinker characters]]: one crafting-only character per account.
 - [[Allegiance limits]]: caps on allegiance size in some areas.
 - [[Bank]] and [[My Mule]]: account-wide storage.
