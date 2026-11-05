@@ -76,6 +76,37 @@ namespace ACE.Server.WorldObjects
             SetEphemeralValues();
         }
 
+        /// <summary>
+        /// JawnTide: scales a Town Control governor's health and defense skills by the town_control_governor_health_percent and
+        /// town_control_governor_defense_percent settings. The whole value scales (attribute bonus included), so 50 means half.
+        /// </summary>
+        private void ScaleTownControlGovernor()
+        {
+            var healthPercent = Math.Clamp(PropertyManager.GetLong("town_control_governor_health_percent").Item, 1, 1000);
+            var defensePercent = Math.Clamp(PropertyManager.GetLong("town_control_governor_defense_percent").Item, 0, 1000);
+
+            if (healthPercent != 100)
+            {
+                var health = Health;
+                var wanted = health.Base * healthPercent / 100.0;
+                var fromElsewhere = (double)(health.Base - health.StartingValue);
+                health.StartingValue = (uint)Math.Max(1, Math.Round(wanted - fromElsewhere));
+            }
+
+            if (defensePercent != 100)
+            {
+                foreach (var skill in new[] { Skill.MeleeDefense, Skill.MissileDefense, Skill.MagicDefense })
+                {
+                    if (!Skills.TryGetValue(skill, out var creatureSkill))
+                        continue;
+
+                    var wanted = creatureSkill.Base * defensePercent / 100.0;
+                    var fromElsewhere = (double)(creatureSkill.Base - creatureSkill.InitLevel);
+                    creatureSkill.InitLevel = (uint)Math.Max(0, Math.Round(wanted - fromElsewhere));
+                }
+            }
+        }
+
         private void InitializePropertyDictionaries()
         {
             if (Biota.PropertiesAttribute == null)
@@ -111,6 +142,10 @@ namespace ACE.Server.WorldObjects
 
             foreach (var kvp in Biota.PropertiesSkill)
                 Skills[kvp.Key] = new CreatureSkill(this, kvp.Key, kvp.Value);
+
+            // JawnTide: the Town Control governors can be scaled down for the early loot stages
+            if (!(this is Player) && TownControlBosses.IsTownControlInitBoss(WeenieClassId))
+                ScaleTownControlGovernor();
 
             if (Health.Current <= 0)
                 Health.Current = Health.MaxValue;
