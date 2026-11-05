@@ -24,6 +24,11 @@ namespace ACE.Server.Entity
         public BankCurrencyKind Kind;
         public uint Wcid;
         public string[] Aliases;
+
+        /// <summary>
+        /// JawnTide: can't be deposited or sent any more (only withdrawn), so carrying it keeps its PK risk.
+        /// </summary>
+        public bool WithdrawOnly;
     }
 
     /// <summary>
@@ -60,9 +65,9 @@ namespace ACE.Server.Entity
             new BankCurrency { Code = "pyreals",      Name = "Pyreals",                     Kind = BankCurrencyKind.Pyreals,   Wcid = PyrealWcid, Aliases = new[] { "pyreals", "pyreal", "py", "p", "notes", "mmd", "mmds" } },
             new BankCurrency { Code = "pk_trophies",  Name = "PK Trophies",                 Kind = BankCurrencyKind.Stack,     Wcid = 1000002,    Aliases = new[] { "trophies", "trophy", "pk", "pktrophy", "pktrophies", "t" } },
             new BankCurrency { Code = "luminance",    Name = "Luminance",                   Kind = BankCurrencyKind.Luminance, Wcid = 0,          Aliases = new[] { "luminance", "lum", "l" } },
-            new BankCurrency { Code = "key_darkbeat", Name = "Darkbeat's Lost Storage Key", Kind = BankCurrencyKind.Key,       Wcid = 480608,     Aliases = new[] { "darkbeat", "darkbeats", "darkbeatkey", "dk" } },
-            new BankCurrency { Code = "key_hera",     Name = "Hera's Vault Key",            Kind = BankCurrencyKind.Key,       Wcid = 490364,     Aliases = new[] { "hera", "heras", "herakey", "hk" } },
-            new BankCurrency { Code = "key_skeleton", Name = "Shimmering Skeleton Key",     Kind = BankCurrencyKind.Key,       Wcid = 30258,      Aliases = new[] { "skeleton", "shimmering", "skeletonkey", "sk" } },
+            new BankCurrency { Code = "key_darkbeat", Name = "Darkbeat's Lost Storage Key", Kind = BankCurrencyKind.Key,       Wcid = 480608,     WithdrawOnly = true, Aliases = new[] { "darkbeat", "darkbeats", "darkbeatkey", "dk" } },
+            new BankCurrency { Code = "key_hera",     Name = "Hera's Vault Key",            Kind = BankCurrencyKind.Key,       Wcid = 490364,     WithdrawOnly = true, Aliases = new[] { "hera", "heras", "herakey", "hk" } },
+            new BankCurrency { Code = "key_skeleton", Name = "Shimmering Skeleton Key",     Kind = BankCurrencyKind.Key,       Wcid = 30258,      WithdrawOnly = true, Aliases = new[] { "skeleton", "shimmering", "skeletonkey", "sk" } },
         };
 
         public static BankCurrency Find(string text)

@@ -1018,6 +1018,13 @@ namespace ACE.Server.WorldObjects
                     continue;
                 }
 
+                // JawnTide: Darkbeat, Hera and Shimmering Skeleton keys stay at risk while carried (no bank, no mule)
+                if (BankInfo.Currencies.Any(c => c.WithdrawOnly && c.Wcid == wo.WeenieClassId))
+                {
+                    Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, $"{wo.Name} cannot be stored in your mule."));
+                    continue;
+                }
+
                 // No Bonded/IsSellable/Retained/item-category checks here: the mule is personal
                 // storage that never changes ownership (deposits/withdrawals are always zero-cost,
                 // non-transactional moves, even when made by a guest with house storage access

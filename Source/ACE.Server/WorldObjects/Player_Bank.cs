@@ -181,6 +181,14 @@ namespace ACE.Server.WorldObjects
         /// Pyreals: coins only, unless notesOnly (then trade notes only).</summary>
         private bool BankDepositInternal(BankCurrency currency, long? amount, bool quietIfNone, bool notesOnly = false)
         {
+            // JawnTide: keys can't go in the bank any more (they're meant to be at risk while you carry them); old balances can still be withdrawn
+            if (currency.WithdrawOnly)
+            {
+                if (!quietIfNone)
+                    BankMessage($"{currency.Name} can't be deposited in the bank. Any you already banked can still be withdrawn.");
+                return false;
+            }
+
             long taken = 0;
             var details = "";
             var breakdown = "";
@@ -898,6 +906,12 @@ namespace ACE.Server.WorldObjects
         {
             if (!BankCheckOpen())
                 return;
+
+            if (currency.WithdrawOnly)
+            {
+                BankMessage($"{currency.Name} can't be sent through the bank. Withdraw them and trade them instead.");
+                return;
+            }
 
             if (amount <= 0)
             {
