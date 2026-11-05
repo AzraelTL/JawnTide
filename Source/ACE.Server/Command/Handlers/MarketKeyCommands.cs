@@ -12,7 +12,7 @@ namespace ACE.Server.Command.Handlers
     /// </summary>
     public static class MarketKeyCommands
     {
-        [CommandHandler("marketkey", AccessLevel.Developer, CommandHandlerFlag.RequiresWorld, 1,
+        [CommandHandler("marketkey", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
             "Tests market key listings from your house chest without the website.",
             "\n@marketkey list <mmds> - list the first key in your house chest\n" +
             "@marketkey back <listing id> - take a listing back\n" +
@@ -25,6 +25,19 @@ namespace ACE.Server.Command.Handlers
             var name = player.Name;
 
             void Say(string text) => session.Network.EnqueueSend(new GameMessageSystemChat(text, ChatMessageType.Broadcast));
+
+            // account access level (like @instance): a character without the admin flag still gets an answer instead of silence
+            if (session.AccessLevel < AccessLevel.Developer)
+            {
+                Say("@marketkey is a staff test command.");
+                return;
+            }
+
+            if (parameters.Length == 0)
+            {
+                Say("Usage: @marketkey list <mmds> | back <id> | buy <id> [mmd|trophies] | status");
+                return;
+            }
 
             void Queue(MarketRequest req)
             {
