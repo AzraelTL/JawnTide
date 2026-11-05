@@ -43,6 +43,12 @@ namespace ACE.Server.Entity
 
         public List<string> SupportedEventTypes { get; set; }
 
+        /// <summary>
+        /// JawnTide: event types that are this map's own queue. Only players who queued for this map play them here,
+        /// and they never get matched anywhere else (One Ten 1v1 = /arena join 110).
+        /// </summary>
+        public List<string> ExclusiveEventTypes { get; set; }
+
         public ArenaEvent ActiveEvent { get; set; }
 
         public bool HasActiveEvent { get { return ActiveEvent != null; } }
@@ -515,7 +521,7 @@ namespace ACE.Server.Entity
         {
             //log.Info($"ArenaLocation.MatchMake() - {this.ArenaName}");
 
-            var arenaEvent = ArenaManager.MatchMake(SupportedEventTypes);
+            var arenaEvent = ArenaManager.MatchMake(this);
             if (arenaEvent != null)
             {
                 ActiveEvent = arenaEvent;
@@ -1834,6 +1840,7 @@ namespace ACE.Server.Entity
             var oneTen = new ArenaLocation();
             oneTen.LandblockId = 0x039D;
             oneTen.SupportedEventTypes = new List<string>() { "1v1", "tugak" };
+            oneTen.ExclusiveEventTypes = new List<string>() { "1v1" };    // JawnTide: One Ten 1v1 is its own queue (/arena join 110)
             oneTen.ArenaName = "One Ten";
             locList.Add(oneTen.LandblockId, oneTen);
 

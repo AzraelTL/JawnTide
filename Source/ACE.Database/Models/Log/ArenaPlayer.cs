@@ -49,6 +49,12 @@ namespace ACE.Database.Models.Log
 
         public DateTime CreateDateTime { get; set; }
 
+        /// <summary>
+        /// JawnTide: the arena map this player queued for (e.g. One Ten, /arena join 110). null = any map that hosts the event type.
+        /// </summary>
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public uint? QueueArena { get; set; }
+
         public bool IsEliminated { get; set; }
 
         [NotMapped]

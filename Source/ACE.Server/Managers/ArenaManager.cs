@@ -65,6 +65,7 @@ namespace ACE.Server.Managers
                     {
                         LandblockId = baseLocation.LandblockId,
                         SupportedEventTypes = baseLocation.SupportedEventTypes,
+                        ExclusiveEventTypes = baseLocation.ExclusiveEventTypes,
                         ArenaName = baseLocation.ArenaName,
                     };
                     location.Slot = slot;
@@ -161,7 +162,7 @@ namespace ACE.Server.Managers
             return isPlayerActive;
         }
 
-        public static bool AddPlayerToQueue(uint characterId, string characterName, int? characterLevel, string eventType, uint monarchId, string monarchName, string playerIP, out string returnMsg, Guid? teamGuid = null, int maxOpposingTeamSize = 9)
+        public static bool AddPlayerToQueue(uint characterId, string characterName, int? characterLevel, string eventType, uint monarchId, string monarchName, string playerIP, out string returnMsg, Guid? teamGuid = null, int maxOpposingTeamSize = 9, uint? queueArena = null)
         {
             returnMsg = string.Empty;
 
@@ -206,14 +207,18 @@ namespace ACE.Server.Managers
             player.PlayerIP = playerIP;
             player.TeamGuid = teamGuid;
             player.MaxOpposingTeamSize = maxOpposingTeamSize;
+            player.QueueArena = queueArena;
 
             queuedPlayers.Add(characterId, player);
 
-            var queueCount = queuedPlayers.Values.Count(x => x.EventType.Equals(eventType));
+            var queueCount = queuedPlayers.Values.Count(x => x.EventType.Equals(eventType) && x.QueueArena == queueArena);
+
+            // JawnTide: a map's own queue (One Ten) is named after the map
+            var queueName = queueArena.HasValue ? $"{GetArenaNameByLandblock(queueArena.Value)} {eventType}" : eventType;
 
             if (!eventType.ToLower().Equals("group"))
             {
-                PlayerManager.BroadcastToAll(new GameMessageSystemChat($"A new player has queued for a{(eventType.ToLower().Equals("ffa") ? "n" : "")} {eventType} arena match. There {(queueCount > 1 ? "are" : "is")} currently {queueCount} player{(queueCount > 1 ? "s" : "")} queued for {eventType}", ChatMessageType.Broadcast));
+                PlayerManager.BroadcastToAll(new GameMessageSystemChat($"A new player has queued for a{(!queueArena.HasValue && eventType.ToLower().Equals("ffa") ? "n" : "")} {queueName} arena match. There {(queueCount > 1 ? "are" : "is")} currently {queueCount} player{(queueCount > 1 ? "s" : "")} queued for {queueName}", ChatMessageType.Broadcast));
             }
 
             return true;
@@ -262,6 +267,29 @@ namespace ACE.Server.Managers
         }
 
         /// <summary>
+        /// JawnTide: matchmaking for one arena map. Event types in the map's ExclusiveEventTypes are its own queue
+        /// (only players who queued for that map, e.g. /arena join 110 for One Ten); every other map only takes the general queue.
+        /// </summary>
+        public static ArenaEvent MatchMake(ArenaLocation location)
+        {
+            return MatchMake(location.SupportedEventTypes, new List<uint>(), location);
+        }
+
+        /// <summary>
+        /// JawnTide: can this queued player be matched on this map?
+        /// </summary>
+        private static bool FitsArena(ArenaPlayer player, ArenaLocation location)
+        {
+            if (location == null)
+                return player.QueueArena == null;
+
+            if (location.ExclusiveEventTypes != null && location.ExclusiveEventTypes.Contains(player.EventType.ToLower()))
+                return player.QueueArena == location.LandblockId;
+
+            return player.QueueArena == null;
+        }
+
+        /// <summary>
         /// Attempts to find a match for the first player in the queue for a given arena's supported event types
         /// If a match can't be found for that player's event type, will add the player to the excludedPlayers list and call the method again recursively
         /// If no players are found queued for the given event types, returns null
@@ -269,7 +297,7 @@ namespace ACE.Server.Managers
         /// <param name="supportedEventTypes"></param>
         /// <param name="excludedPlayers"></param>
         /// <returns></returns>
-        public static ArenaEvent MatchMake(List<string> supportedEventTypes, List<uint> excludedPlayers)
+        public static ArenaEvent MatchMake(List<string> supportedEventTypes, List<uint> excludedPlayers, ArenaLocation location = null)
         {
             if (excludedPlayers == null)
             {
@@ -336,7 +364,7 @@ namespace ACE.Server.Managers
 
             //Find the first queued player waiting for an event type that this arena location supports
             var firstArenaPlayer = queuedPlayers.Values?
-                .Where(x => supportedEventTypes.Contains(x.EventType.ToLower()) && !excludedPlayers.Contains(x.CharacterId))?
+                .Where(x => supportedEventTypes.Contains(x.EventType.ToLower()) && !excludedPlayers.Contains(x.CharacterId) && FitsArena(x, location))?
                 .OrderBy(x => x.CreateDateTime)?
                 .FirstOrDefault();
 
@@ -370,6 +398,7 @@ namespace ACE.Server.Managers
                 var otherPlayers = queuedPlayers.Values?
                 .Where(x =>
                         firstArenaPlayer.EventType.Equals(x.EventType) &&
+                        x.QueueArena == firstArenaPlayer.QueueArena &&
                         x.CharacterId != firstArenaPlayer.CharacterId &&
                         x.CharacterLevel <= maxMatchLevel &&
                         x.CharacterLevel >= minMatchLevel &&
@@ -663,7 +692,7 @@ namespace ACE.Server.Managers
                         //There's not enough players to make a match for the first queued player's event type,
                         //so mark that player excluded and try to matchmake with the next player in the queue
                         excludedPlayers.Add(firstArenaPlayer.CharacterId);
-                        return MatchMake(supportedEventTypes, excludedPlayers);
+                        return MatchMake(supportedEventTypes, excludedPlayers, location);
                     }
                 }
                 else
@@ -672,7 +701,7 @@ namespace ACE.Server.Managers
                     //There's not enough players to make a match for the first queued player's event type,
                     //so mark that player excluded and try to matchmake with the next player in the queue
                     excludedPlayers.Add(firstArenaPlayer.CharacterId);
-                    return MatchMake(supportedEventTypes, excludedPlayers);
+                    return MatchMake(supportedEventTypes, excludedPlayers, location);
                 }
             }
             else
