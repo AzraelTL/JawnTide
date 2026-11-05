@@ -67,6 +67,7 @@ namespace ACE.Server.Managers
         private static bool started;
         private static DateTime nextPoll = DateTime.MinValue;
         private static DateTime nextExpire = DateTime.MinValue;
+        private static DateTime nextDeliveries = DateTime.MinValue;
 
         // ---------------------------------------------------------------- the loop
 
@@ -97,13 +98,21 @@ namespace ACE.Server.Managers
                 var requests = Db.MarketTakePendingRequests(20);
                 var auctions = Db.MarketDueAuctions(10);
 
-                if (requests.Count == 0 && auctions.Count == 0)
+                // JawnTide: keys waiting for room in a house chest
+                var deliveries = new List<ulong>();
+                if (DateTime.UtcNow >= nextDeliveries)
+                {
+                    nextDeliveries = DateTime.UtcNow.AddMinutes(1);
+                    deliveries = Db.MarketDueDeliveries(10);
+                }
+
+                if (requests.Count == 0 && auctions.Count == 0 && deliveries.Count == 0)
                 {
                     Interlocked.Exchange(ref running, 0);
                     return;
                 }
 
-                WorldManager.EnqueueAction(new ActionEventDelegate(() => RunNext(requests, 0, () => RunAuctionEnds(auctions, 0))));
+                WorldManager.EnqueueAction(new ActionEventDelegate(() => RunNext(requests, 0, () => RunAuctionEnds(auctions, 0, () => RunDeliveries(deliveries, 0)))));
             }));
         }
 
@@ -305,7 +314,14 @@ namespace ACE.Server.Managers
                     return;
                 }
 
-                TakeFromMule(req.AccountId, itemGuid, (info, error) => DatabaseManager.Shard.MarketEnqueue(() =>
+                // JawnTide: an item in the mule comes from the mule; anything else must be a key in the house chest
+                var fromMule = Db.MarketGetMuleChain(req.AccountId).Contains(Db.MarketGetItemContainer(itemGuid) ?? 0);
+
+                Action<Action<MarketItemInfo, string>> take = fromMule
+                    ? cb => TakeFromMule(req.AccountId, itemGuid, cb)
+                    : cb => TakeFromChest(req.AccountId, itemGuid, cb);
+
+                take((info, error) => DatabaseManager.Shard.MarketEnqueue(() =>
                 {
                     if (info == null)
                     {
@@ -333,11 +349,11 @@ namespace ACE.Server.Managers
                     if (id == null)
                     {
                         // the item is in market storage but has no listing: put it back
-                        GiveToMule(req.AccountId, itemGuid, (ok, err) =>
+                        GiveBack(req.AccountId, info.Wcid, itemGuid, (ok, err) =>
                         {
                             if (!ok)
-                                log.Error($"[MARKET] {info.Name} (0x{itemGuid:X8}) of account {req.AccountId} is in market storage with no listing and couldn't go back to the mule ({err}). Move it back by hand.");
-                            Finish(req, false, ok ? "The listing couldn't be saved. The item is back in your mule." : "The listing couldn't be saved. An admin has to return the item; please tell one.", next);
+                                log.Error($"[MARKET] {info.Name} (0x{itemGuid:X8}) of account {req.AccountId} is in market storage with no listing and couldn't go back to the {(fromMule ? "mule" : "house chest")} ({err}). Move it back by hand.");
+                            Finish(req, false, ok ? $"The listing couldn't be saved. The item is back in your {(fromMule ? "mule" : "house chest")}." : "The listing couldn't be saved. An admin has to return the item; please tell one.", next);
                         });
                         return;
                     }
@@ -426,8 +442,47 @@ namespace ACE.Server.Managers
                     return;
                 }
 
-                GiveToMule(req.AccountId, listing.ItemGuid, (delivered, error) => DatabaseManager.Shard.MarketEnqueue(() =>
+                var isKey = IsChestOnly(listing.Wcid);
+
+                GiveBack(req.AccountId, listing.Wcid, listing.ItemGuid, (delivered, error) => DatabaseManager.Shard.MarketEnqueue(() =>
                 {
+                    // Buy It Now ends the auction: the high bidder gets their bid back
+                    void RefundHighBid()
+                    {
+                        if (listing.IsAuction && listing.HighBidderAccountId.HasValue && listing.HighBid.HasValue)
+                        {
+                            var back = payTrophies ? listing.HighBid.Value : listing.HighBid.Value * PyrealsPerMmd;
+                            var refundBid = Db.BankChange(listing.HighBidderAccountId.Value, currency, back, new BankLogInfo
+                            {
+                                CharacterName = listing.HighBidderName, Action = "market outbid", OtherAccountId = req.AccountId, OtherCharacterName = req.CharacterName, Details = details
+                            });
+                            if (refundBid.Status != BankResultStatus.Ok)
+                                log.Error($"[MARKET] BID REFUND FAILED: account {listing.HighBidderAccountId} ({listing.HighBidderName}) is owed {currency} {back} for auction {listing.Id}. Restore it by hand (Ops/BANK.md).");
+                            Db.MarketSetBidStatus(listing.Id, "high", "refunded");
+                            Notify(listing.HighBidderAccountId.Value, $"{listing.Name} was bought with Buy It Now. Your bid is back in your bank.");
+                        }
+                    }
+
+                    // JawnTide: a bought key the buyer's house chest can't take yet stays in market storage (owed) and is delivered when there's room
+                    if (!delivered && isKey)
+                    {
+                        var keyCredit = Db.BankChange(listing.SellerAccountId, currency, amount, new BankLogInfo
+                        {
+                            CharacterName = listing.SellerName, Action = "market sale", OtherAccountId = req.AccountId, OtherCharacterName = req.CharacterName, Details = details
+                        });
+
+                        if (keyCredit.Status != BankResultStatus.Ok)
+                            log.Error($"[MARKET] SELLER NOT PAID: account {listing.SellerAccountId} ({listing.SellerName}) is owed {currency} {amount} for listing {listing.Id}. Pay it by hand (Ops/BANK.md).");
+
+                        Db.MarketSetDeliveryPending(listing.Id, "owed", req.AccountId, req.CharacterName, currency, amount, DateTime.UtcNow.AddMinutes(2));
+                        RefundHighBid();
+
+                        log.Info($"[MARKET] Listing {listing.Id}: {req.CharacterName} (account {req.AccountId}) bought {listing.Name} from {listing.SellerName} for {paid}; waiting for room in their house chest ({error}).");
+                        Notify(listing.SellerAccountId, $"Your {listing.Name} sold for {paid}. It's in your bank.");
+                        Finish(req, true, $"You bought {listing.Name} for {paid}. {error} It will go into your house chest as soon as there's room.", next);
+                        return;
+                    }
+
                     if (!delivered)
                     {
                         var refund = Db.BankChange(req.AccountId, currency, amount, new BankLogInfo
@@ -453,24 +508,12 @@ namespace ACE.Server.Managers
 
                     Db.MarketCloseListing(listing.Id, "sold", req.AccountId, req.CharacterName, currency, amount);
 
-                    // Buy It Now ends the auction: the high bidder gets their bid back
-                    if (listing.IsAuction && listing.HighBidderAccountId.HasValue && listing.HighBid.HasValue)
-                    {
-                        var back = payTrophies ? listing.HighBid.Value : listing.HighBid.Value * PyrealsPerMmd;
-                        var refundBid = Db.BankChange(listing.HighBidderAccountId.Value, currency, back, new BankLogInfo
-                        {
-                            CharacterName = listing.HighBidderName, Action = "market outbid", OtherAccountId = req.AccountId, OtherCharacterName = req.CharacterName, Details = details
-                        });
-                        if (refundBid.Status != BankResultStatus.Ok)
-                            log.Error($"[MARKET] BID REFUND FAILED: account {listing.HighBidderAccountId} ({listing.HighBidderName}) is owed {currency} {back} for auction {listing.Id}. Restore it by hand (Ops/BANK.md).");
-                        Db.MarketSetBidStatus(listing.Id, "high", "refunded");
-                        Notify(listing.HighBidderAccountId.Value, $"{listing.Name} was bought with Buy It Now. Your bid is back in your bank.");
-                    }
+                    RefundHighBid();
 
                     log.Info($"[MARKET] Listing {listing.Id}: {req.CharacterName} (account {req.AccountId}) bought {listing.Name} x{listing.StackSize} from {listing.SellerName} (account {listing.SellerAccountId}) for {paid}.");
 
                     Notify(listing.SellerAccountId, $"Your {listing.Name} sold for {paid}. It's in your bank.");
-                    Finish(req, true, $"You bought {listing.Name} for {paid}. It's in your mule.", next);
+                    Finish(req, true, $"You bought {listing.Name} for {paid}. It's in your {(isKey ? "house chest" : "mule")}.", next);
                 }));
             });
         }
@@ -500,8 +543,19 @@ namespace ACE.Server.Managers
                     return;
                 }
 
-                GiveToMule(req.AccountId, listing.ItemGuid, (ok, error) => DatabaseManager.Shard.MarketEnqueue(() =>
+                var isKey = IsChestOnly(listing.Wcid);
+
+                GiveBack(req.AccountId, listing.Wcid, listing.ItemGuid, (ok, error) => DatabaseManager.Shard.MarketEnqueue(() =>
                 {
+                    // JawnTide: a key the seller's house chest can't take yet waits in market storage until there's room
+                    if (!ok && isKey)
+                    {
+                        Db.MarketSetDeliveryPending(listing.Id, "returning", null, null, null, null, DateTime.UtcNow.AddMinutes(2));
+                        log.Info($"[MARKET] Listing {listing.Id}: {listing.Name} is off the market, waiting for room in {req.CharacterName}'s house chest (account {req.AccountId}): {error}");
+                        Finish(req, true, $"{listing.Name} is off the market. {error} It will go back into your house chest as soon as there's room.", next);
+                        return;
+                    }
+
                     if (!ok)
                     {
                         Db.MarketReleaseListing(listing.Id, previous);
@@ -510,8 +564,8 @@ namespace ACE.Server.Managers
                     }
 
                     Db.MarketCloseListing(listing.Id, "returned", null, null, null, null);
-                    log.Info($"[MARKET] Listing {listing.Id}: {listing.Name} went back to {req.CharacterName}'s mule (account {req.AccountId}).");
-                    Finish(req, true, $"{listing.Name} is back in your mule.", next);
+                    log.Info($"[MARKET] Listing {listing.Id}: {listing.Name} went back to {req.CharacterName}'s {(isKey ? "house chest" : "mule")} (account {req.AccountId}).");
+                    Finish(req, true, $"{listing.Name} is back in your {(isKey ? "house chest" : "mule")}.", next);
                 }));
             });
         }
@@ -558,15 +612,18 @@ namespace ACE.Server.Managers
 
         // ---------------------------------------------------------------- auctions ending
 
-        private static void RunAuctionEnds(List<ulong> ids, int index)
+        private static void RunAuctionEnds(List<ulong> ids, int index, Action afterAll = null)
         {
             if (index >= ids.Count)
             {
-                Stop();
+                if (afterAll != null)
+                    afterAll();
+                else
+                    Stop();
                 return;
             }
 
-            void next() => WorldManager.EnqueueAction(new ActionEventDelegate(() => RunAuctionEnds(ids, index + 1)));
+            void next() => WorldManager.EnqueueAction(new ActionEventDelegate(() => RunAuctionEnds(ids, index + 1, afterAll)));
 
             try
             {
@@ -611,7 +668,7 @@ namespace ACE.Server.Managers
                 var paid = $"{listing.HighBid.Value:N0} {(trophies ? "PK Trophies" : "MMDs")}";
                 var winner = listing.HighBidderAccountId.Value;
 
-                GiveToMule(winner, listing.ItemGuid, (delivered, error) => DatabaseManager.Shard.MarketEnqueue(() =>
+                GiveBack(winner, listing.Wcid, listing.ItemGuid, (delivered, error) => DatabaseManager.Shard.MarketEnqueue(() =>
                 {
                     if (!delivered)
                     {
@@ -638,8 +695,343 @@ namespace ACE.Server.Managers
                     Db.MarketSetBidStatus(listing.Id, "high", "won");
 
                     log.Info($"[MARKET] Auction {listing.Id}: {listing.HighBidderName} (account {winner}) won {listing.Name} from {listing.SellerName} for {paid}.");
-                    Notify(winner, $"You won {listing.Name} for {paid}. It's in your mule.");
+                    Notify(winner, $"You won {listing.Name} for {paid}. It's in your {(IsChestOnly(listing.Wcid) ? "house chest" : "mule")}.");
                     Notify(listing.SellerAccountId, $"Your auction for {listing.Name} sold for {paid}. It's in your bank.");
+                    next();
+                }));
+            });
+        }
+
+        // ---------------------------------------------------------------- JawnTide: keys and house chests
+
+        /// <summary>
+        /// Darkbeat, Hera and Shimmering Skeleton keys can't be stored in the bank or the mule (they're meant to be at risk
+        /// while carried). On the market they're listed from the seller's house storage chest, wait in market storage while
+        /// listed, and go back to (or are delivered into) a house chest. If the chest is full (or there's no house), they
+        /// stay in market storage and delivery is tried again every couple of minutes.
+        /// </summary>
+        public static bool IsChestOnly(uint wcid) => BankInfo.Currencies.Any(c => c.WithdrawOnly && c.Wcid == wcid);
+
+        /// <summary>Delivers an item from market storage: keys into the account's house chest, everything else into the mule.</summary>
+        private static void GiveBack(uint accountId, uint wcid, uint itemGuid, Action<bool, string> done)
+        {
+            if (IsChestOnly(wcid))
+                GiveToChest(accountId, itemGuid, done);
+            else
+                GiveToMule(accountId, itemGuid, done);
+        }
+
+        /// <summary>Runs work on a landblock's thread; if it hasn't started after 30 seconds (the landblock unloaded) ifNotRun runs instead.</summary>
+        private static void RunOnLandblock(Landblock landblock, Action work, Action ifNotRun)
+        {
+            var gate = new Gate();
+
+            landblock.EnqueueAction(new ActionEventDelegate(() =>
+            {
+                lock (gate)
+                {
+                    if (gate.Cancelled)
+                        return;
+                    gate.Started = true;
+                }
+                work();
+            }));
+
+            Task.Delay(TimeSpan.FromSeconds(30)).ContinueWith(_ =>
+            {
+                lock (gate)
+                {
+                    if (gate.Started)
+                        return;
+                    gate.Cancelled = true;
+                }
+                WorldManager.EnqueueAction(new ActionEventDelegate(ifNotRun));
+            });
+        }
+
+        /// <summary>
+        /// The places an account's house keeps storage chests: the house itself and, for villas and mansions, the basement.
+        /// Each is (landblock, house guid on that landblock).
+        /// </summary>
+        private static List<(ACE.Entity.LandblockId landblock, uint houseGuid)> HouseChestSites(House house)
+        {
+            var sites = new List<(ACE.Entity.LandblockId, uint)>();
+
+            var guid = house.Guid.Full;
+            sites.Add((new ACE.Entity.LandblockId(((guid >> 12) & 0xFFFF) << 16 | 0xFFFF), guid));
+
+            try
+            {
+                if (house.HasDungeon && house.DungeonLandblockID != 0)
+                {
+                    var basement = house.DungeonHouseGuid;
+                    if (basement != 0)
+                        sites.Add((new ACE.Entity.LandblockId(house.DungeonLandblockID | 0xFFFF), basement));
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Warn($"[MARKET] Couldn't find the basement of house 0x{guid:X8}: {ex.Message}");
+            }
+
+            return sites;
+        }
+
+        /// <summary>
+        /// On the world thread: loads the account's house landblocks and runs work(chests, error) for each place with storage
+        /// chests in turn, on that landblock's thread, until work answers true (handled). error is set when a place can't be used right now.
+        /// done(error) runs if no place handled it (error = the last reason, or null if nothing was wrong).
+        /// </summary>
+        private static void WithHouseChests(uint accountId, Func<List<Storage>, bool> work, Action<string> notHandled)
+        {
+            WorldManager.EnqueueAction(new ActionEventDelegate(() =>
+            {
+                var house = HouseManager.GetAccountHouses(accountId).FirstOrDefault();
+
+                if (house == null)
+                {
+                    notHandled("You don't own a house with a storage chest.");
+                    return;
+                }
+
+                var sites = HouseChestSites(house);
+                string lastError = null;
+
+                void trySite(int index, int waits = 0)
+                {
+                    if (index >= sites.Count)
+                    {
+                        notHandled(lastError);
+                        return;
+                    }
+
+                    var (landblockId, houseGuid) = sites[index];
+                    var landblock = LandblockManager.GetLandblock(landblockId, false);
+
+                    void nextSite() => WorldManager.EnqueueAction(new ActionEventDelegate(() => trySite(index + 1)));
+
+                    // a house nobody is near isn't loaded: give it up to 20 seconds to load
+                    if (!landblock.CreateWorldObjectsCompleted)
+                    {
+                        if (waits < 20)
+                        {
+                            Task.Delay(TimeSpan.FromSeconds(1)).ContinueWith(_ => WorldManager.EnqueueAction(new ActionEventDelegate(() => trySite(index, waits + 1))));
+                            return;
+                        }
+                        lastError = "Your house is loading. Try again in a moment.";
+                        nextSite();
+                        return;
+                    }
+
+                    RunOnLandblock(landblock, () =>
+                    {
+                        var live = landblock.GetObject(new ACE.Entity.ObjectGuid(houseGuid)) as House;
+                        var chests = live?.Storage ?? new List<Storage>();
+
+                        if (chests.Any(c => !c.InventoryLoaded))
+                        {
+                            if (waits < 20)
+                            {
+                                Task.Delay(TimeSpan.FromSeconds(1)).ContinueWith(_ => WorldManager.EnqueueAction(new ActionEventDelegate(() => trySite(index, waits + 1))));
+                                return;
+                            }
+                            lastError = "Your house chest is loading. Try again in a moment.";
+                            nextSite();
+                            return;
+                        }
+
+                        if (chests.Count > 0 && work(chests))
+                            return;
+
+                        nextSite();
+                    },
+                    () =>
+                    {
+                        lastError = "Your house is busy. Try again in a moment.";
+                        trySite(index + 1);
+                    });
+                }
+
+                trySite(0);
+            }));
+        }
+
+        /// <summary>Takes a key out of the account's house chest into market storage. Answers with the item's details, or an error.</summary>
+        private static void TakeFromChest(uint accountId, uint itemGuid, Action<MarketItemInfo, string> done)
+        {
+            var guid = new ACE.Entity.ObjectGuid(itemGuid);
+
+            WithHouseChests(accountId, chests =>
+            {
+                var chest = chests.FirstOrDefault(c => c.Inventory.ContainsKey(guid));
+                if (chest == null)
+                    return false;   // not in this place's chests: try the next
+
+                string error = null;
+                MarketItemInfo info = null;
+
+                if (chest.IsOpen)
+                    error = "Someone has that house chest open. Close it and try again.";
+                else
+                {
+                    var item = chest.Inventory[guid];
+
+                    if (!IsChestOnly(item.WeenieClassId))
+                        error = "Only Darkbeat, Hera and Shimmering Skeleton keys can be listed from a house chest. Other items are listed from your mule.";
+                    else if ((item.GetProperty(PropertyInt.Attuned) ?? 0) == 1)
+                        error = "Attuned items can't be sold.";
+                    else
+                    {
+                        info = BuildItemInfo(item);
+
+                        if (!chest.TryRemoveFromInventory(guid, out var removed) || removed == null)
+                        {
+                            info = null;
+                            error = "That key couldn't be taken out of your house chest.";
+                        }
+                        else
+                        {
+                            removed.ContainerId = StorageContainerId;
+                            removed.PlacementPosition = 0;
+                            removed.SaveBiotaToDatabase();
+                            chest.SaveBiotaToDatabase();
+                        }
+                    }
+                }
+
+                DatabaseManager.Shard.MarketEnqueue(() => done(info, error)); // after the saves it queued
+                return true;
+            },
+            error => DatabaseManager.Shard.MarketEnqueue(() => done(null, error ?? "That key isn't in your house chest.")));
+        }
+
+        /// <summary>Moves a key from market storage into the first of the account's house chests with room. Answers true, or false with the reason.</summary>
+        private static void GiveToChest(uint accountId, uint itemGuid, Action<bool, string> done)
+        {
+            DatabaseManager.Shard.MarketEnqueue(() =>
+            {
+                ACE.Database.Models.Shard.Biota biota;
+
+                try
+                {
+                    var containerId = Db.MarketGetItemContainer(itemGuid);
+                    if (containerId != StorageContainerId)
+                    {
+                        log.Error($"[MARKET] Item 0x{itemGuid:X8} should be in market storage but is in 0x{containerId ?? 0:X8}.");
+                        done(false, "That item isn't in market storage.");
+                        return;
+                    }
+
+                    biota = Db.GetBiota(itemGuid);
+                }
+                catch (Exception ex)
+                {
+                    log.Error($"[MARKET] Loading 0x{itemGuid:X8} for a house chest failed: {ex}");
+                    done(false, "Something went wrong.");
+                    return;
+                }
+
+                if (biota == null)
+                {
+                    done(false, "That item couldn't be loaded.");
+                    return;
+                }
+
+                var full = false;
+
+                WithHouseChests(accountId, chests =>
+                {
+                    var chest = chests.FirstOrDefault(c => !c.IsOpen && c.GetFreeInventorySlots() > 0);
+                    if (chest == null)
+                    {
+                        full |= chests.Any(c => !c.IsOpen);
+                        return false;   // this place has no room: try the next
+                    }
+
+                    var item = WorldObjectFactory.CreateWorldObject(biota);
+                    if (item == null || !chest.TryAddToInventory(item))
+                    {
+                        DatabaseManager.Shard.MarketEnqueue(() => done(false, "That key couldn't be put in your house chest."));
+                        return true;
+                    }
+
+                    item.SaveBiotaToDatabase();
+                    chest.SaveBiotaToDatabase();
+
+                    DatabaseManager.Shard.MarketEnqueue(() => done(true, null)); // after the saves it queued
+                    return true;
+                },
+                error => DatabaseManager.Shard.MarketEnqueue(() => done(false, full ? "Your house chest is full." : error ?? "Your house chest is open or full.")));
+            });
+        }
+
+        /// <summary>Tries again to deliver keys waiting in market storage (owed to a buyer, or going back to the seller).</summary>
+        private static void RunDeliveries(List<ulong> ids, int index)
+        {
+            if (index >= ids.Count)
+            {
+                Stop();
+                return;
+            }
+
+            void next() => WorldManager.EnqueueAction(new ActionEventDelegate(() => RunDeliveries(ids, index + 1)));
+
+            try
+            {
+                RetryDelivery(ids[index], next);
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[MARKET] Delivering listing {ids[index]} failed: {ex}");
+                next();
+            }
+        }
+
+        private static void RetryDelivery(ulong listingId, Action next)
+        {
+            DatabaseManager.Shard.MarketEnqueue(() =>
+            {
+                var listing = Db.MarketClaimListing(listingId, new[] { "owed", "returning" }, null, null, out var previous);
+
+                if (listing == null)
+                {
+                    next();
+                    return;
+                }
+
+                var owed = previous == "owed";
+                var to = owed ? listing.BuyerAccountId : listing.SellerAccountId;
+
+                if (!to.HasValue)
+                {
+                    log.Error($"[MARKET] Listing {listing.Id} ({listing.Name}) is '{previous}' with no one to deliver it to. Check it by hand.");
+                    Db.MarketSetDeliveryPending(listing.Id, previous, null, null, null, null, DateTime.UtcNow.AddHours(1));
+                    next();
+                    return;
+                }
+
+                GiveBack(to.Value, listing.Wcid, listing.ItemGuid, (ok, error) => DatabaseManager.Shard.MarketEnqueue(() =>
+                {
+                    if (!ok)
+                    {
+                        Db.MarketSetDeliveryPending(listing.Id, previous, null, null, null, null, DateTime.UtcNow.AddMinutes(2));
+                        next();
+                        return;
+                    }
+
+                    if (owed)
+                    {
+                        Db.MarketFinishDelivery(listing.Id, "sold");
+                        log.Info($"[MARKET] Listing {listing.Id}: {listing.Name} delivered to {listing.BuyerName}'s house chest (account {to.Value}).");
+                        Notify(to.Value, $"{listing.Name} you bought is in your house chest now.");
+                    }
+                    else
+                    {
+                        Db.MarketFinishDelivery(listing.Id, "returned");
+                        log.Info($"[MARKET] Listing {listing.Id}: {listing.Name} went back to {listing.SellerName}'s house chest (account {to.Value}).");
+                        Notify(to.Value, $"{listing.Name} is back in your house chest.");
+                    }
+
                     next();
                 }));
             });
@@ -927,6 +1319,8 @@ namespace ACE.Server.Managers
                 return "You can't sell your mule gem.";
             if ((item.GetProperty(PropertyInt.Attuned) ?? 0) == 1)
                 return "Attuned items can't be sold.";
+            if (IsChestOnly(item.WeenieClassId))
+                return "Keys can only be listed from your house chest.";
             return null;
         }
 

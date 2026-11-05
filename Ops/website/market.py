@@ -5,7 +5,7 @@ The site never moves items or money: every action is a row in ace_shard.market_r
 (MarketManager) within a few seconds; the result shows on /market/mine. Listings run 30 days, then wait (hidden) for the
 seller to relist or cancel. Sign-in is the wiki login (one login per game account).
 
-Pages: /market (search and filters), /market/item/ID, /market/mine (your mule, listings, history),
+Pages: /market (search and filters), /market/item/ID, /market/mine (your mule, house chest keys, listings, history),
 /market/icon/ID.png (icons the game server exported from portal.dat).
 Database access (see market-setup.sh): read market_listing, market_request, market_icon and the ace_web.market_mule_item
 view (mule contents, no other item data); insert into market_request. Nothing else.
@@ -159,6 +159,19 @@ def _account(user):
     """The game account behind a wiki login."""
     row = wiki._q("SELECT account_id FROM wiki_user WHERE id = %s", (user["id"],), one=True)
     return row[0] if row else None
+
+
+# Darkbeat, Hera and Shimmering Skeleton keys: can't go in the mule, so they're listed from (and go back to) a house storage chest
+KEY_WCIDS = (480608, 490364, 30258)
+
+
+def _chest_keys(account_id):
+    """Keys in the account's house storage chests (same columns as _mule_items). Empty until market-setup.sh has made the view."""
+    cols = "item_Guid, name, material, stack_Size, item_Type, icon_Id, icon_Overlay_Id, icon_Overlay2_Id, icon_Underlay_Id, ui_Effects, attuned, bonded, details"
+    try:
+        return _q(f"SELECT {cols} FROM {VIEW_DB}.market_chest_key WHERE account_Id = %s ORDER BY name LIMIT 500", (account_id,))
+    except Exception:
+        return []
 
 
 def _mule_items(account_id):
@@ -507,7 +520,7 @@ def item_page(h, user, lid, query=None):
     account = _account(user) if user else None
     buy = ""
     if not on_sale:
-        ended = ("sold" if status == "sold" else "won, waiting for delivery" if status == "won" else
+        ended = ("sold" if status in ("sold", "owed") else "won, waiting for delivery" if status == "won" else
                  "the auction ended" if r["auction"] else "taken off the market")
         buy = f'<p class="note">This item is no longer for sale ({e(ended)}).</p>'
     elif not user:
@@ -589,7 +602,7 @@ def mine(h, user, query):
         notices += '<p class="help">This page refreshes by itself until the game server has finished.</p>'
 
     mine_rows = [(_prepare(r[:LISTING_WIDTH]), r[LISTING_WIDTH]) for r in _q(
-        f"SELECT {LISTING_COLUMNS}, status FROM market_listing WHERE seller_Account_Id = %s AND status IN ('active', 'expired', 'busy', 'won') ORDER BY id DESC",
+        f"SELECT {LISTING_COLUMNS}, status FROM market_listing WHERE seller_Account_Id = %s AND status IN ('active', 'expired', 'busy', 'won', 'owed', 'returning') ORDER BY id DESC",
         (account,))]
     now = datetime.utcnow()
     lrows = []
@@ -597,11 +610,16 @@ def mine(h, user, query):
         live = status == "active" and r["expires"] > now
         stack = f' x{r["stack"]:,}' if r["stack"] > 1 else ""
         link = f'<a href="/market/item/{r["id"]}">{e(r["name"])}</a>'
-        back = _post_button(user, "/market/cancel", {"listing": r["id"]}, "Back to mule", f'Take {r["name"]} off the market and put it back in your mule?', quiet=True)
-        if r["auction"]:
+        home = "house chest" if r["wcid"] in KEY_WCIDS else "mule"
+        back = _post_button(user, "/market/cancel", {"listing": r["id"]}, f"Back to {home}", f'Take {r["name"]} off the market and put it back in your {home}?', quiet=True)
+        if status == "returning":
+            state, actions = "Off the market, waiting for room in your house chest", ""
+        elif status == "owed":
+            state, actions = "Sold, waiting for room in the buyer's house chest", ""
+        elif r["auction"]:
             days = max(1, (r["hours"] or 24) // 24)
             if status == "won":
-                state, actions = f'Won by {r["high_name"]}, waiting for room in their mule', ""
+                state, actions = f'Won by {e(r["high_name"])}, waiting for room in their {home}', ""
             elif live and r["bids"]:
                 state, actions = f'Auction: high bid {r["high"]:,} by {e(r["high_name"])}', ""
             elif live:
@@ -621,12 +639,13 @@ def mine(h, user, query):
                      f'{_hover(link, id_panel(r))}'
                      f'{stack}</td>'
                      f'<td>{auction_html(r) if r["auction"] else price_html(r["mmd"], r["trophies"])}</td>'
-                     f'<td class="wrapcell {"" if live else "x"}">{state if r["auction"] and live else e(state)}</td><td>{actions}</td></tr>')
+                     f'<td class="wrapcell {"" if live else "x"}">{state if r["auction"] and (live or status == "won") else e(state)}</td><td>{actions}</td></tr>')
     listings = (f'<div class="wrap"><table><tr><th></th><th>Item</th><th>Price</th><th>Status</th><th></th></tr>{"".join(lrows)}</table></div>'
                 if lrows else '<p class="empty">You have nothing on the market.</p>')
 
-    mule = []
-    for guid, name, material, stack, itype, icon, ov, ov2, under, ui, attuned, bonded, details in _mule_items(account):
+    def sell_rows(items, where):
+      rows = []
+      for guid, name, material, stack, itype, icon, ov, ov2, under, ui, attuned, bonded, details in items:
         full = f"{pretty(material)} {name}" if material and material not in ("Unknown",) and pretty(material) not in name else name
         if attuned == 1:
             action = '<span class="muted">Attuned: can\'t be sold</span>'
@@ -642,36 +661,49 @@ def mine(h, user, query):
                       f'<input name="bin" inputmode="numeric" placeholder="Buy It Now (opt.)" aria-label="Buy It Now price (optional)">'
                       f'<select name="days" aria-label="Length">{DAY_OPTIONS}</select>'
                       f'<button class="btn quiet">Start auction</button></form></details>')
-        mule.append(f'<tr data-n="{e(full.lower())}"><td>{icon_html((under, icon, ov, ov2), ui or 0)}</td>'
-                    f'<td class=wrapcell>{_hover(e(full), id_panel_for(full, stack, _details(details), "In your mule"))}'
+        rows.append(f'<tr data-n="{e(full.lower())}"><td>{icon_html((under, icon, ov, ov2), ui or 0)}</td>'
+                    f'<td class=wrapcell>{_hover(e(full), id_panel_for(full, stack, _details(details), where))}'
                     f'{f" x{stack:,}" if stack and stack > 1 else ""}</td><td>{action}</td></tr>')
+      return rows
+
+    mule = sell_rows(_mule_items(account), "In your mule")
+    chest = sell_rows(_chest_keys(account), "In your house chest")
+    chest_html = (f'<h2>Keys in your house chest</h2><p class="help">Darkbeat, Hera and Shimmering Skeleton keys can\'t go in your mule, so they\'re '
+                  f'listed straight from your house storage chest. While listed they wait in the market; taken back or bought, they go into a house '
+                  f'chest (the buyer\'s, if sold). If that chest is full they wait in the market until there\'s room.</p>'
+                  f'<div class="wrap"><table><tr><th></th><th>Item</th><th>Sell for (one or both)</th></tr>{"".join(chest)}</table></div>') if chest else ""
     mule_html = ((f'<input class="mfind" placeholder="Filter your mule" aria-label="Filter your mule" oninput="'
                   "const t=this.value.toLowerCase();document.querySelectorAll('#mule tr[data-n]').forEach(r=>r.hidden=!r.dataset.n.includes(t))\">"
                   f'<div class="wrap"><table id="mule"><tr><th></th><th>Item</th><th>Sell for (one or both)</th></tr>{"".join(mule)}</table></div>')
                  if mule else '<p class="empty">Your mule is empty (or you have never summoned it).</p>')
 
-    bidding = _q("SELECT l.id, l.name, l.stack_Size, l.auction_Currency, l.high_Bid, l.high_Bidder_Account_Id = %s, l.expires_At, l.status, MAX(b.amount) "
+    bidding = _q("SELECT l.id, l.name, l.stack_Size, l.auction_Currency, l.high_Bid, l.high_Bidder_Account_Id = %s, l.expires_At, l.status, MAX(b.amount), l.wcid "
                  "FROM market_bid b JOIN market_listing l ON l.id = b.listing_Id WHERE b.account_Id = %s AND l.status IN ('active', 'busy', 'won') "
                  "GROUP BY l.id ORDER BY l.expires_At", (account, account))
     brows = []
-    for lid, name, stack, cur, high, winning, ends, status, mine_max in bidding:
+    for lid, name, stack, cur, high, winning, ends, status, mine_max, wcid in bidding:
         if status == "won":
-            where = "You won! It goes to your mule as soon as there's room." if winning else "Ended."
+            where = f"You won! It goes to your {'house chest' if wcid in KEY_WCIDS else 'mule'} as soon as there's room." if winning else "Ended."
         elif winning:
             where = f'You\'re the highest bidder at {high:,} {unit(cur, high)} · ends in {ends_html(ends)}'
         else:
             where = f'Outbid: high bid {high:,} {unit(cur, high)} (yours was {mine_max:,}) · ends in {ends_html(ends)}'
         brows.append(f'<li><span><a href="/market/item/{lid}">{e(name)}</a>{f" x{stack:,}" if stack > 1 else ""}</span>'
                      f'<span class="{"" if winning else "x"}">{where}</span></li>')
+    owed = _q("SELECT id, name, stack_Size FROM market_listing WHERE buyer_Account_Id = %s AND status = 'owed' ORDER BY id", (account,))
+    if owed:
+        notices += ('<h2>Waiting for room in your house chest</h2><ul class="feed">' + "".join(
+            f'<li><span><a href="/market/item/{lid}">{e(name)}</a>{f" x{stack:,}" if stack > 1 else ""}</span>'
+            f'<span class="muted">bought, goes in as soon as a house chest has room</span></li>' for lid, name, stack in owed) + '</ul>')
     bids_html = f'<h2>Your bids</h2><ul class="feed mbids">{"".join(brows)}</ul>' if brows else ""
 
-    history = _q("SELECT id, name, stack_Size, status, paid_Currency, paid_Amount, closed_At, buyer_Account_Id = %s AS bought, buyer_Name, seller_Name, details "
+    history = _q("SELECT id, name, stack_Size, status, paid_Currency, paid_Amount, closed_At, buyer_Account_Id = %s AS bought, buyer_Name, seller_Name, details, wcid "
                  "FROM market_listing WHERE (seller_Account_Id = %s OR buyer_Account_Id = %s) AND status IN ('sold', 'returned') ORDER BY closed_At DESC LIMIT 30",
                  (account, account, account))
     hrows = []
-    for lid, name, stack, status, cur, amount, closed, bought, buyer, seller, details in history:
+    for lid, name, stack, status, cur, amount, closed, bought, buyer, seller, details, wcid in history:
         paid = (f"{amount // PYREALS_PER_MMD:,} MMDs" if cur == "pyreals" else f"{amount:,} PK Trophies") if amount else ""
-        what = (f"Bought from {seller} for {paid}" if bought else f"Sold to {buyer} for {paid}") if status == "sold" else "Taken back to your mule"
+        what = (f"Bought from {seller} for {paid}" if bought else f"Sold to {buyer} for {paid}") if status == "sold" else f"Taken back to your {'house chest' if wcid in KEY_WCIDS else 'mule'}"
         link = _hover(f'<a href="/market/item/{lid}">{e(name)}</a>', id_panel_for(name, stack, _details(details)))
         hrows.append(f'<li><span>{link}{f" x{stack:,}" if stack > 1 else ""}: {e(what)}</span>'
                      f'<span class="muted">{wiki._ago(closed) if closed else ""}</span></li>')
@@ -682,7 +714,7 @@ def mine(h, user, query):
     _page(h, "My market", f'<h1>My market</h1>{sent}{err}{notices}{bids_html}<h2>Your listings</h2>{listings}'
                           f'<h2>Your mule</h2><p class="help">Pick a price in MMDs, PK Trophies, or both (the buyer picks). Listings last {LISTING_DAYS} days, '
                           f'then wait here for you to relist or take back. Or auction it for 1 to 14 days with an optional Buy It Now price. No fees. Items appear here as they are in your mule; '
-                          f'summon your mule in game once if pictures are missing.</p>{mule_html}'
+                          f'summon your mule in game once if pictures are missing.</p>{mule_html}{chest_html}'
                           f'<h2>History</h2>{hist}{FLIP}', user, refresh=4 if waiting else None)
 
 
@@ -698,6 +730,14 @@ def _num(f, key, limit):
     if n > limit:
         raise ValueError
     return n
+
+
+def _chest_key(account, item):
+    """(attuned, bonded) of a key in the account's house chest, or None"""
+    try:
+        return _q(f"SELECT attuned, bonded FROM {VIEW_DB}.market_chest_key WHERE account_Id = %s AND item_Guid = %s", (account, item), one=True)
+    except Exception:
+        return None
 
 
 def act(h, user, kind):
@@ -735,9 +775,9 @@ def act(h, user, kind):
             return fail("Set a starting bid.")
         if bin_ and bin_ <= start:
             return fail("Buy It Now has to be higher than the starting bid.")
-        owned = _q(f"SELECT attuned FROM {VIEW_DB}.market_mule_item WHERE account_Id = %s AND item_Guid = %s", (account, int(item)), one=True)
+        owned = _q(f"SELECT attuned FROM {VIEW_DB}.market_mule_item WHERE account_Id = %s AND item_Guid = %s", (account, int(item)), one=True) or _chest_key(account, int(item))
         if not owned:
-            return fail("That item isn't in your mule.")
+            return fail("That item isn't in your mule or house chest.")
         if owned[0] == 1:
             return fail("Attuned items can't be sold.")
         _x("INSERT INTO market_request (created_At, account_Id, character_Name, kind, item_Guid, auction_Currency, start_Bid, buy_Now, auction_Hours) "
@@ -752,9 +792,9 @@ def act(h, user, kind):
             return fail(f"Prices are whole numbers, up to {MAX_MMD:,} MMDs or {MAX_TROPHIES:,} PK Trophies.")
         if not mmd and not trophies:
             return fail("Set a price in MMDs, PK Trophies, or both.")
-        owned = _q(f"SELECT attuned, bonded FROM {VIEW_DB}.market_mule_item WHERE account_Id = %s AND item_Guid = %s", (account, int(item)), one=True)
+        owned = _q(f"SELECT attuned, bonded FROM {VIEW_DB}.market_mule_item WHERE account_Id = %s AND item_Guid = %s", (account, int(item)), one=True) or _chest_key(account, int(item))
         if not owned:
-            return fail("That item isn't in your mule.")
+            return fail("That item isn't in your mule or house chest.")
         if owned[0] == 1:
             return fail("Attuned items can't be sold.")
         _x("INSERT INTO market_request (created_At, account_Id, character_Name, kind, item_Guid, price_Mmd, price_Trophies) "

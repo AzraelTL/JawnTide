@@ -3,6 +3,7 @@
 # (that creates the ace_shard market tables). Runs as root inside ace-db and gives the website (web) only what /market needs:
 #   read  ace_shard.market_listing, market_icon, market_request, market_bid; add rows to market_request (the game server does the rest)
 #   read  ace_web.market_mule_item: a view of mule contents (name, stack, icons, attuned/bonded, details) and nothing else about items
+#   read  ace_web.market_chest_key: the same for Darkbeat/Hera/Shimmering Skeleton keys in house storage chests
 # Grants go to every host entry web already has. Prints the grants it made.
 set -euo pipefail
 cd ~/jawntide-server
@@ -57,12 +58,47 @@ LEFT JOIN (SELECT b.object_Id, CASE b.value
               WHEN 67 THEN 'Granite' WHEN 68 THEN 'Marble' WHEN 69 THEN 'Obsidian' WHEN 70 THEN 'Sandstone' WHEN 71 THEN 'Serpentine' WHEN 73 THEN 'Ebony'
               WHEN 74 THEN 'Mahogany' WHEN 75 THEN 'Oak' WHEN 76 THEN 'Pine' WHEN 77 THEN 'Teak' END AS value
            FROM ace_shard.biota_properties_int b WHERE b.type = 131) mt ON mt.object_Id = i.object_Id;
+-- JawnTide: Darkbeat, Hera and Shimmering Skeleton keys can't go in the mule; they're listed from a house storage chest instead.
+-- The chest's owner (HouseOwner, a character) gives the account. The game server checks the house again when it takes the key.
+CREATE OR REPLACE SQL SECURITY DEFINER VIEW ace_web.market_chest_key AS
+SELECT ch.account_Id,
+       b.id                               AS item_Guid,
+       nm.value                           AS name,
+       NULL                               AS material,
+       IFNULL(st.value, 1)                AS stack_Size,
+       IFNULL(it.value, 0)                AS item_Type,
+       IFNULL(ic.value, 0)                AS icon_Id,
+       IFNULL(o1.value, 0)                AS icon_Overlay_Id,
+       IFNULL(o2.value, 0)                AS icon_Overlay2_Id,
+       IFNULL(ul.value, 0)                AS icon_Underlay_Id,
+       IFNULL(ui.value, 0)                AS ui_Effects,
+       IFNULL(at.value, 0)                AS attuned,
+       IFNULL(bo.value, 0)                AS bonded,
+       dt.details                         AS details
+FROM ace_shard.biota b
+JOIN ace_shard.biota_properties_i_i_d i       ON i.object_Id = b.id AND i.type = 2
+JOIN ace_shard.biota chest                    ON chest.id = i.value AND chest.weenie_Type = 57
+JOIN ace_shard.biota_properties_i_i_d ho      ON ho.object_Id = chest.id AND ho.type = 32
+JOIN ace_shard.`character` ch                 ON ch.id = ho.value AND ch.is_Deleted = 0
+JOIN ace_shard.biota_properties_string nm     ON nm.object_Id = b.id AND nm.type = 1
+LEFT JOIN ace_shard.biota_properties_int st   ON st.object_Id = b.id AND st.type = 12
+LEFT JOIN ace_shard.biota_properties_int it   ON it.object_Id = b.id AND it.type = 1
+LEFT JOIN ace_shard.biota_properties_int ui   ON ui.object_Id = b.id AND ui.type = 18
+LEFT JOIN ace_shard.biota_properties_int at   ON at.object_Id = b.id AND at.type = 114
+LEFT JOIN ace_shard.biota_properties_int bo   ON bo.object_Id = b.id AND bo.type = 33
+LEFT JOIN ace_shard.biota_properties_d_i_d ic ON ic.object_Id = b.id AND ic.type = 8
+LEFT JOIN ace_shard.biota_properties_d_i_d o1 ON o1.object_Id = b.id AND o1.type = 50
+LEFT JOIN ace_shard.biota_properties_d_i_d o2 ON o2.object_Id = b.id AND o2.type = 51
+LEFT JOIN ace_shard.biota_properties_d_i_d ul ON ul.object_Id = b.id AND ul.type = 52
+LEFT JOIN ace_shard.market_item_detail dt    ON dt.item_Guid = b.id
+WHERE b.weenie_Class_Id IN (480608, 490364, 30258);
 SQL
 docker compose exec -T ace-db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -N -e "
   SELECT CONCAT(\"GRANT SELECT ON ace_shard.market_listing TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
   UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_shard.market_icon TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
   UNION ALL SELECT CONCAT(\"GRANT SELECT, INSERT ON ace_shard.market_request TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
   UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_shard.market_bid TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
-  UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_web.market_mule_item TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"" > /tmp/market-grants.sql
+  UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_web.market_mule_item TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
+  UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_web.market_chest_key TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"" > /tmp/market-grants.sql
   cat /tmp/market-grants.sql; mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" < /tmp/market-grants.sql; rm -f /tmp/market-grants.sql'
 echo "marketplace ready for the website"

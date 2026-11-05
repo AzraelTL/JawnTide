@@ -63,6 +63,10 @@ namespace ACE.Database
         public string HighBidderName;
         public int BidCount;
 
+        // JawnTide: who a sold key is owed to (status 'owed')
+        public uint? BuyerAccountId;
+        public string BuyerName;
+
         public bool IsAuction => Kind == "auction";
     }
 
@@ -238,7 +242,7 @@ namespace ACE.Database
                 using var context = new ShardDbContext();
                 var conn = MarketOpen(context);
                 using var cmd = BankCommand(conn, null,
-                    "SELECT COUNT(*) FROM market_listing WHERE item_Guid = @g AND status IN ('active', 'expired', 'busy', 'won');", ("@g", itemGuid));
+                    "SELECT COUNT(*) FROM market_listing WHERE item_Guid = @g AND status IN ('active', 'expired', 'busy', 'won', 'owed', 'returning');", ("@g", itemGuid));
                 return Convert.ToInt64(cmd.ExecuteScalar()) > 0;
             }
             catch (Exception ex)
@@ -320,7 +324,8 @@ namespace ACE.Database
 
         private const string ListingColumns =
             @"id, seller_Account_Id, seller_Name, item_Guid, wcid, name, stack_Size, price_Mmd, price_Trophies, status, expires_At,
-              kind, auction_Currency, auction_Hours, start_Bid, buy_Now, high_Bid, high_Bidder_Account_Id, high_Bidder_Name, bid_Count";
+              kind, auction_Currency, auction_Hours, start_Bid, buy_Now, high_Bid, high_Bidder_Account_Id, high_Bidder_Name, bid_Count,
+              buyer_Account_Id, buyer_Name";
 
         /// <summary>Reads one listing and locks its row until the transaction ends (null if there is no such listing).</summary>
         private static MarketListing ReadListingForUpdate(DbConnection conn, DbTransaction tx, ulong listingId)
@@ -353,6 +358,8 @@ namespace ACE.Database
                 HighBidderAccountId = ReadUIntOrNull(r, 17),
                 HighBidderName = ReadStringOrNull(r, 18),
                 BidCount = Convert.ToInt32(r.GetValue(19)),
+                BuyerAccountId = ReadUIntOrNull(r, 20),
+                BuyerName = ReadStringOrNull(r, 21),
             };
         }
 
@@ -432,6 +439,71 @@ namespace ACE.Database
             {
                 log.Error($"[MARKET] MarketSetListingStatus failed for listing {listingId} ({status}): {ex}");
             }
+        }
+
+        /// <summary>
+        /// JawnTide: a key that couldn't go into a house chest yet waits in market storage.
+        /// 'owed' = sold, waiting for the buyer's chest; 'returning' = taken off the market, waiting for the seller's chest.
+        /// expires_At is when to try again.
+        /// </summary>
+        public void MarketSetDeliveryPending(ulong listingId, string status, uint? buyerAccountId, string buyerName, string paidCurrency, long? paidAmount, DateTime retryAt)
+        {
+            try
+            {
+                using var context = new ShardDbContext();
+                var conn = MarketOpen(context);
+                using var cmd = BankCommand(conn, null,
+                    @"UPDATE market_listing SET status = @s, expires_At = @e, buyer_Account_Id = IFNULL(@ba, buyer_Account_Id), buyer_Name = IFNULL(@bn, buyer_Name),
+                             paid_Currency = IFNULL(@pc, paid_Currency), paid_Amount = IFNULL(@pa, paid_Amount)
+                      WHERE id = @id;",
+                    ("@s", status), ("@e", retryAt), ("@ba", DbValue(buyerAccountId)), ("@bn", (object)Truncate(buyerName, 64) ?? DBNull.Value),
+                    ("@pc", (object)paidCurrency ?? DBNull.Value), ("@pa", DbValue(paidAmount)), ("@id", listingId));
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[MARKET] MarketSetDeliveryPending failed for listing {listingId} ({status}): {ex}");
+            }
+        }
+
+        /// <summary>JawnTide: a waiting key was delivered: closes the listing (keeps the buyer and price already on it)</summary>
+        public void MarketFinishDelivery(ulong listingId, string status)
+        {
+            try
+            {
+                using var context = new ShardDbContext();
+                var conn = MarketOpen(context);
+                using var cmd = BankCommand(conn, null, "UPDATE market_listing SET status = @s, closed_At = @t WHERE id = @id;", ("@s", status), ("@t", DateTime.UtcNow), ("@id", listingId));
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[MARKET] MarketFinishDelivery failed for listing {listingId} ({status}): {ex}");
+            }
+        }
+
+        /// <summary>JawnTide: keys waiting for room in a house chest whose next try is due</summary>
+        public List<ulong> MarketDueDeliveries(int max)
+        {
+            var ids = new List<ulong>();
+
+            try
+            {
+                using var context = new ShardDbContext();
+                var conn = MarketOpen(context);
+                using var cmd = BankCommand(conn, null,
+                    @"SELECT id FROM market_listing WHERE status IN ('owed', 'returning') AND expires_At <= @t ORDER BY expires_At LIMIT @n;",
+                    ("@t", DateTime.UtcNow), ("@n", max));
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    ids.Add(Convert.ToUInt64(r.GetValue(0)));
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[MARKET] MarketDueDeliveries failed: {ex}");
+            }
+
+            return ids;
         }
 
         /// <summary>A won auction whose item couldn't be delivered yet: waits as 'won' and is tried again after retryAt.</summary>
