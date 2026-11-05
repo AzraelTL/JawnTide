@@ -53,7 +53,7 @@ namespace ACE.Server.WorldObjects
             var allegiance = AllegianceManager.GetAllegiance(this);
 
             // check if the player's allegiance already has the maximum number of players in this area
-            var sameAllegCount = CountPlayersInAreaWithAllegiance(area, allegiance.MonarchId.Value);
+            var sameAllegCount = CountPlayersInAreaWithAllegiance(area, allegiance.MonarchId.Value, newPosition.Variation);
 
             if (sameAllegCount >= area.MaxPlayersPerAllegiance)
                 return new ZergEntryResult { Status = ZergEntryStatus.SameAllegianceLimitReached };
@@ -106,13 +106,18 @@ namespace ACE.Server.WorldObjects
             return new ZergEntryResult { Status = ZergEntryStatus.TcAllowed };
         }
 
-        private int CountPlayersInAreaWithAllegiance(ZergControlArea area, uint monarchId)
+        private int CountPlayersInAreaWithAllegiance(ZergControlArea area, uint monarchId, int? variation)
         {
             var players = new HashSet<Player>();
 
             foreach (var landblockId in area.AreaLandblockIds)
             {
-                var landblock = LandblockManager.GetLandblock(new LandblockId(landblockId << 16), false);
+                // JawnTide instancing: count the copy being entered, without loading anything
+                var id = new LandblockId(landblockId << 16);
+                if (!LandblockManager.IsLoaded(id, variation))
+                    continue;
+
+                var landblock = LandblockManager.GetLandblock(id, variation, false);
                 foreach (var p in landblock.GetCurrentLandblockPlayers())
                 {
                     var alleg = AllegianceManager.GetAllegiance(p);

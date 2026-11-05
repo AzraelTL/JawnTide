@@ -27,6 +27,8 @@ namespace ACE.Server.Managers
         /// </summary>
         public const int ArenaContent = 1;
 
+        // 2 = Town Control conflict areas (TownControlInstances.Content)
+
         /// <summary>
         /// Dynamically created copies start at this id. Ids below it are fixed content variations.
         /// </summary>

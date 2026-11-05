@@ -39,6 +39,11 @@ namespace ACE.Server.Entity
 
         public bool IsDungeon { get; private set; }
 
+        /// <summary>
+        /// JawnTide instancing: the copy of the world this group's landblocks are in (null = normal world). Groups never mix copies.
+        /// </summary>
+        public int? VariationId { get; private set; }
+
         public static readonly TimeSpan TrySplitInterval = Landblock.UnloadInterval;
 
         public DateTime NextTrySplitTime { get; private set; } = DateTime.UtcNow.Add(TrySplitInterval);
@@ -97,6 +102,12 @@ namespace ACE.Server.Entity
                     log.Error($"[LANDBLOCK GROUP] You cannot add a dungeon landblock ({landblock.Id}) to an existing LandblockGroup");
                     return false;
                 }
+
+                if (landblock.VariationId != VariationId)
+                {
+                    log.Error($"[LANDBLOCK GROUP] You cannot add landblock {landblock.Id} (variation {landblock.VariationId}) to a LandblockGroup of variation {VariationId}");
+                    return false;
+                }
             }
 
             if (landblocks.Add(landblock))
@@ -104,7 +115,10 @@ namespace ACE.Server.Entity
                 landblock.CurrentLandblockGroup = this;
 
                 if (landblocks.Count == 1)
+                {
                     IsDungeon = landblock.IsDungeon;
+                    VariationId = landblock.VariationId;
+                }
 
                 if (landblock.Id.LandblockX < XMin) XMin = landblock.Id.LandblockX;
                 if (landblock.Id.LandblockX > XMax) XMax = landblock.Id.LandblockX;
@@ -269,6 +283,10 @@ namespace ACE.Server.Entity
 
         public bool ShouldBeAddedToThisLandblockGroup(Landblock landblock)
         {
+            // JawnTide instancing: never mix copies of the world
+            if (landblock.VariationId != VariationId)
+                return false;
+
             foreach (var value in landblocks)
             {
                 var distance = Math.Max(

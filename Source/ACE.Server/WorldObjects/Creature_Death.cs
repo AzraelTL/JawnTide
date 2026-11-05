@@ -1134,7 +1134,11 @@ namespace ACE.Server.WorldObjects
                         var attackerList = new List<Player>();
                         foreach (var landblockId in landblockList)
                         {
-                            var landblock = LandblockManager.GetLandblock(new LandblockId(landblockId << 16), false);
+                            // JawnTide instancing: the players in this event's copy of the conflict area
+                            var rewardLandblockId = new LandblockId(landblockId << 16);
+                            if (!LandblockManager.IsLoaded(rewardLandblockId, this.Location.Variation))
+                                continue;
+                            var landblock = LandblockManager.GetLandblock(rewardLandblockId, this.Location.Variation, false);
                             var players = landblock.GetCurrentLandblockPlayers();
                             foreach (var player in players)
                             {
@@ -1233,7 +1237,11 @@ namespace ACE.Server.WorldObjects
                         var defenderList = new List<Player>();
                         foreach (var landblockId in landblockList)
                         {
-                            var landblock = LandblockManager.GetLandblock(new LandblockId(landblockId << 16), false);
+                            // JawnTide instancing: the players in this event's copy of the conflict area
+                            var rewardLandblockId = new LandblockId(landblockId << 16);
+                            if (!LandblockManager.IsLoaded(rewardLandblockId, this.Location.Variation))
+                                continue;
+                            var landblock = LandblockManager.GetLandblock(rewardLandblockId, this.Location.Variation, false);
                             var players = landblock.GetCurrentLandblockPlayers();
                             foreach (var player in players)
                             {

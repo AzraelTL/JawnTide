@@ -481,6 +481,16 @@ namespace ACE.Server.Managers
                     log.Error($"Exception executing ArenaManager Tick. ex: {ex}");
                 }
 
+                //JawnTide instancing: keep running Town Control events' conflict area copies loaded
+                try
+                {
+                    ACE.Server.Entity.TownControl.TownControlInstances.Tick();
+                }
+                catch (Exception ex)
+                {
+                    log.Error($"Exception executing TownControlInstances Tick. ex: {ex}");
+                }
+
                 ////World Boss logic
                 try
                 {

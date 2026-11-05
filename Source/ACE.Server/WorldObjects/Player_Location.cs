@@ -9,6 +9,7 @@ using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
+using ACE.Server.Entity.TownControl;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network;
@@ -734,6 +735,15 @@ namespace ACE.Server.WorldObjects
             if (!newPosition.ExplicitVariation && !newPosition.Variation.HasValue && Location != null && Location.Variation.HasValue && newPosition.Landblock == Location.Landblock)
                 newPosition.Variation = Location.Variation;
 
+            // JawnTide instancing: during a Town Control event, the conflict area behind the crystal portals is the event's private copy
+            if (!newPosition.ExplicitVariation && TownControlInstances.IsConflictLandblock(newPosition.Landblock))
+            {
+                if (Location?.Variation != null && TownControlInstances.IsTownControlVariation(Location.Variation.Value))
+                    newPosition.Variation = Location.Variation;     // moving around inside the event's copy
+                else
+                    newPosition.Variation = TownControlInstances.GetActiveVariationForLandblock(newPosition.Landblock);
+            }
+
             if (InInstance != newPosition.Variation.HasValue)
                 InInstance = newPosition.Variation.HasValue;
 
@@ -847,6 +857,11 @@ namespace ACE.Server.WorldObjects
                 return false;
 
             area = ZergControlLandblocks.GetLandblockZergControlArea(newPosition.Landblock);
+
+            // JawnTide instancing: a Town Control conflict area is only restricted inside a running event's copy;
+            // the normal world copy is ordinary content
+            if (area != null && area.IsTownControlArea && !TownControlInstances.IsInActiveConflictArea(newPosition))
+                area = null;
 
             return area != null;
         }
@@ -1123,11 +1138,8 @@ namespace ACE.Server.WorldObjects
             0x5963,     // Gauntlet Arena Two (Eldritch Web)
             0x5964,     // Gauntlet Arena One (Radiant Blood)
             0x5965,     // Gauntlet Arena Two (Radiant Blood)
-            0x00AB,     //Town Control Conflict Area - Yaraq
-            0x4FF1,     //Town Control Conflict Area - Holt
-            0xE9F0,     //Town Control Conflict Area - Shoushi - Hidden Forest
-            0xE9F1,     //Town Control Conflict Area - Shoushi - Hidden Forest
-            0xE8F1,     //Town Control Conflict Area - Shoushi - Hidden Forest
+            // JawnTide instancing: the Town Control conflict areas (4FF1, E9F0, E9F1, E8F1) run in private copies now,
+            // and logging out inside one sends you to your lifestone (PropertyBool.InInstance). Their normal world copies are ordinary content.
             0x0026,     //Drudge Dungeon
             0x003F,     //Dragon Cave
             0x6543,     //Aerbax - Lesser Battle Dungeon

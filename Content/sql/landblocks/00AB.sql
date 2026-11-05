@@ -1,4 +1,5 @@
-DELETE FROM `landblock_instance` WHERE `landblock` = 0x00AB;
+-- JawnTide: normal world content (stock ACE). The Town Control version is in towncontrol/00AB.sql (variation 2).
+DELETE FROM `landblock_instance` WHERE `landblock` = 0x00AB AND `variation_id` IS NULL;
 
 INSERT INTO `landblock_instance` (`guid`, `weenie_Class_Id`, `obj_Cell_Id`, `origin_X`, `origin_Y`, `origin_Z`, `angles_W`, `angles_X`, `angles_Y`, `angles_Z`, `is_Link_Child`, `last_Modified`)
 VALUES (0x700AB000, 80100, 0x00AB028A, 46.3667, -39.9219, -0.063, 0.707107, 0, 0, -0.707107, False, '2021-11-01 00:00:00'); /* Surface */
@@ -158,11 +159,3 @@ VALUES (0x700AB021, 80149, 0x00AB010A, 48.7562, -37.1328, -29.945, 0, 0, 0, -1, 
 
 INSERT INTO `landblock_instance_link` (`parent_GUID`, `child_GUID`, `last_Modified`)
 VALUES (0x700AB021, 0x700AB009, '2021-11-01 00:00:00') /* Statue of Extreme Illumination (80105) */;
-
-INSERT INTO `landblock_instance` (`guid`, `weenie_Class_Id`, `obj_Cell_Id`, `origin_X`, `origin_Y`, `origin_Z`, `angles_W`, `angles_X`, `angles_Y`, `angles_Z`, `is_Link_Child`, `last_Modified`)
-VALUES (0x700AB022, 4200004, 0x00AB0109, 54.7766, -34.7032, -29.945, -0.008167, 0, 0, 0.999967, False, '2022-12-13 13:52:31'); /* towncontrolevent1 */
-/* @teleloc 0x00AB0109 [54.776600 -34.703201 -29.945000] -0.008167 0.000000 0.000000 0.999967 */
-
-INSERT INTO `landblock_instance` (`guid`, `weenie_Class_Id`, `obj_Cell_Id`, `origin_X`, `origin_Y`, `origin_Z`, `angles_W`, `angles_X`, `angles_Y`, `angles_Z`, `is_Link_Child`, `last_Modified`)
-VALUES (0x700AB023, 80007, 0x00AB012D, 50.02918, -49.65062, -23.945, -0.610272, 0, 0, -0.792192, False, '2023-02-19 20:44:33'); /* Landblock KeepAlive */
-/* @teleloc 0x00AB012D [50.029179 -49.650620 -23.945000] -0.610272 0.000000 0.000000 -0.792192 */

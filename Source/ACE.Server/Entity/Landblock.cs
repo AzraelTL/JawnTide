@@ -385,13 +385,22 @@ namespace ACE.Server.Entity
                 {
                     var area = ZergControlLandblocks.GetLandblockZergControlArea(this.Id.Landblock);
 
+                    // JawnTide instancing: Town Control areas are only restricted inside a running event's copy
+                    if (area.IsTownControlArea && !(IsInstance && TownControlInstances.IsActiveTownControlVariation(VariationId.Value)))
+                        return;
+
                     Dictionary<uint, List<Player>> clansInZergControlArea = new Dictionary<uint, List<Player>>();
                     List<Player> playersInZergControlArea = new List<Player>();
                     List<Player> playersNotWhitelisted = new List<Player>();
 
                     foreach (var block in area.AreaLandblockIds)
                     {
-                        var landblock = LandblockManager.GetLandblock(new LandblockId(block << 16), false);
+                        // JawnTide instancing: the same copy of each area landblock, without loading anything
+                        var blockId = new LandblockId(block << 16);
+                        if (!LandblockManager.IsLoaded(blockId, VariationId))
+                            continue;
+
+                        var landblock = LandblockManager.GetLandblock(blockId, VariationId, false);
                         var playersInLandblock = landblock.GetCurrentLandblockPlayers();
                         foreach (var landblockPlayer in playersInLandblock)
                         {
@@ -917,7 +926,27 @@ namespace ACE.Server.Entity
                     PermaloadEndDate = null;
                 }
 
-                if (!Permaload && HasNoKeepAliveObjects)
+                // JawnTide instancing: a running Town Control event's copy stays loaded like the old keep-alive did;
+                // once the event is over, anyone still inside goes to the same spot in the normal world
+                var keptAlive = false;
+                if (IsInstance && TownControlInstances.IsTownControlVariation(VariationId.Value))
+                {
+                    if (TownControlInstances.IsActiveTownControlVariation(VariationId.Value))
+                        keptAlive = true;
+                    else
+                    {
+                        foreach (var player in players.ToList())
+                        {
+                            if (player.Teleporting)
+                                continue;
+
+                            player.Session?.Network.EnqueueSend(new GameMessageSystemChat("The Town Control event is over. You've been moved out of the event area.", ChatMessageType.Broadcast));
+                            WorldManager.ThreadSafeTeleport(player, new ACE.Entity.Position(player.Location).WithVariation(null));
+                        }
+                    }
+                }
+
+                if (!Permaload && HasNoKeepAliveObjects && !keptAlive)
                 {
                     if (lastActiveTime + dormantInterval < thisHeartBeat)
                     {
@@ -1053,7 +1082,7 @@ namespace ACE.Server.Entity
                     InsertWorldObjectIntoSortedGeneratorUpdateList(kvp.Value);
                     InsertWorldObjectIntoSortedGeneratorRegenerationList(kvp.Value);
 
-                    if (kvp.Value.WeenieClassId == 80007) // Landblock KeepAlive weenie (ACE custom)
+                    if (kvp.Value.WeenieClassId == 80007 && !IsInstance) // Landblock KeepAlive weenie (ACE custom); instances use InstanceManager.IsKeptAlive
                         HasNoKeepAliveObjects = false;
                 }
 

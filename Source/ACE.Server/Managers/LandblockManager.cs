@@ -243,8 +243,8 @@ namespace ACE.Server.Managers
             {
                 for (int i = landblockGroupPendingAdditions.Count - 1; i >= 0; i--)
                 {
-                    // JawnTide instancing: an instanced copy never shares a group with the normal world
-                    if (landblockGroupPendingAdditions[i].IsDungeon || landblockGroupPendingAdditions[i].VariationId.HasValue)
+                    // JawnTide instancing: groups never mix copies of the world (ShouldBeAddedToThisLandblockGroup checks the variation)
+                    if (landblockGroupPendingAdditions[i].IsDungeon)
                     {
                         // Each dungeon exists in its own group
                         var landblockGroup = new LandblockGroup(landblockGroupPendingAdditions[i]);
@@ -531,10 +531,6 @@ namespace ACE.Server.Managers
         {
             Landblock landblock;
 
-            // instanced copies are isolated: they never load or link adjacent landblocks
-            if (variation.HasValue)
-                loadAdjacents = false;
-
             landblockLock.EnterUpgradeableReadLock();
             try
             {
@@ -581,13 +577,13 @@ namespace ACE.Server.Managers
                 {
                     var adjacents = GetAdjacentIDs(landblock);
                     foreach (var adjacent in adjacents)
-                        GetLandblock(adjacent, false, permaload);
+                        GetLandblock(adjacent, variation, false, permaload);
 
                     setAdjacents = true;
                 }
 
                 // cache adjacencies
-                if (setAdjacents && !variation.HasValue)
+                if (setAdjacents)
                     SetAdjacents(landblock, true, true);
             }
             finally
@@ -619,17 +615,14 @@ namespace ACE.Server.Managers
         /// </summary>
         private static List<Landblock> GetAdjacents(Landblock landblock)
         {
-            // JawnTide instancing: instanced copies have no adjacents
-            if (landblock.VariationId.HasValue)
-                return new List<Landblock>();
-
             var adjacentIDs = GetAdjacentIDs(landblock);
 
             var adjacents = new List<Landblock>();
 
             foreach (var adjacentID in adjacentIDs)
             {
-                var adjacent = landblocks[adjacentID.LandblockX, adjacentID.LandblockY];
+                // JawnTide instancing: a copy's neighbours are the same copy of the neighbouring landblocks
+                var adjacent = FetchLandblock(adjacentID, landblock.VariationId);
                 if (adjacent != null)
                     adjacents.Add(adjacent);
             }
@@ -811,8 +804,7 @@ namespace ACE.Server.Managers
                                 }
                             }
 
-                            if (!landblock.VariationId.HasValue)
-                                NotifyAdjacents(landblock);
+                            NotifyAdjacents(landblock);
                         }
                         else
                             unloadFailed = true;

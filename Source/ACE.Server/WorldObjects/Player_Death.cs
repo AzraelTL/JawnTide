@@ -987,7 +987,7 @@ namespace ACE.Server.WorldObjects
                 }
 
                 //Drop bonus trophy during active town control events
-                if (TownControlLandblocks.IsTownControlLandblock(this.Location.Landblock) && shouldDropTcRewards)
+                if (TownControlInstances.IsTownControlLocation(this.Location) && shouldDropTcRewards)
                 {
                     //For Town Control landblocks that always drop a set number of pk trophies within a certain subset of cells
                     var townId = TownControlLandblocks.GetTownIdByLandblockId(this.Location.Landblock);
@@ -1001,7 +1001,7 @@ namespace ACE.Server.WorldObjects
                             pkTrophy.SetStackSize(1);
                             dropItems.Add(pkTrophy);
 
-                            if (TownControlLandblocks.IsTownControlRewardLandblock(this.Location.Landblock))
+                            if (TownControlInstances.IsInActiveConflictArea(this.Location))
                             {
                                 //Drop a DB key on corpse
                                 var dbKey = WorldObjectFactory.CreateNewWorldObject(480608);
