@@ -55,7 +55,7 @@ namespace ACE.Server.Physics.Common
         {
             foreach (var portal in Portals)
             {
-                var otherCell = portal.GetOtherCell(CurCell.ID);
+                var otherCell = portal.GetOtherCell(CurCell.ID, CurCell.VariationId);
                 if (otherCell != null)
                     otherCell.check_building_transit(portal.OtherPortalId, pos, numSphere, sphere, cellArray, path);
             }
@@ -65,7 +65,7 @@ namespace ACE.Server.Physics.Common
         {
             foreach (var portal in Portals)
             {
-                var otherCell = portal.GetOtherCell(CurCell.ID);
+                var otherCell = portal.GetOtherCell(CurCell.ID, CurCell.VariationId);
                 if (otherCell != null)
                     otherCell.check_building_transit(portal.OtherPortalId, numParts, parts, cellArray);
             }
@@ -81,7 +81,7 @@ namespace ACE.Server.Physics.Common
             // aka cells touching the outdoor landblock
             foreach (var portal in Portals)
             {
-                var entrypoint = portal.GetOtherCell(LandblockID);
+                var entrypoint = portal.GetOtherCell(LandblockID, CurCell?.VariationId);
                 add_cells_recursive(entrypoint);
             }
             return BuildingCells;

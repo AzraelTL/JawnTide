@@ -198,7 +198,7 @@ namespace ACE.Server.WorldObjects
             //If this is a Dungeon Control landblock, grant bonus XP and Lum to dungeon owners
             var dungeonOwnerMod = 1.0f;
             uint dungeonOwnerAllegId = 0;
-            var landblock = LandblockManager.GetLandblock(this.Location.LandblockId, false, false);
+            var landblock = CurrentLandblock ?? LandblockManager.GetLandblock(this.Location.LandblockId, this.Location.Variation, false);
             if(landblock.IsOwnableDungeon)
             {
                 var dungeon = DungeonControl.GetOwnableDungeonByLandblockId(landblock.Id.Landblock);

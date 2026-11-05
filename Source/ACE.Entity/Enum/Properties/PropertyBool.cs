@@ -206,6 +206,10 @@ namespace ACE.Entity.Enum.Properties
 
         /// <summary>JawnTide Bank: true = ask with a Yes/No popup before paying a vendor shortfall from the bank (/bank purchases ask).
         /// Default: paid without asking.</summary>
-        BankPurchasesAsk = 20005
+        BankPurchasesAsk = 20005,
+
+        /// <summary>JawnTide instancing: true while the player is inside a private instance (e.g. an arena match).
+        /// Instances don't survive a logout, so logging in with this set sends the player to their lifestone.</summary>
+        InInstance = 20010
     }
 }

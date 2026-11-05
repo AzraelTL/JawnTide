@@ -37,6 +37,49 @@ namespace ACE.Server.Managers
         private static readonly Landblock[,] landblocks = new Landblock[255, 255];
 
         /// <summary>
+        /// JawnTide instancing: private copies of landblocks, keyed by (landblock, variation).
+        /// The normal world lives in the landblocks array above and never touches this.
+        /// </summary>
+        private static readonly Dictionary<(ushort landblock, int variation), Landblock> variantLandblocks = new Dictionary<(ushort, int), Landblock>();
+
+        private static Landblock FetchLandblock(LandblockId landblockId, int? variation)
+        {
+            if (variation.HasValue)
+                return variantLandblocks.TryGetValue((landblockId.Landblock, variation.Value), out var variant) ? variant : null;
+
+            return landblocks[landblockId.LandblockX, landblockId.LandblockY];
+        }
+
+        private static void StoreLandblock(LandblockId landblockId, int? variation, Landblock landblock)
+        {
+            if (variation.HasValue)
+            {
+                if (landblock == null)
+                    variantLandblocks.Remove((landblockId.Landblock, variation.Value));
+                else
+                    variantLandblocks[(landblockId.Landblock, variation.Value)] = landblock;
+            }
+            else
+                landblocks[landblockId.LandblockX, landblockId.LandblockY] = landblock;
+        }
+
+        /// <summary>
+        /// JawnTide instancing: returns the loaded copies of instanced landblocks with this variation
+        /// </summary>
+        public static List<Landblock> GetLoadedVariantLandblocks(int variation)
+        {
+            landblockLock.EnterReadLock();
+            try
+            {
+                return variantLandblocks.Where(kvp => kvp.Key.variation == variation).Select(kvp => kvp.Value).ToList();
+            }
+            finally
+            {
+                landblockLock.ExitReadLock();
+            }
+        }
+
+        /// <summary>
         /// A lookup table of all the currently loaded landblocks
         /// </summary>
         private static readonly HashSet<Landblock> loadedLandblocks = new HashSet<Landblock>();
@@ -200,7 +243,8 @@ namespace ACE.Server.Managers
             {
                 for (int i = landblockGroupPendingAdditions.Count - 1; i >= 0; i--)
                 {
-                    if (landblockGroupPendingAdditions[i].IsDungeon)
+                    // JawnTide instancing: an instanced copy never shares a group with the normal world
+                    if (landblockGroupPendingAdditions[i].IsDungeon || landblockGroupPendingAdditions[i].VariationId.HasValue)
                     {
                         // Each dungeon exists in its own group
                         var landblockGroup = new LandblockGroup(landblockGroupPendingAdditions[i]);
@@ -431,7 +475,7 @@ namespace ACE.Server.Managers
         /// <param name="loadAdjacents">If TRUE, ensures all of the adjacent landblocks for this WorldObject are loaded</param>
         public static bool AddObject(WorldObject worldObject, bool loadAdjacents = false)
         {
-            var block = GetLandblock(worldObject.Location.LandblockId, loadAdjacents);
+            var block = GetLandblock(worldObject.Location.LandblockId, worldObject.Location.Variation, loadAdjacents);
 
             return block.AddWorldObject(worldObject);
         }
@@ -442,7 +486,7 @@ namespace ACE.Server.Managers
         public static void RelocateObjectForPhysics(WorldObject worldObject, bool adjacencyMove)
         {
             var oldBlock = worldObject.CurrentLandblock;
-            var newBlock = GetLandblock(worldObject.Location.LandblockId, true);
+            var newBlock = GetLandblock(worldObject.Location.LandblockId, worldObject.Location.Variation, true);
 
             if (newBlock.IsDormant && worldObject is SpellProjectile)
             {
@@ -458,12 +502,12 @@ namespace ACE.Server.Managers
             newBlock.AddWorldObjectForPhysics(worldObject);
         }
 
-        public static bool IsLoaded(LandblockId landblockId)
+        public static bool IsLoaded(LandblockId landblockId, int? variation = null)
         {
             landblockLock.EnterReadLock();
             try
             {
-                return landblocks[landblockId.LandblockX, landblockId.LandblockY] != null;
+                return FetchLandblock(landblockId, variation) != null;
             }
             finally
             {
@@ -476,14 +520,27 @@ namespace ACE.Server.Managers
         /// </summary>
         public static Landblock GetLandblock(LandblockId landblockId, bool loadAdjacents, bool permaload = false, DateTime? permaloadEndDate = null)
         {
+            return GetLandblock(landblockId, null, loadAdjacents, permaload, permaloadEndDate);
+        }
+
+        /// <summary>
+        /// Returns a reference to a landblock copy, loading it if not already active.
+        /// variation null = the normal world, a value = a private instance (JawnTide instancing)
+        /// </summary>
+        public static Landblock GetLandblock(LandblockId landblockId, int? variation, bool loadAdjacents, bool permaload = false, DateTime? permaloadEndDate = null)
+        {
             Landblock landblock;
+
+            // instanced copies are isolated: they never load or link adjacent landblocks
+            if (variation.HasValue)
+                loadAdjacents = false;
 
             landblockLock.EnterUpgradeableReadLock();
             try
             {
                 bool setAdjacents = false;
 
-                landblock = landblocks[landblockId.LandblockX, landblockId.LandblockY];
+                landblock = FetchLandblock(landblockId, variation);
 
                 if (landblock == null)
                 {
@@ -491,7 +548,8 @@ namespace ACE.Server.Managers
                     try
                     {
                         // load up this landblock
-                        landblock = landblocks[landblockId.LandblockX, landblockId.LandblockY] = new Landblock(landblockId);
+                        landblock = new Landblock(landblockId, variation);
+                        StoreLandblock(landblockId, variation, landblock);
 
                         if (!loadedLandblocks.Add(landblock))
                         {
@@ -529,7 +587,7 @@ namespace ACE.Server.Managers
                 }
 
                 // cache adjacencies
-                if (setAdjacents)
+                if (setAdjacents && !variation.HasValue)
                     SetAdjacents(landblock, true, true);
             }
             finally
@@ -561,6 +619,10 @@ namespace ACE.Server.Managers
         /// </summary>
         private static List<Landblock> GetAdjacents(Landblock landblock)
         {
+            // JawnTide instancing: instanced copies have no adjacents
+            if (landblock.VariationId.HasValue)
+                return new List<Landblock>();
+
             var adjacentIDs = GetAdjacentIDs(landblock);
 
             var adjacents = new List<Landblock>();
@@ -707,7 +769,9 @@ namespace ACE.Server.Managers
                         // remove from list of managed landblocks
                         if (loadedLandblocks.Remove(landblock))
                         {
-                            landblocks[landblock.Id.LandblockX, landblock.Id.LandblockY] = null;
+                            // only clear the slot if it still points at this landblock
+                            if (FetchLandblock(landblock.Id, landblock.VariationId) == landblock)
+                                StoreLandblock(landblock.Id, landblock.VariationId, null);
 
                             // remove from landblock group
                             for (int i = landblockGroups.Count - 1; i >= 0 ; i--)
@@ -747,7 +811,8 @@ namespace ACE.Server.Managers
                                 }
                             }
 
-                            NotifyAdjacents(landblock);
+                            if (!landblock.VariationId.HasValue)
+                                NotifyAdjacents(landblock);
                         }
                         else
                             unloadFailed = true;

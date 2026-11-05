@@ -37,6 +37,11 @@ namespace ACE.Server.Physics.Common
         public Landblock CurLandblock;
 
         /// <summary>
+        /// JawnTide instancing: which copy of the landblock this cell belongs to (null = normal world)
+        /// </summary>
+        public int? VariationId;
+
+        /// <summary>
         /// Returns TRUE if this is a house cell that can be protected by a housing barrier
         /// </summary>
         public bool IsCellRestricted => RestrictionObj != 0;
@@ -198,15 +203,14 @@ namespace ACE.Server.Physics.Common
             }
         }
 
-        public static ObjCell Get(uint cellID)
+        public static ObjCell Get(uint cellID, int? variation)
         {
             if (cellID == 0) return null;
 
-            var objCell = new ObjCell(cellID);
             if (cellID >= 0x100)
                 return DBObj.GetEnvCell(cellID);
 
-            return LandCell.Get(cellID);
+            return LandCell.Get(cellID, variation);
         }
 
         public PhysicsObj GetObject(int id)
@@ -228,7 +232,7 @@ namespace ACE.Server.Physics.Common
             }
         }
 
-        public static ObjCell GetVisible(uint cellID)
+        public static ObjCell GetVisible(uint cellID, int? variation)
         {
             if (cellID == 0) return null;
 
@@ -237,7 +241,7 @@ namespace ACE.Server.Physics.Common
                return EnvCell.get_visible(cellID);
             else
                 return LandCell.Get(cellID);*/
-            return LScape.get_landcell(cellID);
+            return LScape.get_landcell(cellID, variation);
         }
 
         public void Init()
@@ -337,7 +341,11 @@ namespace ACE.Server.Physics.Common
             cellArray.NumCells = 0;
             cellArray.AddedOutside = false;
 
-            var visibleCell = GetVisible(position.ObjCellID);
+            // JawnTide instancing: look cells up in the copy of the landblock the moving object is in
+            var variation = path != null ? path.VariationId : position.Variation;
+            cellArray.VariationId = variation;
+
+            var visibleCell = GetVisible(position.ObjCellID, variation);
 
             if ((position.ObjCellID & 0xFFFF) >= 0x100)
             {

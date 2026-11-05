@@ -135,7 +135,7 @@ namespace ACE.Server.WorldObjects
 
             if (IsArenaObserver)
             {
-                if(!ArenaLocation.IsArenaLandblock(Location?.Landblock ?? 0))
+                if(!ArenaLocation.IsArenaLocation(Location))
                 {
                     ArenaManager.ExitArenaObserverMode(this);
                 }
@@ -445,6 +445,11 @@ namespace ACE.Server.WorldObjects
             // possible bug: while teleporting, client can still send AutoPos packets from old landblock
             if (Teleporting && !forceUpdate) return false;
 
+            // JawnTide instancing: positions from the client never carry a copy, they're always in the copy we're in.
+            // Teleport (forceUpdate) passes the destination copy itself.
+            if (!forceUpdate && Location != null)
+                newPosition.Variation = Location.Variation;
+
             // pre-validate movement
             if (!ValidateMovement(newPosition))
             {
@@ -489,7 +494,7 @@ namespace ACE.Server.WorldObjects
                                 verifyContact = true;                            
                         }
 
-                        var curCell = LScape.get_landcell(newPosition.Cell);
+                        var curCell = LScape.get_landcell(newPosition.Cell, newPosition.Variation);
                         if (curCell != null)
                         {
                             //if (PhysicsObj.CurCell == null || curCell.ID != PhysicsObj.CurCell.ID)
@@ -513,7 +518,7 @@ namespace ACE.Server.WorldObjects
                                 if (blockDist <= 1)
                                 {
                                     log.Warn($"z-pos hacking detected for {Name}, lastGroundPos: {LastGroundPos.ToLOCString()} - requestPos: {newPosition.ToLOCString()}");
-                                    Location = new ACE.Entity.Position(LastGroundPos);
+                                    Location = new ACE.Entity.Position(LastGroundPos).WithVariation(Location.Variation);
                                     Sequences.GetNextSequence(SequenceType.ObjectForcePosition);
                                     SendUpdatePosition();
                                     return false;
@@ -640,7 +645,7 @@ namespace ACE.Server.WorldObjects
 
                 if (!success) return false;
 
-                var landblockUpdate = Location.Cell >> 16 != newPosition.Cell >> 16;
+                var landblockUpdate = Location.Cell >> 16 != newPosition.Cell >> 16 || Location.Variation != newPosition.Variation;
 
                 Location = newPosition;
 
@@ -711,7 +716,7 @@ namespace ACE.Server.WorldObjects
 
                 if (CurrentLandblock.IsDungeon)
                 {
-                    var destBlock = LScape.get_landblock(newPosition.Cell);
+                    var destBlock = LScape.get_landblock(newPosition.Cell, newPosition.Variation);
                     if (destBlock != null && destBlock.IsDungeon)
                         return false;
                 }
@@ -732,9 +737,9 @@ namespace ACE.Server.WorldObjects
             var pos = PhysicsObj.Position.Frame.Origin;
             var rotate = PhysicsObj.Position.Frame.Orientation;
 
-            var landblockUpdate = blockcell << 16 != CurrentLandblock.Id.Landblock;
+            var landblockUpdate = blockcell << 16 != CurrentLandblock.Id.Landblock || PhysicsObj.Position.Variation != CurrentLandblock.VariationId;
 
-            Location = new ACE.Entity.Position(blockcell, pos, rotate);
+            Location = new ACE.Entity.Position(blockcell, pos, rotate).WithVariation(PhysicsObj.Position.Variation);
 
             return landblockUpdate;
         }

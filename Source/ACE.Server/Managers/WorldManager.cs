@@ -261,10 +261,13 @@ namespace ACE.Server.Managers
                 log.Warn($"Player {session.Player.Name} logged in with invalid position, relocating to {fallbackPosition.ToLOCString()}");
             } 
 
-            //Handle logging into arena
-            if(ArenaLocation.IsArenaLandblock(session.Player.Location?.Landblock ?? 0))
+            // JawnTide instancing: instances don't survive a logout, so anyone who logged out inside one
+            // (an arena match, for example) goes to their lifestone. The normal world copy of the arena
+            // dungeons is ordinary content now, so logging out there is fine.
+            if (session.Player.InInstance)
             {
-                session.Player.Location = new Position(session.Player.Sanctuary);
+                session.Player.InInstance = false;
+                session.Player.Location = new Position(session.Player.Sanctuary ?? session.Player.FallbackPosition);
             }
 
             //Handle players who disconnected while Arena observers

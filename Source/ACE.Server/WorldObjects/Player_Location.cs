@@ -728,6 +728,15 @@ namespace ACE.Server.WorldObjects
             }
 
             var newPosition = new Position(_newPosition);
+
+            // JawnTide instancing: a teleport to somewhere else in the same landblock (portals, levers, emotes)
+            // stays in the copy you're in. Anything that wants a specific copy (or the normal world) uses WithVariation.
+            if (!newPosition.ExplicitVariation && !newPosition.Variation.HasValue && Location != null && Location.Variation.HasValue && newPosition.Landblock == Location.Landblock)
+                newPosition.Variation = Location.Variation;
+
+            if (InInstance != newPosition.Variation.HasValue)
+                InInstance = newPosition.Variation.HasValue;
+
             //newPosition.PositionZ += 0.005f;
             newPosition.PositionZ += 0.005f * (ObjScale ?? 1.0f);
 
@@ -801,7 +810,7 @@ namespace ACE.Server.WorldObjects
             }
 
             ////If you're teleporting to an arena landblock and aren't in an arena event, disallow
-            //if (ArenaLocation.IsArenaLandblock(newPosition.Landblock) && !ArenaManager.IsActiveArenaPlayer(this.Character.Id) && !this.IsArenaObserver)
+            //if (ArenaLocation.IsArenaLocation(newPosition) && !ArenaManager.IsActiveArenaPlayer(this.Character.Id) && !this.IsArenaObserver)
             //{
             //    this.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have attempted to enter an arena location without being part of an arena event.  You have been redirected to your lifestone.", ChatMessageType.Broadcast));
 
@@ -811,10 +820,14 @@ namespace ACE.Server.WorldObjects
 
             HandlePreTeleportVisibility(newPosition);
 
+            // JawnTide instancing: the client can't tell copies of a landblock apart, so forget everything from the copy we're leaving
+            if (prevLoc != null && prevLoc.Variation != newPosition.Variation)
+                HandleVariationChangeVisibility(newPosition.Variation);
+
             UpdatePlayerPosition(new Position(newPosition), true);
 
             //If you're an arena observer, or pending becoming an observer, and you're teleporting to somewhere that's not an arena landblock, exit observer mode
-            if((IsArenaObserver || IsPendingArenaObserver) && !ArenaLocation.IsArenaLandblock(newPosition.Landblock))
+            if((IsArenaObserver || IsPendingArenaObserver) && !ArenaLocation.IsArenaLocation(newPosition))
             {
                 ArenaManager.ExitArenaObserverMode(this);
             }            

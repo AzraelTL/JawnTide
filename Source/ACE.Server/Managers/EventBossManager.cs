@@ -603,7 +603,7 @@ namespace ACE.Server.Managers
             {
                 var angle = 2 * Math.PI * i / Math.Max(1, count);
                 var facing = new Position(center.LandblockId.Raw, center.PositionX, center.PositionY, center.PositionZ,
-                    0f, 0f, (float)Math.Sin(angle / 2), (float)Math.Cos(angle / 2));
+                    0f, 0f, (float)Math.Sin(angle / 2), (float)Math.Cos(angle / 2)).WithVariation(center.Variation);
                 var pos = center.Indoors ? new Position(center) : facing.InFrontOf(radius);
                 pos.LandblockId = new LandblockId(pos.GetCell());
                 yield return pos;
@@ -621,7 +621,7 @@ namespace ACE.Server.Managers
                 var angle = ThreadSafeRandom.Next(0.0f, (float)(2 * Math.PI));
                 var dist = ThreadSafeRandom.Next(minRadius, Math.Max(minRadius, maxRadius));
                 var facing = new Position(center.LandblockId.Raw, center.PositionX, center.PositionY, center.PositionZ,
-                    0f, 0f, (float)Math.Sin(angle / 2), (float)Math.Cos(angle / 2));
+                    0f, 0f, (float)Math.Sin(angle / 2), (float)Math.Cos(angle / 2)).WithVariation(center.Variation);
                 var pos = center.Indoors ? new Position(center) : facing.InFrontOf(dist);
                 pos.LandblockId = new LandblockId(pos.GetCell());
                 yield return pos;

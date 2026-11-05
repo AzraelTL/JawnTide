@@ -82,8 +82,15 @@ namespace ACE.Server.Physics.Animation
             PlacementAllowsSliding = true;
         }
 
+        /// <summary>
+        /// JawnTide instancing: which copy of the landblock this path moves through
+        /// </summary>
+        public int? VariationId;
+
         public void InitPath(ObjCell beginCell, Position beginPos, Position endPos)
         {
+            VariationId = beginPos != null ? beginPos.Variation : endPos?.Variation;
+
             BeginPos = beginPos;
             BeginCell = beginCell;
             EndPos = endPos;

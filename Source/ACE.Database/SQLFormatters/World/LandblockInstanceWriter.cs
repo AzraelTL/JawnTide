@@ -23,7 +23,8 @@ namespace ACE.Database.SQLFormatters.World
 
         public void CreateSQLDELETEStatement(IList<LandblockInstance> input, StreamWriter writer)
         {
-            writer.WriteLine($"DELETE FROM `landblock_instance` WHERE `landblock` = 0x{(input[0].ObjCellId >> 16):X4};");
+            // JawnTide instancing: only the normal world rows; instanced content (variation_id) lives in Content/sql/landblocks/arena
+            writer.WriteLine($"DELETE FROM `landblock_instance` WHERE `landblock` = 0x{(input[0].ObjCellId >> 16):X4} AND `variation_id` IS NULL;");
         }
 
         /// <exception cref="System.Exception">WeenieClassNames must be set, and must have a record for input.ClassId.</exception>

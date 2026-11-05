@@ -486,9 +486,9 @@ namespace ACE.Server.WorldObjects
                 //Arenas - If this is an arena landblock
                 //don't allow any dmg except while the event is in a started status and between non-eliminated players
                 bool isArena1v1 = false;
-                if (targetPlayer != null && ArenaLocation.IsArenaLandblock(targetPlayer.Location.Landblock))
+                if (targetPlayer != null && ArenaLocation.IsArenaLocation(targetPlayer.Location))
                 {
-                    var arenaEvent = ArenaManager.GetArenaEventByLandblock(targetPlayer.Location.Landblock);
+                    var arenaEvent = ArenaManager.GetArenaEventByLocation(targetPlayer.Location);
                     if (arenaEvent == null || arenaEvent.Status != 4)
                     {
                         return 0.0f;
@@ -808,9 +808,9 @@ namespace ACE.Server.WorldObjects
 
                 //Arenas - If this is an arena landblock
                 //track dmg dealt and received
-                if (targetPlayer != null && ArenaLocation.IsArenaLandblock(targetPlayer.Location.Landblock))
+                if (targetPlayer != null && ArenaLocation.IsArenaLocation(targetPlayer.Location))
                 {
-                    var arenaEvent = ArenaManager.GetArenaEventByLandblock(targetPlayer.Location.Landblock);
+                    var arenaEvent = ArenaManager.GetArenaEventByLocation(targetPlayer.Location);
                     if (arenaEvent != null && arenaEvent.Status == 4 && sourcePlayer != null)
                     {
                         var attackerArenaPlayer = arenaEvent.Players.FirstOrDefault(x => x.CharacterId == sourcePlayer.Character.Id);

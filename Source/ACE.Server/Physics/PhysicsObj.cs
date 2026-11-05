@@ -239,10 +239,10 @@ namespace ACE.Server.Physics
             if (cellID < 0x100)
             {
                 LandDefs.AdjustToOutside(position);
-                return ObjCell.GetVisible(position.ObjCellID);
+                return ObjCell.GetVisible(position.ObjCellID, position.Variation);
             }
 
-            var visibleCell = (EnvCell)ObjCell.GetVisible(position.ObjCellID);
+            var visibleCell = (EnvCell)ObjCell.GetVisible(position.ObjCellID, position.Variation);
             if (visibleCell == null) return null;
 
             var point = position.LocalToGlobal(low_pt);
@@ -257,7 +257,7 @@ namespace ACE.Server.Physics
                 return null;
 
             position.adjust_to_outside();
-            return ObjCell.GetVisible(position.ObjCellID);
+            return ObjCell.GetVisible(position.ObjCellID, position.Variation);
         }
 
         public bool CacheHasPhysicsBSP()
@@ -1417,7 +1417,7 @@ namespace ACE.Server.Physics
                     LandDefs.AdjustToOutside(newPos);
 
                     // ensure walkable slope
-                    var landcell = (LandCell)LScape.get_landcell(newPos.ObjCellID);
+                    var landcell = (LandCell)LScape.get_landcell(newPos.ObjCellID, newPos.Variation);
 
                     Polygon walkable = null;
                     var terrainPoly = landcell.find_terrain_poly(newPos.Frame.Origin, ref walkable);
@@ -1428,11 +1428,11 @@ namespace ACE.Server.Physics
                     // compare: rabbits occasionally spawning in buildings in yaraq,
                     // vs. lich tower @ 3D31FFFF
 
-                    var sortCell = LScape.get_landcell(newPos.ObjCellID) as SortCell;
+                    var sortCell = LScape.get_landcell(newPos.ObjCellID, newPos.Variation) as SortCell;
                     if (sortCell == null || !sortCell.has_building())
                     {
                         // set to ground pos
-                        var landblock = LScape.get_landblock(newPos.ObjCellID);
+                        var landblock = LScape.get_landblock(newPos.ObjCellID, newPos.Variation);
                         var groundZ = landblock.GetZ(newPos.Frame.Origin) + 0.05f;
 
                         if (Math.Abs(newPos.Frame.Origin.Z - groundZ) > ScatterThreshold_Z)
@@ -1458,7 +1458,7 @@ namespace ACE.Server.Physics
                 }
                 if (indoors)
                 {
-                    var landblock = LScape.get_landblock(newPos.ObjCellID);
+                    var landblock = LScape.get_landblock(newPos.ObjCellID, newPos.Variation);
                     var envcells = landblock.get_envcells();
                     var found = false;
                     foreach (var envCell in envcells)
@@ -1662,6 +1662,7 @@ namespace ACE.Server.Physics
 
             JumpedThisFrame = false;
             var newPos = new Position(Position.ObjCellID);
+            newPos.Variation = Position.Variation;
             UpdatePositionInternal(quantum, ref newPos.Frame);
 
             if (PartArray != null && PartArray.GetNumSphere() != 0)
@@ -1811,6 +1812,7 @@ namespace ACE.Server.Physics
 
             JumpedThisFrame = false;
             var newPos = new Position(Position.ObjCellID);
+            newPos.Variation = Position.Variation;
 
             //UpdatePositionInternal(quantum, ref newPos.Frame);
             if (PartArray != null)
@@ -2360,12 +2362,13 @@ namespace ACE.Server.Physics
 
             CurCell = newCell;
             Position.ObjCellID = newCell.ID;        // warning: Position will be in an inconsistent state here, until set_frame() is run!
+            Position.Variation = newCell.VariationId;   // JawnTide instancing: the cell decides which copy we're in
             if (PartArray != null && !State.HasFlag(PhysicsState.ParticleEmitter))
                 PartArray.SetCellID(newCell.ID);
 
             if (!DatObject && newCell != null)
             {
-                CurLandblock = LScape.get_landblock(newCell.ID);
+                CurLandblock = LScape.get_landblock(newCell.ID, newCell.VariationId);
                 if (CurLandblock != null)
                     CurLandblock.add_server_object(this);
             }
@@ -2377,6 +2380,7 @@ namespace ACE.Server.Physics
 
             enter_cell(newCell);
             RequestPos.ObjCellID = newCell.ID;      // document this control flow better
+            RequestPos.Variation = newCell.VariationId;
 
             // sync location for initial CO
             if (entering_world)
@@ -2480,6 +2484,7 @@ namespace ACE.Server.Physics
             if (PartArray == null || CurCell == null) return;
             cellArray.NumCells = 0;
             cellArray.AddedOutside = false;
+            cellArray.VariationId = CurCell.VariationId;   // JawnTide instancing
             cellArray.add_cell(CurCell.ID, CurCell);
 
             //var checkCells = cellArray.Cells.Values.ToList();
@@ -3466,10 +3471,11 @@ namespace ACE.Server.Physics
         {
             Position.ObjCellID = newPos.ObjCellID;
             Position.Frame = new AFrame(newPos.Frame);
+            Position.Variation = newPos.Variation;
 
-            if (CurCell == null || CurCell.ID != Position.ObjCellID)
+            if (CurCell == null || CurCell.ID != Position.ObjCellID || CurCell.VariationId != Position.Variation)
             {
-                var newCell = LScape.get_landcell(newPos.ObjCellID);
+                var newCell = LScape.get_landcell(newPos.ObjCellID, newPos.Variation);
 
                 if (WeenieObj.WorldObject is Player player && player.LastContact && newCell is LandCell landCell)
                 {
@@ -3889,10 +3895,12 @@ namespace ACE.Server.Physics
         {
             RequestPos.Frame.Origin = pos;
             RequestPos.Frame.Orientation = rotation;
+            // JawnTide instancing: the client can't move us between copies; the server picks the cell (and so the copy)
+            RequestPos.Variation = cell != null ? cell.VariationId : Position.Variation;
 
             if (CurCell == null)
             {
-                CurCell = LScape.get_landcell(blockCellID);
+                CurCell = LScape.get_landcell(blockCellID, RequestPos.Variation);
                 if (CurCell == null)
                     return;
             }
@@ -4344,7 +4352,12 @@ namespace ACE.Server.Physics
 
             RequestPos.ObjCellID = requestCell;
 
-            if (forcePos && success)
+            // JawnTide instancing: moving between copies is a teleport, don't sweep for collisions through the copy being left
+            if (forcePos && success && Position.Variation != RequestPos.Variation)
+            {
+                set_current_pos(RequestPos);
+            }
+            else if (forcePos && success)
             {
                 // attempt transition to request pos,
                 // to trigger any collision detection

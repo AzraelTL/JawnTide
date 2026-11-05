@@ -663,7 +663,7 @@ namespace ACE.Server.WorldObjects
             if (player == null || attackerPlayer == null)
                 mustBeInCombatStance = true;
             
-            var arenaEvent = ArenaManager.GetArenaEventByLandblock(this.Location.Landblock);
+            var arenaEvent = ArenaManager.GetArenaEventByLocation(this.Location);
             if (arenaEvent != null && arenaEvent.EventType.Equals("1v1"))
             {
                 mustBeInCombatStance = true;

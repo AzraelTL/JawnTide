@@ -252,12 +252,12 @@ namespace ACE.Server.Entity
             //don't allow any dmg except while the event is in a started status and between non-eliminated players
             //also disallow any dmg except from Tugak in a Tugak War event
             bool isArena1v1 = false;
-            if (playerDefender != null && ArenaLocation.IsArenaLandblock(playerDefender.Location.Landblock))
+            if (playerDefender != null && ArenaLocation.IsArenaLocation(playerDefender.Location))
             {
                 if (playerAttacker != null && playerAttacker.IsArenaObserver)
                     return 0.0f;
 
-                var arenaEvent = ArenaManager.GetArenaEventByLandblock(playerDefender.Location.Landblock);
+                var arenaEvent = ArenaManager.GetArenaEventByLocation(playerDefender.Location);
                 if (arenaEvent == null || arenaEvent.Status != 4 || arenaEvent.EventType.Equals("tugak"))
                 {
                     return 0.0f;
@@ -837,9 +837,9 @@ namespace ACE.Server.Entity
 
             //Arenas - If this is an arena landblock
             //track total dmg dealt and received            
-            if (playerDefender != null && ArenaLocation.IsArenaLandblock(playerDefender.Location.Landblock))
+            if (playerDefender != null && ArenaLocation.IsArenaLocation(playerDefender.Location))
             {
-                var arenaEvent = ArenaManager.GetArenaEventByLandblock(playerDefender.Location.Landblock);
+                var arenaEvent = ArenaManager.GetArenaEventByLocation(playerDefender.Location);
                 if (arenaEvent != null && arenaEvent.Status == 4 && playerAttacker != null)
                 {                    
                     var attackerArenaPlayer = arenaEvent.Players.FirstOrDefault(x => x.CharacterId == playerAttacker.Character.Id);

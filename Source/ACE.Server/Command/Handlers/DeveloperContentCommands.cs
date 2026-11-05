@@ -1407,7 +1407,7 @@ namespace ACE.Server.Command.Handlers.Processors
                 File.Delete(sqlFilename);
 
                 using (var ctx = new WorldDbContext())
-                    ctx.Database.ExecuteSqlInterpolated($"DELETE FROM landblock_instance WHERE landblock={landblock};");
+                    ctx.Database.ExecuteSqlInterpolated($"DELETE FROM landblock_instance WHERE landblock={landblock} AND variation_id IS NULL;");
             }
 
             // clear landblock instances for this landblock (again)
@@ -1696,9 +1696,9 @@ namespace ACE.Server.Command.Handlers.Processors
 
             newPos.Frame.Origin.Z = session.Player.CurrentLandblock.PhysicsLandblock.GetZ(newPos.Frame.Origin);
 
-            wo.Location = new Position(newPos.ObjCellID, newPos.Frame.Origin, newPos.Frame.Orientation);
+            wo.Location = new Position(newPos.ObjCellID, newPos.Frame.Origin, newPos.Frame.Orientation).WithVariation(session.Player.Location.Variation);
 
-            var sortCell = Physics.Common.LScape.get_landcell(newPos.ObjCellID) as Physics.Common.SortCell;
+            var sortCell = Physics.Common.LScape.get_landcell(newPos.ObjCellID, session.Player.Location.Variation) as Physics.Common.SortCell;
             if (sortCell != null && sortCell.has_building())
             {
                 session.Network.EnqueueSend(new GameMessageSystemChat($"Failed to create encounter near building cell", ChatMessageType.Broadcast));

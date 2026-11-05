@@ -698,6 +698,7 @@ namespace ACE.Server.Managers
                 ("chat_requires_account_time_seconds", new Property<long>(0, "the amount of time in seconds an account is required to have existed for for global chat privileges")),
                 ("chat_requires_player_age", new Property<long>(0, "the amount of time in seconds a player is required to have played for global chat privileges")),
                 ("chat_requires_player_level", new Property<long>(0, "the level a player is required to have for global chat privileges")),
+                ("arena_instances_per_map", new Property<long>(3, "JawnTide instancing: how many arena matches can run on the same arena map at once (each match gets its own private copy). Read at server start.")),
                 ("corpse_spam_limit", new Property<long>(15, "the number of corpses a player is allowed to leave on a landblock at one time")),
                 ("default_subscription_level", new Property<long>(1, "retail defaults to 1, 1 = standard subscription (same as 2 and 3), 4 grants ToD pre-order bonus item Asheron's Benediction")),
                 ("fellowship_even_share_level", new Property<long>(50, "level when fellowship XP sharing is no longer restricted")),

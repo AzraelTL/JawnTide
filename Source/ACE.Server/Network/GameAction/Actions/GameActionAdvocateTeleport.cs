@@ -24,7 +24,7 @@ namespace ACE.Server.Network.GameAction.Actions
             //Console.WriteLine($"Client sent position: {position}");
 
             // Check if water block
-            var landblock = LScape.get_landblock(position.LandblockId.Raw);
+            var landblock = LScape.get_landblock(position.LandblockId.Raw, null);
             if (landblock.WaterType == LandDefs.WaterType.EntirelyWater)
             {
                 ChatPacket.SendServerMessage(session, $"Landblock 0x{position.LandblockId.Landblock:X4} is entirely filled with water, and is impassable", ChatMessageType.Broadcast);

@@ -120,7 +120,7 @@ namespace ACE.Server.Physics.Common
             {
                 var blockCellID = ID & 0xFFFF0000 | visibleCellID;
                 if (VisibleCells.ContainsKey(blockCellID)) continue;
-                var cell = (EnvCell)LScape.get_landcell(blockCellID);
+                var cell = (EnvCell)LScape.get_landcell(blockCellID, VariationId);
                 VisibleCells.Add(visibleCellID, cell);
             }
         }
@@ -403,9 +403,9 @@ namespace ACE.Server.Physics.Common
             }
         }
 
-        public static ObjCell get_visible(uint cellID)
+        public static ObjCell get_visible(uint cellID, int? variation)
         {
-            var cell = (EnvCell)LScape.get_landcell(cellID);
+            var cell = (EnvCell)LScape.get_landcell(cellID, variation);
             return cell.VisibleCells.Values.First();
         }
 

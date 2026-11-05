@@ -582,6 +582,7 @@ namespace ACE.Database
         /// </summary>
         public void ClearCachedLandblockInstances()
         {
+            cachedVariationInstances.Clear();
             cachedLandblockInstances.Clear();
         }
 
@@ -590,7 +591,40 @@ namespace ACE.Database
         /// </summary>
         public bool ClearCachedInstancesByLandblock(ushort landblock)
         {
+            foreach (var key in cachedVariationInstances.Keys.Where(k => k.landblock == landblock).ToList())
+                cachedVariationInstances.TryRemove(key, out _);
+
             return cachedLandblockInstances.TryRemove(landblock, out _);
+        }
+
+        /// <summary>
+        /// JawnTide instancing: content for instanced copies, keyed by (landblock, content variation)
+        /// </summary>
+        private readonly ConcurrentDictionary<(ushort landblock, int variation), List<LandblockInstance>> cachedVariationInstances = new ConcurrentDictionary<(ushort, int), List<LandblockInstance>>();
+
+        /// <summary>
+        /// JawnTide instancing: returns the spawn map for an instanced copy of a landblock:
+        /// exactly the rows with this variation_id (none = an empty copy).
+        /// </summary>
+        public List<LandblockInstance> GetCachedInstancesByLandblockForVariation(ushort landblock, int contentVariation)
+        {
+            if (cachedVariationInstances.TryGetValue((landblock, contentVariation), out var value))
+                return value;
+
+            List<LandblockInstance> results;
+
+            using (var context = new WorldDbContext())
+            {
+                results = context.LandblockInstance
+                    .Include(r => r.LandblockInstanceLink)
+                    .AsNoTracking()
+                    .Where(r => r.Landblock == landblock && r.VariationId == contentVariation)
+                    .ToList();
+            }
+
+            cachedVariationInstances.TryAdd((landblock, contentVariation), results);
+
+            return cachedVariationInstances[(landblock, contentVariation)];
         }
 
         public List<LandblockInstance> GetCachedInstancesByLandblock(WorldDbContext context, ushort landblock)
@@ -601,7 +635,7 @@ namespace ACE.Database
             var results = context.LandblockInstance
                 .Include(r => r.LandblockInstanceLink)
                 .AsNoTracking()
-                .Where(r => r.Landblock == landblock)
+                .Where(r => r.Landblock == landblock && r.VariationId == null)
                 .ToList();
 
             cachedLandblockInstances.TryAdd(landblock, results.ToList());
@@ -631,6 +665,7 @@ namespace ACE.Database
                 var result = context.LandblockInstance
                     .AsNoTracking()
                     .Where(r => r.Landblock == landblock
+                                && r.VariationId == null
                                 && r.WeenieClassId != 11730 /* Exclude House Portal */
                                 && r.WeenieClassId != 278   /* Exclude Door */
                                 && r.WeenieClassId != 568   /* Exclude Door (entry) */

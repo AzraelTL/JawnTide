@@ -72,7 +72,7 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            if (IsArenaObserver || ArenaLocation.IsArenaLandblock(Location.Landblock))
+            if (IsArenaObserver || ArenaLocation.IsArenaLocation(Location))
             {
                 Session.Network.EnqueueSend(new GameMessageSystemChat("Your mule can't be summoned in an arena.", ChatMessageType.Broadcast));
                 return;

@@ -311,7 +311,10 @@ namespace ACE.Server.WorldObjects
                     return false;
                 }
 
-                var landblockUpdate = (cellBefore >> 16) != (curCell.ID >> 16);
+                var landblockUpdate = (cellBefore >> 16) != (curCell.ID >> 16) || Location.Variation != curCell.VariationId;
+
+                // JawnTide instancing: the cell decides which copy the object is in
+                Location.Variation = curCell.VariationId;
 
                 if (isMoved || isDying)
                 {

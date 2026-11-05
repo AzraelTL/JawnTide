@@ -9,6 +9,11 @@ namespace ACE.Server.Physics.Common
         public Dictionary<uint, ObjCell> Cells;
         public int NumCells;
 
+        /// <summary>
+        /// JawnTide instancing: which copy of the landblock the cells are being looked up in
+        /// </summary>
+        public int? VariationId;
+
         public CellArray()
         {
             Cells = new Dictionary<uint, ObjCell>();

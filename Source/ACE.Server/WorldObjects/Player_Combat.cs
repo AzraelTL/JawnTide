@@ -1327,7 +1327,7 @@ namespace ACE.Server.WorldObjects
                 }
 
                 //Disable most inepts in arenas
-                if (ArenaLocation.IsArenaLandblock(this.Location.Landblock) &&
+                if (ArenaLocation.IsArenaLocation(this.Location) &&
                     spell != null &&
                     spell.IsHarmful)
                 {
@@ -1340,7 +1340,7 @@ namespace ACE.Server.WorldObjects
                         return new List<WeenieErrorWithString>() { WeenieErrorWithString.YouFailToAffect_YouCannotAffectAnyone, WeenieErrorWithString._FailsToAffectYou_TheyCannotAffectAnyone };
                     }
 
-                    var arenaEvent = ArenaManager.GetArenaEventByLandblock(this.Location.Landblock);
+                    var arenaEvent = ArenaManager.GetArenaEventByLocation(this.Location);
 
                     if (spell.School == MagicSchool.VoidMagic)
                     {                        

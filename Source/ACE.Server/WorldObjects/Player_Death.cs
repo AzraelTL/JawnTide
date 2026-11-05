@@ -474,7 +474,7 @@ namespace ACE.Server.WorldObjects
                     uint? killerArenaPlayerId = null;                    
                     try
                     {
-                        if (ArenaLocation.IsArenaLandblock(Location.Landblock))
+                        if (ArenaLocation.IsArenaLocation(Location))
                         {
                             var victimArenaPlayer = ArenaManager.GetArenaPlayerByCharacterId(Character.Id);
                             var killerArenaPlayer = ArenaManager.GetArenaPlayerByCharacterId(killerPlayer.Guid.Full);

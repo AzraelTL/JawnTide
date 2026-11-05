@@ -29,9 +29,12 @@ namespace ACE.Server.Physics.Util
                 uint cellID = firstCellID + i;
                 uint blockCell = dungeonID << 16 | cellID;
 
-                var objCell = Common.LScape.get_landcell(blockCell);
-                var envCell = objCell as Common.EnvCell;
-                if (envCell != null)
+                // JawnTide instancing: read the cell geometry straight from the dat.
+                // AdjustCell only answers "which cell id contains this point", so it must not load
+                // (or depend on) any particular copy of the landblock.
+                Common.EnvCell envCell = null;
+                try { envCell = Common.DBObj.GetEnvCell(blockCell); } catch { }
+                if (envCell != null && envCell.CellStructure != null)
                     EnvCells.Add(envCell);
             }
         }

@@ -544,9 +544,9 @@ namespace ACE.Server.WorldObjects
                 default:   // Health
                     var targetP = targetCreature as Player;
 
-                    if (targetP != null && ArenaLocation.IsArenaLandblock(targetP.Location.Landblock))
+                    if (targetP != null && ArenaLocation.IsArenaLocation(targetP.Location))
                     {
-                        var arenaEvent = ArenaManager.GetArenaEventByLandblock(targetP.Location.Landblock);
+                        var arenaEvent = ArenaManager.GetArenaEventByLocation(targetP.Location);
                         if (arenaEvent != null && arenaEvent.IsOvertime)
                         {
                             tryBoost = boost = (int)Math.Round((boost * arenaEvent.OvertimeHealingModifier));
@@ -735,9 +735,9 @@ namespace ACE.Server.WorldObjects
 
             bool isArenaOvertime = false;
             var arenaOvertimeDrainMod = 1.0f;
-            if (targetPlayer != null && ArenaLocation.IsArenaLandblock(targetPlayer.Location.Landblock))
+            if (targetPlayer != null && ArenaLocation.IsArenaLocation(targetPlayer.Location))
             {
-                var arenaEvent = ArenaManager.GetArenaEventByLandblock(targetPlayer.Location.Landblock);
+                var arenaEvent = ArenaManager.GetArenaEventByLocation(targetPlayer.Location);
                 if (arenaEvent != null && arenaEvent.IsOvertime)
                 {
                     isArenaOvertime = true;
@@ -834,9 +834,9 @@ namespace ACE.Server.WorldObjects
                     if (targetPlayer != null &&
                         spell.Destination == PropertyAttribute2nd.Health &&
                         srcVitalChange < 0 &&
-                        ArenaLocation.IsArenaLandblock(targetPlayer.Location.Landblock))
+                        ArenaLocation.IsArenaLocation(targetPlayer.Location))
                     {
-                        var arenaEvent = ArenaManager.GetArenaEventByLandblock(targetPlayer.Location.Landblock);
+                        var arenaEvent = ArenaManager.GetArenaEventByLocation(targetPlayer.Location);
                         if (arenaEvent != null && arenaEvent.IsOvertime)
                         {
                             srcVitalChange = Convert.ToUInt32(Math.Round(srcVitalChange * arenaEvent.OvertimeHealingModifier));

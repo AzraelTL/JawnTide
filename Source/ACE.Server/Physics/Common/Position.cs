@@ -14,6 +14,11 @@ namespace ACE.Server.Physics.Common
         public uint ObjCellID;
         public AFrame Frame;
 
+        /// <summary>
+        /// JawnTide instancing: which copy of the landblock (null = normal world). See ACE.Entity.Position.Variation
+        /// </summary>
+        public int? Variation;
+
         public uint Landblock => ObjCellID >> 16;
 
         public uint LandblockX => ObjCellID >> 24;
@@ -48,12 +53,14 @@ namespace ACE.Server.Physics.Common
 
             ObjCellID = p.ObjCellID;
             Frame = new AFrame(p.Frame);
+            Variation = p.Variation;
         }
 
         public Position(ACE.Entity.Position p)
         {
             ObjCellID = p.Cell;
             Frame = new AFrame(p.Pos, p.Rotation);
+            Variation = p.Variation;
         }
 
         public void Init()

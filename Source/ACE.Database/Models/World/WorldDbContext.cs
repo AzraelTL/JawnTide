@@ -336,6 +336,9 @@ public partial class WorldDbContext : DbContext
             entity.Property(e => e.WeenieClassId)
                 .HasComment("Weenie Class Id of object to spawn")
                 .HasColumnName("weenie_Class_Id");
+            entity.Property(e => e.VariationId)
+                .HasComment("JawnTide instancing: NULL = normal world, otherwise content for instanced copies")
+                .HasColumnName("variation_id");
         });
 
         modelBuilder.Entity<LandblockInstanceLink>(entity =>

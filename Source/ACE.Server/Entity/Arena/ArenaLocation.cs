@@ -31,6 +31,16 @@ namespace ACE.Server.Entity
 
         public uint LandblockId { get; set; }
 
+        /// <summary>
+        /// JawnTide instancing: which copy of this arena map this slot is (several matches can run on the same map at once)
+        /// </summary>
+        public int Slot { get; set; }
+
+        /// <summary>
+        /// JawnTide instancing: the instance the most recent event on this slot ran in (kept after the event ends so loiterers can be cleared)
+        /// </summary>
+        public int? LastVariation { get; set; }
+
         public List<string> SupportedEventTypes { get; set; }
 
         public ArenaEvent ActiveEvent { get; set; }
@@ -160,7 +170,7 @@ namespace ACE.Server.Entity
                             //log.Info($"ArenaLocation.Tick() - {this.ArenaName} status = 2 - PreEventCountdown is complete");
 
                             //Pre-Event countdown is complete
-                            List<Position> positions = GetArenaLocationStartingPositions(ActiveEvent.Location);
+                            List<Position> positions = GetArenaLocationStartingPositions(ActiveEvent.Location, ActiveEvent.Variation);
                             var playerList = new List<Player>();
                             foreach (var arenaPlayer in ActiveEvent.Players)
                             {
@@ -309,7 +319,7 @@ namespace ACE.Server.Entity
                                     }
 
                                     //if the player is not on the arena landblock they're eliminated
-                                    if (player.Location.Landblock != ActiveEvent.Location)
+                                    if (player.Location.Landblock != ActiveEvent.Location || player.Location.Variation != ActiveEvent.Variation)
                                     {
                                         arenaPlayer.IsEliminated = true;
                                         ArenaManager.DispelArenaRares(player);
@@ -474,7 +484,7 @@ namespace ACE.Server.Entity
                             foreach (var arenaPlayer in ActiveEvent.Players)
                             {
                                 var player = PlayerManager.GetOnlinePlayer(arenaPlayer.CharacterId);
-                                if (player != null && player.Location.Landblock == LandblockId)
+                                if (player != null && player.Location.Landblock == LandblockId && player.Location.Variation == ActiveEvent.Variation)
                                 {
                                     hasPlayers = true;
                                 }
@@ -510,6 +520,10 @@ namespace ACE.Server.Entity
             {
                 ActiveEvent = arenaEvent;
                 ActiveEvent.Location = LandblockId;
+
+                // JawnTide instancing: every event gets its own private copy of the arena map
+                ActiveEvent.Variation = InstanceManager.CreateInstance(InstanceManager.ArenaContent, $"{ArenaName} arena event");
+                LastVariation = ActiveEvent.Variation;
             }
         }
 
@@ -1699,7 +1713,17 @@ namespace ACE.Server.Entity
 
             try
             {
-                var arenaLandblock = LandblockManager.GetLandblock(new LandblockId(LandblockId << 16), false);
+                // JawnTide instancing: only the instance this slot used. Never touch the normal world copy
+                // (it's ordinary content again), and never load an instance just to empty it.
+                var variation = ActiveEvent?.Variation ?? LastVariation;
+                if (!variation.HasValue)
+                    return;
+
+                var landblockId = new LandblockId(LandblockId << 16);
+                if (!LandblockManager.IsLoaded(landblockId, variation))
+                    return;
+
+                var arenaLandblock = LandblockManager.GetLandblock(landblockId, variation, false);
                 var playerList = arenaLandblock.GetCurrentLandblockPlayers();
                 foreach (var player in playerList)
                 {
@@ -2076,9 +2100,29 @@ namespace ACE.Server.Entity
             return arenaLocationStartingPositions.ContainsKey(landblockId) ? arenaLocationStartingPositions[landblockId] : new List<Position>();
         }
 
+        /// <summary>
+        /// JawnTide instancing: starting positions inside a specific instance of the arena map
+        /// </summary>
+        public static List<Position> GetArenaLocationStartingPositions(uint landblockId, int? variation)
+        {
+            return GetArenaLocationStartingPositions(landblockId).Select(p => new Position(p).WithVariation(variation)).ToList();
+        }
+
+        /// <summary>
+        /// Is this landblock one of the arena maps (any copy)?
+        /// </summary>
         public static bool IsArenaLandblock(uint landblockId)
         {
             return ArenaLandblocks.Contains(landblockId);
+        }
+
+        /// <summary>
+        /// JawnTide instancing: is this position inside an arena match? Only the private arena copies count;
+        /// the normal world copy of an arena map is ordinary content.
+        /// </summary>
+        public static bool IsArenaLocation(Position pos)
+        {
+            return pos != null && pos.Variation.HasValue && ArenaLandblocks.Contains(pos.Landblock);
         }
     }
 }

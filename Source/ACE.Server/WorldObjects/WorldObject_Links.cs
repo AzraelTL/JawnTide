@@ -7,6 +7,7 @@ using ACE.Database.Models.World;
 using ACE.Database.Models.Shard;
 using ACE.Entity;
 using ACE.Server.Factories;
+using ACE.Server.Managers;
 
 namespace ACE.Server.WorldObjects
 {
@@ -30,12 +31,15 @@ namespace ACE.Server.WorldObjects
             if (parent == null)
                 parent = this;
 
+            // JawnTide instancing: linked children in an instanced copy get dynamic guids too
+            var variation = CurrentLandblock?.VariationId;
+
             foreach (var link in LinkedInstances)
             {
                 WorldObject wo = null;
-                var biota = biotas.FirstOrDefault(b => b.Id == link.Guid);
+                var biota = variation.HasValue ? null : biotas.FirstOrDefault(b => b.Id == link.Guid);
                 if (biota == null)
-                    wo = WorldObjectFactory.CreateWorldObject(DatabaseManager.World.GetCachedWeenie(link.WeenieClassId), new ObjectGuid(link.Guid));
+                    wo = WorldObjectFactory.CreateWorldObject(DatabaseManager.World.GetCachedWeenie(link.WeenieClassId), variation.HasValue ? GuidManager.NewDynamicGuid() : new ObjectGuid(link.Guid));
                 else
                 {
                     wo = WorldObjectFactory.CreateWorldObject(biota);
@@ -44,8 +48,9 @@ namespace ACE.Server.WorldObjects
 
                 if (wo == null) continue;
 
-                wo.Location = new Position(link.ObjCellId, link.OriginX, link.OriginY, link.OriginZ, link.AnglesX, link.AnglesY, link.AnglesZ, link.AnglesW);
+                wo.Location = new Position(link.ObjCellId, link.OriginX, link.OriginY, link.OriginZ, link.AnglesX, link.AnglesY, link.AnglesZ, link.AnglesW).WithVariation(variation);
                 parent.SetLinkProperties(wo);
+                CurrentLandblock?.MarkInstanceContent(wo);
                 CurrentLandblock?.AddWorldObject(wo);
                 if (wo.PhysicsObj != null)
                     wo.PhysicsObj.Order = 0;

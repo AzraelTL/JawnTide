@@ -449,6 +449,9 @@ namespace ACE.Server.WorldObjects
 
             newPosition.PositionZ += 0.005f * (ObjScale ?? 1.0f);
 
+            // JawnTide instancing: monsters only blip within their own copy
+            newPosition.Variation = Location.Variation;
+
             if (Location.Landblock != newPosition.Landblock)
             {
                 log.Error($"{Name} tried to teleport from {Location} to a different landblock {newPosition}");

@@ -17,6 +17,30 @@ namespace ACE.Entity
 
         public uint Landblock { get => landblockId.Raw >> 16; }
 
+        /// <summary>
+        /// JawnTide instancing: which copy of the landblock this position is in.
+        /// null = the normal shared world. A value = a private instance (e.g. one arena match).
+        /// The client never sees this; it only exists on the server.
+        /// </summary>
+        public int? Variation;
+
+        /// <summary>
+        /// JawnTide instancing: true when Variation was chosen on purpose (WithVariation), so a teleport
+        /// uses it as is - including null, meaning "the normal world". Otherwise a teleport within the same
+        /// landblock stays in the copy the player is already in.
+        /// </summary>
+        public bool ExplicitVariation;
+
+        /// <summary>
+        /// Sets Variation (on purpose, see ExplicitVariation) and returns this, for chaining onto new Position(...)
+        /// </summary>
+        public Position WithVariation(int? variation)
+        {
+            Variation = variation;
+            ExplicitVariation = true;
+            return this;
+        }
+
         // FIXME: this is returning landblock + cell
         public uint Cell { get => landblockId.Raw; }
 
@@ -109,10 +133,10 @@ namespace ACE.Entity
             if (rotate180)
             {
                 var rotate = new Quaternion(0, 0, qz, qw) * Quaternion.CreateFromYawPitchRoll(0, 0, (float)Math.PI);
-                return new Position(LandblockId.Raw, PositionX + dx, PositionY + dy, PositionZ + bumpHeight, 0f, 0f, rotate.Z, rotate.W);
+                return new Position(LandblockId.Raw, PositionX + dx, PositionY + dy, PositionZ + bumpHeight, 0f, 0f, rotate.Z, rotate.W).WithVariation(Variation);
             }
             else
-                return new Position(LandblockId.Raw, PositionX + dx, PositionY + dy, PositionZ + bumpHeight, 0f, 0f, qz, qw);
+                return new Position(LandblockId.Raw, PositionX + dx, PositionY + dy, PositionZ + bumpHeight, 0f, 0f, qz, qw).WithVariation(Variation);
         }
 
         /// <summary>
@@ -215,6 +239,8 @@ namespace ACE.Entity
             LandblockId = new LandblockId(pos.LandblockId.Raw);
             Pos = pos.Pos;
             Rotation = pos.Rotation;
+            Variation = pos.Variation;
+            ExplicitVariation = pos.ExplicitVariation;
         }
 
         public Position(uint blockCellID, float newPositionX, float newPositionY, float newPositionZ, float newRotationX, float newRotationY, float newRotationZ, float newRotationW, bool relativePos = false)
@@ -394,6 +420,10 @@ namespace ACE.Entity
         /// </summary>
         public float SquaredDistanceTo(Position p)
         {
+            // JawnTide instancing: different copies of the world are infinitely far apart
+            if (p != null && p.Variation != Variation)
+                return float.MaxValue;
+
             if (p == null) return float.MaxValue;
 
             if (p.LandblockId == this.LandblockId)
@@ -419,6 +449,10 @@ namespace ACE.Entity
         /// </summary>
         public float Distance2D(Position p)
         {
+            // JawnTide instancing: different copies of the world are infinitely far apart
+            if (p != null && p.Variation != Variation)
+                return float.MaxValue;
+
             if (p == null) return float.MaxValue;
 
             // originally this returned the offset instead of distance...
@@ -443,6 +477,10 @@ namespace ACE.Entity
         /// </summary>
         public float Distance2DSquared(Position p)
         {
+            // JawnTide instancing: different copies of the world are infinitely far apart
+            if (p != null && p.Variation != Variation)
+                return float.MaxValue;
+
             if (p == null) return float.MaxValue;
 
             // originally this returned the offset instead of distance...
@@ -467,6 +505,10 @@ namespace ACE.Entity
         /// </summary>
         public float DistanceTo(Position p)
         {
+            // JawnTide instancing: different copies of the world are infinitely far apart
+            if (p != null && p.Variation != Variation)
+                return float.MaxValue;
+
             if (p == null) return float.MaxValue;
 
             // originally this returned the offset instead of distance...
@@ -505,7 +547,7 @@ namespace ACE.Entity
 
         public override string ToString()
         {
-            return $"{LandblockId.Raw:X8} [{PositionX} {PositionY} {PositionZ}]";
+            return $"{LandblockId.Raw:X8} [{PositionX} {PositionY} {PositionZ}]{(Variation.HasValue ? $" v{Variation.Value}" : "")}";
         }
 
         public string ToLOCString()
@@ -519,7 +561,7 @@ namespace ACE.Entity
 
         public bool Equals(Position p)
         {
-            return p != null && Cell == p.Cell && Pos.Equals(p.Pos) && Rotation.Equals(p.Rotation);
+            return p != null && Cell == p.Cell && Variation == p.Variation && Pos.Equals(p.Pos) && Rotation.Equals(p.Rotation);
         }
     }
 }

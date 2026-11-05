@@ -1527,6 +1527,15 @@ namespace ACE.Server.WorldObjects
             }
         }
 
+        /// <summary>
+        /// JawnTide instancing: see PropertyBool.InInstance
+        /// </summary>
+        public bool InInstance
+        {
+            get => GetProperty(PropertyBool.InInstance) ?? false;
+            set { if (!value) RemoveProperty(PropertyBool.InInstance); else SetProperty(PropertyBool.InInstance, value); }
+        }
+
         public bool IsArenaObserver
         {
             get => GetProperty(PropertyBool.IsArenaObserver) ?? false;

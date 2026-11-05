@@ -57,6 +57,25 @@ namespace ACE.Server.Entity
         public LandblockId Id { get; }
 
         /// <summary>
+        /// JawnTide instancing: null = the normal world, a value = a private copy of this landblock (see Managers/InstanceManager.cs)
+        /// </summary>
+        public int? VariationId { get; }
+
+        public bool IsInstance => VariationId.HasValue;
+
+        /// <summary>
+        /// JawnTide instancing: guids of the objects this copy spawned from world content.
+        /// They have dynamic guids, but they are never saved and never moved to the normal world.
+        /// </summary>
+        private readonly HashSet<ObjectGuid> instanceContentGuids = new HashSet<ObjectGuid>();
+
+        public void MarkInstanceContent(WorldObject wo)
+        {
+            if (IsInstance && wo != null)
+                instanceContentGuids.Add(wo.Guid);
+        }
+
+        /// <summary>
         /// Flag indicates if this landblock is permanently loaded (for example, towns on high-traffic servers)
         /// </summary>
         public bool Permaload = false;
@@ -159,7 +178,7 @@ namespace ACE.Server.Entity
             {
                 if(_isTownControlLandblock == null)
                 {
-                    _isTownControlLandblock = TownControlLandblocks.IsTownControlLandblock(this.Id.Landblock);
+                    _isTownControlLandblock = !IsInstance && TownControlLandblocks.IsTownControlLandblock(this.Id.Landblock);
                 }
 
                 return _isTownControlLandblock.Value;
@@ -236,11 +255,14 @@ namespace ACE.Server.Entity
         }
 
 
-        public Landblock(LandblockId id)
+        public Landblock(LandblockId id) : this(id, null) { }
+
+        public Landblock(LandblockId id, int? variationId)
         {
             //log.DebugFormat("Landblock({0:X8})", (id.Raw | 0xFFFF));
 
             Id = id;
+            VariationId = variationId;
 
             CellLandblock = DatManager.CellDat.ReadFromDat<CellLandblock>(Id.Raw | 0xFFFF);
             LandblockInfo = DatManager.CellDat.ReadFromDat<LandblockInfo>((uint)Id.Landblock << 16 | 0xFFFE);
@@ -249,6 +271,7 @@ namespace ACE.Server.Entity
 
             var cellLandblock = DBObj.GetCellLandblock(Id.Raw | 0xFFFF);
             PhysicsLandblock = new Physics.Common.Landblock(cellLandblock);
+            PhysicsLandblock.VariationId = variationId;
         }
 
         public void Init(bool reload = false)
@@ -259,6 +282,11 @@ namespace ACE.Server.Entity
             Task.Run(() =>
             {
                 CreateWorldObjects();
+
+                // JawnTide instancing: a private copy only gets the world content.
+                // Shard objects (corpses, dropped items, saved statics) belong to the normal world.
+                if (IsInstance)
+                    return;
 
                 SpawnDynamicShardObjects();
 
@@ -530,9 +558,22 @@ namespace ACE.Server.Entity
         /// </summary>
         private void CreateWorldObjects()
         {
-            var objects = DatabaseManager.World.GetCachedInstancesByLandblock(Id.Landblock);
-            var shardObjects = DatabaseManager.Shard.BaseDatabase.GetStaticObjectsByLandblock(Id.Landblock);
-            var factoryObjects = WorldObjectFactory.CreateNewWorldObjects(objects, shardObjects);
+            List<LandblockInstance> objects;
+            List<ACE.Database.Models.Shard.Biota> shardObjects;
+
+            if (IsInstance)
+            {
+                // JawnTide instancing: the copy loads its own content (landblock_instance rows with its content variation_id)
+                objects = DatabaseManager.World.GetCachedInstancesByLandblockForVariation(Id.Landblock, InstanceManager.GetContentVariation(VariationId.Value));
+                shardObjects = new List<ACE.Database.Models.Shard.Biota>();
+            }
+            else
+            {
+                objects = DatabaseManager.World.GetCachedInstancesByLandblock(Id.Landblock);
+                shardObjects = DatabaseManager.Shard.BaseDatabase.GetStaticObjectsByLandblock(Id.Landblock);
+            }
+
+            var factoryObjects = WorldObjectFactory.CreateNewWorldObjects(objects, shardObjects, null, VariationId);
 
             actionQueue.EnqueueAction(new ActionEventDelegate(() =>
             {
@@ -560,6 +601,9 @@ namespace ACE.Server.Entity
                         }
                     }
 
+                    if (IsInstance)
+                        instanceContentGuids.Add(fo.Guid);
+
                     AddWorldObject(fo);
                     fo.ActivateLinks(objects, shardObjects, parent);
 
@@ -585,7 +629,18 @@ namespace ACE.Server.Entity
             actionQueue.EnqueueAction(new ActionEventDelegate(() =>
             {
                 foreach (var fso in factoryShardObjects)
+                {
+                    // JawnTide instancing: a corpse or item saved from inside an instance is still live in that instance
+                    // (or was just moved here), don't make a second copy of it
+                    if ((ACE.Server.Physics.Managers.ServerObjectManager.ServerObjects.TryGetValue(fso.Guid.Full, out var live) && live != null && live != fso.PhysicsObj)
+                        || GetObject(fso.Guid, false) != null)
+                    {
+                        // not Destroy(): that would delete the live object's saved data
+                        continue;
+                    }
+
                     AddWorldObject(fso);
+                }
             }));
         }
 
@@ -616,9 +671,9 @@ namespace ACE.Server.Entity
 
                     pos.Frame.Origin.Z = PhysicsLandblock.GetZ(pos.Frame.Origin);
 
-                    wo.Location = new Position(pos.ObjCellID, pos.Frame.Origin, pos.Frame.Orientation);
+                    wo.Location = new Position(pos.ObjCellID, pos.Frame.Origin, pos.Frame.Orientation).WithVariation(VariationId);
 
-                    var sortCell = LScape.get_landcell(pos.ObjCellID) as SortCell;
+                    var sortCell = LScape.get_landcell(pos.ObjCellID, VariationId) as SortCell;
                     if (sortCell != null && sortCell.has_building())
                     {
                         wo.Destroy();
@@ -889,7 +944,8 @@ namespace ACE.Server.Entity
 
             // Database Save
             stopwatch.Restart();
-            if (lastDatabaseSave + databaseSaveInterval <= DateTime.UtcNow)
+            // JawnTide instancing: a private copy never saves on a timer; what's worth keeping is saved to the normal world when it unloads
+            if (!IsInstance && lastDatabaseSave + databaseSaveInterval <= DateTime.UtcNow)
             {
                 ProcessPendingWorldObjectAdditionsAndRemovals();
 
@@ -1212,6 +1268,10 @@ namespace ACE.Server.Entity
 
             wo.CurrentLandblock = this;
 
+            // JawnTide instancing: an object added to this copy lives in this copy
+            if (wo.Location != null && wo.Location.Variation != VariationId)
+                wo.Location.Variation = VariationId;
+
             if (wo.PhysicsObj == null)
                 wo.InitPhysicsObj();
             else
@@ -1494,6 +1554,9 @@ namespace ACE.Server.Entity
 
             ProcessPendingWorldObjectAdditionsAndRemovals();
 
+            if (IsInstance)
+                MoveKeepersToNormalWorld();
+
             SaveDB();
 
             // remove all objects
@@ -1510,9 +1573,67 @@ namespace ACE.Server.Entity
             actionQueue.Clear();
 
             // remove physics landblock
-            LScape.unload_landblock(landblockID);
+            LScape.unload_landblock(landblockID, VariationId);
 
             PhysicsLandblock.release_shadow_objs();
+        }
+
+        /// <summary>
+        /// JawnTide instancing: when a private copy goes away, anything a player would want back
+        /// (their corpse, items they dropped) moves to the same spot in the normal world and is saved there.
+        /// The copy's own content is destroyed.
+        /// </summary>
+        private void MoveKeepersToNormalWorld()
+        {
+            foreach (var wo in worldObjects.Values.ToList())
+            {
+                if (wo is Player || wo.IsDestroyed)
+                    continue;
+
+                if (instanceContentGuids.Contains(wo.Guid))
+                {
+                    wo.Destroy(false, true);
+                    continue;
+                }
+
+                if (!wo.IsDynamicThatShouldPersistToShard())
+                    continue;
+
+                try
+                {
+                    if (ServerManager.ShutdownInProgress)
+                    {
+                        // shutting down: just save it where it will load in the normal world next start
+                        wo.Location = new ACE.Entity.Position(wo.Location).WithVariation(null);
+                        wo.SaveBiotaToDatabase();
+                        RemoveWorldObjectInternal(wo.Guid, false, false, false);
+                        continue;
+                    }
+
+                    RemoveWorldObjectInternal(wo.Guid, false, false, false);
+
+                    wo.ClearPhysicsObjForInstanceMove();
+                    wo.Location = new ACE.Entity.Position(wo.Location).WithVariation(null);
+
+                    if (LandblockManager.AddObject(wo))
+                    {
+                        wo.SaveBiotaToDatabase();
+                        log.Info($"[INSTANCE] Moved {wo.Name} (0x{wo.Guid}) from instance {VariationId} of 0x{Id.Landblock:X4} to the normal world");
+                    }
+                    else
+                    {
+                        // couldn't place it, still save it so it loads with the normal landblock next time
+                        wo.SaveBiotaToDatabase();
+                        log.Warn($"[INSTANCE] Couldn't place {wo.Name} (0x{wo.Guid}) from instance {VariationId} of 0x{Id.Landblock:X4}; saved for the normal world");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    log.Error($"[INSTANCE] Failed moving {wo.Name} (0x{wo.Guid}) out of instance {VariationId} of 0x{Id.Landblock:X4}: {ex}");
+                }
+            }
+
+            ProcessPendingWorldObjectAdditionsAndRemovals();
         }
 
         public void DestroyAllNonPlayerObjects()
@@ -1541,6 +1662,10 @@ namespace ACE.Server.Entity
 
             foreach (var wo in worldObjects.Values)
             {
+                // JawnTide instancing: an instanced copy's own content is never saved
+                if (IsInstance && instanceContentGuids.Contains(wo.Guid))
+                    continue;
+
                 if (wo.IsStaticThatShouldPersistToShard() || wo.IsDynamicThatShouldPersistToShard())
                     AddWorldObjectToBiotasSaveCollection(wo, biotas);
             }
@@ -1736,7 +1861,8 @@ namespace ACE.Server.Entity
             {
                 if (!_isArenaLandblock.HasValue)
                 {
-                    _isArenaLandblock = ArenaLocation.IsArenaLandblock(this.Id.Landblock);
+                    // JawnTide instancing: only the private arena copies are arenas; the normal world copy is ordinary content
+                    _isArenaLandblock = IsInstance && ArenaLocation.IsArenaLandblock(this.Id.Landblock);
                 }
 
                 return _isArenaLandblock.Value;

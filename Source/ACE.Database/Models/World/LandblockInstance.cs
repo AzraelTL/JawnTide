@@ -41,6 +41,11 @@ public partial class LandblockInstance
     /// </summary>
     public bool IsLinkChild { get; set; }
 
+    /// <summary>
+    /// JawnTide instancing: null = normal world content, a value = content that only spawns in instanced copies using that content variation
+    /// </summary>
+    public int? VariationId { get; set; }
+
     public DateTime LastModified { get; set; }
 
     public virtual ICollection<LandblockInstanceLink> LandblockInstanceLink { get; set; } = new List<LandblockInstanceLink>();

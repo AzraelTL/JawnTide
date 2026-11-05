@@ -181,6 +181,15 @@ namespace ACE.Server.WorldObjects
                 PhysicsObj.Velocity = new Vector3(0, 0, 0.5f);
         }
 
+        /// <summary>
+        /// JawnTide instancing: used when an object is moved out of an instanced copy into the normal world.
+        /// The old physics object was already destroyed by the landblock removal; a fresh one is made on add.
+        /// </summary>
+        public void ClearPhysicsObjForInstanceMove()
+        {
+            PhysicsObj = null;
+        }
+
         public bool AddPhysicsObj()
         {
             if (PhysicsObj.CurCell != null)
@@ -191,7 +200,7 @@ namespace ACE.Server.WorldObjects
             // exclude linkspots from spawning
             if (WeenieClassId == 10762) return true;
 
-            var cell = LScape.get_landcell(Location.Cell);
+            var cell = LScape.get_landcell(Location.Cell, Location.Variation);
             if (cell == null)
             {
                 PhysicsObj.DestroyObject();
@@ -200,9 +209,11 @@ namespace ACE.Server.WorldObjects
             }
 
             PhysicsObj.Position.ObjCellID = cell.ID;
+            PhysicsObj.Position.Variation = Location.Variation;
 
             var location = new Physics.Common.Position();
             location.ObjCellID = cell.ID;
+            location.Variation = Location.Variation;
             location.Frame.Origin = Location.Pos;
             location.Frame.Orientation = Location.Rotation;
 
@@ -746,7 +757,7 @@ namespace ACE.Server.WorldObjects
         {
             if (pos == null) return false;
 
-            var landblock = LScape.get_landblock(pos.Cell);
+            var landblock = LScape.get_landblock(pos.Cell, pos.Variation);
             if (landblock == null || !landblock.HasDungeon) return false;
 
             var dungeonID = pos.Cell >> 16;
@@ -767,7 +778,7 @@ namespace ACE.Server.WorldObjects
         {
             if (pos == null) return false;
 
-            var landblock = LScape.get_landblock(pos.Cell);
+            var landblock = LScape.get_landblock(pos.Cell, pos.Variation);
             if (landblock == null || !landblock.HasDungeon) return false;
 
             var dungeonID = pos.Cell >> 16;

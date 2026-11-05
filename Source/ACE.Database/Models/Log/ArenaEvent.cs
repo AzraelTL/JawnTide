@@ -37,6 +37,12 @@ namespace ACE.Database.Models.Log
 
         public uint Location { get; set; }
 
+        /// <summary>
+        /// JawnTide instancing: the private copy of the arena landblock this event runs in
+        /// </summary>
+        [NotMapped]
+        public int? Variation { get; set; }
+
         [NotMapped]
         public List<ArenaPlayer> Players { get; set; }
 

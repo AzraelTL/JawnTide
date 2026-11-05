@@ -39,9 +39,43 @@ namespace ACE.Server.Managers
         private static Dictionary<uint, ArenaPlayer> queuedPlayers = new Dictionary<uint, ArenaPlayer>();
         private static Dictionary<uint, ArenaLocation> arenaLocations = new Dictionary<uint, ArenaLocation>();
 
+        /// <summary>
+        /// Arena names by map landblock (the same for every slot of a map)
+        /// </summary>
+        private static Dictionary<uint, string> arenaNamesByLandblock = new Dictionary<uint, string>();
+
         public static void Initialize()
         {
-            arenaLocations = ArenaLocation.InitializeArenaLocations();
+            var baseLocations = ArenaLocation.InitializeArenaLocations();
+
+            // JawnTide instancing: every match runs in its own private copy of the map, so a map can host
+            // several matches at once. Each slot is keyed (slot << 16) | landblock; slot 0 keeps the plain landblock key.
+            var slotsPerMap = (int)Math.Clamp(PropertyManager.GetLong("arena_instances_per_map").Item, 1, 50);
+
+            var locations = new Dictionary<uint, ArenaLocation>();
+            arenaNamesByLandblock = new Dictionary<uint, string>();
+
+            foreach (var baseLocation in baseLocations.Values)
+            {
+                arenaNamesByLandblock[baseLocation.LandblockId] = baseLocation.ArenaName;
+
+                for (var slot = 0; slot < slotsPerMap; slot++)
+                {
+                    var location = slot == 0 ? baseLocation : new ArenaLocation()
+                    {
+                        LandblockId = baseLocation.LandblockId,
+                        SupportedEventTypes = baseLocation.SupportedEventTypes,
+                        ArenaName = baseLocation.ArenaName,
+                    };
+                    location.Slot = slot;
+
+                    locations[((uint)slot << 16) | baseLocation.LandblockId] = location;
+                }
+            }
+
+            arenaLocations = locations;
+
+            log.Info($"ArenaManager.Initialize() - {baseLocations.Count} arena maps, {slotsPerMap} instance(s) each");
         }
 
         private static DateTime LastTickDateTime = DateTime.MinValue;
@@ -826,14 +860,19 @@ namespace ACE.Server.Managers
             return null;
         }
 
-        public static ArenaEvent GetArenaEventByLandblock(uint landblockId)
+        /// <summary>
+        /// JawnTide instancing: the active event running in the arena instance this position is in (null outside arena instances)
+        /// </summary>
+        public static ArenaEvent GetArenaEventByLocation(Position pos)
         {
-            if (arenaLocations.ContainsKey(landblockId))
+            if (pos == null || !pos.Variation.HasValue)
+                return null;
+
+            foreach (var arena in arenaLocations.Values)
             {
-                if (arenaLocations[landblockId].HasActiveEvent)
-                {
-                    return arenaLocations[landblockId].ActiveEvent;
-                }
+                var ev = arena.ActiveEvent;   // read once, the arena tick can clear it
+                if (ev != null && ev.Variation == pos.Variation && arena.LandblockId == pos.Landblock)
+                    return ev;
             }
 
             return null;
@@ -841,10 +880,8 @@ namespace ACE.Server.Managers
 
         public static string GetArenaNameByLandblock(uint landblockId)
         {
-            if (arenaLocations.ContainsKey(landblockId))
-            {
-                return arenaLocations[landblockId].ArenaName;
-            }
+            if (arenaNamesByLandblock.TryGetValue(landblockId, out var name))
+                return name;
 
             return "";
         }
@@ -970,7 +1007,7 @@ namespace ACE.Server.Managers
             actionChain.AddDelaySeconds(.5);
             actionChain.AddAction(player, () =>
             {
-                var startingPositions = ArenaLocation.GetArenaLocationStartingPositions(arenaEvent.Location);
+                var startingPositions = ArenaLocation.GetArenaLocationStartingPositions(arenaEvent.Location, arenaEvent.Variation);
                 if (startingPositions != null)
                 {
                     //Teleport to a random starting position

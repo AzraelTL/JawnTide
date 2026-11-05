@@ -228,6 +228,34 @@ namespace ACE.Server.WorldObjects
             actionChain.EnqueueChain();
         }
 
+        /// <summary>
+        /// JawnTide instancing: when moving between copies of a landblock, the client would otherwise keep showing
+        /// objects from the copy being left (same cell ids). Drop everything we know that isn't in the destination copy.
+        /// </summary>
+        public void HandleVariationChangeVisibility(int? destinationVariation)
+        {
+            var knownObjs = GetKnownObjects();
+            if (knownObjs == null)
+                return;
+
+            foreach (var knownObj in knownObjs)
+            {
+                if (knownObj == null || knownObj == this || knownObj.PhysicsObj == null)
+                    continue;
+
+                if (knownObj.Location != null && knownObj.Location.Variation == destinationVariation)
+                    continue;
+
+                knownObj.PhysicsObj.ObjMaint.RemoveObject(PhysicsObj);
+
+                if (knownObj is Player knownPlayer)
+                    knownPlayer.RemoveTrackedObject(this, false);
+
+                ObjMaint.RemoveObject(knownObj.PhysicsObj);
+                RemoveTrackedObject(knownObj, false);
+            }
+        }
+
         public void HandlePreTeleportVisibility(ACE.Entity.Position newPosition)
         {
             // repro steps without this function:

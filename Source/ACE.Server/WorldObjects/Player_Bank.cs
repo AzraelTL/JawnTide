@@ -53,7 +53,7 @@ namespace ACE.Server.WorldObjects
             if (PKTimerActive)
                 return "The bank is closed to you while you're PK tagged.";
 
-            if (IsArenaObserver || (Location != null && ArenaLocation.IsArenaLandblock(Location.Landblock)))
+            if (IsArenaObserver || (Location != null && ArenaLocation.IsArenaLocation(Location)))
                 return "The bank can't be used in an arena.";
 
             if (IsTrading)

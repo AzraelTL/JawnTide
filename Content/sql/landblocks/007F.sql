@@ -1,4 +1,5 @@
-DELETE FROM `landblock_instance` WHERE `landblock` = 0x007F;
+-- JawnTide: normal world content (stock ACE). The arena version is in arena/007F.sql (variation 1).
+DELETE FROM `landblock_instance` WHERE `landblock` = 0x007F AND `variation_id` IS NULL;
 
 INSERT INTO `landblock_instance` (`guid`, `weenie_Class_Id`, `obj_Cell_Id`, `origin_X`, `origin_Y`, `origin_Z`, `angles_W`, `angles_X`, `angles_Y`, `angles_Z`, `is_Link_Child`, `last_Modified`)
 VALUES (0x7007F000, 87532, 0x007F02EC, 10, -840.747, -0.063, 1, 0, 0, 0, False, '2021-11-01 00:00:00'); /* Surface */
@@ -52,7 +53,8 @@ VALUES (0x7007F001, 0x7007F002, '2021-11-01 00:00:00') /* Viamontian Tribune (30
      , (0x7007F001, 0x7007F02C, '2021-11-01 00:00:00') /* Viamontian Tribune (30291) */
      , (0x7007F001, 0x7007F02D, '2021-11-01 00:00:00') /* Viamontian Tribune (30291) */
      , (0x7007F001, 0x7007F02E, '2021-11-01 00:00:00') /* Adept of Fire (35128) */
-     , (0x7007F001, 0x7007F02F, '2021-11-01 00:00:00') /* Adept of Lightning (35130) */;
+     , (0x7007F001, 0x7007F02F, '2021-11-01 00:00:00') /* Adept of Lightning (35130) */
+     , (0x7007F001, 0x7007F032, '2021-11-01 00:00:00') /* Bound Falatacot (87531) */;
 
 INSERT INTO `landblock_instance` (`guid`, `weenie_Class_Id`, `obj_Cell_Id`, `origin_X`, `origin_Y`, `origin_Z`, `angles_W`, `angles_X`, `angles_Y`, `angles_Z`, `is_Link_Child`, `last_Modified`)
 VALUES (0x7007F002, 30291, 0x007F02E9, 6.41336, -807.57, 0.00679, 0.046259, 0, 0, 0.998929,  True, '2021-11-01 00:00:00'); /* Viamontian Tribune */
@@ -243,5 +245,9 @@ VALUES (0x7007F030, 87532, 0x007F0146, 289.389, -159.951, -42.063, -0.710526, 0,
 /* @teleloc 0x007F0146 [289.389008 -159.951004 -42.063000] -0.710526 0.000000 0.000000 -0.703671 */
 
 INSERT INTO `landblock_instance` (`guid`, `weenie_Class_Id`, `obj_Cell_Id`, `origin_X`, `origin_Y`, `origin_Z`, `angles_W`, `angles_X`, `angles_Y`, `angles_Z`, `is_Link_Child`, `last_Modified`)
-VALUES (0x7007F031, 87531, 0x007F0123, 208.462, -159.588, -41.9864, 0.686291, 0, 0, -0.727327, False, '2023-03-10 19:46:54'); /* Bound Falatacot */
-/* @teleloc 0x007F0123 [208.462006 -159.587997 -41.986401] 0.686291 0.000000 0.000000 -0.727327 */
+VALUES (0x7007F031, 87534, 0x007F0123, 209.703, -159.8, -42.063, 0.706652, 0, 0, -0.707562, False, '2021-11-01 00:00:00'); /* Binding Realm */
+/* @teleloc 0x007F0123 [209.703003 -159.800003 -42.063000] 0.706652 0.000000 0.000000 -0.707562 */
+
+INSERT INTO `landblock_instance` (`guid`, `weenie_Class_Id`, `obj_Cell_Id`, `origin_X`, `origin_Y`, `origin_Z`, `angles_W`, `angles_X`, `angles_Y`, `angles_Z`, `is_Link_Child`, `last_Modified`)
+VALUES (0x7007F032, 87531, 0x007F0103, 250, -10.1622, -59.9864, 0.020795, 0, 0, -0.999784,  True, '2021-11-01 00:00:00'); /* Bound Falatacot */
+/* @teleloc 0x007F0103 [250.000000 -10.162200 -59.986401] 0.020795 0.000000 0.000000 -0.999784 */

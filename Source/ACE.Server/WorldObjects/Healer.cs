@@ -229,9 +229,9 @@ namespace ACE.Server.WorldObjects
             // heal up
             var healAmount = GetHealAmount(healer, target, missingVital, out var critical, out var staminaCost);
 
-            if(ArenaLocation.IsArenaLandblock(target.Location.Landblock))
+            if(ArenaLocation.IsArenaLocation(target.Location))
             {
-                var arenaEvent = ArenaManager.GetArenaEventByLandblock(target.Location.Landblock);
+                var arenaEvent = ArenaManager.GetArenaEventByLocation(target.Location);
                 if (arenaEvent != null && arenaEvent.IsOvertime)
                 {
                     healAmount = Convert.ToUInt32(Math.Round(healAmount * arenaEvent.OvertimeHealingModifier));
@@ -276,8 +276,8 @@ namespace ACE.Server.WorldObjects
 
             var combatMod = healer.CombatMode == CombatMode.NonCombat ? 1.0f : 1.1f;
             int boostValue = BoostValue;
-            var arenaEvent = ArenaManager.GetArenaEventByLandblock(target.Location.Landblock);
-            bool isArena = target != null && ArenaLocation.IsArenaLandblock(target.Location.Landblock);
+            var arenaEvent = ArenaManager.GetArenaEventByLocation(target.Location);
+            bool isArena = target != null && ArenaLocation.IsArenaLocation(target.Location);
             if (isArena && arenaEvent != null && arenaEvent.EventType.Equals("1v1"))
             {
                 boostValue = Math.Min(BoostValue, (int)PropertyManager.GetDouble("arena_1v1_healkit_skill_bonus_cap").Item);
@@ -303,8 +303,8 @@ namespace ACE.Server.WorldObjects
                 return 0;
             }
 
-            var arenaEvent = ArenaManager.GetArenaEventByLandblock(target.Location.Landblock);
-            bool isArena = target != null && ArenaLocation.IsArenaLandblock(target.Location.Landblock);
+            var arenaEvent = ArenaManager.GetArenaEventByLocation(target.Location);
+            bool isArena = target != null && ArenaLocation.IsArenaLocation(target.Location);
 
             //Cap HealkitMod during arena 1v1s
             var healkitMod = (float)HealkitMod.Value;

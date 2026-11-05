@@ -123,9 +123,9 @@ namespace ACE.Server.WorldObjects
             if (player.IsJumping)
                 boostValue = 0;
 
-            if (ArenaLocation.IsArenaLandblock(player.Location.Landblock))
+            if (ArenaLocation.IsArenaLocation(player.Location))
             {
-                var arenaEvent = ArenaManager.GetArenaEventByLandblock(player.Location.Landblock);
+                var arenaEvent = ArenaManager.GetArenaEventByLocation(player.Location);
                 if (arenaEvent != null && arenaEvent.IsOvertime)
                 {
                     boostValue = 0;

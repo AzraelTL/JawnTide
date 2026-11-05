@@ -33,6 +33,11 @@ namespace ACE.Server.Physics.Common
         public List<PhysicsObj> Scenery;
         public List<PhysicsObj> ServerObjects { get; set; }
 
+        /// <summary>
+        /// JawnTide instancing: which copy of the landblock this is (null = normal world). Set before PostInit.
+        /// </summary>
+        public int? VariationId;
+
         public static bool UseSceneFiles = true;
 
         public Landblock() : base()
@@ -68,6 +73,13 @@ namespace ACE.Server.Physics.Common
 
         public void PostInit()
         {
+            foreach (var landCell in LandCells.Values)
+            {
+                landCell.VariationId = VariationId;
+                if (landCell.Pos != null)
+                    landCell.Pos.Variation = VariationId;
+            }
+
             init_landcell();
 
             init_buildings();
@@ -145,7 +157,7 @@ namespace ACE.Server.Physics.Common
             var cellY = (int)point.Y / 24;
 
             var blockCellID = (ID & 0xFFFF0000) | (uint)(cellX * 8 + cellY) + 1;
-            return (LandCell)LScape.get_landcell((uint)blockCellID);
+            return (LandCell)LScape.get_landcell((uint)blockCellID, VariationId);
         }
 
         public void destroy_buildings()
@@ -438,7 +450,7 @@ namespace ACE.Server.Physics.Common
             foreach (var info in Info.Buildings)
             {
                 var building = BuildingObj.makeBuilding(info.ModelId, info.Portals, info.NumLeaves);
-                var position = new Position(ID, new AFrame(info.Frame));
+                var position = new Position(ID, new AFrame(info.Frame)) { Variation = VariationId };
                 var outside = LandDefs.AdjustToOutside(position);
                 var cell = get_landcell(position.ObjCellID);
                 if (cell == null) continue;
@@ -492,7 +504,7 @@ namespace ACE.Server.Physics.Common
                 {
                     var obj = PhysicsObj.makeObject(info.Id, 0, false);
                     obj.DatObject = true;
-                    var position = new Position(ID, new AFrame(info.Frame));
+                    var position = new Position(ID, new AFrame(info.Frame)) { Variation = VariationId };
                     var outside = LandDefs.AdjustToOutside(position);
                     var cell = get_landcell(position.ObjCellID);
                     if (cell == null)
@@ -685,7 +697,7 @@ namespace ACE.Server.Physics.Common
             var cellID = startCell;
             for (var i = 0; i < Info.NumCells; i++)
             {
-                var envCell = (EnvCell)LScape.get_landcell(cellID++);
+                var envCell = (EnvCell)LScape.get_landcell(cellID++, VariationId);
                 if (envCell != null)
                     envcells.Add(envCell);
                 else

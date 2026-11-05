@@ -24,6 +24,9 @@ namespace ACE.Server.Network.GameAction.Actions
 
             session.Player.LastContact = message.Payload.ReadByte() != 0;   // TRUE if player is currently on ground
 
+            // JawnTide instancing: client positions are always in the copy the player is in
+            position.Variation = session.Player.Location?.Variation;
+
             if (session.Player.LastContact)
                 session.Player.LastGroundPos = position;
 

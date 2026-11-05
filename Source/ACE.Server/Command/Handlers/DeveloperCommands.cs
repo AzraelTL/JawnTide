@@ -2474,7 +2474,7 @@ namespace ACE.Server.Command.Handlers
             }
 
             var foundOnLandblock = player.CurrentLandblock != null &&
-                LandblockManager.GetLandblock(player.CurrentLandblock.Id, false).GetObject(player.Guid) != null;
+                LandblockManager.GetLandblock(player.CurrentLandblock.Id, player.CurrentLandblock.VariationId, false).GetObject(player.Guid) != null;
 
             // capture state before logoff for message and DB log
             var wasForced = player.ForcedLogOffRequested;

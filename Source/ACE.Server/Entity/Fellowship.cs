@@ -650,6 +650,10 @@ namespace ACE.Server.Entity
             if (earner.Location.Indoors != fellow.Location.Indoors)
                 return 0.0f;
 
+            // JawnTide instancing: fellows in different copies of a landblock are never in range
+            if (earner.Location.Variation != fellow.Location.Variation)
+                return 0.0f;
+
             // If you are both indoors but in different landblocks.
             if (earner.Location.Indoors && fellow.Location.Indoors && earner.Location.Landblock != fellow.Location.Landblock)
                 return 0.0f;
@@ -687,6 +691,10 @@ namespace ACE.Server.Entity
                     player.CurrentLandblock == fellow.CurrentLandblock || player.Location.DistanceTo(fellow.Location) <= 192.0f :
                     player.Location.Distance2D(fellow.Location) <= player.CurrentRadarRange && player.ObjMaint.VisibleObjectsContainsKey(fellow.Guid.Full);      // 2d visible distance / radar range?
 
+                // JawnTide instancing: fellows in different copies of a landblock are never in range
+                if (player != fellow && player.Location?.Variation != fellow.Location?.Variation)
+                    shareable = false;
+
                 if (shareable)
                     results.Add(fellow);
             }
@@ -718,7 +726,9 @@ namespace ACE.Server.Entity
 
                 bool shareable;
 
-                if (player.Location.Landblock == fellow.Location.Landblock)
+                if (player.Location.Variation != fellow.Location.Variation)
+                    shareable = false;  // JawnTide instancing: different copies are never in range
+                else if (player.Location.Landblock == fellow.Location.Landblock)
                     shareable = true;
                 else if ((player.CurrentLandblock?.IsDungeon ?? true) || (fellow.CurrentLandblock?.IsDungeon ?? true))
                     shareable = false;
