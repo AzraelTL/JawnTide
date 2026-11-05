@@ -448,13 +448,15 @@ namespace ACE.Server.WorldObjects
                     this.ItemSpellcraft = 525;
                     if (this.ItemType == ItemType.Caster)
                     {
-                        this.ProcSpell = (uint)SpellId.MagicYieldOther8;
+                        // JawnTide loot stages: level 7 for Stage 1; back to MagicYieldOther8 in Stage 2 (Ops/loot-stages/DISABLED.md)
+                        this.ProcSpell = (uint)SpellId.MagicYieldOther7;
                         currRollResultMsg = "Added Cast on Strike Magic Yield";
                         HandleTinkerLottoLog("COSYIELD");
                     }
                     else
                     {
-                        this.ProcSpell = (uint)SpellId.ImperilOther8;
+                        // JawnTide loot stages: level 7 for Stage 1; back to ImperilOther8 in Stage 2 (Ops/loot-stages/DISABLED.md)
+                        this.ProcSpell = (uint)SpellId.ImperilOther7;
                         currRollResultMsg = "Added Cast on Strike Imperil";
                         HandleTinkerLottoLog("COSIMP");
                     }
