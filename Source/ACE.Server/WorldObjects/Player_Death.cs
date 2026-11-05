@@ -1017,7 +1017,7 @@ namespace ACE.Server.WorldObjects
 
                 //Drop DB key on death during indoor world boss events
                 var currWb = WorldBossManager.GetActiveWorldBoss();
-                if (currWb != null && currWb.IndoorLocation != null && currWb.IndoorLocation.Landblock == this.Location.Landblock)
+                if (currWb != null && currWb.IsInBossArea(this.Location))
                 {
                     var dbKey = WorldObjectFactory.CreateNewWorldObject(480608);
                     dbKey.SetStackSize(1);

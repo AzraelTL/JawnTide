@@ -134,7 +134,7 @@ namespace ACE.Server.WorldObjects
         {
             var wb = WorldBossManager.GetActiveWorldBoss();
 
-            if (wb == null || !wb.MaxAllegianceEntries.HasValue || wb.IndoorLocation.Landblock != pos.Landblock)
+            if (wb == null || !wb.MaxAllegianceEntries.HasValue || !wb.IsInBossArea(pos))
                 return new ZergEntryResult { Status = ZergEntryStatus.WbAllowed };
 
             var count = wb.AllegianceEntries.GetValueOrDefault(monarchId);
@@ -265,7 +265,7 @@ namespace ACE.Server.WorldObjects
             if (wb == null)
                 return;
 
-            if (wb.IndoorLocation.Landblock != pos.Landblock)
+            if (!wb.IsInBossArea(pos))
                 return;
 
             if (wb.AllegianceEntries.ContainsKey(MonarchId.Value))

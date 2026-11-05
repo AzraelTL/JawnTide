@@ -83,7 +83,7 @@ namespace ACE.Server.Managers
                     //For indoor bosses make them take zero dmg if more than one allegiance is on the landblock                
                     if (activeWorldBoss.IndoorLocation != null)
                     {
-                        var bossLandblock = LandblockManager.GetLandblock(activeWorldBoss.IndoorLocation.LandblockId, false, true);
+                        var bossLandblock = activeWorldBoss.BossWorldObject.CurrentLandblock ?? LandblockManager.GetLandblock(activeWorldBoss.IndoorLocation.LandblockId, activeWorldBoss.InstanceVariation, false, !activeWorldBoss.InstanceVariation.HasValue);
                         var playersOnLandblock = bossLandblock?.GetCurrentLandblockPlayers() ?? new List<Player>();
                         uint? firstAllegId = null;
                         bool hasMultipleAllegiances = false;
@@ -183,13 +183,16 @@ namespace ACE.Server.Managers
 
                 boss.StatueWorldObject = statueWorldObj;
 
-                //Perma load the landblock for the boss location
+                // JawnTide instancing: an instanced boss gets a fresh private copy of its lair (kept loaded while it's up, see IsBossInstance)
+                boss.InstanceVariation = boss.InstanceContent.HasValue ? InstanceManager.CreateInstance(boss.InstanceContent.Value, $"{boss.Name} world boss") : (int?)null;
+
+                //Perma load the landblock for the boss location (the normal world one; an instance stays loaded while the boss is up)
                 var bossLandblockID = new LandblockId(boss.IndoorLocation.LandblockId.Raw << 16);
-                var bossLandblock = LandblockManager.GetLandblock(bossLandblockID, false, true);
+                var bossLandblock = LandblockManager.GetLandblock(bossLandblockID, boss.InstanceVariation, false, !boss.InstanceVariation.HasValue);
 
                 //Create boss in world
                 var bossWorldObj = WorldObjectFactory.CreateNewWorldObject(bossWeenie);
-                bossWorldObj.Location = boss.IndoorLocation;
+                bossWorldObj.Location = boss.BossLocation;
                 bossWorldObj.CurrentLandblock = bossLandblock;
                 bossWorldObj.TimeToRot = -1;
                 bossWorldObj.Lifespan = 14400;
@@ -258,6 +261,38 @@ namespace ACE.Server.Managers
             }
 
             activeWorldBoss = boss;
+        }
+
+        /// <summary>
+        /// JawnTide instancing: the copy a teleport into this landblock should use for the active instanced boss, or null
+        /// </summary>
+        public static int? GetBossInstanceRoute(uint landblock)
+        {
+            var wb = activeWorldBoss;
+            if (wb == null || !wb.InstanceVariation.HasValue || wb.IndoorLocation == null || wb.IndoorLocation.Landblock != landblock)
+                return null;
+
+            if (wb.BossWorldObject == null || wb.BossWorldObject.IsDestroyed)
+                return null;
+
+            return wb.InstanceVariation;
+        }
+
+        /// <summary>
+        /// JawnTide instancing: is this the copy of the boss that's up right now? (it stays loaded while the boss lives)
+        /// </summary>
+        public static bool IsBossInstance(int variation)
+        {
+            var wb = activeWorldBoss;
+            return wb != null && wb.InstanceVariation == variation && wb.BossWorldObject != null && !wb.BossWorldObject.IsDestroyed;
+        }
+
+        /// <summary>
+        /// JawnTide instancing: does this landblock host an instanced boss? Its normal world copy is ordinary content.
+        /// </summary>
+        public static bool IsInstancedBossLandblock(uint landblock)
+        {
+            return WorldBosses.WorldBossMap.Values.Any(b => b.InstanceContent.HasValue && b.IndoorLocation != null && b.IndoorLocation.Landblock == landblock);
         }
 
         public static WorldBoss GetActiveWorldBoss()

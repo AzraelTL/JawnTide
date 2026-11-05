@@ -389,6 +389,10 @@ namespace ACE.Server.Entity
                     if (area.IsTownControlArea && !(IsInstance && TownControlInstances.IsActiveTownControlVariation(VariationId.Value)))
                         return;
 
+                    // JawnTide instancing: an instanced world boss's lair is only restricted inside the boss's copy
+                    if (area.IsWorldBossArea && WorldBossManager.IsInstancedBossLandblock(Id.Landblock) && !(IsInstance && WorldBossManager.IsBossInstance(VariationId.Value)))
+                        return;
+
                     Dictionary<uint, List<Player>> clansInZergControlArea = new Dictionary<uint, List<Player>>();
                     List<Player> playersInZergControlArea = new List<Player>();
                     List<Player> playersNotWhitelisted = new List<Player>();
@@ -928,7 +932,7 @@ namespace ACE.Server.Entity
 
                 // JawnTide instancing: a running Town Control event's copy stays loaded like the old keep-alive did;
                 // once the event is over, anyone still inside goes to the same spot in the normal world
-                var keptAlive = false;
+                var keptAlive = IsInstance && WorldBossManager.IsBossInstance(VariationId.Value);
                 if (IsInstance && TownControlInstances.IsTownControlVariation(VariationId.Value))
                 {
                     if (TownControlInstances.IsActiveTownControlVariation(VariationId.Value))

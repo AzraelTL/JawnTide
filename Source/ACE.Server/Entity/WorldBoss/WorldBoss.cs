@@ -226,6 +226,7 @@ namespace ACE.Server.Entity.WorldBoss
                     tq.IndoorLocation = new Position(0x02C8011E, 29.906477f, -218.092255f, -5.995000f, 0f, 0f, 0.008112f, -0.999967f);
                     // 0x02C8011E [29.906477 -218.092255 -5.995000] -0.999967 0.000000 0.000000 0.008112
                     tq.StatueWeenieId = 49009301;
+                    tq.InstanceContent = 3;     // JawnTide instancing: the lair runs in a private copy of 02C8; the normal world copy is the stock Banderling dungeon
                     _worldBossMap.Add(49009300, tq);
                 }
 
@@ -443,6 +444,31 @@ namespace ACE.Server.Entity.WorldBoss
         public Position IndoorLocation { get; set; }
 
         public uint? StatueWeenieId { get; set; }
+
+        /// <summary>
+        /// JawnTide instancing: when set, each spawn of this indoor boss gets its own private copy of IndoorLocation's
+        /// landblock, loading the landblock_instance rows with this variation_id. Teleports into that landblock go to the
+        /// copy while the boss is up; otherwise the landblock is the normal world.
+        /// </summary>
+        public int? InstanceContent { get; set; }
+
+        /// <summary>
+        /// JawnTide instancing: the copy the current spawn lives in
+        /// </summary>
+        public int? InstanceVariation { get; set; }
+
+        /// <summary>
+        /// JawnTide instancing: where the boss fight happens (IndoorLocation, in this spawn's copy)
+        /// </summary>
+        public Position BossLocation => IndoorLocation == null ? null : new Position(IndoorLocation).WithVariation(InstanceVariation);
+
+        /// <summary>
+        /// JawnTide instancing: is this position in this boss's lair (its copy, if it has one)?
+        /// </summary>
+        public bool IsInBossArea(Position pos)
+        {
+            return pos != null && IndoorLocation != null && pos.Landblock == IndoorLocation.Landblock && pos.Variation == InstanceVariation;
+        }
 
         /// <summary>JawnTide: lower-level boss, switched on and off by disable_low_level_world_bosses</summary>
         public bool IsLowLevel { get; set; }

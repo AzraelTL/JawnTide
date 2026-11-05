@@ -744,6 +744,14 @@ namespace ACE.Server.WorldObjects
                     newPosition.Variation = TownControlInstances.GetActiveVariationForLandblock(newPosition.Landblock);
             }
 
+            // JawnTide instancing: while an instanced world boss is up, its lair is the boss's private copy
+            if (!newPosition.ExplicitVariation && !newPosition.Variation.HasValue)
+            {
+                var bossRoute = WorldBossManager.GetBossInstanceRoute(newPosition.Landblock);
+                if (bossRoute.HasValue)
+                    newPosition.Variation = bossRoute;
+            }
+
             if (InInstance != newPosition.Variation.HasValue)
                 InInstance = newPosition.Variation.HasValue;
 
@@ -861,6 +869,11 @@ namespace ACE.Server.WorldObjects
             // JawnTide instancing: a Town Control conflict area is only restricted inside a running event's copy;
             // the normal world copy is ordinary content
             if (area != null && area.IsTownControlArea && !TownControlInstances.IsInActiveConflictArea(newPosition))
+                area = null;
+
+            // JawnTide instancing: an instanced world boss's lair is only restricted inside the boss's copy
+            if (area != null && area.IsWorldBossArea && WorldBossManager.IsInstancedBossLandblock(newPosition.Landblock)
+                && !(newPosition.Variation.HasValue && WorldBossManager.IsBossInstance(newPosition.Variation.Value)))
                 area = null;
 
             return area != null;
