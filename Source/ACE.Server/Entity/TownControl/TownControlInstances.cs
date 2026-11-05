@@ -50,6 +50,21 @@ namespace ACE.Server.Entity.TownControl
         private static DateTime nextTick = DateTime.MinValue;
 
         /// <summary>
+        /// How long players get to leave an event's copy after the event ends, before they're sent to their lifestone
+        /// </summary>
+        public static readonly TimeSpan EventOverGrace = TimeSpan.FromMinutes(2);
+
+        /// <summary>
+        /// instance -> when its event was first seen to be over (the same clock for every landblock of the copy)
+        /// </summary>
+        private static readonly ConcurrentDictionary<int, DateTime> eventOverTimes = new ConcurrentDictionary<int, DateTime>();
+
+        public static DateTime GetEventOverTime(int variation)
+        {
+            return eventOverTimes.GetOrAdd(variation, _ => DateTime.UtcNow);
+        }
+
+        /// <summary>
         /// Called from the world tick. While a town's event runs, its conflict area copy is kept loaded
         /// (like the old keep-alive objects did), so the crystal spawns and the event can end on time even before anyone enters.
         /// </summary>

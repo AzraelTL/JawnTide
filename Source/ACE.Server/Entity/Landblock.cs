@@ -930,24 +930,15 @@ namespace ACE.Server.Entity
                     PermaloadEndDate = null;
                 }
 
-                // JawnTide instancing: a running Town Control event's copy stays loaded like the old keep-alive did;
-                // once the event is over, anyone still inside goes to the same spot in the normal world
+                // JawnTide instancing: a running Town Control event's copy stays loaded like the old keep-alive did.
+                // Once the event is over, players get 2 minutes to leave (warned at 1 minute and 30 seconds), then go to their lifestone.
                 var keptAlive = IsInstance && WorldBossManager.IsBossInstance(VariationId.Value);
                 if (IsInstance && TownControlInstances.IsTownControlVariation(VariationId.Value))
                 {
                     if (TownControlInstances.IsActiveTownControlVariation(VariationId.Value))
                         keptAlive = true;
                     else
-                    {
-                        foreach (var player in players.ToList())
-                        {
-                            if (player.Teleporting)
-                                continue;
-
-                            player.Session?.Network.EnqueueSend(new GameMessageSystemChat("The Town Control event is over. You've been moved out of the event area.", ChatMessageType.Broadcast));
-                            WorldManager.ThreadSafeTeleport(player, new ACE.Entity.Position(player.Location).WithVariation(null));
-                        }
-                    }
+                        HandleTownControlEventOver();
                 }
 
                 if (!Permaload && HasNoKeepAliveObjects && !keptAlive)
@@ -1616,6 +1607,53 @@ namespace ACE.Server.Entity
         /// (their corpse, items they dropped) moves to the same spot in the normal world and is saved there.
         /// The copy's own content is destroyed.
         /// </summary>
+        /// <summary>
+        /// JawnTide instancing: how many of the "event is over" messages this copy has sent (0 none, 1 two minutes, 2 one minute, 3 thirty seconds)
+        /// </summary>
+        private int tcEventOverStage;
+
+        private void HandleTownControlEventOver()
+        {
+            var remaining = TownControlInstances.EventOverGrace - (DateTime.UtcNow - TownControlInstances.GetEventOverTime(VariationId.Value));
+
+            string message = null;
+
+            if (remaining <= TimeSpan.Zero)
+            {
+                foreach (var player in players.ToList())
+                {
+                    if (player.Teleporting || player.IsAdmin)
+                        continue;
+
+                    player.Session?.Network.EnqueueSend(new GameMessageSystemChat("The Town Control event area has closed. You've been sent to your lifestone.", ChatMessageType.Broadcast));
+                    WorldManager.ThreadSafeTeleport(player, new ACE.Entity.Position(player.Sanctuary ?? player.FallbackPosition));
+                }
+                return;
+            }
+
+            if (tcEventOverStage < 1)
+            {
+                tcEventOverStage = 1;
+                message = "The Town Control event is over. You have 2 minutes to leave the event area before you are sent to your lifestone.";
+            }
+            else if (tcEventOverStage < 2 && remaining <= TimeSpan.FromMinutes(1))
+            {
+                tcEventOverStage = 2;
+                message = "1 minute left to leave the Town Control event area before you are sent to your lifestone.";
+            }
+            else if (tcEventOverStage < 3 && remaining <= TimeSpan.FromSeconds(30))
+            {
+                tcEventOverStage = 3;
+                message = "30 seconds left to leave the Town Control event area before you are sent to your lifestone.";
+            }
+
+            if (message != null)
+            {
+                foreach (var player in players)
+                    player.Session?.Network.EnqueueSend(new GameMessageSystemChat(message, ChatMessageType.Broadcast));
+            }
+        }
+
         private void MoveKeepersToNormalWorld()
         {
             foreach (var wo in worldObjects.Values.ToList())
