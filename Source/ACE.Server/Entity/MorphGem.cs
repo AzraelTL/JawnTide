@@ -1379,18 +1379,17 @@ namespace ACE.Server.Entity
                     #region MorphGemBanditHilt
                     case MorphGemBanditHilt:
 
-                        // a Light Weapons melee weapon with multi-strike (as before), or (JawnTide) any Finesse Weapons dagger that isn't
-                        // Triple-Strike yet, imbued or not, so it can be rended or imbued before or after. Finesse ones are balanced by
-                        // pvp_dmg_mod_fw_triplestrike and the per-imbue pvp_dmg_mod_fw_triplestrike_cs/_ar/_cb/_rend settings.
-                        var banditHiltLight = target.WeaponSkill == Skill.LightWeapons &&
+                        // JawnTide: Light Weapons or Finesse Weapons daggers that are already Multi-Strike (double slash or double thrust),
+                        // imbued or not. Finesse ones are balanced by pvp_dmg_mod_fw_triplestrike and the per-imbue
+                        // pvp_dmg_mod_fw_triplestrike_cs/_ar/_cb/_rend settings; Light ones by the pvp_dmg_mod_lw_*triplestrike settings.
+                        var banditHiltOk = target.WeenieType == WeenieType.MeleeWeapon &&
+                            (target.WeaponSkill == Skill.LightWeapons || target.WeaponSkill == Skill.FinesseWeapons) &&
+                            target.W_WeaponType == WeaponType.Dagger &&
                             (target.W_AttackType.HasFlag(AttackType.DoubleSlash) || target.W_AttackType.HasFlag(AttackType.DoubleThrust));
 
-                        var banditHiltFinesse = target.WeaponSkill == Skill.FinesseWeapons && target.W_WeaponType == WeaponType.Dagger &&
-                            target.W_AttackType != AttackType.TripleStrike;
-
-                        if (target.WeenieType != WeenieType.MeleeWeapon || (!banditHiltLight && !banditHiltFinesse))
+                        if (!banditHiltOk)
                         {
-                            playerMsg = "This gem can only be used on Light Weapon melee weapons with the Multi-Strike property, or on Finesse Weapon daggers that aren't already Triple-Strike";
+                            playerMsg = "This gem can only be used on Light Weapon or Finesse Weapon daggers with the Multi-Strike property";
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat(playerMsg, ChatMessageType.Broadcast));
                             player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
                             return;
