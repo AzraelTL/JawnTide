@@ -1379,12 +1379,16 @@ namespace ACE.Server.Entity
                     #region MorphGemBanditHilt
                     case MorphGemBanditHilt:
 
-                        //Check if the target is a LW multi-strike weapon
-                        if (target.WeenieType != WeenieType.MeleeWeapon ||
-                            target.WeaponSkill != Skill.LightWeapons ||
-                            (!target.W_AttackType.HasFlag(AttackType.DoubleSlash) && !target.W_AttackType.HasFlag(AttackType.DoubleThrust)))
+                        // JawnTide: Finesse Weapons daggers only, imbued with Critical Strike, Armor Rending or Crippling Blow,
+                        // and not already Triple-Strike. Their PvP damage is balanced by pvp_dmg_mod_fw_triplestrike_cs/_ar/_cb.
+                        var banditHiltImbued = target.HasImbuedEffect(ImbuedEffectType.CriticalStrike) ||
+                            target.HasImbuedEffect(ImbuedEffectType.ArmorRending) ||
+                            target.HasImbuedEffect(ImbuedEffectType.CripplingBlow);
+
+                        if (target.WeenieType != WeenieType.MeleeWeapon || target.WeaponSkill != Skill.FinesseWeapons ||
+                            target.W_WeaponType != WeaponType.Dagger || !banditHiltImbued || target.W_AttackType == AttackType.TripleStrike)
                         {
-                            playerMsg = "This gem can only be used on Light Weapon melee weapons with the Multi-Strike property";
+                            playerMsg = "This gem can only be used on Finesse Weapon daggers imbued with Critical Strike, Armor Rending or Crippling Blow that aren't already Triple-Strike";
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat(playerMsg, ChatMessageType.Broadcast));
                             player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
                             return;
