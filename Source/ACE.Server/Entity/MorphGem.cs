@@ -1379,16 +1379,20 @@ namespace ACE.Server.Entity
                     #region MorphGemBanditHilt
                     case MorphGemBanditHilt:
 
-                        // JawnTide: Finesse Weapons daggers only, imbued with Critical Strike, Armor Rending or Crippling Blow,
-                        // and not already Triple-Strike. Their PvP damage is balanced by pvp_dmg_mod_fw_triplestrike_cs/_ar/_cb.
-                        var banditHiltImbued = target.HasImbuedEffect(ImbuedEffectType.CriticalStrike) ||
-                            target.HasImbuedEffect(ImbuedEffectType.ArmorRending) ||
-                            target.HasImbuedEffect(ImbuedEffectType.CripplingBlow);
+                        // a Light Weapons melee weapon with multi-strike (as before), or (JawnTide) a Finesse Weapons dagger imbued with
+                        // Critical Strike, Armor Rending or Crippling Blow. Finesse ones are balanced by pvp_dmg_mod_fw_triplestrike_cs/_ar/_cb.
+                        var banditHiltLight = target.WeaponSkill == Skill.LightWeapons &&
+                            (target.W_AttackType.HasFlag(AttackType.DoubleSlash) || target.W_AttackType.HasFlag(AttackType.DoubleThrust));
 
-                        if (target.WeenieType != WeenieType.MeleeWeapon || target.WeaponSkill != Skill.FinesseWeapons ||
-                            target.W_WeaponType != WeaponType.Dagger || !banditHiltImbued || target.W_AttackType == AttackType.TripleStrike)
+                        var banditHiltFinesse = target.WeaponSkill == Skill.FinesseWeapons && target.W_WeaponType == WeaponType.Dagger &&
+                            target.W_AttackType != AttackType.TripleStrike &&
+                            (target.HasImbuedEffect(ImbuedEffectType.CriticalStrike) ||
+                             target.HasImbuedEffect(ImbuedEffectType.ArmorRending) ||
+                             target.HasImbuedEffect(ImbuedEffectType.CripplingBlow));
+
+                        if (target.WeenieType != WeenieType.MeleeWeapon || (!banditHiltLight && !banditHiltFinesse))
                         {
-                            playerMsg = "This gem can only be used on Finesse Weapon daggers imbued with Critical Strike, Armor Rending or Crippling Blow that aren't already Triple-Strike";
+                            playerMsg = "This gem can only be used on Light Weapon melee weapons with the Multi-Strike property, or on Finesse Weapon daggers imbued with Critical Strike, Armor Rending or Crippling Blow";
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat(playerMsg, ChatMessageType.Broadcast));
                             player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
                             return;
