@@ -4,8 +4,9 @@
 --
 -- Sections:
 --   1. Stacks bigger than the item's maximum stack size (can't happen legitimately)
---   2. Twins: randomly generated loot (it has a workmanship its weenie doesn't) that exists more than once with exactly
---      the same rolled stats and spells. Two separate drops almost never match, so a twin is very likely a copy.
+--   2. Twins: armor, weapons and wands from random loot (it has a workmanship its weenie doesn't) that exist more than
+--      once with exactly the same stats and spells (2a), or with the same base roll but tinkered or imbued
+--      differently since (2b). Two separate drops almost never match, so a twin is very likely a copy.
 --   3. Biggest holders of pyreals (coins, trade notes and MMDs, plus the bank), PK Trophies and keys, per account,
 --      so a sudden jump stands out when you compare reports from different days.
 --   4. Every Darkbeat / Hera / Shimmering Skeleton key stack, largest first.
@@ -100,11 +101,12 @@ WHERE mx.value > 0 AND i.stack > mx.value
 ORDER BY i.stack / mx.value DESC
 LIMIT 200;
 
--- ---------------------------------------------------------------- 2. twins
+-- ---------------------------------------------------------------- 2. twins (armor, weapons, wands)
 
-SELECT '2. TWINS: random loot with identical rolled stats and spells, more than one copy (likely duped)' AS `Section`;
+SELECT '2a. TWINS: armor, weapons and wands from random loot, more than one copy with identical stats and spells (likely duped)' AS `Section`;
 
--- loot rolled by the server: it has a workmanship, but its weenie doesn't define one (fixed quest/vendor items do)
+-- armor, clothing, melee and missile weapons and casters that were rolled as random loot: they have a workmanship
+-- their weenie doesn't define (fixed quest and vendor items do, and identical copies of those are normal)
 DROP TEMPORARY TABLE IF EXISTS jt_loot;
 CREATE TEMPORARY TABLE jt_loot (item INT UNSIGNED PRIMARY KEY, wcid INT UNSIGNED NOT NULL) ENGINE=InnoDB;
 
@@ -112,25 +114,40 @@ INSERT INTO jt_loot (item, wcid)
 SELECT i.item, i.wcid
 FROM jt_item i
 JOIN biota_properties_int w ON w.object_Id = i.item AND w.type = 105                                 -- ItemWorkmanship
+JOIN biota_properties_int it ON it.object_Id = i.item AND it.type = 1                                -- ItemType
 LEFT JOIN ace_world.weenie_properties_int ww ON ww.object_Id = i.wcid AND ww.type = 105
-WHERE ww.object_Id IS NULL;
+WHERE ww.object_Id IS NULL
+  AND (it.value & (1 | 2 | 4 | 256 | 32768)) <> 0;   -- MeleeWeapon, Armor, Clothing, MissileWeapon, Caster
 
--- fingerprint of everything the loot roll decides (not wear: structure, current mana, wielded slot)
+-- exact: everything the loot roll and tinkering decide (not wear: structure, current mana, wielded slot)
+-- base:  only what the loot roll decides and tinkering, imbuing and the lottery can't change, so a copy that was
+--        tinkered or imbued after duping still matches its original
 DROP TEMPORARY TABLE IF EXISTS jt_print;
-CREATE TEMPORARY TABLE jt_print (item INT UNSIGNED PRIMARY KEY, wcid INT UNSIGNED NOT NULL, spells INT NOT NULL, fp MEDIUMTEXT NOT NULL) ENGINE=InnoDB;
+CREATE TEMPORARY TABLE jt_print (
+    item INT UNSIGNED PRIMARY KEY, wcid INT UNSIGNED NOT NULL, spells INT NOT NULL, tinkers INT NOT NULL,
+    exact_hash CHAR(32) NOT NULL, base_hash CHAR(32) NOT NULL, KEY (exact_hash), KEY (base_hash)
+) ENGINE=InnoDB;
 
-INSERT INTO jt_print (item, wcid, spells, fp)
-SELECT l.item, l.wcid, COALESCE(sp.n, 0),
-       CONCAT(l.wcid, '|', COALESCE(pi.v, ''), '|', COALESCE(pf.v, ''), '|', COALESCE(sp.v, ''))
+INSERT INTO jt_print (item, wcid, spells, tinkers, exact_hash, base_hash)
+SELECT l.item, l.wcid, COALESCE(sp.n, 0), COALESCE(tk.value, 0),
+       MD5(CONCAT(l.wcid, '|', COALESCE(pi.v, ''), '|', COALESCE(pf.v, ''), '|', COALESCE(sp.v, ''))),
+       MD5(CONCAT(l.wcid, '|', COALESCE(pb.v, ''), '|', COALESCE(sp.v, '')))
 FROM jt_loot l
 LEFT JOIN (
     SELECT object_Id, GROUP_CONCAT(CONCAT(type, '=', value) ORDER BY type) AS v
     FROM biota_properties_int
     WHERE object_Id IN (SELECT item FROM jt_loot)
-      AND type IN (19, 28, 44, 45, 105, 106, 108, 109, 131, 158, 159, 160, 166, 171, 179, 204, 265, 315, 316, 317, 318,
-                   370, 371, 372, 373, 374, 375, 376, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386, 387, 388, 389, 390)
+      AND type IN (19, 28, 44, 45, 105, 106, 108, 109, 131, 158, 159, 160, 166, 171, 179, 204, 265,
+                   370, 371, 372, 373, 374, 375, 376, 377, 378, 379, 381, 382, 383, 384, 386, 387, 388, 389)
     GROUP BY object_Id
 ) pi ON pi.object_Id = l.item
+LEFT JOIN (
+    SELECT object_Id, GROUP_CONCAT(CONCAT(type, '=', value) ORDER BY type) AS v
+    FROM biota_properties_int
+    WHERE object_Id IN (SELECT item FROM jt_loot)
+      AND type IN (105, 106, 108, 109, 131, 158, 159, 160, 265)   -- workmanship, spellcraft, max mana, arcane lore, material, wield requirement, set
+    GROUP BY object_Id
+) pb ON pb.object_Id = l.item
 LEFT JOIN (
     SELECT object_Id, GROUP_CONCAT(CONCAT(type, '=', ROUND(value, 5)) ORDER BY type) AS v
     FROM biota_properties_float
@@ -143,20 +160,43 @@ LEFT JOIN (
     FROM biota_properties_spell_book
     WHERE object_Id IN (SELECT item FROM jt_loot)
     GROUP BY object_Id
-) sp ON sp.object_Id = l.item;
+) sp ON sp.object_Id = l.item
+LEFT JOIN biota_properties_int tk ON tk.object_Id = l.item AND tk.type = 171;                         -- NumTimesTinkered
 
 DROP TEMPORARY TABLE IF EXISTS jt_twin;
-CREATE TEMPORARY TABLE jt_twin (fp_hash CHAR(32) PRIMARY KEY, copies INT NOT NULL, spells INT NOT NULL) ENGINE=InnoDB;
+CREATE TEMPORARY TABLE jt_twin (h CHAR(32) PRIMARY KEY, copies INT NOT NULL, spells INT NOT NULL) ENGINE=InnoDB;
 
-INSERT INTO jt_twin (fp_hash, copies, spells)
-SELECT MD5(fp), COUNT(*), MAX(spells) FROM jt_print GROUP BY MD5(fp) HAVING COUNT(*) > 1;
+INSERT INTO jt_twin (h, copies, spells)
+SELECT exact_hash, COUNT(*), MAX(spells) FROM jt_print GROUP BY exact_hash HAVING COUNT(*) > 1;
 
-SELECT DENSE_RANK() OVER (ORDER BY tw.spells DESC, tw.copies DESC, tw.fp_hash) AS `group`,
+SELECT DENSE_RANK() OVER (ORDER BY tw.spells DESC, tw.copies DESC, tw.h) AS `group`,
        tw.copies, tw.spells, CONCAT('0x', HEX(i.item)) AS item, i.name, i.held_by, i.account_Id AS account
 FROM jt_twin tw
-JOIN jt_print p ON MD5(p.fp) = tw.fp_hash
+JOIN jt_print p ON p.exact_hash = tw.h
 JOIN jt_item i ON i.item = p.item
-ORDER BY tw.spells DESC, tw.copies DESC, tw.fp_hash, i.item
+ORDER BY tw.spells DESC, tw.copies DESC, tw.h, i.item
+LIMIT 500;
+
+SELECT '2b. SAME BASE ROLL: same workmanship, material, wield req, spellcraft, mana and spells, but tinkered/imbued differently since (likely duped, then modified)' AS `Section`;
+
+DROP TEMPORARY TABLE IF EXISTS jt_base;
+CREATE TEMPORARY TABLE jt_base (h CHAR(32) PRIMARY KEY, copies INT NOT NULL, spells INT NOT NULL) ENGINE=InnoDB;
+
+-- items with spells only (without spells too many plain items share a base roll), and only groups whose copies
+-- differ now (identical groups are already in 2a)
+INSERT INTO jt_base (h, copies, spells)
+SELECT base_hash, COUNT(*), MAX(spells)
+FROM jt_print
+WHERE spells > 0
+GROUP BY base_hash
+HAVING COUNT(*) > 1 AND COUNT(DISTINCT exact_hash) > 1;
+
+SELECT DENSE_RANK() OVER (ORDER BY b.spells DESC, b.copies DESC, b.h) AS `group`,
+       b.copies, b.spells, CONCAT('0x', HEX(i.item)) AS item, i.name, p.tinkers, i.held_by, i.account_Id AS account
+FROM jt_base b
+JOIN jt_print p ON p.base_hash = b.h
+JOIN jt_item i ON i.item = p.item
+ORDER BY b.spells DESC, b.copies DESC, b.h, i.item
 LIMIT 500;
 
 -- ---------------------------------------------------------------- 3. biggest holders per account
