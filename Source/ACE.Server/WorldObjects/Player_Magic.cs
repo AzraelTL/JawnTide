@@ -1157,7 +1157,7 @@ namespace ACE.Server.WorldObjects
                     {
                         if (spell.IsHarmful)
                         {
-                            if (targetCreature != null)
+                            if (targetCreature != null && !(targetCreature is TrainingDummy))
                                 Proficiency.OnSuccessUse(this, GetCreatureSkill(spell.School), targetCreature.GetCreatureSkill(Skill.MagicDefense).Current);
 
                             // handle target procs

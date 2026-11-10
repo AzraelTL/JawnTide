@@ -13,6 +13,8 @@ services:
       DB_HOST: ace-db
       DB_USER: monitor
       DB_PASSWORD: ${MONITOR_DB_PASSWORD}
+      # PvP damage page: the password for saving setting changes (empty = editing off). See README.md.
+      MONITOR_EDIT_PASSWORD: ${MONITOR_EDIT_PASSWORD:-}
       INTERVAL_SECONDS: "600"
       HISTORY_DAYS: "30"
       TZ: America/New_York

@@ -39,6 +39,16 @@ A small web page for the LAN that shows, per account:
   built from `Source/ACE.Server/Managers/PropertyManager.cs`: after adding or changing a setting there, run
   `python Ops/monitor/make_settings_catalog.py` from the repo root and commit the JSON.
 
+- **PvP damage** (`/pvp`): every setting about damage (the whole PvP damage tuning area plus any other setting whose name is about
+  damage, crits, armor or resistance) with its live value, and **editable**: change values, enter the edit password and Save. The monitor
+  only adds rows to `ace_shard.settings_request`; the game server (`SettingsRequests.cs`) applies them within about 5 seconds, the same as
+  `@modifydouble` / `@modifylong` / `@modifybool`, and posts each change on the audit channel. String settings (webhooks, keys) can't be
+  changed here. Recent changes and whether each was applied are listed below the table.
+- **Target Drudge** (`/dummy`): every attack session on a Target Drudge (wcid 4290001, `TrainingDummy.cs`): DPS, damage, hit, crit,
+  evade and resist rates, the dummy's setup, the per-weapon and per-spell breakdown, and which PvP settings were changed from default at
+  the time. Place one in game with `@createinst 4290001` and set it up with `/dummy` (`/help dummy`). A player's hits on it take the
+  PvP damage path, it never dies and gives no skill training.
+
 Pages: `/` accounts (click a currency header to sort), `/account?name=...`, `/levels`, `/allegiances`, `/top` top 15 holders per
 currency, `/ips` IPs shared by several accounts, `/settings` server settings, `/casting` casting and movement. Open it from any machine on the LAN: **http://192.168.0.190:8080**
 
@@ -66,6 +76,13 @@ reachable from the internet.
 2. Create the read-only database user:
 
        cd ~/jawntide-server && MP=$(grep '^MONITOR_DB_PASSWORD=' .env | cut -d= -f2) && docker compose exec -T -e MP="$MP" ace-db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -e "CREATE USER IF NOT EXISTS monitor@\"%\" IDENTIFIED BY \"$MP\"; ALTER USER monitor@\"%\" IDENTIFIED BY \"$MP\"; GRANT SELECT ON ace_auth.account TO monitor@\"%\"; GRANT SELECT ON ace_shard.* TO monitor@\"%\"; GRANT SELECT ON ace_log.character_login_log TO monitor@\"%\"; GRANT SELECT ON ace_world.weenie_properties_d_i_d TO monitor@\"%\"; GRANT SELECT ON ace_world.weenie_properties_string TO monitor@\"%\"; FLUSH PRIVILEGES;"'
+
+   For the PvP damage page (after the game server has started once with the PvP balance tools, which creates the table), let the
+   monitor add setting change requests and set its edit password:
+
+       cd ~/jawntide-server && grep -q '^MONITOR_EDIT_PASSWORD=' .env || echo "MONITOR_EDIT_PASSWORD=$(openssl rand -hex 6)" >> .env && docker compose exec -T ace-db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -e "GRANT INSERT ON ace_shard.settings_request TO monitor@\"%\"; FLUSH PRIVILEGES;"' && grep '^MONITOR_EDIT_PASSWORD=' .env
+
+   The last part prints the edit password (keep it to yourself).
 
 3. Build and start it:
 

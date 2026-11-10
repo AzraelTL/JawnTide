@@ -307,6 +307,9 @@ namespace ACE.Server
             log.Info("Initializing TransferAudit...");
             TransferAudit.Initialize();
 
+            log.Info("Initializing SettingsRequests...");
+            SettingsRequests.Initialize();
+
             log.Info("Initializing ArenaManager...");
             ArenaManager.Initialize();
 
