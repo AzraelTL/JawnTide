@@ -9,7 +9,7 @@ cd ~/jawntide-server
 docker compose exec -T ace-db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD"' < ~/JawnTide/Ops/website/wiki-schema.sql
 docker compose exec -T ace-db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -N -e "
   SELECT CONCAT(\"GRANT SELECT, INSERT, UPDATE, DELETE ON ace_wiki.\", t, \" TO web@\", QUOTE(host), \";\") FROM mysql.user
-    JOIN (SELECT \"wiki_user\" t UNION SELECT \"link_code\" UNION SELECT \"session\" UNION SELECT \"page\" UNION SELECT \"revision\") x WHERE user = \"web\"
+    JOIN (SELECT \"wiki_user\" t UNION SELECT \"link_code\" UNION SELECT \"session\" UNION SELECT \"page\" UNION SELECT \"revision\" UNION SELECT \"seed_update\") x WHERE user = \"web\"
   UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_wiki.contributor TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
   UNION ALL SELECT CONCAT(\"GRANT SELECT, UPDATE ON ace_wiki.link_code TO ace@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"ace\"
   UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_wiki.contributor TO ace@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"ace\"
