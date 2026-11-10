@@ -138,7 +138,7 @@ namespace ACE.Server.Command.Handlers
             wo.DeleteObject(rootOwner);
             session.Network.EnqueueSend(new GameMessageDeleteObject(wo));
 
-            PlayerManager.BroadcastToAuditChannel(session.Player, $"{session.Player.Name} has deleted 0x{wo.Guid}:{wo.Name}");
+            log.Info($"{session.Player.Name} has deleted 0x{wo.Guid}:{wo.Name}");
         }
 
         // draw
@@ -2535,9 +2535,9 @@ namespace ACE.Server.Command.Handlers
             }
 
             if (numToSpawn > 1)
-                PlayerManager.BroadcastToAuditChannel(session.Player, $"{session.Player.Name} has created {numToSpawn} {obj.Name} (0x{obj.Guid:X8}) near {obj.Location.ToLOCString()}.");
+                log.Info($"{session.Player.Name} has created {numToSpawn} {obj.Name} (0x{obj.Guid:X8}) near {obj.Location.ToLOCString()}.");
             else
-                PlayerManager.BroadcastToAuditChannel(session.Player, $"{session.Player.Name} has created {obj.Name} (0x{obj.Guid:X8}) at {obj.Location.ToLOCString()}.");
+                log.Info($"{session.Player.Name} has created {obj.Name} (0x{obj.Guid:X8}) at {obj.Location.ToLOCString()}.");
         }
 
         public static Position LastSpawnPos;
