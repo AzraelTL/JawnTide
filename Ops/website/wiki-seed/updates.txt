@@ -1,0 +1,4 @@
+# Starter article updates for pages that already exist, applied once each when the website starts.
+# "TAG FILE.md": add a new line with a new tag to push a changed seed file onto its page (as a new revision).
+2026-11-10-bank-shortcuts 11-bank.md
+2026-11-10-player-commands 14-player-commands.md

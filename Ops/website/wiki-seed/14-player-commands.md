@@ -3,7 +3,9 @@ Commands added on JawnTide on top of the normal ACE ones.
 
 | Command | What it does |
 |---|---|
-| `/bank` | Your account bank. See [[Bank]] |
+| `/bank` or `/b` | Your account bank. See [[Bank]] |
+| `/top bank` | The 25 richest banks (add `trophies` or `luminance` for those). See [[Bank]] |
+| `/lhs` and `/lhr` | Luminance you sent / received through the bank in the last 7 days. See [[Bank]] |
 | `/mule` | Your account mule. See [[My Mule]] |
 | `/arena` | Arena queues and stats. See [[Arena]] |
 | `/town-owners` | Who owns each town. See [[Town Control]] |

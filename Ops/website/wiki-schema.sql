@@ -70,3 +70,9 @@ CREATE TABLE IF NOT EXISTS revision (
   created_at DATETIME NOT NULL DEFAULT UTC_TIMESTAMP(),
   KEY (slug, id)
 ) ENGINE=InnoDB;
+
+-- starter article updates already pushed onto existing pages (wiki-seed/updates.txt), so each is applied once
+CREATE TABLE IF NOT EXISTS seed_update (
+  tag VARCHAR(80) PRIMARY KEY,
+  applied_at DATETIME NOT NULL DEFAULT UTC_TIMESTAMP()
+) ENGINE=InnoDB;
