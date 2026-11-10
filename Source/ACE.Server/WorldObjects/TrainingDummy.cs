@@ -32,6 +32,7 @@ namespace ACE.Server.WorldObjects
 
 
         public int Armor = 0;
+        public int ArmorExtremities = 0; // head, hands and feet
         public int MeleeDef = 0;
         public int MissileDef = 0;
         public int MagicDef = 0;
@@ -39,6 +40,10 @@ namespace ACE.Server.WorldObjects
         public int Cdr = 0;
         public int Pkdr = 0;
         public List<uint> Buffs = new List<uint>();
+
+        /// <summary>Each worn copy and the guid of the real item it copies (/dummy wear), so the copies come back after a restart.</summary>
+        private readonly Dictionary<ObjectGuid, uint> wornFrom = new Dictionary<ObjectGuid, uint>();
+        public List<uint> WornSources => wornFrom.Values.ToList();
 
         private class SourceStats
         {
@@ -82,23 +87,38 @@ namespace ACE.Server.WorldObjects
             DatabaseManager.Shard.MarketEnqueue(() =>
             {
                 var rows = DatabaseManager.Shard.BaseDatabase.PvpToolsQuery(
-                    "SELECT armor, melee_Defense, missile_Defense, magic_Defense, damage_Resist_Rating, crit_Damage_Resist_Rating, pk_Damage_Resist_Rating, spells FROM training_dummy WHERE dummy_Guid = @g;",
+                    "SELECT armor, armor_Extremities, melee_Defense, missile_Defense, magic_Defense, damage_Resist_Rating, crit_Damage_Resist_Rating, pk_Damage_Resist_Rating, spells, worn_Items FROM training_dummy WHERE dummy_Guid = @g;",
                     ("@g", guid));
 
                 if (rows == null || rows.Count == 0)
                     return;
 
                 var r = rows[0];
+
+                // the worn items, read from the database here (off the game thread)
+                var wornIds = ParseIds(r[9]?.ToString());
+                var wornBiotas = new List<ACE.Entity.Models.Biota>();
+                foreach (var id in wornIds)
+                {
+                    var b = DatabaseManager.Shard.BaseDatabase.GetBiota(id, true);
+                    if (b != null)
+                        wornBiotas.Add(ACE.Database.Adapter.BiotaConverter.ConvertToEntityBiota(b));
+                }
+
                 EnqueueAction(new ActionEventDelegate(() =>
                 {
                     Armor = Convert.ToInt32(r[0]);
-                    MeleeDef = Convert.ToInt32(r[1]);
-                    MissileDef = Convert.ToInt32(r[2]);
-                    MagicDef = Convert.ToInt32(r[3]);
-                    Drr = Convert.ToInt32(r[4]);
-                    Cdr = Convert.ToInt32(r[5]);
-                    Pkdr = Convert.ToInt32(r[6]);
-                    Buffs = (r[7]?.ToString() ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).Select(s => uint.TryParse(s, out var id) ? id : 0).Where(id => id != 0).ToList();
+                    ArmorExtremities = Convert.ToInt32(r[1]);
+                    MeleeDef = Convert.ToInt32(r[2]);
+                    MissileDef = Convert.ToInt32(r[3]);
+                    MagicDef = Convert.ToInt32(r[4]);
+                    Drr = Convert.ToInt32(r[5]);
+                    Cdr = Convert.ToInt32(r[6]);
+                    Pkdr = Convert.ToInt32(r[7]);
+                    Buffs = ParseIds(r[8]?.ToString());
+                    StripAll();
+                    foreach (var b in wornBiotas)
+                        WearCopy(b, new System.Threading.ReaderWriterLockSlim());
                     ApplySetup();
                 }));
             });
@@ -111,10 +131,11 @@ namespace ACE.Server.WorldObjects
         /// <summary>Applies armor, defenses and ratings (buffs are kept up by the heartbeat).</summary>
         public void ApplySetup()
         {
-            foreach (var part in Biota.PropertiesBodyPart.Values)
+            foreach (var (key, part) in Biota.PropertiesBodyPart)
             {
-                part.BaseArmor = Armor;
-                part.ArmorVsSlash = part.ArmorVsPierce = part.ArmorVsBludgeon = part.ArmorVsCold = part.ArmorVsFire = part.ArmorVsAcid = part.ArmorVsElectric = part.ArmorVsNether = Armor;
+                var al = IsExtremity(key) ? ArmorExtremities : Armor;
+                part.BaseArmor = al;
+                part.ArmorVsSlash = part.ArmorVsPierce = part.ArmorVsBludgeon = part.ArmorVsCold = part.ArmorVsFire = part.ArmorVsAcid = part.ArmorVsElectric = part.ArmorVsNether = al;
             }
 
             SetDefense(Skill.MeleeDefense, MeleeDef);
@@ -127,6 +148,8 @@ namespace ACE.Server.WorldObjects
 
             RefreshBuffs();
         }
+
+        public static bool IsExtremity(CombatBodyPart part) => part == CombatBodyPart.Head || part == CombatBodyPart.Hand || part == CombatBodyPart.Foot;
 
         /// <summary>Sets a defense skill's unbuffed value (the part from attributes is taken off).</summary>
         private void SetDefense(Skill skill, int value)
@@ -149,26 +172,147 @@ namespace ACE.Server.WorldObjects
 
             foreach (var id in Buffs)
             {
-                if (EnchantmentManager.HasSpell(id))
+                var spell = new Spell(id);
+                if (spell.NotFound)
                     continue;
 
-                var spell = new Spell(id);
-                if (!spell.NotFound)
+                if (spell.IsImpenBaneType)
+                {
+                    // armor spells (Impenetrability, banes) go on every piece of armor/clothing it wears, like on a player
+                    foreach (var item in WornItems())
+                        if (!item.EnchantmentManager.HasSpell(id))
+                            CreateEnchantment(item, this, null, spell);
+                }
+                else if (!EnchantmentManager.HasSpell(id))
                     CreateEnchantment(this, this, null, spell);
             }
         }
 
+        private static List<uint> ParseIds(string csv) =>
+            (csv ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).Select(s => uint.TryParse(s, out var id) ? id : 0).Where(id => id != 0).ToList();
+
+        // ---------------------------------------------------------------- worn items
+
+        /// <summary>Slots a copied item may take: armor, underclothes, jewelry, cloak. Not weapons, shields or held items
+        /// (a shield only counts in combat mode, and the dummy never enters it).</summary>
+        private const EquipMask WearableSlots = EquipMask.HeadWear | EquipMask.ChestWear | EquipMask.AbdomenWear | EquipMask.UpperArmWear | EquipMask.LowerArmWear |
+            EquipMask.HandWear | EquipMask.UpperLegWear | EquipMask.LowerLegWear | EquipMask.FootWear | EquipMask.ChestArmor | EquipMask.AbdomenArmor |
+            EquipMask.UpperArmArmor | EquipMask.LowerArmArmor | EquipMask.UpperLegArmor | EquipMask.LowerLegArmor | EquipMask.NeckWear | EquipMask.WristWearLeft |
+            EquipMask.WristWearRight | EquipMask.FingerWearLeft | EquipMask.FingerWearRight | EquipMask.TrinketOne | EquipMask.Cloak | EquipMask.SigilOne |
+            EquipMask.SigilTwo | EquipMask.SigilThree;
+
+        /// <summary>Underclothes: shirts and pants (chest, abdomen, arm and leg wear slots only).</summary>
+        public const EquipMask UnderclothesSlots = EquipMask.ChestWear | EquipMask.AbdomenWear | EquipMask.UpperArmWear | EquipMask.LowerArmWear | EquipMask.UpperLegWear | EquipMask.LowerLegWear;
+
+        public static bool CanCopy(WorldObject item, bool underclothesOnly)
+        {
+            var loc = item.CurrentWieldedLocation ?? EquipMask.None;
+            if (loc == EquipMask.None || (loc & ~WearableSlots) != 0)
+                return false;
+            return !underclothesOnly || (loc & ~UnderclothesSlots) == 0;
+        }
+
+        public List<WorldObject> WornItems() => EquippedObjects.Values.ToList();
+
+        /// <summary>Puts on a copy of an item (every property and spell of the original, so its armor level, resistances,
+        /// ratings and cantrips all count). The copy is not saved; the original's guid is kept in WornSources.</summary>
+        public bool WearCopy(ACE.Entity.Models.Biota src, System.Threading.ReaderWriterLockSlim srcLock)
+        {
+            var copy = Factories.WorldObjectFactory.CreateNewWorldObject(src.WeenieClassId);
+            if (copy == null)
+                return false;
+
+            var sourceGuid = src.Id;
+
+            EquipMask loc;
+            srcLock.EnterReadLock();
+            try
+            {
+                if (src.PropertiesInt != null)
+                    foreach (var kv in src.PropertiesInt)
+                        copy.SetProperty(kv.Key, kv.Value);
+                if (src.PropertiesInt64 != null)
+                    foreach (var kv in src.PropertiesInt64)
+                        copy.SetProperty(kv.Key, kv.Value);
+                if (src.PropertiesBool != null)
+                    foreach (var kv in src.PropertiesBool)
+                        copy.SetProperty(kv.Key, kv.Value);
+                if (src.PropertiesFloat != null)
+                    foreach (var kv in src.PropertiesFloat)
+                        copy.SetProperty(kv.Key, kv.Value);
+                if (src.PropertiesString != null)
+                    foreach (var kv in src.PropertiesString)
+                        copy.SetProperty(kv.Key, kv.Value);
+                if (src.PropertiesDID != null)
+                    foreach (var kv in src.PropertiesDID)
+                        copy.SetProperty(kv.Key, kv.Value);
+                if (src.PropertiesSpellBook != null)
+                    foreach (var spellId in src.PropertiesSpellBook.Keys)
+                        copy.Biota.GetOrAddKnownSpell(spellId, copy.BiotaDatabaseLock, out _);
+
+                loc = (EquipMask)(src.PropertiesInt != null && src.PropertiesInt.TryGetValue(PropertyInt.CurrentWieldedLocation, out var l) ? l : 0);
+            }
+            finally
+            {
+                srcLock.ExitReadLock();
+            }
+
+            copy.RemoveProperty(PropertyInt.CurrentWieldedLocation);
+
+            // whatever it already wears in those slots comes off first
+            foreach (var old in WornItems().Where(w => ((w.CurrentWieldedLocation ?? EquipMask.None) & loc) != 0))
+                TakeOff(old);
+
+            if (loc == EquipMask.None || !TryWieldObject(copy, loc))
+            {
+                copy.Destroy();
+                return false;
+            }
+
+            wornFrom[copy.Guid] = sourceGuid;
+            return true;
+        }
+
+        private void TakeOff(WorldObject item)
+        {
+            wornFrom.Remove(item.Guid);
+            if (TryDequipObject(item.Guid, out var wo, out _))
+                wo.Destroy();
+        }
+
+        /// <summary>Takes off and deletes the worn copies in these slots (all of them when null).</summary>
+        public int Strip(EquipMask? slots = null)
+        {
+            var items = WornItems().Where(w => slots == null || ((w.CurrentWieldedLocation ?? EquipMask.None) & slots.Value) != 0).ToList();
+            foreach (var item in items)
+                TakeOff(item);
+            return items.Count;
+        }
+
+        public string DescribeWorn()
+        {
+            var items = WornItems();
+            if (items.Count == 0)
+                return "nothing";
+            return string.Join(", ", items.Select(i => $"{i.Name}{(i.ArmorLevel > 0 ? $" (AL {i.ArmorLevel})" : "")}")) +
+                   $"; gear ratings: damage resist {GetEquippedItemsRatingSum(PropertyInt.GearDamageResist)}, crit damage resist {GetEquippedItemsRatingSum(PropertyInt.GearCritDamageResist)}, " +
+                   $"crit resist {GetEquippedItemsRatingSum(PropertyInt.GearCritResist)}, PK damage resist {GetEquippedItemsRatingSum(PropertyInt.GearPKDamageResistRating)}";
+        }
+
+        public int StripAll() => Strip(null);
+
         public void SaveSetup()
         {
             var guid = Guid.Full;
-            var (armor, mel, mis, mag, drr, cdr, pkdr, spells) = (Armor, MeleeDef, MissileDef, MagicDef, Drr, Cdr, Pkdr, string.Join(",", Buffs));
+            var (armor, ext, mel, mis, mag, drr, cdr, pkdr, spells) = (Armor, ArmorExtremities, MeleeDef, MissileDef, MagicDef, Drr, Cdr, Pkdr, string.Join(",", Buffs));
+            var worn = string.Join(",", WornSources);
 
             DatabaseManager.Shard.MarketEnqueue(() => DatabaseManager.Shard.BaseDatabase.PvpToolsExecute(
-                @"INSERT INTO training_dummy (dummy_Guid, armor, melee_Defense, missile_Defense, magic_Defense, damage_Resist_Rating, crit_Damage_Resist_Rating, pk_Damage_Resist_Rating, spells, updated_At)
-                  VALUES (@g, @a, @me, @mi, @ma, @d, @c, @p, @s, @t)
-                  ON DUPLICATE KEY UPDATE armor = @a, melee_Defense = @me, missile_Defense = @mi, magic_Defense = @ma, damage_Resist_Rating = @d,
-                      crit_Damage_Resist_Rating = @c, pk_Damage_Resist_Rating = @p, spells = @s, updated_At = @t;",
-                ("@g", guid), ("@a", armor), ("@me", mel), ("@mi", mis), ("@ma", mag), ("@d", drr), ("@c", cdr), ("@p", pkdr), ("@s", spells), ("@t", DateTime.UtcNow)));
+                @"INSERT INTO training_dummy (dummy_Guid, armor, armor_Extremities, melee_Defense, missile_Defense, magic_Defense, damage_Resist_Rating, crit_Damage_Resist_Rating, pk_Damage_Resist_Rating, spells, worn_Items, updated_At)
+                  VALUES (@g, @a, @x, @me, @mi, @ma, @d, @c, @p, @s, @w, @t)
+                  ON DUPLICATE KEY UPDATE armor = @a, armor_Extremities = @x, melee_Defense = @me, missile_Defense = @mi, magic_Defense = @ma, damage_Resist_Rating = @d,
+                      crit_Damage_Resist_Rating = @c, pk_Damage_Resist_Rating = @p, spells = @s, worn_Items = @w, updated_At = @t;",
+                ("@g", guid), ("@a", armor), ("@x", ext), ("@me", mel), ("@mi", mis), ("@ma", mag), ("@d", drr), ("@c", cdr), ("@p", pkdr), ("@s", spells), ("@w", worn), ("@t", DateTime.UtcNow)));
         }
 
         public static string SpellName(uint id) => new Spell(id) is var s && !s.NotFound ? s.Name : $"spell {id}";
@@ -176,8 +320,8 @@ namespace ACE.Server.WorldObjects
         public string DescribeSetup()
         {
             var buffs = Buffs.Count == 0 ? "none" : string.Join(", ", Buffs.Select(SpellName));
-            return $"armor {Armor}, melee defense {MeleeDef}, missile defense {MissileDef}, magic defense {MagicDef}, " +
-                   $"damage resist rating {Drr}, crit damage resist rating {Cdr}, PK damage resist rating {Pkdr}, buffs: {buffs}";
+            return $"armor {Armor} (head, hands, feet {ArmorExtremities}), melee defense {MeleeDef}, missile defense {MissileDef}, magic defense {MagicDef}, " +
+                   $"damage resist rating {Drr}, crit damage resist rating {Cdr}, PK damage resist rating {Pkdr}, buffs: {buffs}; wearing: {DescribeWorn()}";
         }
 
         /// <summary>Finds a spell by id or exact name (case does not matter).</summary>
@@ -186,6 +330,10 @@ namespace ACE.Server.WorldObjects
             text = text.Trim();
             if (uint.TryParse(text, out var id))
                 return new Spell(id).NotFound ? null : id;
+
+            // SpellId names too (e.g. Impenetrability8)
+            if (Enum.TryParse<SpellId>(text, true, out var named) && !int.TryParse(text, out _) && !new Spell((uint)named).NotFound)
+                return (uint)named;
 
             foreach (var kv in DatManager.PortalDat.SpellTable.Spells)
                 if (string.Equals(kv.Value.Name, text, StringComparison.OrdinalIgnoreCase))

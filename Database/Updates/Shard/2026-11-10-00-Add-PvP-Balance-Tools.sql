@@ -1,5 +1,6 @@
 /* JawnTide PvP balance tools.
-   training_dummy         = the settings of each placed Target Drudge (armor, defenses, ratings, buffs), by its guid.
+   training_dummy         = the settings of each placed Target Drudge (armor for the body and for head/hands/feet, defenses,
+                            ratings, buffs), by its guid.
    training_dummy_session = one row per finished attack session on a Target Drudge: who, with what, the result,
                             the dummy's setup and every pvp_* setting in effect at the time.
    settings_request       = server setting changes made on the LAN admin page; the game server applies them
@@ -9,6 +10,7 @@
 CREATE TABLE IF NOT EXISTS `training_dummy` (
     `dummy_Guid`      INT UNSIGNED NOT NULL,
     `armor`           INT          NOT NULL DEFAULT 0,
+    `armor_Extremities` INT        NOT NULL DEFAULT 0,
     `melee_Defense`   INT          NOT NULL DEFAULT 0,
     `missile_Defense` INT          NOT NULL DEFAULT 0,
     `magic_Defense`   INT          NOT NULL DEFAULT 0,
@@ -16,6 +18,7 @@ CREATE TABLE IF NOT EXISTS `training_dummy` (
     `crit_Damage_Resist_Rating` INT NOT NULL DEFAULT 0,
     `pk_Damage_Resist_Rating`   INT NOT NULL DEFAULT 0,
     `spells`          VARCHAR(1024) NULL,
+    `worn_Items`      VARCHAR(1024) NULL COMMENT 'guids of the items it wears copies of (/dummy wear)',
     `updated_At`      DATETIME     NOT NULL,
     PRIMARY KEY (`dummy_Guid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

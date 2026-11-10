@@ -28,15 +28,35 @@ namespace ACE.Server.Command.Handlers
             "Impregnability Self VII", "Magic Resistance Self VII"
         };
 
+        private static readonly string[] ArmorBuffs8 =
+        {
+            nameof(ACE.Entity.Enum.SpellId.Impenetrability8), nameof(ACE.Entity.Enum.SpellId.AcidBane8), nameof(ACE.Entity.Enum.SpellId.BladeBane8),
+            nameof(ACE.Entity.Enum.SpellId.BludgeonBane8), nameof(ACE.Entity.Enum.SpellId.FlameBane8), nameof(ACE.Entity.Enum.SpellId.FrostBane8),
+            nameof(ACE.Entity.Enum.SpellId.LightningBane8), nameof(ACE.Entity.Enum.SpellId.PiercingBane8)
+        };
+
+        private static readonly string[] ArmorBuffs7 =
+        {
+            nameof(ACE.Entity.Enum.SpellId.Impenetrability7), nameof(ACE.Entity.Enum.SpellId.AcidBane7), nameof(ACE.Entity.Enum.SpellId.BladeBane7),
+            nameof(ACE.Entity.Enum.SpellId.BludgeonBane7), nameof(ACE.Entity.Enum.SpellId.FlameBane7), nameof(ACE.Entity.Enum.SpellId.FrostBane7),
+            nameof(ACE.Entity.Enum.SpellId.LightningBane7), nameof(ACE.Entity.Enum.SpellId.PiercingBane7)
+        };
+
         [CommandHandler("dummy", AccessLevel.Developer, CommandHandlerFlag.RequiresWorld, 0,
             "Sets up a Target Drudge (select it, or stand within 30 m of one). Place one with @createinst 4290001 (saved) or @create 4290001 (until restart).",
             "/dummy - its setup\n" +
-            "/dummy armor <level> - armor level on every body part, against every damage type\n" +
+            "/dummy armor <body> [head/hands/feet] - armor level against every damage type: one value for the body (chest, abdomen, arms, legs)\n" +
+            "   and one for the head, hands and feet; give one number to use it everywhere (e.g. /dummy armor 650 450)\n" +
             "/dummy defense <melee> <missile> <magic> - unbuffed defense skills (0 = every attack lands)\n" +
             "/dummy ratings <damage resist> <crit damage resist> <pk damage resist>\n" +
             "/dummy buff <spell name or id> - keep this buff on it (recast when it wears off)\n" +
             "/dummy buff pvp7 | pvp8 - armor, the 7 protections, invulnerability, impregnability and magic resistance at level 7 or 8\n" +
             "/dummy unbuff <spell name or id> | all - stop keeping a buff (all also removes every enchantment on it)\n" +
+            "/dummy wear - puts copies of everything you're wearing (armor, underclothes, jewelry, cloak) on it, with all their stats and spells\n" +
+            "/dummy wear under - copies only your shirt and pants (underclothes AL, resistances and ratings), keeping its other worn items\n" +
+            "/dummy strip [under] - takes its worn copies off (all, or just underclothes)\n" +
+            "/dummy buff armor8 | armor7 - Impenetrability and the 7 banes, cast on whatever it wears (like on a player's armor)\n" +
+            "Worn item AL adds on top of /dummy armor, so set /dummy armor 0 when it wears a full suit.\n" +
             "/dummy clean - removes debuffs players cast on it (keeps its own buffs)\n" +
             "/dummy reset - restarts your damage session on it\n" +
             "Anyone can attack it: a player's attacks take the PvP damage path. Sessions are on the LAN admin page.")]
@@ -91,8 +111,15 @@ namespace ACE.Server.Command.Handlers
                     return;
 
                 case "armor":
-                    if (!Ints(1, out var a)) { Say("/dummy armor <level>"); return; }
-                    dummy.Armor = a[0];
+                    if (Ints(2, out var a2))
+                        (dummy.Armor, dummy.ArmorExtremities) = (a2[0], a2[1]);
+                    else if (Ints(1, out var a1))
+                        dummy.Armor = dummy.ArmorExtremities = a1[0];
+                    else
+                    {
+                        Say("/dummy armor <body> [head/hands/feet], e.g. /dummy armor 650 450");
+                        return;
+                    }
                     Done();
                     return;
 
@@ -116,6 +143,8 @@ namespace ACE.Server.Command.Handlers
                     {
                         "pvp8" => PvpBuffs8,
                         "pvp7" => PvpBuffs7,
+                        "armor8" => ArmorBuffs8,
+                        "armor7" => ArmorBuffs7,
                         _ => new[] { rest }
                     };
                     if (string.IsNullOrWhiteSpace(rest)) { Say("/dummy buff <spell name or id> | pvp7 | pvp8"); return; }
@@ -148,6 +177,31 @@ namespace ACE.Server.Command.Handlers
                     var entry = dummy.EnchantmentManager.GetEnchantment(id.Value);
                     if (entry != null)
                         dummy.EnchantmentManager.Remove(entry);
+                    Done();
+                    return;
+                }
+
+                case "wear":
+                {
+                    var under = rest.StartsWith("under", StringComparison.OrdinalIgnoreCase);
+                    var mine = player.EquippedObjects.Values.Where(i => TrainingDummy.CanCopy(i, under)).ToList();
+                    if (mine.Count == 0)
+                    {
+                        Say(under ? "You aren't wearing a shirt or pants." : "You aren't wearing anything it can copy.");
+                        return;
+                    }
+                    if (!under)
+                        dummy.StripAll();
+                    var worn = mine.Count(i => dummy.WearCopy(i.Biota, i.BiotaDatabaseLock));
+                    Say($"It put on copies of {worn} of your {mine.Count} item(s).");
+                    Done();
+                    return;
+                }
+
+                case "strip":
+                {
+                    var n = rest.StartsWith("under", StringComparison.OrdinalIgnoreCase) ? dummy.Strip(TrainingDummy.UnderclothesSlots) : dummy.StripAll();
+                    Say($"Took off {n} item(s).");
                     Done();
                     return;
                 }
