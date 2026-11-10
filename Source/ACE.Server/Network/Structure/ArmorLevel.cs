@@ -46,6 +46,11 @@ namespace ACE.Server.Network.Structure
             // get total AL
             var totalAL = 0;
 
+            // JawnTide Target Drudge: its own armor level for this body part (/dummy armor), plus Armor Self style buffs on it
+            if (creature is TrainingDummy dummy && Enum.TryParse<ACE.Entity.Enum.CombatBodyPart>(bodyPart.ToString(), out var part)
+                && dummy.Biota.PropertiesBodyPart.TryGetValue(part, out var bp))
+                totalAL += bp.BaseArmor + dummy.EnchantmentManager.GetBodyArmorMod();
+
             foreach (var layer in layers)
             {
                 var baseAL = layer.GetProperty(PropertyInt.ArmorLevel) ?? 0;

@@ -591,7 +591,8 @@ namespace ACE.Server.Network.Structure
             ResistHighlight = ResistMaskHelper.GetHighlightMask(creature);
             ResistColor = ResistMaskHelper.GetColorMask(creature);
 
-            if (Success && (creature is Player || !creature.Attackable))
+            // JawnTide Target Drudge: shows its per-body-part armor like a player's ID panel
+            if (Success && (creature is Player || !creature.Attackable || creature is TrainingDummy))
                 ArmorLevels = new ArmorLevel(creature);
 
             AddRatings(creature);
