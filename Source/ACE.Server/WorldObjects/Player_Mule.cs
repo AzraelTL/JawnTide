@@ -406,6 +406,10 @@ namespace ACE.Server.WorldObjects
             vendor.MuleContainers = containers;
             vendor.TimeToRot = -1; // JawnTide: never decay (a dynamic object with no TimeToRot is cleaned up after 5 minutes, which made mules "time out")
 
+            // JawnTide: players and monsters walk through mules, so a mule can't be used to block a passage or a monster.
+            // It can still be selected, used and traded with as before.
+            vendor.Ethereal = true;
+
             foreach (var item in SortMuleItems(containers.SelectMany(c => c.Inventory.Values)))
                 vendor.UniqueItemsForSale[item.Guid] = item;
 

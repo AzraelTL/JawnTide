@@ -1387,6 +1387,9 @@ namespace ACE.Server.WorldObjects
                 containerRootOwner.Value += (item.Value ?? 0);
             }
 
+            if (prevLocation != null && containerRootOwner == this)
+                TransferAudit.OnPickedUp(this, item);
+
             // when moving from a non-stuck container to a different container,
             // the database must be synced immediately
             if (prevContainer != null && !prevContainer.Stuck && container != prevContainer)
@@ -1520,6 +1523,8 @@ namespace ACE.Server.WorldObjects
 
             if (!CurrentLandblock.AddWorldObject(item))
                 return false;
+
+            TransferAudit.OnDropped(this, item);
 
             // use radius?
             var targetPos = Location.InFrontOf(1.1f);
@@ -2489,6 +2494,9 @@ namespace ACE.Server.WorldObjects
                 return false;
             }
 
+            if (stack.CurrentLandblock != null && containerRootOwner == this)
+                TransferAudit.OnPickedUp(this, stack, amount);
+
             if (container != containerRootOwner && containerRootOwner != null)
             {
                 containerRootOwner.EncumbranceVal += (stack.StackUnitEncumbrance * amount);
@@ -3143,6 +3151,10 @@ namespace ACE.Server.WorldObjects
                 return false;
             }
 
+            // JawnTide bank audit: a ground stack merged into this player's pack
+            if (sourceStack.CurrentLandblock != null && targetStackRootOwner == this)
+                TransferAudit.OnPickedUp(this, sourceStack, amount);
+
             if (amount == sourceStack.StackSize && sourceStack.StackSize + targetStack.StackSize <= targetStack.MaxStackSize) // The merge will consume the entire source stack
             {
                 Session.Network.EnqueueSend(new GameMessageInventoryRemoveObject(sourceStack));
@@ -3426,6 +3438,8 @@ namespace ACE.Server.WorldObjects
 
                 if (item == itemToGive)
                     Session.Network.EnqueueSend(new GameEventItemServerSaysContainId(Session, item, target));
+
+                TransferAudit.RecordItems("give", this, target, new[] { itemToGive });
 
                 var stackSize = itemToGive.StackSize ?? 1;
 

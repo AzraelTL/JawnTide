@@ -498,6 +498,9 @@ namespace ACE.Server.Managers
 
         public static readonly ReadOnlyDictionary<string, Property<bool>> DefaultBooleanProperties =
             DictOf(
+                ("transfer_audit_enabled", new Property<bool>(true, "JawnTide bank audit: log bank sends, gives, trades and ground drop-then-pickups between different accounts to transfer_log (/bankaudit)")),
+                ("transfer_audit_notify", new Property<bool>(true, "JawnTide bank audit: tell online staff (Sentinel and up) when a transfer is flagged")),
+                ("economy_stats_enabled", new Property<bool>(true, "JawnTide economy stats: count daily luminance earned/spent and vendor pyreals to economy_daily (/economystats)")),
                 ("account_login_boots_in_use", new Property<bool>(true, "if FALSE, oldest connection to account is not booted when new connection occurs")),
                 ("advanced_combat_pets", new Property<bool>(false, "(non-retail function) If enabled, Combat Pets can cast spells")),
                 ("advocate_fane_auto_bestow", new Property<bool>(false, "If enabled, Advocate Fane will automatically bestow new advocates to advocate_fane_auto_bestow_level")),
@@ -669,6 +672,13 @@ namespace ACE.Server.Managers
 
         public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties =
             DictOf(
+                ("transfer_audit_large_pyreals", new Property<long>(10000000, "JawnTide bank audit: a transfer worth at least this many pyreals (bank pyreals, or the items' value) is flagged large; 0 = off")),
+                ("transfer_audit_large_trophies", new Property<long>(500, "JawnTide bank audit: a transfer of at least this many PK Trophies is flagged large; 0 = off")),
+                ("transfer_audit_large_keys", new Property<long>(25, "JawnTide bank audit: a transfer of at least this many Darkbeat, Hera or Shimmering Skeleton keys is flagged large; 0 = off")),
+                ("transfer_audit_large_luminance", new Property<long>(50000000, "JawnTide bank audit: a bank send of at least this much luminance is flagged large; 0 = off")),
+                ("transfer_audit_repeat_count", new Property<long>(10, "JawnTide bank audit: the same two accounts moving value this many times within transfer_audit_window_minutes is flagged repeat; 0 = off")),
+                ("transfer_audit_funnel_count", new Property<long>(5, "JawnTide bank audit: this many different accounts sending to one account within transfer_audit_window_minutes is flagged funnel; 0 = off")),
+                ("transfer_audit_window_minutes", new Property<long>(60, "JawnTide bank audit: the time window for the repeat and funnel flags")),
                 ("world_boss_tokens_per_ip", new Property<long>(2, "JawnTide: world boss tokens (Claw, Blood, Cloak, Fang, Knucklebone, Shroud) one IP address can pick up from the ground per world boss kill; 0 = no limit. Admins are exempt")),
                 ("town_control_governor_vitals_percent", new Property<long>(100, "JawnTide: the Town Control governors' health, stamina and mana as a percent of normal (100 = unchanged, 1 to 1000). Applies when a governor spawns")),
                 ("town_control_governor_defense_percent", new Property<long>(100, "JawnTide: the Town Control governors' melee, missile and magic defense as a percent of normal (100 = unchanged, 0 to 1000). Applies when a governor spawns")),
@@ -827,6 +837,11 @@ namespace ACE.Server.Managers
                 ("pvp_dmg_mod_fw_ar", new Property<double>(1.0, "Scales the amount of damage for FW AR.")),
                 ("pvp_dmg_mod_fw_hollow", new Property<double>(1.0, "Scales the amount of damage for FW Hollow.")),
                 ("pvp_dmg_mod_fw_phantom", new Property<double>(1.0, "Scales the amount of damage for war FW Phantom.")),
+                ("pvp_dmg_mod_fw_triplestrike", new Property<double>(1.0, "JawnTide: scales PvP damage of every Triple-Strike (Bandit Hilt) Finesse dagger, imbued or not. The per-imbue settings below apply on top.")),
+                ("pvp_dmg_mod_fw_triplestrike_rend", new Property<double>(1.0, "JawnTide: scales PvP damage of Triple-Strike (Bandit Hilt) Finesse daggers with any rend (acid, bludgeon, cold, lightning, fire, pierce or slash rending).")),
+                ("pvp_dmg_mod_fw_triplestrike_cs", new Property<double>(1.0, "JawnTide: scales PvP damage of Triple-Strike (Bandit Hilt) Finesse daggers with Critical Strike. Applies on top of pvp_dmg_mod_fw and pvp_dmg_mod_fw_cs.")),
+                ("pvp_dmg_mod_fw_triplestrike_ar", new Property<double>(1.0, "JawnTide: scales PvP damage of Triple-Strike (Bandit Hilt) Finesse daggers with Armor Rending. Applies on top of pvp_dmg_mod_fw and pvp_dmg_mod_fw_ar.")),
+                ("pvp_dmg_mod_fw_triplestrike_cb", new Property<double>(1.0, "JawnTide: scales PvP damage of Triple-Strike (Bandit Hilt) Finesse daggers with Crippling Blow. Applies on top of pvp_dmg_mod_fw and pvp_dmg_mod_fw_cb.")),
                 ("pvp_dmg_mod_lw", new Property<double>(1.0, "Scales the amount of damage for Light Weapons")),
                 ("pvp_dmg_mod_lw_cb", new Property<double>(1.0, "Scales the amount of damage for LW CB.")),
                 ("pvp_dmg_mod_lw_cb_crit", new Property<double>(1.0, "Scales the amount of damage for LW CB Crit.")),

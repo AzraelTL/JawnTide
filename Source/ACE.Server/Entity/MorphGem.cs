@@ -575,7 +575,7 @@ namespace ACE.Server.Entity
 
                         if (workChange < 0)
                         {
-                            playerMsg = $"You fail applying the Morph Gem to your {target.NameWithMaterial}. I am uninspired. Your armor workmanship has increased by {workChange}";
+                            playerMsg = $"You fail applying the Morph Gem to your {target.NameWithMaterial}. I am uninspired. Your workmanship has increased by {-workChange}";
                         }
                         else if (workChange == 0)
                         {
@@ -583,7 +583,7 @@ namespace ACE.Server.Entity
                         }
                         else
                         {
-                            playerMsg = $"You apply the Morph Gem skillfully and have reduced the workmanship of your {target.NameWithMaterial} by {workChange}";
+                            playerMsg = $"You apply the Morph Gem skillfully and have reduced the workmanship of your {target.NameWithMaterial} by {workChange}. Lower workmanship is better for tinkering.";
                         }
 
                         //Send player message confirming the applied morph gem
@@ -1379,12 +1379,17 @@ namespace ACE.Server.Entity
                     #region MorphGemBanditHilt
                     case MorphGemBanditHilt:
 
-                        //Check if the target is a LW multi-strike weapon
-                        if (target.WeenieType != WeenieType.MeleeWeapon ||
-                            target.WeaponSkill != Skill.LightWeapons ||
-                            (!target.W_AttackType.HasFlag(AttackType.DoubleSlash) && !target.W_AttackType.HasFlag(AttackType.DoubleThrust)))
+                        // JawnTide: Light Weapons or Finesse Weapons daggers that are already Multi-Strike (double slash or double thrust),
+                        // imbued or not. Finesse ones are balanced by pvp_dmg_mod_fw_triplestrike and the per-imbue
+                        // pvp_dmg_mod_fw_triplestrike_cs/_ar/_cb/_rend settings; Light ones by the pvp_dmg_mod_lw_*triplestrike settings.
+                        var banditHiltOk = target.WeenieType == WeenieType.MeleeWeapon &&
+                            (target.WeaponSkill == Skill.LightWeapons || target.WeaponSkill == Skill.FinesseWeapons) &&
+                            target.W_WeaponType == WeaponType.Dagger &&
+                            (target.W_AttackType.HasFlag(AttackType.DoubleSlash) || target.W_AttackType.HasFlag(AttackType.DoubleThrust));
+
+                        if (!banditHiltOk)
                         {
-                            playerMsg = "This gem can only be used on Light Weapon melee weapons with the Multi-Strike property";
+                            playerMsg = "This gem can only be used on Light Weapon or Finesse Weapon daggers with the Multi-Strike property";
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat(playerMsg, ChatMessageType.Broadcast));
                             player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
                             return;

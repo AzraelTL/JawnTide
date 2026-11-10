@@ -26,7 +26,7 @@ VALUES (490018,  39,       0.75) /* DefaultScale */
      , (490018,  54,       3) /* UseRadius */;
 
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
-VALUES (490018,   0.5, 'Dark Isle') /* Name */
+VALUES (490018,   1, 'Dark Isle') /* Name */
      , (490018,  14, 'This item can be hooked to the Floor or Yard hooks of mansions. Use this item to be transported to Dark Isle - No level requirement.') /* Use */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)

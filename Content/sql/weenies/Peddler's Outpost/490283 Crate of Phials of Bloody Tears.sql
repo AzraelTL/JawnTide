@@ -11,7 +11,7 @@ VALUES (490283,   1,        128) /* ItemType - Misc */
      , (490283,  13,         50) /* StackUnitEncumbrance */
      , (490283,  15,          15) /* StackUnitValue */
      , (490283,  16,          8) /* ItemUseable - Contained */
-     , (490283,  19,          15) /* Value */
+     , (490283,  19,          12) /* Value */
      , (490283,  93,       1044) /* PhysicsState - Ethereal, IgnoreCollisions, Gravity */
      , (490283,  94,         16) /* TargetType - Creature */
      , (490283, 269,          10) /* UseCreateQuantity */;

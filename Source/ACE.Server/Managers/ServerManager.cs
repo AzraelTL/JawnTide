@@ -219,6 +219,10 @@ namespace ACE.Server.Managers
                 Thread.Sleep(10);
             }
 
+            // JawnTide bank audit / economy stats: write what's buffered before the shard queue drains
+            TransferAudit.Flush();
+            EconomyStats.Flush();
+
             log.Info("Saving OfflinePlayers that have unsaved changes...");
             PlayerManager.SaveOfflinePlayersWithChanges();
 
