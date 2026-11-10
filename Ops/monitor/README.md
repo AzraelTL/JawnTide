@@ -46,7 +46,9 @@ A small web page for the LAN that shows, per account:
   changed here. Recent changes and whether each was applied are listed below the table.
 - **Target Drudge** (`/dummy`): every placed Target Drudge with its setup and a form to change it (armor for the body and for
   head/hands/feet, defenses, ratings, buff presets and extra buffs by name or id, taking worn items off, removing debuffs), saved with the
-  edit password as `training_dummy_request` rows that the game server applies within about 5 seconds. Below that, every attack session on a Target Drudge (wcid 4290001, `TrainingDummy.cs`): DPS, damage, hit, crit,
+  edit password as `training_dummy_request` rows that the game server applies within about 5 seconds. Then a **Balance summary** (every
+  weapon and spell grouped by kind, skill, weapon type, attack type, imbue and spell shape: hits, average/min/max hit, crit and miss rates,
+  average attacker skill) with a **CSV download** (`/dummy.csv`, one row per weapon or spell per session with all its stats). Below that, every attack session on a Target Drudge (wcid 4290001, `TrainingDummy.cs`): DPS, damage, hit, crit,
   evade and resist rates, the dummy's setup, the per-weapon and per-spell breakdown, and which PvP settings were changed from default at
   the time. Place one in game with `@createinst 4290001` and set it up with `/dummy` (`/help dummy`). A player's hits on it take the
   PvP damage path, it never dies and gives no skill training.

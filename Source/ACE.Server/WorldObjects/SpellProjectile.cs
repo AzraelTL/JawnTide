@@ -323,7 +323,7 @@ namespace ACE.Server.WorldObjects
 
             // JawnTide target dummy: a resisted spell
             if (damage == null && creatureTarget is TrainingDummy resistedBy && ProjectileSource is Player resistedCaster)
-                resistedBy.RecordSpell(resistedCaster, Spell, 0, false, true);
+                resistedBy.RecordSpell(resistedCaster, Spell, 0, false, true, ProjectileLauncher);
 
             if (damage != null)
             {                
@@ -1099,7 +1099,7 @@ namespace ACE.Server.WorldObjects
             amount = (uint)Math.Round(damage);    // full amount for debugging
 
             if (target is TrainingDummy dummy && sourcePlayer != null)
-                dummy.RecordSpell(sourcePlayer, Spell, amount, critical, false);
+                dummy.RecordSpell(sourcePlayer, Spell, amount, critical, false, ProjectileLauncher);
 
             // show debug info
             if (sourceCreature != null && sourceCreature.DebugDamage.HasFlag(Creature.DebugDamageType.Attacker))

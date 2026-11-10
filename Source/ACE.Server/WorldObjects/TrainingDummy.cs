@@ -53,6 +53,67 @@ namespace ACE.Server.WorldObjects
             public int Attacks, Hits, Misses, Crits;
             public long Damage;
             public uint Min = uint.MaxValue, Max;
+
+            /// <summary>What did the damage: weapon / spell / launcher stats and the attacker's skill, taken at the first attack.</summary>
+            public Dictionary<string, object> Info;
+            public string Label;
+            public readonly Dictionary<string, int> DamageTypes = new Dictionary<string, int>();
+        }
+
+        // ---------------------------------------------------------------- weapon stats for the session record
+
+        private static void AddItemStats(Dictionary<string, object> d, string prefix, WorldObject wo)
+        {
+            if (wo == null)
+                return;
+
+            d[prefix + "name"] = wo.NameWithMaterial ?? wo.Name;
+            d[prefix + "wcid"] = wo.WeenieClassId;
+            void I(string name, PropertyInt p) { var v = wo.GetProperty(p); if (v != null) d[prefix + name] = v.Value; }
+            void F(string name, PropertyFloat p) { var v = wo.GetProperty(p); if (v != null) d[prefix + name] = Math.Round(v.Value, 4); }
+
+            if (wo.WeaponSkill != Skill.None) d[prefix + "skill"] = wo.WeaponSkill.ToString();
+            if (wo.W_WeaponType != WeaponType.Undef) d[prefix + "weapon_type"] = wo.W_WeaponType.ToString();
+            if (wo.W_AttackType != AttackType.Undef) d[prefix + "attack_type"] = wo.W_AttackType.ToString();
+            if (wo.DefaultCombatStyle != null) d[prefix + "combat_style"] = wo.DefaultCombatStyle.ToString();
+            if (wo.ImbuedEffect != ImbuedEffectType.Undef) d[prefix + "imbue"] = wo.ImbuedEffect.ToString();
+            if (wo.W_DamageType != DamageType.Undef) d[prefix + "damage_type"] = wo.W_DamageType.ToString();
+            I("damage", PropertyInt.Damage);
+            F("variance", PropertyFloat.DamageVariance);
+            F("damage_mod", PropertyFloat.DamageMod);
+            F("elemental_damage_mod", PropertyFloat.ElementalDamageMod);
+            I("speed", PropertyInt.WeaponTime);
+            F("offense", PropertyFloat.WeaponOffense);
+            F("melee_defense", PropertyFloat.WeaponDefense);
+            F("missile_defense", PropertyFloat.WeaponMissileDefense);
+            F("magic_defense", PropertyFloat.WeaponMagicDefense);
+            F("crit_frequency", PropertyFloat.CriticalFrequency);
+            F("crit_multiplier", PropertyFloat.CriticalMultiplier);
+            F("ignore_armor", PropertyFloat.IgnoreArmor);
+            if (wo.SlayerCreatureType != null) d[prefix + "slayer"] = wo.SlayerCreatureType.ToString();
+            F("slayer_bonus", PropertyFloat.SlayerDamageBonus);
+            I("workmanship", PropertyInt.ItemWorkmanship);
+            I("tinkers", PropertyInt.NumTimesTinkered);
+            I("wield_requirement", PropertyInt.WieldDifficulty);
+            if (wo.ProcSpell != null) d[prefix + "cast_on_strike"] = SpellName(wo.ProcSpell.Value);
+
+            var cantrips = wo.Biota.GetKnownSpellsIds(wo.BiotaDatabaseLock);
+            if (cantrips.Count > 0) d[prefix + "spells"] = string.Join(", ", cantrips.Select(id => SpellName((uint)id)));
+
+            var buffs = wo.Biota.PropertiesEnchantmentRegistry?.Clone(wo.BiotaDatabaseLock);
+            if (buffs != null && buffs.Count > 0) d[prefix + "buffs"] = string.Join(", ", buffs.Select(e => SpellName((uint)e.SpellId)));
+        }
+
+        private static void AddSkill(Dictionary<string, object> d, Player p, Skill skill)
+        {
+            if (skill == Skill.None)
+                return;
+            var cs = p.GetCreatureSkill(skill, false);
+            if (cs == null)
+                return;
+            d["attacker_skill"] = skill.ToString();
+            d["attacker_skill_current"] = cs.Current;
+            d["attacker_skill_base"] = cs.Base;
         }
 
         private class DummySession
@@ -475,8 +536,20 @@ namespace ACE.Server.WorldObjects
             lock (sessionLock)
             {
                 var s = SessionFor(p);
-                var weapon = de.Weapon?.Name ?? "Unarmed";
-                var st = Src(s, $"{weapon} ({de.DamageType})");
+                var weapon = de.Weapon;
+                var ammo = damageSource != null && damageSource != weapon && damageSource != p ? damageSource : null;
+                var st = Src(s, $"w{weapon?.Guid.Full ?? 0}:{ammo?.WeenieClassId ?? 0}");
+
+                if (st.Info == null)
+                {
+                    st.Label = (weapon?.Name ?? "Unarmed") + (ammo != null ? $" + {ammo.Name}" : "");
+                    st.Info = new Dictionary<string, object> { ["kind"] = weapon == null ? "unarmed" : ammo != null ? "missile" : "melee" };
+                    AddItemStats(st.Info, "", weapon);
+                    AddItemStats(st.Info, "ammo_", ammo);
+                    AddSkill(st.Info, p, weapon?.WeaponSkill ?? p.GetCurrentWeaponSkill());
+                    st.Info["combat_mode"] = p.CombatMode.ToString();
+                }
+
                 s.Attacks++; st.Attacks++;
 
                 if (de.Evaded)
@@ -484,14 +557,18 @@ namespace ACE.Server.WorldObjects
                     s.Evaded++; st.Misses++;
                 }
                 else if (de.HasDamage)
+                {
                     AddHit(s, st, (uint)Math.Round(de.Damage), de.IsCritical);
+                    var dt = de.DamageType.ToString();
+                    st.DamageTypes[dt] = st.DamageTypes.TryGetValue(dt, out var n) ? n + 1 : 1;
+                }
             }
 
             SetMaxVitals();
         }
 
         /// <summary>A war, void or life projectile (hit or resisted).</summary>
-        public void RecordSpell(Player p, Spell spell, uint amount, bool crit, bool resisted)
+        public void RecordSpell(Player p, Spell spell, uint amount, bool crit, bool resisted, WorldObject launcher = null)
         {
             if (p == null || spell == null)
                 return;
@@ -499,7 +576,32 @@ namespace ACE.Server.WorldObjects
             lock (sessionLock)
             {
                 var s = SessionFor(p);
-                var st = Src(s, spell.Name);
+                var st = Src(s, $"s{spell.Id}:{launcher?.Guid.Full ?? 0}");
+
+                if (st.Info == null)
+                {
+                    st.Label = spell.Name + (launcher != null && launcher != p ? $" ({launcher.Name})" : "");
+                    st.Info = new Dictionary<string, object>
+                    {
+                        ["kind"] = spell.School.ToString(),
+                        ["spell"] = spell.Name,
+                        ["spell_id"] = spell.Id,
+                        ["spell_level"] = spell.Level,
+                        ["spell_shape"] = SpellProjectile.GetProjectileSpellType(spell.Id).ToString(),
+                        ["damage_type"] = spell.DamageType.ToString(),
+                    };
+                    if (launcher != null && launcher != p)
+                        AddItemStats(st.Info, "caster_", launcher);
+                    AddSkill(st.Info, p, spell.School switch
+                    {
+                        MagicSchool.WarMagic => Skill.WarMagic,
+                        MagicSchool.VoidMagic => Skill.VoidMagic,
+                        MagicSchool.LifeMagic => Skill.LifeMagic,
+                        MagicSchool.CreatureEnchantment => Skill.CreatureEnchantment,
+                        _ => Skill.None
+                    });
+                }
+
                 s.Attacks++; st.Attacks++;
 
                 if (resisted) { s.Resisted++; st.Misses++; }
@@ -521,7 +623,14 @@ namespace ACE.Server.WorldObjects
                     return; // only while that player is attacking
 
                 var s = SessionFor(p);
-                var st = Src(s, $"DoT ({damageType})");
+                var st = Src(s, $"dot:{damageType}");
+                if (st.Info == null)
+                {
+                    st.Label = $"DoT ({damageType})";
+                    st.Info = new Dictionary<string, object> { ["kind"] = "dot", ["damage_type"] = damageType.ToString() };
+                    if (damageType == DamageType.Nether)
+                        AddSkill(st.Info, p, Skill.VoidMagic);
+                }
                 var a = (uint)Math.Round(amount);
                 st.Hits++; st.Damage += a; s.Damage += a;
                 st.Min = Math.Min(st.Min, a); st.Max = Math.Max(st.Max, a);
@@ -584,7 +693,7 @@ namespace ACE.Server.WorldObjects
         {
             var st = kv.Value;
             var avg = st.Hits > 0 ? st.Damage / (double)st.Hits : 0;
-            return $"  {kv.Key}: {st.Damage:N0} damage, {st.Hits} hits" +
+            return $"  {st.Label ?? kv.Key}: {st.Damage:N0} damage, {st.Hits} hits" +
                    (st.Hits > 0 ? $", avg {avg:N1} (min {st.Min:N0}, max {st.Max:N0})" : "") +
                    (st.Crits > 0 ? $", {st.Crits} crits" : "") +
                    (st.Misses > 0 ? $", {st.Misses} evaded/resisted" : "");
@@ -602,16 +711,33 @@ namespace ACE.Server.WorldObjects
             PlayerManager.GetOnlinePlayer(s.CharacterId)?.Session?.Network.EnqueueSend(new GameMessageSystemChat(report, ChatMessageType.Broadcast));
 
             var setup = $"{DescribeSetup()}; attacker: {s.Attacker}";
+            var sourcesJson = JsonSerializer.Serialize(s.Sources.Values.OrderByDescending(v => v.Damage).Select(v =>
+            {
+                var row = new Dictionary<string, object>(v.Info ?? new Dictionary<string, object>())
+                {
+                    ["label"] = v.Label,
+                    ["attacks"] = v.Attacks,
+                    ["hits"] = v.Hits,
+                    ["misses"] = v.Misses,
+                    ["crits"] = v.Crits,
+                    ["damage_total"] = v.Damage,
+                    ["min"] = v.Hits > 0 ? v.Min : 0,
+                    ["max"] = v.Max,
+                    ["avg"] = v.Hits > 0 ? Math.Round(v.Damage / (double)v.Hits, 2) : 0,
+                    ["damage_types"] = v.DamageTypes,
+                };
+                return row;
+            }).ToList());
             var settings = JsonSerializer.Serialize(PvpSettingsSnapshot());
             var guid = Guid.Full;
             var (start, end, secs, dps) = (s.Start, s.Last, Seconds(s), Dps(s));
 
             DatabaseManager.Shard.MarketEnqueue(() => DatabaseManager.Shard.BaseDatabase.PvpToolsExecute(
-                @"INSERT INTO training_dummy_session (started_At, ended_At, dummy_Guid, character_Id, character_Name, character_Level, seconds, attacks, hits, evaded, resisted, crits, damage, dps, dummy_Setup, sources, settings)
-                  VALUES (@s, @e, @g, @ci, @cn, @cl, @sec, @a, @h, @ev, @r, @c, @d, @dps, @setup, @src, @set);",
+                @"INSERT INTO training_dummy_session (started_At, ended_At, dummy_Guid, character_Id, character_Name, character_Level, seconds, attacks, hits, evaded, resisted, crits, damage, dps, dummy_Setup, sources, settings, sources_json)
+                  VALUES (@s, @e, @g, @ci, @cn, @cl, @sec, @a, @h, @ev, @r, @c, @d, @dps, @setup, @src, @set, @sj);",
                 ("@s", start), ("@e", end), ("@g", guid), ("@ci", s.CharacterId), ("@cn", s.Name), ("@cl", s.Level), ("@sec", secs),
                 ("@a", s.Attacks), ("@h", s.Hits), ("@ev", s.Evaded), ("@r", s.Resisted), ("@c", s.Crits), ("@d", s.Damage), ("@dps", dps),
-                ("@setup", setup.Length > 1024 ? setup.Substring(0, 1024) : setup), ("@src", sources), ("@set", settings)));
+                ("@setup", setup.Length > 1024 ? setup.Substring(0, 1024) : setup), ("@src", sources), ("@set", settings), ("@sj", sourcesJson)));
         }
 
         /// <summary>Every PvP setting in effect right now (doubles, longs and bools whose name has "pvp").</summary>
