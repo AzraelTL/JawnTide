@@ -575,7 +575,7 @@ namespace ACE.Server.Entity
 
                         if (workChange < 0)
                         {
-                            playerMsg = $"You fail applying the Morph Gem to your {target.NameWithMaterial}. I am uninspired. Your armor workmanship has increased by {workChange}";
+                            playerMsg = $"You fail applying the Morph Gem to your {target.NameWithMaterial}. I am uninspired. Your workmanship has increased by {-workChange}";
                         }
                         else if (workChange == 0)
                         {
@@ -583,7 +583,7 @@ namespace ACE.Server.Entity
                         }
                         else
                         {
-                            playerMsg = $"You apply the Morph Gem skillfully and have reduced the workmanship of your {target.NameWithMaterial} by {workChange}";
+                            playerMsg = $"You apply the Morph Gem skillfully and have reduced the workmanship of your {target.NameWithMaterial} by {workChange}. Lower workmanship is better for tinkering.";
                         }
 
                         //Send player message confirming the applied morph gem

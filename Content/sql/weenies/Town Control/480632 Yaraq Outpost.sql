@@ -28,7 +28,7 @@ VALUES (480632,  39,       1) /* DefaultScale */
 
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
 VALUES (480632,   1, 'Yaraq Outpost') /* Name */
-     , (480632,  14, 'This item can be hooked to the Floor or Yard hooks of mansions. Use this item to be transported to the Holtburg Governor.') /* Use */;
+     , (480632,  14, 'This item can be hooked to the Floor or Yard hooks of mansions. Use this item to be transported to the Yaraq Governor.') /* Use */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
 VALUES (480632,   1, 0x020016EC) /* Setup */

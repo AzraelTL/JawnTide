@@ -26,7 +26,7 @@ VALUES (490019,  39,       1) /* DefaultScale */
      , (490019,  54,       3) /* UseRadius */;
 
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
-VALUES (490019,   0.5, 'Snowy Valley') /* Name */
+VALUES (490019,   1, 'Snowy Valley') /* Name */
      , (490019,  14, 'This item can be hooked to the Floor or Yard hooks of mansions. Use this item to be transported to Snowy Valley.') /* Use */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
