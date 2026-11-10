@@ -1379,12 +1379,17 @@ namespace ACE.Server.Entity
                     #region MorphGemBanditHilt
                     case MorphGemBanditHilt:
 
-                        //Check if the target is a LW multi-strike weapon
-                        if (target.WeenieType != WeenieType.MeleeWeapon ||
-                            target.WeaponSkill != Skill.LightWeapons ||
-                            (!target.W_AttackType.HasFlag(AttackType.DoubleSlash) && !target.W_AttackType.HasFlag(AttackType.DoubleThrust)))
+                        // JawnTide: Light Weapons or Finesse Weapons daggers that are already Multi-Strike (double slash or double thrust),
+                        // imbued or not. Finesse ones are balanced by pvp_dmg_mod_fw_triplestrike and the per-imbue
+                        // pvp_dmg_mod_fw_triplestrike_cs/_ar/_cb/_rend settings; Light ones by the pvp_dmg_mod_lw_*triplestrike settings.
+                        var banditHiltOk = target.WeenieType == WeenieType.MeleeWeapon &&
+                            (target.WeaponSkill == Skill.LightWeapons || target.WeaponSkill == Skill.FinesseWeapons) &&
+                            target.W_WeaponType == WeaponType.Dagger &&
+                            (target.W_AttackType.HasFlag(AttackType.DoubleSlash) || target.W_AttackType.HasFlag(AttackType.DoubleThrust));
+
+                        if (!banditHiltOk)
                         {
-                            playerMsg = "This gem can only be used on Light Weapon melee weapons with the Multi-Strike property";
+                            playerMsg = "This gem can only be used on Light Weapon or Finesse Weapon daggers with the Multi-Strike property";
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat(playerMsg, ChatMessageType.Broadcast));
                             player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
                             return;

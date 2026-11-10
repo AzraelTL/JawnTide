@@ -25,7 +25,7 @@ VALUES (490026,   1, False) /* Stuck */
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
 VALUES (490026,   1, 'Blade Hilt') /* Name */
      , (490026,  15, 'A blade hilt.') /* ShortDesc */
-     , (490026,  16, 'A well-balanced blade hilt. Affix this hilt to a loot-generated dagger or light sword to give the weapon multi-strike capability.') /* LongDesc */;
+     , (490026,  16, 'A well-balanced blade hilt. Affix this hilt to a Multi-Strike Light Weapon or Finesse Weapon dagger to make it a Triple-Strike weapon.') /* LongDesc */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
 VALUES (490026,   1, 0x02000179) /* Setup */

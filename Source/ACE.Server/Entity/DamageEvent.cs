@@ -541,6 +541,23 @@ namespace ACE.Server.Entity
                         {
                             case Skill.FinesseWeapons:
                                 config_mod = (float)PropertyManager.GetDouble("pvp_dmg_mod_fw").Item;
+                                // JawnTide: Finesse daggers made Triple-Strike with the Bandit Hilt, balanced per imbue
+                                if (Weapon.W_AttackType == AttackType.TripleStrike)
+                                {
+                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_fw_triplestrike").Item;
+
+                                    if (Weapon.HasImbuedEffect(ImbuedEffectType.CriticalStrike))
+                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_fw_triplestrike_cs").Item;
+                                    else if (Weapon.HasImbuedEffect(ImbuedEffectType.ArmorRending))
+                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_fw_triplestrike_ar").Item;
+                                    else if (Weapon.HasImbuedEffect(ImbuedEffectType.CripplingBlow))
+                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_fw_triplestrike_cb").Item;
+                                    else if (Weapon.HasImbuedEffect(ImbuedEffectType.AcidRending) || Weapon.HasImbuedEffect(ImbuedEffectType.BludgeonRending) ||
+                                             Weapon.HasImbuedEffect(ImbuedEffectType.ColdRending) || Weapon.HasImbuedEffect(ImbuedEffectType.ElectricRending) ||
+                                             Weapon.HasImbuedEffect(ImbuedEffectType.FireRending) || Weapon.HasImbuedEffect(ImbuedEffectType.PierceRending) ||
+                                             Weapon.HasImbuedEffect(ImbuedEffectType.SlashRending))
+                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_fw_triplestrike_rend").Item;
+                                }
                                 break;
                             case Skill.LightWeapons:
                                 config_mod = (float)PropertyManager.GetDouble("pvp_dmg_mod_lw").Item;
