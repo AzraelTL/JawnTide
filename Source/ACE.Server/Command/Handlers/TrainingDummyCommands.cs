@@ -42,6 +42,16 @@ namespace ACE.Server.Command.Handlers
             nameof(ACE.Entity.Enum.SpellId.LightningBane7), nameof(ACE.Entity.Enum.SpellId.PiercingBane7)
         };
 
+        /// <summary>The spell names behind a buff preset (pvp7, pvp8, armor7, armor8), or null.</summary>
+        public static string[] Preset(string key) => key?.Trim().ToLowerInvariant() switch
+        {
+            "pvp8" => PvpBuffs8,
+            "pvp7" => PvpBuffs7,
+            "armor8" => ArmorBuffs8,
+            "armor7" => ArmorBuffs7,
+            _ => null
+        };
+
         [CommandHandler("dummy", AccessLevel.Developer, CommandHandlerFlag.RequiresWorld, 0,
             "Sets up a Target Drudge (select it, or stand within 30 m of one). Place one with @createinst 4290001 (saved) or @create 4290001 (until restart).",
             "/dummy - its setup\n" +

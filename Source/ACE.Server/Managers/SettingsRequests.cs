@@ -4,7 +4,11 @@ using System.Threading;
 
 using log4net;
 
+using System.Collections.Generic;
+using System.Text.Json;
+
 using ACE.Database;
+using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Managers
 {
@@ -61,6 +65,8 @@ namespace ACE.Server.Managers
                         else
                             log.Warn($"[SETTINGS] Rejected admin page change of {key} to {value}: {message}");
                     }
+
+                    DummyRequests(db);
                 }
                 catch (Exception ex)
                 {
@@ -71,6 +77,86 @@ namespace ACE.Server.Managers
                     Interlocked.Exchange(ref busy, 0);
                 }
             });
+        }
+
+        /// <summary>Target Drudge changes from the LAN admin page (training_dummy_request).</summary>
+        private static void DummyRequests(ShardDatabase db)
+        {
+            var rows = db.PvpToolsQuery("SELECT id, dummy_Guid, request FROM training_dummy_request WHERE status = 'pending' ORDER BY id LIMIT 20;");
+            if (rows == null)
+                return;
+
+            foreach (var r in rows)
+            {
+                var id = Convert.ToInt64(r[0]);
+                var guid = Convert.ToUInt32(r[1]);
+
+                void Done(string status, string message) => DatabaseManager.Shard.MarketEnqueue(() =>
+                    DatabaseManager.Shard.BaseDatabase.PvpToolsExecute("UPDATE training_dummy_request SET status = @s, applied_At = @t, message = @m WHERE id = @id;",
+                        ("@s", status), ("@t", DateTime.UtcNow), ("@m", message?.Length > 255 ? message.Substring(0, 255) : message), ("@id", id)));
+
+                JsonElement req;
+                try
+                {
+                    req = JsonDocument.Parse(r[2]?.ToString() ?? "{}").RootElement.Clone();
+                }
+                catch (Exception)
+                {
+                    Done("rejected", "bad request");
+                    continue;
+                }
+
+                var missing = new List<string>();
+                List<uint> buffs = null;
+                if (req.TryGetProperty("buffs", out var b) && b.ValueKind == JsonValueKind.String)
+                    buffs = TrainingDummy.ResolveBuffs(b.GetString(), missing);
+                var replace = !req.TryGetProperty("buffs_mode", out var bm) || bm.GetString() != "add";
+                var note = missing.Count > 0 ? $"; no spell named: {string.Join(", ", missing)}" : "";
+
+                if (TrainingDummy.Placed.TryGetValue(guid, out var dummy) && dummy.CurrentLandblock != null && !dummy.IsDestroyed)
+                {
+                    dummy.EnqueueAction(new ACE.Server.Entity.Actions.ActionEventDelegate(() =>
+                    {
+                        try
+                        {
+                            Done("applied", dummy.ApplyWebRequest(req, buffs, replace) + note);
+                        }
+                        catch (Exception ex)
+                        {
+                            log.Error($"[DUMMY] Admin page change failed: {ex}");
+                            Done("rejected", "error: " + ex.Message);
+                        }
+                    }));
+                    continue;
+                }
+
+                // not loaded right now: change its saved setup, which it reads when its landblock loads
+                int Int(string name) => req.TryGetProperty(name, out var v) && v.TryGetInt32(out var i) && i >= 0 ? i : -1;
+                var sets = new List<string>();
+                var args = new List<(string, object)> { ("@g", guid), ("@t", DateTime.UtcNow) };
+                foreach (var (field, col) in new[] { ("armor", "armor"), ("armor_extremities", "armor_Extremities"), ("melee_defense", "melee_Defense"),
+                    ("missile_defense", "missile_Defense"), ("magic_defense", "magic_Defense"), ("damage_resist_rating", "damage_Resist_Rating"),
+                    ("crit_damage_resist_rating", "crit_Damage_Resist_Rating"), ("pk_damage_resist_rating", "pk_Damage_Resist_Rating") })
+                {
+                    var v = Int(field);
+                    if (v < 0) continue;
+                    sets.Add($"{col} = @{field}");
+                    args.Add(($"@{field}", v));
+                }
+                if (buffs != null && replace)
+                {
+                    sets.Add("spells = @spells");
+                    args.Add(("@spells", string.Join(",", buffs)));
+                }
+                var worn = req.TryGetProperty("worn", out var w) ? w.GetString() : "keep";
+                if (worn == "strip")
+                    sets.Add("worn_Items = NULL");
+
+                sets.Add("updated_At = @t");
+                var n = db.PvpToolsExecute($"UPDATE training_dummy SET {string.Join(", ", sets)} WHERE dummy_Guid = @g;", args.ToArray());
+                Done(n > 0 ? "applied" : "rejected", (n > 0 ? "saved; it isn't loaded right now, so it takes effect when its area loads" : "no such dummy") +
+                    (buffs != null && !replace ? "; adding buffs needs it loaded" : "") + (worn == "strip_under" ? "; taking off underclothes needs it loaded" : "") + note);
+            }
         }
 
         private static (bool ok, string message) Apply(string key, string type, string value)

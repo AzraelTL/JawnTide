@@ -1020,7 +1020,96 @@ def pvp_set(form):
     return len(changes), ""
 
 
-def dummy_page(name):
+DUMMY_FIELDS = [("armor", "armor", "Armor: body"), ("armor_extremities", "armor_Extremities", "Armor: head, hands, feet"),
+                ("melee_defense", "melee_Defense", "Melee defense"), ("missile_defense", "missile_Defense", "Missile defense"),
+                ("magic_defense", "magic_Defense", "Magic defense"), ("damage_resist_rating", "damage_Resist_Rating", "Damage resist rating"),
+                ("crit_damage_resist_rating", "crit_Damage_Resist_Rating", "Crit damage resist rating"),
+                ("pk_damage_resist_rating", "pk_Damage_Resist_Rating", "PK damage resist rating")]
+DUMMY_BUFF_PRESETS = [("keep", "Keep its current buffs"), ("none", "No buffs"),
+                      ("pvp7", "pvp7: armor, protections, invulnerability, impregnability, magic resistance (VII)"),
+                      ("pvp8", "pvp8: the same at level VIII"),
+                      ("pvp7,armor7", "pvp7 + armor7 (Impenetrability and banes VII on worn items)"),
+                      ("pvp8,armor8", "pvp8 + armor8 (Impenetrability and banes VIII on worn items)")]
+
+
+def dummies_section(note):
+    try:
+        cols = ", ".join(c for _, c, _ in DUMMY_FIELDS)
+        rows = shard_rows(f"SELECT dummy_Guid, {cols}, description, updated_At FROM training_dummy ORDER BY dummy_Guid")
+        reqs = shard_rows("SELECT dummy_Guid, requested_At, requested_By, status, message FROM training_dummy_request ORDER BY id DESC LIMIT 20")
+    except Exception as ex:
+        return (f'<h2>Placed Target Drudges</h2><p class="err">Could not read the Target Drudge tables (the game server creates them '
+                f'on its first start with this version): {e(ex)}</p>')
+    presets = "".join(f'<option value="{e(k)}">{e(t)}</option>' for k, t in DUMMY_BUFF_PRESETS)
+    forms = []
+    for r in rows:
+        guid, vals, desc, updated = r[0], r[1:1 + len(DUMMY_FIELDS)], r[-2], r[-1]
+        fields = "".join(f'<label>{e(label)}<br><input name="{f}" value="{v}" size="6" inputmode="numeric"></label>'
+                         for (f, _, label), v in zip(DUMMY_FIELDS, vals))
+        forms.append(
+            f'<details open><summary><b>Target Drudge 0x{guid:08X}</b> <span class="muted">saved {fmt_t(updated)} UTC</span></summary>'
+            f'<p class="wrapd">{e(desc or "(setup not described yet)")}</p>'
+            f'<form method="post" action="/dummy-set"><input type="hidden" name="guid" value="{guid}">'
+            f'<div class="filters">{fields}</div>'
+            f'<div class="filters"><label>Buffs<br><select name="preset">{presets}</select></label>'
+            f'<label>Extra buffs (spell names or ids, comma-separated)<br><input name="extra" size="48" placeholder="e.g. Incantation of Armor Self, 4407"></label>'
+            f'<label>Worn items<br><select name="worn"><option value="keep">Keep</option><option value="strip_under">Take off underclothes</option>'
+            f'<option value="strip">Take off everything</option></select></label>'
+            f'<label><input type="checkbox" name="clean" value="1"> Remove players\' debuffs</label></div>'
+            f'<div class="filters"><input type="password" name="password" placeholder="Edit password" aria-label="Edit password" autocomplete="current-password">'
+            f'<input name="by" placeholder="Your name" size="12" aria-label="Your name"> <button>Save</button>'
+            f'<span class="muted">Copying worn gear needs <code>/dummy wear</code> in game.</span></div></form></details>')
+    hist = "".join(f'<tr><td>{fmt_t(t)}</td><td>0x{g:08X}</td><td>{e(b or "")}</td>'
+                   f'<td class="{"yes" if st == "applied" else "no" if st == "rejected" else "muted"}">{e(st)}</td><td class="muted wrapd">{e(m or "")}</td></tr>'
+                   for g, t, b, st, m in reqs)
+    none = '<p class="muted">None yet. Place one in game with <code>@createinst 4290001</code>.</p>'
+    return (f"<h2>Placed Target Drudges</h2>{note}" + ("".join(forms) or none)
+            + '<h2>Recent dummy changes</h2><div class="wrap"><table><thead><tr><th>When (UTC)</th><th>Dummy</th><th>By</th><th>Status</th><th></th></tr></thead>'
+            + f'<tbody>{hist or "<tr><td colspan=5 class=muted>None yet</td></tr>"}</tbody></table></div>')
+
+
+def dummy_set(form):
+    """Queues a change for one dummy as a training_dummy_request row. Returns an error, or "" when sent."""
+    if not EDIT_PASSWORD:
+        return "Editing is off: MONITOR_EDIT_PASSWORD is not set."
+    if not hmac.compare_digest(form.get("password", [""])[0].encode(), EDIT_PASSWORD.encode()):
+        return "Wrong edit password. Nothing was changed."
+    g = form.get("guid", [""])[0]
+    if not g.isdigit():
+        return "Bad dummy."
+    req = {}
+    for f, _, label in DUMMY_FIELDS:
+        v = form.get(f, [""])[0].strip()
+        if v == "":
+            continue
+        if not v.isdigit():
+            return f"{label}: {v} is not a whole number. Nothing was changed."
+        req[f] = int(v)
+    preset = form.get("preset", ["keep"])[0]
+    extra = form.get("extra", [""])[0].strip()
+    if preset != "keep":
+        req["buffs"] = ",".join(([] if preset == "none" else [preset]) + ([extra] if extra else []))
+        req["buffs_mode"] = "replace"
+    elif extra:
+        req["buffs"], req["buffs_mode"] = extra, "add"
+    worn = form.get("worn", ["keep"])[0]
+    if worn in ("strip", "strip_under"):
+        req["worn"] = worn
+    if form.get("clean", [""])[0] == "1":
+        req["clean"] = True
+    by = (form.get("by", [""])[0].strip() or "admin page")[:64]
+    conn = pymysql.connect(database="ace_shard", autocommit=True, **DB)
+    try:
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO training_dummy_request (requested_At, requested_By, dummy_Guid, request) VALUES (UTC_TIMESTAMP(), %s, %s, %s)",
+                        (by, int(g), json.dumps(req)))
+    finally:
+        conn.close()
+    print(f"[dummy] {by} queued a change for 0x{int(g):08X}: {json.dumps(req)}", flush=True)
+    return ""
+
+
+def dummy_page(name, sent="", bad=""):
     cat = {r["key"]: r for r in load_catalog()["settings"]}
     args, where = [], ""
     if name:
@@ -1052,7 +1141,10 @@ def dummy_page(name):
                    f'<td class="n">{hits}/{attacks}</td><td class="n">{pct(crits, hits)}</td><td class="n">{pct(evaded, attacks)}</td><td class="n">{pct(resisted, attacks)}</td>'
                    f'<td class="wrapd"><details><summary>{e((setup or "")[:80])}...</summary><p>{e(setup or "")}</p><pre>{e(sources or "")}</pre>'
                    f'<p><b>Settings changed from default ({len(diff)}):</b><br>{"<br>".join(e(d) for d in diff) or "none"}</p></details></td></tr>')
-    body = f"""<h2>Target Drudge sessions</h2>
+    note = (('<p class="yes">Sent. The game server applies it within about 5 seconds (see Recent dummy changes).</p>' if sent else "")
+            + (f'<p class="err">{e(bad)}</p>' if bad else "")
+            + ("" if EDIT_PASSWORD else '<p class="err">Editing is off: MONITOR_EDIT_PASSWORD is not set (see README.md).</p>'))
+    body = dummies_section(note) + f"""<h2>Target Drudge sessions</h2>
 <p class="muted">Each row is one attack session on a Target Drudge (it ends 15 seconds after the last hit). A player's hits on it use the PvP damage path, with the
 dummy's armor, defenses, ratings and buffs (set in game with <code>/dummy</code>). Open a row for the per-weapon/spell breakdown and the PvP settings that were in effect.
 Change settings on <a href="/pvp">PvP damage</a>, then attack again to compare.{' Showing ' + e(name) + ' only: <a href="/dummy">show everyone</a>.' if name else ''}</p>
@@ -1068,11 +1160,18 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         try:
             origin = self.headers.get("Origin")
-            if url.path not in ("/wiki-contributor", "/pvp-set") or (origin and urlparse(origin).netloc != self.headers.get("Host", "")):
+            if url.path not in ("/wiki-contributor", "/pvp-set", "/dummy-set") or (origin and urlparse(origin).netloc != self.headers.get("Host", "")):
                 self.send_error(403)
                 return
-            n = min(int(self.headers.get("Content-Length") or 0), 200000 if url.path == "/pvp-set" else 2000)
+            n = min(int(self.headers.get("Content-Length") or 0), 200000 if url.path == "/pvp-set" else 8000)
             form = parse_qs(self.rfile.read(n).decode("utf-8", "replace"))
+            if url.path == "/dummy-set":
+                bad = dummy_set(form)
+                self.send_response(303)
+                self.send_header("Location", "/dummy?" + (f"bad={quote(bad)}" if bad else "sent=1"))
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
             if url.path == "/pvp-set":
                 sent, bad = pvp_set(form)
                 self.send_response(303)
@@ -1120,7 +1219,7 @@ class Handler(BaseHTTPRequestHandler):
             elif url.path == "/pvp":
                 body = pvp_page(q.get("sent", [""])[0] if q.get("sent", ["0"])[0] != "0" else "", q.get("bad", [""])[0])
             elif url.path == "/dummy":
-                body = dummy_page(q.get("name", [""])[0])
+                body = dummy_page(q.get("name", [""])[0], q.get("sent", [""])[0], q.get("bad", [""])[0])
             elif url.path == "/health":
                 body = "ok"
             else:

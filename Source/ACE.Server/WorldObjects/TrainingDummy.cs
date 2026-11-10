@@ -30,6 +30,9 @@ namespace ACE.Server.WorldObjects
     {
         public const uint DummyWcid = 4290001;
 
+        /// <summary>Dummies in the world, by guid (for changes made on the LAN admin page).</summary>
+        public static readonly System.Collections.Concurrent.ConcurrentDictionary<uint, TrainingDummy> Placed = new System.Collections.Concurrent.ConcurrentDictionary<uint, TrainingDummy>();
+
 
         public int Armor = 0;
         public int ArmorExtremities = 0; // head, hands and feet
@@ -83,6 +86,8 @@ namespace ACE.Server.WorldObjects
             if (!base.EnterWorld())
                 return false;
 
+            Placed[Guid.Full] = this;
+
             var guid = Guid.Full;
             DatabaseManager.Shard.MarketEnqueue(() =>
             {
@@ -90,8 +95,15 @@ namespace ACE.Server.WorldObjects
                     "SELECT armor, armor_Extremities, melee_Defense, missile_Defense, magic_Defense, damage_Resist_Rating, crit_Damage_Resist_Rating, pk_Damage_Resist_Rating, spells, worn_Items FROM training_dummy WHERE dummy_Guid = @g;",
                     ("@g", guid));
 
-                if (rows == null || rows.Count == 0)
+                if (rows == null)
                     return;
+
+                if (rows.Count == 0)
+                {
+                    // first time in the world: save its setup so it shows on the LAN admin page
+                    EnqueueAction(new ActionEventDelegate(SaveSetup));
+                    return;
+                }
 
                 var r = rows[0];
 
@@ -306,13 +318,79 @@ namespace ACE.Server.WorldObjects
             var guid = Guid.Full;
             var (armor, ext, mel, mis, mag, drr, cdr, pkdr, spells) = (Armor, ArmorExtremities, MeleeDef, MissileDef, MagicDef, Drr, Cdr, Pkdr, string.Join(",", Buffs));
             var worn = string.Join(",", WornSources);
+            var description = DescribeSetup();
+            if (description.Length > 2000) description = description.Substring(0, 2000);
 
             DatabaseManager.Shard.MarketEnqueue(() => DatabaseManager.Shard.BaseDatabase.PvpToolsExecute(
-                @"INSERT INTO training_dummy (dummy_Guid, armor, armor_Extremities, melee_Defense, missile_Defense, magic_Defense, damage_Resist_Rating, crit_Damage_Resist_Rating, pk_Damage_Resist_Rating, spells, worn_Items, updated_At)
-                  VALUES (@g, @a, @x, @me, @mi, @ma, @d, @c, @p, @s, @w, @t)
+                @"INSERT INTO training_dummy (dummy_Guid, armor, armor_Extremities, melee_Defense, missile_Defense, magic_Defense, damage_Resist_Rating, crit_Damage_Resist_Rating, pk_Damage_Resist_Rating, spells, worn_Items, description, updated_At)
+                  VALUES (@g, @a, @x, @me, @mi, @ma, @d, @c, @p, @s, @w, @desc, @t)
                   ON DUPLICATE KEY UPDATE armor = @a, armor_Extremities = @x, melee_Defense = @me, missile_Defense = @mi, magic_Defense = @ma, damage_Resist_Rating = @d,
-                      crit_Damage_Resist_Rating = @c, pk_Damage_Resist_Rating = @p, spells = @s, worn_Items = @w, updated_At = @t;",
-                ("@g", guid), ("@a", armor), ("@x", ext), ("@me", mel), ("@mi", mis), ("@ma", mag), ("@d", drr), ("@c", cdr), ("@p", pkdr), ("@s", spells), ("@w", worn), ("@t", DateTime.UtcNow)));
+                      crit_Damage_Resist_Rating = @c, pk_Damage_Resist_Rating = @p, spells = @s, worn_Items = @w, description = @desc, updated_At = @t;",
+                ("@g", guid), ("@a", armor), ("@x", ext), ("@me", mel), ("@mi", mis), ("@ma", mag), ("@d", drr), ("@c", cdr), ("@p", pkdr), ("@s", spells), ("@w", worn), ("@desc", description), ("@t", DateTime.UtcNow)));
+        }
+
+        /// <summary>Spells from a comma-separated list of names, ids and presets (pvp7, pvp8, armor7, armor8).</summary>
+        public static List<uint> ResolveBuffs(string text, List<string> missing)
+        {
+            var ids = new List<uint>();
+            foreach (var part in (text ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                var names = ACE.Server.Command.Handlers.TrainingDummyCommands.Preset(part) ?? new[] { part };
+                foreach (var n in names)
+                {
+                    var id = FindSpell(n);
+                    if (id == null) missing.Add(n);
+                    else if (!ids.Contains(id.Value)) ids.Add(id.Value);
+                }
+            }
+            return ids;
+        }
+
+        /// <summary>A change from the LAN admin page (on this dummy's thread). Returns what happened.</summary>
+        public string ApplyWebRequest(JsonElement req, List<uint> buffs, bool replaceBuffs)
+        {
+            int Int(string name, int current) => req.TryGetProperty(name, out var v) && v.TryGetInt32(out var i) && i >= 0 ? i : current;
+
+            Armor = Int("armor", Armor);
+            ArmorExtremities = Int("armor_extremities", ArmorExtremities);
+            MeleeDef = Int("melee_defense", MeleeDef);
+            MissileDef = Int("missile_defense", MissileDef);
+            MagicDef = Int("magic_defense", MagicDef);
+            Drr = Int("damage_resist_rating", Drr);
+            Cdr = Int("crit_damage_resist_rating", Cdr);
+            Pkdr = Int("pk_damage_resist_rating", Pkdr);
+
+            if (buffs != null)
+            {
+                if (replaceBuffs)
+                {
+                    foreach (var id in Buffs.Where(b => !buffs.Contains(b)).ToList())
+                    {
+                        var e = EnchantmentManager.GetEnchantment(id);
+                        if (e != null) EnchantmentManager.Remove(e);
+                        foreach (var item in WornItems())
+                        {
+                            var ie = item.EnchantmentManager.GetEnchantment(id);
+                            if (ie != null) item.EnchantmentManager.Remove(ie);
+                        }
+                    }
+                    Buffs = buffs;
+                }
+                else
+                    foreach (var id in buffs.Where(b => !Buffs.Contains(b)))
+                        Buffs.Add(id);
+            }
+
+            var worn = req.TryGetProperty("worn", out var w) ? w.GetString() : "keep";
+            if (worn == "strip") StripAll();
+            else if (worn == "strip_under") Strip(UnderclothesSlots);
+
+            if (req.TryGetProperty("clean", out var c) && c.ValueKind == JsonValueKind.True)
+                EnchantmentManager.RemoveAllBadEnchantments();
+
+            ApplySetup();
+            SaveSetup();
+            return "applied";
         }
 
         public static string SpellName(uint id) => new Spell(id) is var s && !s.NotFound ? s.Name : $"spell {id}";
