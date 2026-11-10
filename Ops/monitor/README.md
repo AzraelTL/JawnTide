@@ -44,7 +44,9 @@ A small web page for the LAN that shows, per account:
   only adds rows to `ace_shard.settings_request`; the game server (`SettingsRequests.cs`) applies them within about 5 seconds, the same as
   `@modifydouble` / `@modifylong` / `@modifybool`, and posts each change on the audit channel. String settings (webhooks, keys) can't be
   changed here. Recent changes and whether each was applied are listed below the table.
-- **Target Drudge** (`/dummy`): every attack session on a Target Drudge (wcid 4290001, `TrainingDummy.cs`): DPS, damage, hit, crit,
+- **Target Drudge** (`/dummy`): every placed Target Drudge with its setup and a form to change it (armor for the body and for
+  head/hands/feet, defenses, ratings, buff presets and extra buffs by name or id, taking worn items off, removing debuffs), saved with the
+  edit password as `training_dummy_request` rows that the game server applies within about 5 seconds. Below that, every attack session on a Target Drudge (wcid 4290001, `TrainingDummy.cs`): DPS, damage, hit, crit,
   evade and resist rates, the dummy's setup, the per-weapon and per-spell breakdown, and which PvP settings were changed from default at
   the time. Place one in game with `@createinst 4290001` and set it up with `/dummy` (`/help dummy`). A player's hits on it take the
   PvP damage path, it never dies and gives no skill training.
@@ -80,7 +82,7 @@ reachable from the internet.
    For the PvP damage page (after the game server has started once with the PvP balance tools, which creates the table), let the
    monitor add setting change requests and set its edit password:
 
-       cd ~/jawntide-server && grep -q '^MONITOR_EDIT_PASSWORD=' .env || echo "MONITOR_EDIT_PASSWORD=$(openssl rand -hex 6)" >> .env && docker compose exec -T ace-db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -e "GRANT INSERT ON ace_shard.settings_request TO monitor@\"%\"; FLUSH PRIVILEGES;"' && grep '^MONITOR_EDIT_PASSWORD=' .env
+       cd ~/jawntide-server && grep -q '^MONITOR_EDIT_PASSWORD=' .env || echo "MONITOR_EDIT_PASSWORD=$(openssl rand -hex 6)" >> .env && docker compose exec -T ace-db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -e "GRANT INSERT ON ace_shard.settings_request TO monitor@\"%\"; GRANT INSERT ON ace_shard.training_dummy_request TO monitor@\"%\"; FLUSH PRIVILEGES;"' && grep '^MONITOR_EDIT_PASSWORD=' .env
 
    The last part prints the edit password (keep it to yourself).
 
