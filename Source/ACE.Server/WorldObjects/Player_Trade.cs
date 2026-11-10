@@ -287,6 +287,10 @@ namespace ACE.Server.WorldObjects
 
                 DatabaseManager.Shard.SaveBiotasInParallel(tradedItems, null);
 
+                // JawnTide bank audit
+                TransferAudit.RecordItems("trade", this, target, targetEscrow);
+                TransferAudit.RecordItems("trade", target, this, myEscrow);
+
                 HandleActionResetTrade(Guid);
                 target.HandleActionResetTrade(target.Guid);
             });

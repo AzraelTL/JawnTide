@@ -47,6 +47,9 @@ namespace ACE.Server.WorldObjects
         /// <summary>Why the bank is closed right now, or null if it's open.</summary>
         public string BankClosedReason(bool checkPending = true)
         {
+            if (Account != null && TransferAudit.IsBankBanned(Account.AccountId))
+                return "Your bank has been closed by the staff. Contact an admin.";
+
             if (IsDead)
                 return "You can't use the bank while dead.";
 
@@ -299,7 +302,7 @@ namespace ACE.Server.WorldObjects
                         return false;
                     }
 
-                    if (want > 0 && SpendLuminance(want))
+                    if (want > 0 && SpendLuminance(want, false))
                         taken = want;
                     break;
                 }
@@ -956,6 +959,8 @@ namespace ACE.Server.WorldObjects
             {
                 if (result.Status == BankResultStatus.Ok)
                 {
+                    TransferAudit.RecordBank(this, toAccount, targetGuid, targetName, currency, amount);
+
                     // tell whoever is online on the receiving account
                     var notify = PlayerManager.GetOnlinePlayer(targetGuid)
                         ?? PlayerManager.GetAllOnline().FirstOrDefault(p => p.Account?.AccountId == toAccount);

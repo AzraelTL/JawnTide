@@ -73,6 +73,9 @@ namespace ACE.Server.WorldObjects
 
             AvailableLuminance = available + addAmount;
 
+            // JawnTide economy stats
+            EconomyStats.Add("luminance", $"earned:{xpType}", addAmount);
+
             if (xpType == XpType.Quest)
                 Session.Network.EnqueueSend(new GameMessageSystemChat($"You've earned {amount:N0} Luminance.", ChatMessageType.Broadcast));
 
@@ -82,7 +85,7 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Spends the amount of luminance specified, deducting it from available luminance
         /// </summary>
-        public bool SpendLuminance(long amount)
+        public bool SpendLuminance(long amount, bool countAsSpent = true)
         {
             var available = AvailableLuminance ?? 0;
 
@@ -90,6 +93,10 @@ namespace ACE.Server.WorldObjects
                 return false;
 
             AvailableLuminance = available - amount;
+
+            // JawnTide economy stats (bank deposits aren't spending)
+            if (countAsSpent)
+                EconomyStats.Add("luminance", "spent", -amount);
 
             UpdateLuminance();
 

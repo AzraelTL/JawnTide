@@ -112,6 +112,9 @@ namespace ACE.Server.WorldObjects
 
             vendor.MoneyIncome += (int)cost;
 
+            // JawnTide economy stats
+            EconomyStats.Add(vendor.AlternateCurrency == null ? "pyreals" : (BankInfo.ForVendorCurrency(vendor.AlternateCurrency)?.Code ?? $"wcid_{vendor.AlternateCurrency}"), "vendor_buy", -(long)cost);
+
             foreach (var item in genericItems)
             {
                 var service = item.GetProperty(PropertyBool.VendorService) ?? false;
@@ -274,6 +277,8 @@ namespace ACE.Server.WorldObjects
             var payoutCoinStacks = proceedsToBank ? new List<WorldObject>() : CreatePayoutCoinStacks(payoutCoinAmount);
 
             vendor.MoneyOutflow += payoutCoinAmount;
+
+            EconomyStats.Add("pyreals", "vendor_sale", payoutCoinAmount); // JawnTide economy stats
 
             // remove sell items from player inventory
             foreach (var item in sellList.Values)
