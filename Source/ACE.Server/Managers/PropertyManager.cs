@@ -498,6 +498,9 @@ namespace ACE.Server.Managers
 
         public static readonly ReadOnlyDictionary<string, Property<bool>> DefaultBooleanProperties =
             DictOf(
+                ("transfer_audit_enabled", new Property<bool>(true, "JawnTide bank audit: log bank sends, gives, trades and ground drop-then-pickups between different accounts to transfer_log (/bankaudit)")),
+                ("transfer_audit_notify", new Property<bool>(true, "JawnTide bank audit: tell online staff (Sentinel and up) when a transfer is flagged")),
+                ("economy_stats_enabled", new Property<bool>(true, "JawnTide economy stats: count daily luminance earned/spent and vendor pyreals to economy_daily (/economystats)")),
                 ("account_login_boots_in_use", new Property<bool>(true, "if FALSE, oldest connection to account is not booted when new connection occurs")),
                 ("advanced_combat_pets", new Property<bool>(false, "(non-retail function) If enabled, Combat Pets can cast spells")),
                 ("advocate_fane_auto_bestow", new Property<bool>(false, "If enabled, Advocate Fane will automatically bestow new advocates to advocate_fane_auto_bestow_level")),
@@ -669,6 +672,13 @@ namespace ACE.Server.Managers
 
         public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties =
             DictOf(
+                ("transfer_audit_large_pyreals", new Property<long>(10000000, "JawnTide bank audit: a transfer worth at least this many pyreals (bank pyreals, or the items' value) is flagged large; 0 = off")),
+                ("transfer_audit_large_trophies", new Property<long>(500, "JawnTide bank audit: a transfer of at least this many PK Trophies is flagged large; 0 = off")),
+                ("transfer_audit_large_keys", new Property<long>(25, "JawnTide bank audit: a transfer of at least this many Darkbeat, Hera or Shimmering Skeleton keys is flagged large; 0 = off")),
+                ("transfer_audit_large_luminance", new Property<long>(50000000, "JawnTide bank audit: a bank send of at least this much luminance is flagged large; 0 = off")),
+                ("transfer_audit_repeat_count", new Property<long>(10, "JawnTide bank audit: the same two accounts moving value this many times within transfer_audit_window_minutes is flagged repeat; 0 = off")),
+                ("transfer_audit_funnel_count", new Property<long>(5, "JawnTide bank audit: this many different accounts sending to one account within transfer_audit_window_minutes is flagged funnel; 0 = off")),
+                ("transfer_audit_window_minutes", new Property<long>(60, "JawnTide bank audit: the time window for the repeat and funnel flags")),
                 ("world_boss_tokens_per_ip", new Property<long>(2, "JawnTide: world boss tokens (Claw, Blood, Cloak, Fang, Knucklebone, Shroud) one IP address can pick up from the ground per world boss kill; 0 = no limit. Admins are exempt")),
                 ("town_control_reentries", new Property<long>(3, "JawnTide: how many times a character may re-enter a town control area after its first entry, per town control event (0 = one entry only). Re-entries do not count again toward town_control_allegiance_player_limit or the IP restriction")),
                 ("char_delete_time", new Property<long>(3600, "the amount of time in seconds a deleted character can be restored")),

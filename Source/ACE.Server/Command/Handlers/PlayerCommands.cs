@@ -1727,6 +1727,7 @@ namespace ACE.Server.Command.Handlers
             "/bank purchases auto|ask|off - when your pack is short at a vendor: pay the rest from the bank without asking (default), ask with a popup, or never use the bank\n" +
             "/bank send <currency> <amount> <character> - e.g. /bank send trophies 25 Some Name (logged; asks you to confirm)\n" +
             "/bank log [count] - your recent bank history\n" +
+            "/b works the same as /bank (/b d, /b w, /b s). /top bank - the richest banks. /lhs, /lhr - luminance you sent / received (7 days)\n" +
             "Currencies: pyreals, trophies, luminance, darkbeat, hera, skeleton. Amounts take k/m/b (5k, 2.5m).\n" +
             "The bank is shared by every character on your account. It can't be used while PK tagged or in an arena.")]
         public static void HandleBank(Session session, params string[] parameters)
@@ -1844,6 +1845,8 @@ namespace ACE.Server.Command.Handlers
 
                 case "send":
                 case "s":
+                case "transfer":
+                case "t":
                 {
                     var currency = ParseCurrency(1);
                     if (currency == null || !ParseAmount(2, out var amount))
