@@ -210,14 +210,6 @@
    "area": "World bosses & events"
   },
   {
-   "key": "log_corpse_contents",
-   "type": "bool",
-   "default": "false",
-   "jawntide": true,
-   "desc": "JawnTide: if true, every time a player opens a corpse the server logs each item inside ([CORPSE-CONTENTS]: wcid, name, types, icons, palette, spells, value). For finding the item that crashes a client on opening a corpse",
-   "area": "Server & everything else"
-  },
-  {
    "key": "world_boss_tokens_per_ip",
    "type": "long",
    "default": "2",
@@ -287,6 +279,14 @@
    "default": "",
    "jawntide": false,
    "desc": "Webhook to be send Arena global messages.",
+   "area": "Arena"
+  },
+  {
+   "key": "arena_instances_per_map",
+   "type": "long",
+   "default": "3",
+   "jawntide": true,
+   "desc": "JawnTide instancing: how many arena matches can run on the same arena map at once (each match gets its own private copy). Read at server start.",
    "area": "Arena"
   },
   {
@@ -863,6 +863,46 @@
    "default": "1.0",
    "jawntide": false,
    "desc": "Scales the amount of damage for war FW Phantom.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_fw_triplestrike",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": true,
+   "desc": "scales PvP damage of every Triple-Strike (Bandit Hilt) Finesse dagger, imbued or not. The per-imbue settings below apply on top.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_fw_triplestrike_ar",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": true,
+   "desc": "scales PvP damage of Triple-Strike (Bandit Hilt) Finesse daggers with Armor Rending. Applies on top of pvp_dmg_mod_fw and pvp_dmg_mod_fw_ar.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_fw_triplestrike_cb",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": true,
+   "desc": "scales PvP damage of Triple-Strike (Bandit Hilt) Finesse daggers with Crippling Blow. Applies on top of pvp_dmg_mod_fw and pvp_dmg_mod_fw_cb.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_fw_triplestrike_cs",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": true,
+   "desc": "scales PvP damage of Triple-Strike (Bandit Hilt) Finesse daggers with Critical Strike. Applies on top of pvp_dmg_mod_fw and pvp_dmg_mod_fw_cs.",
+   "area": "PvP damage tuning"
+  },
+  {
+   "key": "pvp_dmg_mod_fw_triplestrike_rend",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": true,
+   "desc": "scales PvP damage of Triple-Strike (Bandit Hilt) Finesse daggers with any rend (acid, bludgeon, cold, lightning, fire, pierce or slash rending).",
    "area": "PvP damage tuning"
   },
   {
@@ -1898,6 +1938,14 @@
    "area": "Housing"
   },
   {
+   "key": "mansion_whitelist_only",
+   "type": "bool",
+   "default": "true",
+   "jawntide": true,
+   "desc": "if TRUE, only the monarch of an allegiance on the Town Control whitelist (town_control_alleglist) can buy a mansion",
+   "area": "Housing"
+  },
+  {
    "key": "allegiance_free_swears",
    "type": "long",
    "default": "3",
@@ -2634,6 +2682,14 @@
    "area": "Combat & magic"
   },
   {
+   "key": "log_corpse_contents",
+   "type": "bool",
+   "default": "false",
+   "jawntide": true,
+   "desc": "if true, every time a player opens a corpse the server logs each item inside ([CORPSE-CONTENTS]: wcid, name, types, icons, palette, spells, value). For finding the item that crashes a client on opening a corpse",
+   "area": "Combat & magic"
+  },
+  {
    "key": "melee_max_angle",
    "type": "double",
    "default": "0.0",
@@ -2991,6 +3047,14 @@
    "default": "false",
    "jawntide": false,
    "desc": "Do not enable on live servers! Enable this to allow for server behavior to change as necessary for testing envrionments.",
+   "area": "Server & everything else"
+  },
+  {
+   "key": "market_enabled",
+   "type": "bool",
+   "default": "true",
+   "jawntide": true,
+   "desc": "if FALSE, the game server stops carrying out jawntide.com marketplace requests (they wait until it is turned back on)",
    "area": "Server & everything else"
   },
   {

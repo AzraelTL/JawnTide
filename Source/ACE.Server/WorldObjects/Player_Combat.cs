@@ -163,7 +163,18 @@ namespace ACE.Server.WorldObjects
                     targetPlayer.TakeDamage(this, damageEvent);
                 }
                 else
+                {
+                    // JawnTide target dummy: same PvP damage cap as a player target
+                    if (target is TrainingDummy)
+                    {
+                        bool isDinnerware = LootTables.DinnerwareLootMatrix.Contains((int)((damageSource?.WeenieClassId) ?? 0));
+                        var damageCap = PropertyManager.GetLong("pvp_damage_cap").Item;
+                        if (damageEvent.Damage > damageCap && !isDinnerware)
+                            damageEvent.Damage = damageCap;
+                    }
+
                     target.TakeDamage(this, damageEvent.DamageType, damageEvent.Damage, damageEvent.IsCritical);
+                }
             }
             else
             {
@@ -176,6 +187,9 @@ namespace ACE.Server.WorldObjects
                 if (targetPlayer != null)
                     targetPlayer.OnEvade(this, damageEvent.CombatType);
             }
+
+            if (target is TrainingDummy dummy)
+                dummy.RecordAttack(this, damageEvent, damageSource);
 
             if (damageEvent.HasDamage && target.IsAlive)
             {
@@ -235,6 +249,10 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public override void OnDamageTarget(WorldObject target, CombatType attackType, bool critical)
         {
+            // JawnTide target dummy: no skill training from an unkillable target
+            if (target is TrainingDummy)
+                return;
+
             var attackSkill = GetCreatureSkill(GetCurrentWeaponSkill());
             var difficulty = GetTargetEffectiveDefenseSkill(target);
 

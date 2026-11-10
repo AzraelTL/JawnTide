@@ -321,6 +321,10 @@ namespace ACE.Server.WorldObjects
 
             var damage = CalculateDamage(ProjectileSource, creatureTarget, ref critical, ref critDefended, ref overpower);
 
+            // JawnTide target dummy: a resisted spell
+            if (damage == null && creatureTarget is TrainingDummy resistedBy && ProjectileSource is Player resistedCaster)
+                resistedBy.RecordSpell(resistedCaster, Spell, 0, false, true);
+
             if (damage != null)
             {                
                 if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.EnchantmentProjectile)
@@ -330,7 +334,7 @@ namespace ACE.Server.WorldObjects
                 }
                 else
                 {
-                    if(player != null && targetPlayer != null && IsWeaponSpell)
+                    if(player != null && (targetPlayer != null || creatureTarget is TrainingDummy) && IsWeaponSpell)
                     {
                         // weapon spells do no damage to other players
                         damage = 0;
@@ -342,7 +346,7 @@ namespace ACE.Server.WorldObjects
                 // if this SpellProjectile has a TargetEffect, play it on successful hit
                 DoSpellEffects(Spell, ProjectileSource, creatureTarget, true);
 
-                if (player != null)
+                if (player != null && !(creatureTarget is TrainingDummy))
                     Proficiency.OnSuccessUse(player, player.GetCreatureSkill(Spell.School), Spell.PowerMod);
 
                 // handle target procs
@@ -570,7 +574,8 @@ namespace ACE.Server.WorldObjects
 
                 var absorbMod = GetAbsorbMod(target);
 
-                bool isPVP = sourcePlayer != null && targetPlayer != null;
+                // JawnTide target dummy: a player's spells take the PvP damage path against it
+                bool isPVP = sourcePlayer != null && (targetPlayer != null || target is TrainingDummy);
 
                 //http://acpedia.org/wiki/Announcements_-_2014/01_-_Forces_of_Nature - Aegis is 72% effective in PvP
                 if (isPVP && (target.CombatMode == CombatMode.Melee || target.CombatMode == CombatMode.Missile))
@@ -580,7 +585,7 @@ namespace ACE.Server.WorldObjects
                     absorbMod = 1 - absorbMod;
                 }
 
-                if (isPVP && Spell.IsHarmful)
+                if (isPVP && targetPlayer != null && Spell.IsHarmful)
                     Player.UpdatePKTimers(sourcePlayer, targetPlayer);
 
                 var elementalDamageMod = GetCasterElementalDamageModifier(weapon, sourceCreature, target, Spell.DamageType);
@@ -734,7 +739,7 @@ namespace ACE.Server.WorldObjects
 
                 //Apply pvp dmg mods for war and void (not including DOTs which are in EnchantmentManager.ApplyDamageTick)
                 float dmgMod = 1;
-                if (sourcePlayer != null && targetPlayer != null)
+                if (isPVP)
                 {
                     if (Spell.School == MagicSchool.WarMagic)
                     {
@@ -958,7 +963,7 @@ namespace ACE.Server.WorldObjects
             var sourceCreature = ProjectileSource as Creature;
             var sourcePlayer = ProjectileSource as Player;
 
-            var pkBattle = sourcePlayer != null && targetPlayer != null;
+            var pkBattle = sourcePlayer != null && (targetPlayer != null || target is TrainingDummy);
 
             var amount = 0u;
             var percent = 0.0f;
@@ -1092,6 +1097,9 @@ namespace ACE.Server.WorldObjects
             }
 
             amount = (uint)Math.Round(damage);    // full amount for debugging
+
+            if (target is TrainingDummy dummy && sourcePlayer != null)
+                dummy.RecordSpell(sourcePlayer, Spell, amount, critical, false);
 
             // show debug info
             if (sourceCreature != null && sourceCreature.DebugDamage.HasFlag(Creature.DebugDamageType.Attacker))

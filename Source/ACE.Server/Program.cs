@@ -304,6 +304,9 @@ namespace ACE.Server
             log.Info("Initializing PlayerManager...");
             PlayerManager.Initialize();
 
+            log.Info("Initializing SettingsRequests...");
+            SettingsRequests.Initialize();
+
             log.Info("Initializing ArenaManager...");
             ArenaManager.Initialize();
 

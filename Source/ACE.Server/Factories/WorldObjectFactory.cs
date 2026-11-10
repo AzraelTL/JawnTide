@@ -49,6 +49,8 @@ namespace ACE.Server.Factories
                 case WeenieType.Cow:
                     return new Cow(weenie, guid);
                 case WeenieType.Creature:
+                    if (weenie.WeenieClassId == TrainingDummy.DummyWcid)
+                        return new TrainingDummy(weenie, guid);
                     return new Creature(weenie, guid);
                 case WeenieType.Container:
                     return new Container(weenie, guid);
@@ -168,6 +170,8 @@ namespace ACE.Server.Factories
                 case WeenieType.Cow:
                     return new Cow(biota);
                 case WeenieType.Creature:
+                    if (biota.WeenieClassId == TrainingDummy.DummyWcid)
+                        return new TrainingDummy(biota);
                     return new Creature(biota);
                 case WeenieType.Container:
                     return new Container(biota);

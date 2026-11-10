@@ -300,6 +300,10 @@ namespace ACE.Server.WorldObjects.Managers
                 entry.IsPvP = true;
             }
 
+            // JawnTide target dummy: a player's DoTs on it count as PvP
+            if (caster is Player && spell.IsHarmful && !spell.IsSelfTargeted && WorldObject is TrainingDummy)
+                entry.IsPvP = true;
+
             return entry;
         }
 
@@ -1404,7 +1408,7 @@ namespace ACE.Server.WorldObjects.Managers
                 }
 
                 // with the halvening, this actually seems like the fairest balance currently..
-                var useNetherDotDamageRating = targetPlayer != null;
+                var useNetherDotDamageRating = targetPlayer != null || creature is TrainingDummy;
 
                 var damageResistRatingMod = creature.GetDamageResistRatingMod(CombatType.Magic, useNetherDotDamageRating);   // df?
 
@@ -1430,7 +1434,8 @@ namespace ACE.Server.WorldObjects.Managers
                 //Console.WriteLine("NRR: " + Creature.NegativeModToRating(netherResistRatingMod));
 
                 var pvpDmgMod = 1.0f;
-                if (damageType == DamageType.Nether && sourcePlayer != null && targetPlayer != null)
+                var pvpTarget = targetPlayer != null || creature is TrainingDummy; // JawnTide target dummy: PvP DoT damage
+                if (damageType == DamageType.Nether && sourcePlayer != null && pvpTarget)
                     pvpDmgMod = (float)PropertyManager.GetDouble("pvp_dmg_mod_void_dot").Item;
 
                 tickAmount *= resistanceMod * damageResistRatingMod * dotResistRatingMod * pvpDmgMod;
@@ -1444,7 +1449,7 @@ namespace ACE.Server.WorldObjects.Managers
                 }
 
                 //Add an additional modifier for hybrid void characters in pvp
-                if (sourcePlayer != null && targetPlayer != null && damageType == DamageType.Nether)
+                if (sourcePlayer != null && pvpTarget && damageType == DamageType.Nether)
                 {
                     try
                     {                        
@@ -1530,6 +1535,9 @@ namespace ACE.Server.WorldObjects.Managers
                 if (damageSourcePlayer != null)
                 {
                     creature.TakeDamageOverTime_NotifySource(damageSourcePlayer, damageType, amount, aetheria);
+
+                    if (creature is TrainingDummy dummy)
+                        dummy.RecordDot(damageSourcePlayer, damageType, amount);
 
                     if (creature.IsAlive)
                         creature.EmoteManager.OnDamage(damageSourcePlayer);

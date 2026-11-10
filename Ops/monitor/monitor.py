@@ -12,8 +12,10 @@ for history (XP gain rates and leveling spots come from that), and serves web pa
 It never writes to the game databases. Its one write is the wiki contributor list (ace_wiki.contributor), set with
 the Wiki checkboxes on the Levels page.
 """
+import hmac
 import html
 import json
+import re
 import os
 import sqlite3
 import threading
@@ -333,7 +335,7 @@ def page(title, body, refresh=True):
         status += f' <span class="err">Last error: {e(err)}</span>'
     return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 {'<meta http-equiv="refresh" content="300">' if refresh else ""}<title>{e(title)} - JawnTide monitor</title><style>{STYLE}</style></head><body>
-<header><b>JawnTide monitor</b><nav><a href="/">Accounts</a><a href="/levels">Levels</a><a href="/allegiances">Allegiances</a><a href="/top">Top holders</a><a href="/bank">Bank</a><a href="/ips">Shared IPs</a><a href="/settings">Settings</a><a href="/casting">Casting</a></nav>
+<header><b>JawnTide monitor</b><nav><a href="/">Accounts</a><a href="/levels">Levels</a><a href="/allegiances">Allegiances</a><a href="/top">Top holders</a><a href="/bank">Bank</a><a href="/ips">Shared IPs</a><a href="/settings">Settings</a><a href="/casting">Casting</a><a href="/pvp">PvP damage</a><a href="/dummy">Target Drudge</a></nav>
 <span class="muted">{status}</span></header><main>{body}</main></body></html>"""
 
 
@@ -893,16 +895,191 @@ def casting_page():
     return page("Casting", body, refresh=False)
 
 
+# ---------------------------------------------------------------- PvP damage settings and the Target Drudge
+
+# Every setting about damage: the whole "PvP damage tuning" area plus any other bool/long/double whose name is about damage.
+DAMAGE_RX = re.compile(r"dmg|damage|crit|armor|resist|rending|slayer|absorb|cleav")
+EDIT_PASSWORD = os.environ.get("MONITOR_EDIT_PASSWORD", "")
+
+
+def damage_settings(cat):
+    return [r for r in cat["settings"] if r["type"] != "string" and (r["area"] == "PvP damage tuning" or DAMAGE_RX.search(r["key"]))]
+
+
+def shard_rows(sql, args=None):
+    conn = pymysql.connect(database="ace_shard", **DB)
+    try:
+        with conn.cursor() as cur:
+            return query(cur, sql, args)
+    finally:
+        conn.close()
+
+
+def pvp_page(sent, bad):
+    cat = load_catalog()
+    try:
+        stored = live_settings()
+        err = ""
+    except Exception as ex:
+        stored, err = {}, f'<p class="err">Could not read the live settings: {e(ex)}</p>'
+    try:
+        recent = shard_rows("SELECT requested_At, requested_By, `key`, value, status, message FROM settings_request ORDER BY id DESC LIMIT 25")
+    except Exception as ex:
+        recent, err = [], err + f'<p class="err">Could not read settings_request (run the setup step in README.md): {e(ex)}</p>'
+    rows, last_area, changed_count = [], None, 0
+    for r in damage_settings(cat):
+        key, typ = r["key"], r["type"]
+        default = norm(typ, r["default"])
+        current = norm(typ, stored[key][1]) if key in stored else default
+        changed = key in stored and current != default
+        changed_count += changed
+        if r["area"] != last_area:
+            rows.append(f'<tr class="area"><th colspan="4">{e(r["area"])}</th></tr>')
+            last_area = r["area"]
+        if typ == "bool":
+            field = (f'<select name="v:{e(key)}" aria-label="{e(key)}"><option{" selected" if current == "true" else ""}>true</option>'
+                     f'<option{" selected" if current == "false" else ""}>false</option></select>')
+        else:
+            field = f'<input name="v:{e(key)}" value="{e(current)}" size="10" inputmode="decimal" aria-label="{e(key)}">'
+        rows.append(f'<tr class="s{" changed" if changed else ""}" data-text="{e((key + " " + r["desc"]).lower().replace("_", " "))}">'
+                    f'<td><code>{e(key)}</code><br><span class="muted">{typ}</span></td>'
+                    f'<td class="n">{field}<input type="hidden" name="o:{e(key)}" value="{e(current)}"><input type="hidden" name="t:{e(key)}" value="{typ}"></td>'
+                    f'<td class="n muted">{e(default)}</td><td class="wrapd">{e(r["desc"])}</td></tr>')
+    note = ""
+    if sent:
+        note = f'<p class="yes">Sent {e(sent)} change(s). The game server applies them within about 5 seconds (see Recent changes).</p>'
+    if bad:
+        note += f'<p class="err">{e(bad)}</p>'
+    if not EDIT_PASSWORD:
+        note += '<p class="err">Editing is off: MONITOR_EDIT_PASSWORD is not set (see README.md).</p>'
+    hist = "".join(f'<tr><td>{fmt_t(t)}</td><td>{e(b or "")}</td><td><code>{e(k)}</code></td><td class="n">{e(v)}</td>'
+                   f'<td class="{"yes" if st == "applied" else "no" if st == "rejected" else "muted"}">{e(st)}</td><td class="muted">{e(m or "")}</td></tr>'
+                   for t, b, k, v, st, m in recent)
+    body = f"""<h2>PvP damage settings</h2>
+<p class="muted">Every server setting about damage, with its live value. Change values, enter the edit password and press Save: the game server applies them
+within about 5 seconds, exactly like <code>@modifydouble</code> (also posted on the audit channel). Highlighted rows differ from the default ({changed_count}).
+Measure the effect on a <a href="/dummy">Target Drudge</a>.</p>
+{note}{err}
+<form method="post" action="/pvp-set">
+<div class="filters"><input id="q" type="search" placeholder="Search names and descriptions" aria-label="Search settings">
+<input type="password" name="password" placeholder="Edit password" aria-label="Edit password" autocomplete="current-password">
+<input name="by" placeholder="Your name" aria-label="Your name" size="12"> <button>Save changes</button> <span id="cnt" class="muted"></span></div>
+<div class="wrap"><table id="t"><thead><tr><th>Setting</th><th class="n">Value</th><th class="n">Default</th><th>What it does</th></tr></thead>
+<tbody>{"".join(rows)}</tbody></table></div></form>
+<h2>Recent changes</h2>
+<div class="wrap"><table><thead><tr><th>When (UTC)</th><th>By</th><th>Setting</th><th class="n">Value</th><th>Status</th><th></th></tr></thead><tbody>{hist or '<tr><td colspan="6" class="muted">None yet</td></tr>'}</tbody></table></div>
+<script>
+(function(){{
+  var q=document.getElementById('q'), cnt=document.getElementById('cnt');
+  function run(){{
+    var words=q.value.toLowerCase().replace(/_/g,' ').split(/\\s+/).filter(Boolean), n=0;
+    document.querySelectorAll('#t tr.s').forEach(function(tr){{ var ok=words.every(function(w){{return tr.dataset.text.indexOf(w)>=0;}}); tr.hidden=!ok; if(ok)n++; }});
+    cnt.textContent=n+' shown';
+  }}
+  q.addEventListener('input',run); q.addEventListener('keydown',function(ev){{ if(ev.key==='Enter') ev.preventDefault(); }}); run();
+}})();
+</script>"""
+    return page("PvP damage", body, refresh=False)
+
+
+def pvp_set(form):
+    """Queues every changed value as a settings_request row. Returns (count sent, error)."""
+    if not EDIT_PASSWORD:
+        return 0, "Editing is off: MONITOR_EDIT_PASSWORD is not set."
+    if not hmac.compare_digest(form.get("password", [""])[0].encode(), EDIT_PASSWORD.encode()):
+        return 0, "Wrong edit password. Nothing was changed."
+    allowed = {r["key"]: r["type"] for r in damage_settings(load_catalog())}
+    by = (form.get("by", [""])[0].strip() or "admin page")[:64]
+    changes = []
+    for name, vals in form.items():
+        if not name.startswith("v:"):
+            continue
+        key = name[2:]
+        typ = allowed.get(key)
+        new = vals[0].strip()
+        if typ is None or new == form.get("o:" + key, [""])[0]:
+            continue
+        if typ == "double":
+            try:
+                new = f"{float(new):g}"
+            except ValueError:
+                return 0, f"{key}: {new} is not a number. Nothing was changed."
+        elif typ == "long" and not new.lstrip("-").isdigit():
+            return 0, f"{key}: {new} is not a whole number. Nothing was changed."
+        elif typ == "bool" and new not in ("true", "false"):
+            return 0, f"{key}: must be true or false. Nothing was changed."
+        changes.append((by, key, typ, new))
+    if changes:
+        conn = pymysql.connect(database="ace_shard", autocommit=True, **DB)
+        try:
+            with conn.cursor() as cur:
+                cur.executemany("INSERT INTO settings_request (requested_At, requested_By, `key`, type, value) VALUES (UTC_TIMESTAMP(), %s, %s, %s, %s)", changes)
+        finally:
+            conn.close()
+        print(f"[pvp] {by} queued {len(changes)} setting change(s): {', '.join(k + '=' + v for _, k, _, v in changes)}", flush=True)
+    return len(changes), ""
+
+
+def dummy_page(name):
+    cat = {r["key"]: r for r in load_catalog()["settings"]}
+    args, where = [], ""
+    if name:
+        where, args = "WHERE character_Name = %s", [name]
+    try:
+        rows = shard_rows("SELECT id, ended_At, character_Name, character_Level, seconds, attacks, hits, evaded, resisted, crits, damage, dps, "
+                          f"dummy_Setup, sources, settings FROM training_dummy_session {where} ORDER BY id DESC LIMIT 100", args)
+        err = ""
+    except Exception as ex:
+        rows, err = [], f'<p class="err">Could not read training_dummy_session: {e(ex)}</p>'
+
+    def pct(n, of):
+        return f"{100.0 * n / of:.1f}%" if of else "-"
+
+    out = []
+    for (sid, ended, who, lvl, secs, attacks, hits, evaded, resisted, crits, dmg, dps, setup, sources, settings) in rows:
+        try:
+            snap = json.loads(settings or "{}")
+        except ValueError:
+            snap = {}
+        diff = []
+        for k, v in sorted(snap.items()):
+            r = cat.get(k)
+            if r and norm(r["type"], v) != norm(r["type"], r["default"]):
+                diff.append(f"{k} = {norm(r['type'], v)}")
+        out.append(f'<tr><td class="n">{sid}</td><td>{fmt_t(ended)}</td>'
+                   f'<td><a href="/dummy?name={quote(who or "")}">{e(who or "")}</a> <span class="muted">{lvl}</span></td>'
+                   f'<td class="n">{secs:.0f}s</td><td class="n"><b>{dps:,.1f}</b></td><td class="n">{dmg:,}</td>'
+                   f'<td class="n">{hits}/{attacks}</td><td class="n">{pct(crits, hits)}</td><td class="n">{pct(evaded, attacks)}</td><td class="n">{pct(resisted, attacks)}</td>'
+                   f'<td class="wrapd"><details><summary>{e((setup or "")[:80])}...</summary><p>{e(setup or "")}</p><pre>{e(sources or "")}</pre>'
+                   f'<p><b>Settings changed from default ({len(diff)}):</b><br>{"<br>".join(e(d) for d in diff) or "none"}</p></details></td></tr>')
+    body = f"""<h2>Target Drudge sessions</h2>
+<p class="muted">Each row is one attack session on a Target Drudge (it ends 15 seconds after the last hit). A player's hits on it use the PvP damage path, with the
+dummy's armor, defenses, ratings and buffs (set in game with <code>/dummy</code>). Open a row for the per-weapon/spell breakdown and the PvP settings that were in effect.
+Change settings on <a href="/pvp">PvP damage</a>, then attack again to compare.{' Showing ' + e(name) + ' only: <a href="/dummy">show everyone</a>.' if name else ''}</p>
+{err}
+<div class="wrap"><table><thead><tr><th class="n">#</th><th>Ended (UTC)</th><th>Character</th><th class="n">Time</th><th class="n">DPS</th><th class="n">Damage</th>
+<th class="n">Hits</th><th class="n">Crit</th><th class="n">Evaded</th><th class="n">Resisted</th><th>Setup, breakdown and settings</th></tr></thead>
+<tbody>{"".join(out) or '<tr><td colspan="11" class="muted">No sessions yet</td></tr>'}</tbody></table></div>"""
+    return page("Target Drudge", body, refresh=False)
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         url = urlparse(self.path)
         try:
             origin = self.headers.get("Origin")
-            if url.path != "/wiki-contributor" or (origin and urlparse(origin).netloc != self.headers.get("Host", "")):
+            if url.path not in ("/wiki-contributor", "/pvp-set") or (origin and urlparse(origin).netloc != self.headers.get("Host", "")):
                 self.send_error(403)
                 return
-            n = min(int(self.headers.get("Content-Length") or 0), 2000)
+            n = min(int(self.headers.get("Content-Length") or 0), 200000 if url.path == "/pvp-set" else 2000)
             form = parse_qs(self.rfile.read(n).decode("utf-8", "replace"))
+            if url.path == "/pvp-set":
+                sent, bad = pvp_set(form)
+                self.send_response(303)
+                self.send_header("Location", f"/pvp?sent={sent}" + (f"&bad={quote(bad)}" if bad else ""))
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
             cid = form.get("id", [""])[0]
             if cid.isdigit():
                 set_contributor(int(cid), form.get("on", [""])[0] == "1")
@@ -940,6 +1117,10 @@ class Handler(BaseHTTPRequestHandler):
                 body = casting_page()
             elif url.path == "/settings":
                 body = settings_page()
+            elif url.path == "/pvp":
+                body = pvp_page(q.get("sent", [""])[0] if q.get("sent", ["0"])[0] != "0" else "", q.get("bad", [""])[0])
+            elif url.path == "/dummy":
+                body = dummy_page(q.get("name", [""])[0])
             elif url.path == "/health":
                 body = "ok"
             else:

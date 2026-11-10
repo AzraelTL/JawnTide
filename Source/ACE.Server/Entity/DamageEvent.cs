@@ -173,7 +173,8 @@ namespace ACE.Server.Entity
             var playerAttacker = attacker as Player;
             var playerDefender = defender as Player;
 
-            var pkBattle = playerAttacker != null && playerDefender != null;
+            // JawnTide target dummy: a player hitting it takes the PvP damage path (pvp_* settings, PK ratings)
+            var pkBattle = playerAttacker != null && (playerDefender != null || defender is TrainingDummy);
 
             // Tinker-flagged characters (dedicated crafters) cannot damage monsters (non-player targets).
             // Tinker-vs-player is blocked earlier in CheckPKStatusVsTarget.
@@ -416,7 +417,7 @@ namespace ACE.Server.Entity
                 }
             }
 
-            if (playerAttacker != null && playerDefender != null && Weapon != null)
+            if (pkBattle && Weapon != null)
             {
                 var multi = (float?)Weapon.GetProperty(ACE.Entity.Enum.Properties.PropertyFloat.ForedawnPvpDamageMulti);
                 if (multi.HasValue)
@@ -529,7 +530,7 @@ namespace ACE.Server.Entity
             // calculate final output damage
             Damage = DamageBeforeMitigation * ArmorMod * ShieldMod * ResistanceMod * DamageResistanceRatingMod * gearCreatureResistRatingMod;
 
-            if (playerAttacker != null && playerDefender != null)
+            if (pkBattle)
             {
                 float config_mod = 1;
 
