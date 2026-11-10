@@ -51,7 +51,7 @@ Nine pieces (bracers, breastplate, gauntlets, girth, greaves, helm, pauldrons, s
 | **Infinite Dragon Scale Arrow / Quarrel / Atlatl Dart** | 2 each | Ammunition that never runs out. Needs 250 Missile Weapons, lasts 7 days. Draws its damage type from your elemental launcher. |
 | **Volley of Infinite Dragon Scale Arrows / Quarrels / Atlatl Darts** (3 or 5) | 2 each | The same, but fires a volley of 3 or 5. |
 | **Boxed Hera's Vault Key** | 15 | One Hera's Vault Key (Hera's Vault holds tier 9 treasure). |
-| **Crate of Phials of Bloody Tears** | 15 | 10 Phials of Bloody Tears. |
+| **Crate of Phials of Bloody Tears** | 12 | 10 Phials of Bloody Tears. |
 | **Celestial Hand / Eldrytch Web / Radiant Blood Advancement Token** | 25 each | Hand it to your society's promotion officer to advance to Master. |
 | **Ornate Armor Writ** | 1 | Trade it for a key to a Society Armor Chest. |
 

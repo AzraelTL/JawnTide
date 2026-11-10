@@ -27,7 +27,7 @@ Unless noted, a morph gem only works on **loot-generated** items (they have work
 |---|---|---|
 | **Value Morph Gem** | 25 | About 90% chance to lower the item's value by 5-15%, 10% chance to raise it by 5-15%. Never below 20,000. Not for rares. Works on quest items too. |
 | **Arcane Lore Morph Gem** | 25 | 90% chance to lower Arcane Lore by 25, 10% chance to raise it by 50. |
-| **Workmanship Morph Gem** | 25 | Rerolls workmanship to a random 1-10, so it can go up or down. |
+| **Workmanship Morph Gem** | 25 | Rerolls workmanship to a random 1-10. Lower is better for tinkering, so a drop is a success and a rise is a failure. |
 | **Slayer Morph Gem** | 15 | Rerolls the creature type of a slayer (always to a different type, never Human). Weapons and casters: only slayers from the tinkering lottery or Oil of Creature Slaying. Armor, jewelry and underclothes: their Creature Slayer or Creature Resist rating. |
 | **Slayer Upgrade Gem** | 100 | Raises a tinkering-lottery or Oil slayer to a 1.8 damage bonus. Refused if it's already 1.8 or more. |
 | **Melee Defense Requirement Morph Gem** | 100 | Removes the Melee Defense activation requirement. |
@@ -41,8 +41,8 @@ These go on your house hooks. The travel ones need a **mansion floor or yard hoo
 | Item | Price | What it does |
 |---|---|---|
 | **Asheron's Castle** | 200 | Use it to travel to Asheron's Castle. |
-| **Dark Isle device** | 200 | Use it to travel to Dark Isle, no level requirement. |
-| **Snowy Valley device** | 200 | Use it to travel to Snowy Valley. |
+| **Dark Isle** | 200 | Use it to travel to Dark Isle, no level requirement. |
+| **Snowy Valley** | 200 | Use it to travel to Snowy Valley. |
 | **Sir Bellas** | 200 | Use it once a day for a Blank Augmentation Gem. |
 | **Barber's Chair** | 100 | Opens the barber (change your hair and face). 15-second cooldown. |
 | **Focusing Stone** | 250 | Wall hook. Casts Brilliance on you. 5-second cooldown. |
