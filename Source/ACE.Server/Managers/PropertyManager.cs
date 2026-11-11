@@ -498,6 +498,7 @@ namespace ACE.Server.Managers
 
         public static readonly ReadOnlyDictionary<string, Property<bool>> DefaultBooleanProperties =
             DictOf(
+                ("burning_coals_enabled", new Property<bool>(false, "JawnTide: Burning Coals (460000, 480613) can be used. Off until Stage 2; turn on with the Stage 2 vendor and Campfire files (Ops/loot-stages/DISABLED.md)")),
                 ("stuck_state_auto_fix", new Property<bool>(true, "JawnTide: clear a player's busy state when it has lasted 2 minutes (stuck after an action that never finished: can move but can't change stance, wield, use kits or attack). /fixbusy does it after 10 seconds")),
                 ("combat_mode_attack_fix", new Property<bool>(true, "JawnTide: when a melee or missile attack or a spell cast arrives while the server still has the player in peace mode (macros switching weapon or stance quickly), switch into the mode the wielded weapon or wand needs and make the attack or cast instead of dropping it")),
                 ("transfer_audit_enabled", new Property<bool>(true, "JawnTide bank audit: log bank sends, gives, trades and ground drop-then-pickups between different accounts to transfer_log (/bankaudit)")),
