@@ -816,7 +816,12 @@ namespace ACE.Server.WorldObjects
             if (!PropertyManager.GetBool("combat_mode_attack_fix").Item || combatModeFixPending)
                 return false;
 
-            if (IsBusy || Teleporting || IsDead || suicideInProgress || IsArenaObserver || CombatMode == CombatMode.Magic)
+            if (IsBusy || Teleporting || IsDead || suicideInProgress || IsArenaObserver)
+                return false;
+
+            // only when the server has the player in peace mode and no other stance was asked for: if the player has just
+            // asked for another mode (say magic, mid weapon swap), a late attack must never pull them out of it
+            if (CombatMode != CombatMode.NonCombat || LastCombatMode != CombatMode.NonCombat)
                 return false;
 
             // only the mode the equipped weapon is for
