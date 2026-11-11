@@ -624,6 +624,47 @@ def handle(h, method):
 
 # ---------------------------------------------------------------- starter articles
 
+def _apply_seed_updates():
+    """Pushes changed starter articles onto pages that already exist, once each: every line of wiki-seed/updates.txt is
+    "TAG FILE.md". A tag is applied only once (remembered in ace_wiki.seed_update). The update is a new revision, so any
+    earlier edit stays in the page history and can be restored."""
+    path = os.path.join(SEED_DIR, "updates.txt")
+    if not os.path.isfile(path):
+        return
+    try:
+        _q("SELECT 1 FROM seed_update LIMIT 1")
+    except Exception as ex:
+        print(f"[wiki] article updates skipped, ace_wiki.seed_update isn't set up (run wiki-setup.sh): {ex}", flush=True)
+        return
+    with open(path, encoding="utf-8") as f:
+        lines = [l.split() for l in f if l.strip() and not l.lstrip().startswith("#")]
+    for parts in lines:
+        if len(parts) != 2:
+            continue
+        tag, fn = parts
+        if _q("SELECT 1 FROM seed_update WHERE tag = %s", (tag,), one=True):
+            continue
+        file = os.path.join(SEED_DIR, fn)
+        if not os.path.isfile(file):
+            print(f"[wiki] seed update {tag}: {fn} not found", flush=True)
+            continue
+        with open(file, encoding="utf-8") as f:
+            first, _, body = f.read().partition("\n")
+        title = first.lstrip("#").strip()
+        slug = slugify(title)
+        body = body.strip() + "\n"
+        page = _q("SELECT current_rev FROM page WHERE slug = %s", (slug,), one=True)
+        current = _q("SELECT body FROM revision WHERE id = %s", (page[0],), one=True) if page else None
+        if not current or current[0] != body:
+            rid = _x("INSERT INTO revision (slug, title, body, summary, user_id) VALUES (%s, %s, %s, %s, NULL)", (slug, title, body, f"Update: {tag}"))
+            if page:
+                _x("UPDATE page SET title = %s, current_rev = %s, updated_at = UTC_TIMESTAMP() WHERE slug = %s", (title, rid, slug))
+            else:
+                _x("INSERT INTO page (slug, title, current_rev) VALUES (%s, %s, %s)", (slug, title, rid))
+            print(f"[wiki] updated article: {title} ({tag})", flush=True)
+        _x("INSERT IGNORE INTO seed_update (tag) VALUES (%s)", (tag,))
+
+
 def _seed_when_ready():
     """Adds the starter articles from wiki-seed/*.md the first time the wiki database is reachable.
     Only pages that don't exist yet are added, so edits are never overwritten."""
@@ -645,6 +686,7 @@ def _seed_when_ready():
                          (slug, title, body.strip() + "\n", "Starter article"))
                 _x("INSERT INTO page (slug, title, current_rev) VALUES (%s, %s, %s)", (slug, title, rid))
                 print(f"[wiki] added starter article: {title}", flush=True)
+            _apply_seed_updates()
             return
         except Exception as ex:
             print(f"[wiki] waiting for the wiki database: {ex}", flush=True)
