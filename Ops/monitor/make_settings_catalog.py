@@ -24,7 +24,7 @@ AREAS = [
     ("PvP damage tuning", r"^pvp_(dmg_mod|ratings_mod|void_hybrid|cs_critrate|damage_cap|cloak_max)|^ignore_magic_"),
     ("PvP & player killers", r"(^|_)pk|pvp|respite|cleave|zerg"),
     ("XP, levels & luminance", r"xp|level|rolling|luminance|lum_|aug"),
-    ("Loot & salvage", r"loot|rare|salvage|tier|mutat|treasure|equipmentset|rating|burning_coals"),
+    ("Loot & salvage", r"loot|rare|salvage|tier|mutat|treasure|equipmentset|rating|burning_coals|blazing_heart"),
     ("Bank, audit & economy", r"^transfer_audit|^economy_stats|^bank_|^market_"),
     ("Housing", r"house|housing|slumlord|mansion"),
     ("Allegiance & fellowship", r"alleg|fellow|monarch|patron"),

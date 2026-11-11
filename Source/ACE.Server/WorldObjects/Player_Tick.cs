@@ -127,6 +127,13 @@ namespace ACE.Server.WorldObjects
 
             MuleTick();     // JawnTide My Mule: leaves on PK tag, landblock change or distance
 
+            // JawnTide: while Blazing Heart is held back, end any that's still on the player (cast before it was turned off)
+            if (!PropertyManager.GetBool("blazing_heart_enabled").Item)
+            {
+                for (var n = 0; n < 10 && EnchantmentManager.GetEnchantment(BlazingHeartSpellId) is var bh && bh != null; n++)
+                    EnchantmentManager.Remove(bh, false);
+            }
+
             // JawnTide: a busy state that hasn't ended in 2 minutes is stuck (an action that never finished); clear it
             if (IsBusy && (DateTime.UtcNow - BusySince).TotalSeconds >= 120 && PropertyManager.GetBool("stuck_state_auto_fix").Item)
                 ClearStuckState(120);
