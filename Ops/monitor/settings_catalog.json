@@ -8,6 +8,7 @@
   "PvP & player killers",
   "XP, levels & luminance",
   "Loot & salvage",
+  "Bank, audit & economy",
   "Housing",
   "Allegiance & fellowship",
   "Vendors & economy",
@@ -370,6 +371,14 @@
    "area": "Town Control"
   },
   {
+   "key": "town_control_crystal_magic_defense_percent",
+   "type": "long",
+   "default": "100",
+   "jawntide": true,
+   "desc": "the Town Control crystals' magic defense (how often they resist spells) as a percent of normal (100 = unchanged, 0 to 1000). Applies when a crystal spawns",
+   "area": "Town Control"
+  },
+  {
    "key": "town_control_enable_webhook_debug",
    "type": "bool",
    "default": "false",
@@ -383,6 +392,22 @@
    "default": "",
    "jawntide": false,
    "desc": "Webhook to be send Town Control global messages.",
+   "area": "Town Control"
+  },
+  {
+   "key": "town_control_governor_defense_percent",
+   "type": "long",
+   "default": "100",
+   "jawntide": true,
+   "desc": "the Town Control governors' melee, missile and magic defense as a percent of normal (100 = unchanged, 0 to 1000). Applies when a governor spawns",
+   "area": "Town Control"
+  },
+  {
+   "key": "town_control_governor_vitals_percent",
+   "type": "long",
+   "default": "100",
+   "jawntide": true,
+   "desc": "the Town Control governors' health, stamina and mana as a percent of normal (100 = unchanged, 1 to 1000). Applies when a governor spawns",
    "area": "Town Control"
   },
   {
@@ -1738,6 +1763,14 @@
    "area": "Loot & salvage"
   },
   {
+   "key": "burning_coals_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": true,
+   "desc": "Burning Coals (460000, 480613) can be used. Off until Stage 2; turn on with the Stage 2 vendor and Campfire files (Ops/loot-stages/DISABLED.md)",
+   "area": "Loot & salvage"
+  },
+  {
    "key": "equipmentset_whitelist_enabled",
    "type": "bool",
    "default": "false",
@@ -1872,6 +1905,86 @@
    "jawntide": false,
    "desc": "in retail, if 2 salvage bags were combined beyond 100 structure, the overages would be lost",
    "area": "Loot & salvage"
+  },
+  {
+   "key": "economy_stats_enabled",
+   "type": "bool",
+   "default": "true",
+   "jawntide": true,
+   "desc": "JawnTide economy stats: count daily luminance earned/spent and vendor pyreals to economy_daily (/economystats)",
+   "area": "Bank, audit & economy"
+  },
+  {
+   "key": "market_enabled",
+   "type": "bool",
+   "default": "true",
+   "jawntide": true,
+   "desc": "if FALSE, the game server stops carrying out jawntide.com marketplace requests (they wait until it is turned back on)",
+   "area": "Bank, audit & economy"
+  },
+  {
+   "key": "transfer_audit_enabled",
+   "type": "bool",
+   "default": "true",
+   "jawntide": true,
+   "desc": "JawnTide bank audit: log bank sends, gives, trades and ground drop-then-pickups between different accounts to transfer_log (/bankaudit)",
+   "area": "Bank, audit & economy"
+  },
+  {
+   "key": "transfer_audit_funnel_count",
+   "type": "long",
+   "default": "5",
+   "jawntide": true,
+   "desc": "JawnTide bank audit: this many different accounts sending to one account within transfer_audit_window_minutes is flagged funnel; 0 = off",
+   "area": "Bank, audit & economy"
+  },
+  {
+   "key": "transfer_audit_large_keys",
+   "type": "long",
+   "default": "25",
+   "jawntide": true,
+   "desc": "JawnTide bank audit: a transfer of at least this many Darkbeat, Hera or Shimmering Skeleton keys is flagged large; 0 = off",
+   "area": "Bank, audit & economy"
+  },
+  {
+   "key": "transfer_audit_large_pyreals",
+   "type": "long",
+   "default": "10000000",
+   "jawntide": true,
+   "desc": "JawnTide bank audit: a transfer worth at least this many pyreals (bank pyreals, or the items' value) is flagged large; 0 = off",
+   "area": "Bank, audit & economy"
+  },
+  {
+   "key": "transfer_audit_large_trophies",
+   "type": "long",
+   "default": "500",
+   "jawntide": true,
+   "desc": "JawnTide bank audit: a transfer of at least this many PK Trophies is flagged large; 0 = off",
+   "area": "Bank, audit & economy"
+  },
+  {
+   "key": "transfer_audit_notify",
+   "type": "bool",
+   "default": "true",
+   "jawntide": true,
+   "desc": "JawnTide bank audit: tell online staff (Sentinel and up) when a transfer is flagged",
+   "area": "Bank, audit & economy"
+  },
+  {
+   "key": "transfer_audit_repeat_count",
+   "type": "long",
+   "default": "10",
+   "jawntide": true,
+   "desc": "JawnTide bank audit: the same two accounts moving value this many times within transfer_audit_window_minutes is flagged repeat; 0 = off",
+   "area": "Bank, audit & economy"
+  },
+  {
+   "key": "transfer_audit_window_minutes",
+   "type": "long",
+   "default": "60",
+   "jawntide": true,
+   "desc": "JawnTide bank audit: the time window for the repeat and funnel flags",
+   "area": "Bank, audit & economy"
   },
   {
    "key": "house_15day_account",
@@ -2071,14 +2184,6 @@
    "default": "false",
    "jawntide": false,
    "desc": "(non-retail function) If enabled, IOUs can be traded for objects that are missing in DB but added/restored later on",
-   "area": "Vendors & economy"
-  },
-  {
-   "key": "transfer_audit_large_pyreals",
-   "type": "long",
-   "default": "10000000",
-   "jawntide": true,
-   "desc": "JawnTide bank audit: a transfer worth at least this many pyreals (bank pyreals, or the items' value) is flagged large; 0 = off",
    "area": "Vendors & economy"
   },
   {
@@ -2658,6 +2763,14 @@
    "area": "Combat & magic"
   },
   {
+   "key": "combat_mode_attack_fix",
+   "type": "bool",
+   "default": "true",
+   "jawntide": true,
+   "desc": "when a melee or missile attack or a spell cast arrives while the server still has the player in peace mode (macros switching weapon or stance quickly), switch into the mode the wielded weapon or wand needs and make the attack or cast instead of dropping it",
+   "area": "Combat & magic"
+  },
+  {
    "key": "corpse_decay_tick_logging",
    "type": "bool",
    "default": "false",
@@ -2783,6 +2896,14 @@
    "default": "-1.0",
    "jawntide": true,
    "desc": "the maximum angle to target for starting a cast (windup, and skipping the server's first turn when above 5); spellcast_max_angle still controls release. Below 0 = use spellcast_max_angle",
+   "area": "Combat & magic"
+  },
+  {
+   "key": "stuck_state_auto_fix",
+   "type": "bool",
+   "default": "true",
+   "jawntide": true,
+   "desc": "clear a player's busy state when it has lasted 2 minutes (stuck after an action that never finished: can move but can't change stance, wield, use kits or attack). /fixbusy does it after 10 seconds",
    "area": "Combat & magic"
   },
   {
@@ -2954,14 +3075,6 @@
    "area": "Server & everything else"
   },
   {
-   "key": "economy_stats_enabled",
-   "type": "bool",
-   "default": "true",
-   "jawntide": true,
-   "desc": "JawnTide economy stats: count daily luminance earned/spent and vendor pyreals to economy_daily (/economystats)",
-   "area": "Server & everything else"
-  },
-  {
    "key": "encounter_delay",
    "type": "double",
    "default": "1800",
@@ -3071,14 +3184,6 @@
    "default": "false",
    "jawntide": false,
    "desc": "Do not enable on live servers! Enable this to allow for server behavior to change as necessary for testing envrionments.",
-   "area": "Server & everything else"
-  },
-  {
-   "key": "market_enabled",
-   "type": "bool",
-   "default": "true",
-   "jawntide": true,
-   "desc": "if FALSE, the game server stops carrying out jawntide.com marketplace requests (they wait until it is turned back on)",
    "area": "Server & everything else"
   },
   {
@@ -3303,62 +3408,6 @@
    "default": "false",
    "jawntide": false,
    "desc": "use the alternate trajectory solver for missiles and spell projectiles",
-   "area": "Server & everything else"
-  },
-  {
-   "key": "transfer_audit_enabled",
-   "type": "bool",
-   "default": "true",
-   "jawntide": true,
-   "desc": "JawnTide bank audit: log bank sends, gives, trades and ground drop-then-pickups between different accounts to transfer_log (/bankaudit)",
-   "area": "Server & everything else"
-  },
-  {
-   "key": "transfer_audit_funnel_count",
-   "type": "long",
-   "default": "5",
-   "jawntide": true,
-   "desc": "JawnTide bank audit: this many different accounts sending to one account within transfer_audit_window_minutes is flagged funnel; 0 = off",
-   "area": "Server & everything else"
-  },
-  {
-   "key": "transfer_audit_large_keys",
-   "type": "long",
-   "default": "25",
-   "jawntide": true,
-   "desc": "JawnTide bank audit: a transfer of at least this many Darkbeat, Hera or Shimmering Skeleton keys is flagged large; 0 = off",
-   "area": "Server & everything else"
-  },
-  {
-   "key": "transfer_audit_large_trophies",
-   "type": "long",
-   "default": "500",
-   "jawntide": true,
-   "desc": "JawnTide bank audit: a transfer of at least this many PK Trophies is flagged large; 0 = off",
-   "area": "Server & everything else"
-  },
-  {
-   "key": "transfer_audit_notify",
-   "type": "bool",
-   "default": "true",
-   "jawntide": true,
-   "desc": "JawnTide bank audit: tell online staff (Sentinel and up) when a transfer is flagged",
-   "area": "Server & everything else"
-  },
-  {
-   "key": "transfer_audit_repeat_count",
-   "type": "long",
-   "default": "10",
-   "jawntide": true,
-   "desc": "JawnTide bank audit: the same two accounts moving value this many times within transfer_audit_window_minutes is flagged repeat; 0 = off",
-   "area": "Server & everything else"
-  },
-  {
-   "key": "transfer_audit_window_minutes",
-   "type": "long",
-   "default": "60",
-   "jawntide": true,
-   "desc": "JawnTide bank audit: the time window for the repeat and funnel flags",
    "area": "Server & everything else"
   },
   {

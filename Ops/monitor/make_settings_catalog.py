@@ -24,13 +24,14 @@ AREAS = [
     ("PvP damage tuning", r"^pvp_(dmg_mod|ratings_mod|void_hybrid|cs_critrate|damage_cap|cloak_max)|^ignore_magic_"),
     ("PvP & player killers", r"(^|_)pk|pvp|respite|cleave|zerg"),
     ("XP, levels & luminance", r"xp|level|rolling|luminance|lum_|aug"),
-    ("Loot & salvage", r"loot|rare|salvage|tier|mutat|treasure|equipmentset|rating"),
+    ("Loot & salvage", r"loot|rare|salvage|tier|mutat|treasure|equipmentset|rating|burning_coals"),
+    ("Bank, audit & economy", r"^transfer_audit|^economy_stats|^bank_|^market_"),
     ("Housing", r"house|housing|slumlord|mansion"),
     ("Allegiance & fellowship", r"alleg|fellow|monarch|patron"),
     ("Vendors & economy", r"vendor|pyreal|trade|coin|currency|price|value|stipend"),
     ("Chat, Discord & messages", r"chat|webhook|discord|motd|popup|broadcast|global|message|welcome"),
     ("Accounts, logins & security", r"vpn|ip_|account|login|proxycheck|session|ban|whitelist|logoff|logout"),
-    ("Combat & magic", r"spell|magic|comp|damage|dmg|combat|melee|missile|attack|defense|armor|resist|heal|vitae|death|corpse|cloak|dispel"),
+    ("Combat & magic", r"spell|magic|comp|damage|dmg|combat|melee|missile|attack|defense|armor|resist|heal|vitae|death|corpse|cloak|dispel|stuck_state"),
 ]
 OTHER = "Server & everything else"
 
