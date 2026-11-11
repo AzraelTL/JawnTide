@@ -810,6 +810,58 @@ namespace ACE.Server.WorldObjects
         private DateTime lastPeaceRequest = DateTime.MinValue;
 
         /// <summary>
+        /// JawnTide: clears a player stuck "busy" (can move, but can't change stance, wield, use kits or attack) after an action
+        /// that never finished. A busy state is only cleared once it has lasted minBusySeconds, and never mid trade, teleport
+        /// or logout, so a real action in progress is left alone. Also ends a cast or attack that never finished, then puts the
+        /// player in peace mode so the client and server agree. Returns what it cleared (empty when nothing was stuck).
+        /// </summary>
+        public string ClearStuckState(double minBusySeconds)
+        {
+            var cleared = new List<string>();
+            var now = DateTime.UtcNow;
+
+            if (TradeTransferInProgress || Teleporting || IsLoggingOut || IsDead)
+                return "";
+
+            if (IsBusy && (now - BusySince).TotalSeconds >= minBusySeconds)
+            {
+                IsBusy = false;
+                cleared.Add($"busy for {(now - BusySince).TotalSeconds:0}s");
+            }
+
+            if (MagicState.IsCasting && (now - MagicState.StartTime).TotalSeconds >= Math.Max(10, minBusySeconds))
+            {
+                FailCast(false);
+                cleared.Add("an unfinished cast");
+            }
+
+            if (Attacking && !IsBusy)
+            {
+                Attacking = false;
+                cleared.Add("an unfinished attack");
+            }
+
+            if (NextUseTime > now.AddSeconds(5))
+            {
+                NextUseTime = now;
+                cleared.Add("a stance/use lock");
+            }
+
+            combatModeFixPending = false;
+
+            if (cleared.Count == 0)
+                return "";
+
+            log.Warn($"[STUCK] {Name}: cleared {string.Join(", ", cleared)}");
+
+            SendUseDoneEvent();
+            LastCombatMode = CombatMode.NonCombat;
+            SetCombatMode(CombatMode.NonCombat);
+
+            return string.Join(", ", cleared);
+        }
+
+        /// <summary>
         /// JawnTide: an attack arrived while the server still had the player out of that combat mode (the client, usually a
         /// macro, switched weapon or stance faster than the server). Switches into the mode the equipped weapon needs (melee,
         /// missile, or magic with a wand or orb), then retries the attack or cast once. Returns false when it can't help (turned off, busy, wrong weapon, or already retried),

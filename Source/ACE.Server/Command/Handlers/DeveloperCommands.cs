@@ -117,6 +117,21 @@ namespace ACE.Server.Command.Handlers
                 return;
             }
 
+            // JawnTide: also clears a busy state stuck for 10+ seconds on the server, not just the client's hourglass
+            var cleared = session.Player.ClearStuckState(10);
+            if (cleared.Length > 0)
+                session.Network.EnqueueSend(new GameMessageSystemChat($"Fixed: {cleared}. You're in peace mode now; switch stance or wield again as normal.", ChatMessageType.Broadcast));
+            else if (!session.Player.IsBusy && !session.Player.Teleporting)
+            {
+                // nothing flagged as stuck: still put client and server back in step (peace mode, no use lock)
+                session.Player.NextUseTime = DateTime.UtcNow;
+                session.Player.LastCombatMode = CombatMode.NonCombat;
+                session.Player.SetCombatMode(CombatMode.NonCombat);
+                session.Network.EnqueueSend(new GameMessageSystemChat("Your stance was reset to peace mode. If you still can't act, log out to character select and back in.", ChatMessageType.Broadcast));
+            }
+            else
+                session.Network.EnqueueSend(new GameMessageSystemChat("You're in the middle of an action. Wait a few seconds and try /fixbusy again.", ChatMessageType.Broadcast));
+
             session.Player.SendUseDoneEvent();
         }
 
