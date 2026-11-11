@@ -2,3 +2,5 @@
 # "TAG FILE.md": add a new line with a new tag to push a changed seed file onto its page (as a new revision).
 2026-11-10-bank-shortcuts 11-bank.md
 2026-11-10-player-commands 14-player-commands.md
+2026-11-11-coals-held-back 23-town-treasurers.md
+2026-11-11-coals-held-back-db 24-darkbeat.md

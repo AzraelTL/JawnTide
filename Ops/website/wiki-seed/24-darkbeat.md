@@ -46,7 +46,6 @@ Nine pieces (bracers, breastplate, gauntlets, girth, greaves, helm, pauldrons, s
 | **Virindi Cage** | 50 | Summons your Virindi Servant. Hand it a PK Trophy and it removes your vitae, then casts about 20 buffs on you (Inky Armor, the Dark buffs, the plant blessings and more). |
 | **Eternal Plentiful Healing Kit** | 25 | Unlimited uses, heal boost 100, 1.6 kit modifier. Never expires. |
 | **Eternal Blunt** | 25 | Casts Gauntlet Vitality III on you. Unlimited uses, 30-second cooldown, never expires. |
-| **Burning Coal** | 1 | Casts Blazing Heart on you once. Stacks to 10. |
 | **Infinite Black Page of Salt and Ash** | 25 | Casts Invocation of the Black Book on your wielded weapon (+10% attack). |
 | **Infinite Dragon Scale Arrow / Quarrel / Atlatl Dart** | 2 each | Ammunition that never runs out. Needs 250 Missile Weapons, lasts 7 days. Draws its damage type from your elemental launcher. |
 | **Volley of Infinite Dragon Scale Arrows / Quarrels / Atlatl Darts** (3 or 5) | 2 each | The same, but fires a volley of 3 or 5. |
