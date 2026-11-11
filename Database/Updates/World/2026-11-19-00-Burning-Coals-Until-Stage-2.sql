@@ -1,6 +1,6 @@
 -- JawnTide: Burning Coals are held back until Stage 2 (see Ops/loot-stages/DISABLED.md). Safe to re-run.
 -- Darkbeat stops selling Burning Coal, the Town Treasurers stop selling Boxed Burning Coals, and the Campfire no longer hands out coals.
--- Coals already owned can't be used while blazing_heart_enabled is false (server code).
+-- Coals already owned can't be used while burning_coals_enabled is false (server code).
 
 DELETE FROM `weenie_properties_create_list` WHERE `object_Id` = 480480 AND `weenie_Class_Id` = 460000 AND `destination_Type` = 4;
 DELETE FROM `weenie_properties_create_list` WHERE `object_Id` IN (42128707, 42128708, 42128709) AND `weenie_Class_Id` = 480623 AND `destination_Type` = 4;

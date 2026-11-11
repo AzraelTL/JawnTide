@@ -95,15 +95,8 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Handles equipping an item casting a spell on player or creature
         /// </summary>
-        /// <summary>JawnTide: Blazing Heart, from Burning Coals, the Blazing Heart Morph Gem and Salvaged Obsidian</summary>
-        public const uint BlazingHeartSpellId = 3204;
-
         public bool CreateItemSpell(WorldObject item, uint spellID)
         {
-            // JawnTide: Blazing Heart is held back until Stage 2: items keep the spell, but it doesn't take effect
-            if (spellID == BlazingHeartSpellId && !ACE.Server.Managers.PropertyManager.GetBool("blazing_heart_enabled").Item)
-                return false;
-
             var spell = new Spell(spellID);
 
             if (spell.NotFound)

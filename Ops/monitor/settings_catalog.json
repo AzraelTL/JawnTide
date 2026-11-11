@@ -1763,11 +1763,11 @@
    "area": "Loot & salvage"
   },
   {
-   "key": "blazing_heart_enabled",
+   "key": "burning_coals_enabled",
    "type": "bool",
    "default": "false",
    "jawntide": true,
-   "desc": "the spell Blazing Heart (3204) works: Burning Coals can be used, and armor or jewelry with Blazing Heart casts it when worn. Off until Stage 2 (the spell stays on items, it just does nothing); see Ops/loot-stages/DISABLED.md",
+   "desc": "Burning Coals (460000, 480613) can be used. Off until Stage 2; turn on with the Stage 2 vendor and Campfire files (Ops/loot-stages/DISABLED.md)",
    "area": "Loot & salvage"
   },
   {

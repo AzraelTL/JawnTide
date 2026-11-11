@@ -67,8 +67,8 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            // JawnTide: Burning Coals (Town Control and Arena Patch versions) are held back until Stage 2, with Blazing Heart
-            if ((WeenieClassId == 460000 || WeenieClassId == 480613) && !PropertyManager.GetBool("blazing_heart_enabled").Item)
+            // JawnTide: Burning Coals (Town Control and Arena Patch versions) are held back until Stage 2
+            if ((WeenieClassId == 460000 || WeenieClassId == 480613) && !PropertyManager.GetBool("burning_coals_enabled").Item)
             {
                 player.Session.Network.EnqueueSend(new GameMessageSystemChat("The coal is cold. It will burn again when the realm has grown stronger.", ChatMessageType.Broadcast));
                 player.SendUseDoneEvent();
