@@ -498,7 +498,7 @@ namespace ACE.Server.Managers
 
         public static readonly ReadOnlyDictionary<string, Property<bool>> DefaultBooleanProperties =
             DictOf(
-                ("combat_mode_attack_fix", new Property<bool>(true, "JawnTide: when a melee or missile attack arrives while the server still has the player out of that combat mode (macros switching weapon or stance quickly), switch into it and make the attack instead of dropping it")),
+                ("combat_mode_attack_fix", new Property<bool>(true, "JawnTide: when a melee or missile attack or a spell cast arrives while the server still has the player in peace mode (macros switching weapon or stance quickly), switch into the mode the wielded weapon or wand needs and make the attack or cast instead of dropping it")),
                 ("transfer_audit_enabled", new Property<bool>(true, "JawnTide bank audit: log bank sends, gives, trades and ground drop-then-pickups between different accounts to transfer_log (/bankaudit)")),
                 ("transfer_audit_notify", new Property<bool>(true, "JawnTide bank audit: tell online staff (Sentinel and up) when a transfer is flagged")),
                 ("economy_stats_enabled", new Property<bool>(true, "JawnTide economy stats: count daily luminance earned/spent and vendor pyreals to economy_daily (/economystats)")),

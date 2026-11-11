@@ -805,13 +805,17 @@ namespace ACE.Server.WorldObjects
         /// <summary>JawnTide: set while the server is switching a player into combat mode for an attack that arrived too early.</summary>
         private bool combatModeFixPending;
 
+        /// <summary>JawnTide: when the player last asked for peace mode themselves (an attack or cast arriving just after is
+        /// left alone, so pressing peace to run in PvP is never undone by a late packet).</summary>
+        private DateTime lastPeaceRequest = DateTime.MinValue;
+
         /// <summary>
         /// JawnTide: an attack arrived while the server still had the player out of that combat mode (the client, usually a
-        /// macro, switched weapon or stance faster than the server). Switches into the mode the equipped weapon needs, then
-        /// retries the attack once. Returns false when it can't help (turned off, busy, wrong weapon, or already retried),
+        /// macro, switched weapon or stance faster than the server). Switches into the mode the equipped weapon needs (melee,
+        /// missile, or magic with a wand or orb), then retries the attack or cast once. Returns false when it can't help (turned off, busy, wrong weapon, or already retried),
         /// and the attack is dropped as before. Setting: combat_mode_attack_fix.
         /// </summary>
-        public bool TryFixCombatModeForAttack(CombatMode mode, Action retry)
+        public bool TryFixCombatModeForAttack(CombatMode mode, Action retry, Action giveUp = null)
         {
             if (!PropertyManager.GetBool("combat_mode_attack_fix").Item || combatModeFixPending)
                 return false;
@@ -824,11 +828,15 @@ namespace ACE.Server.WorldObjects
             if (CombatMode != CombatMode.NonCombat || LastCombatMode != CombatMode.NonCombat)
                 return false;
 
+            if ((DateTime.UtcNow - lastPeaceRequest).TotalSeconds < 3)
+                return false;
+
             // only the mode the equipped weapon is for
             var missile = GetEquippedMissileWeapon();
             var wand = GetEquippedWand();
             if (mode == CombatMode.Missile && missile == null) return false;
             if (mode == CombatMode.Melee && (missile != null || wand != null)) return false;
+            if (mode == CombatMode.Magic && wand == null) return false;
 
             combatModeFixPending = true;
 
@@ -838,6 +846,8 @@ namespace ACE.Server.WorldObjects
 
                 if (CombatMode == mode)
                     retry();
+                else if (giveUp != null)
+                    giveUp();
                 else
                     OnAttackDone();
             });
@@ -881,6 +891,9 @@ namespace ACE.Server.WorldObjects
             }
 
             LastCombatMode = newCombatMode;
+
+            if (newCombatMode == CombatMode.NonCombat)
+                lastPeaceRequest = DateTime.UtcNow;
             
             if (DateTime.UtcNow >= NextUseTime.AddSeconds(UseTimeEpsilon))
                 HandleActionChangeCombatMode_Inner(newCombatMode, forceHandCombat, callback);

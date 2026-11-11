@@ -89,6 +89,10 @@ namespace ACE.Server.WorldObjects
                     CombatMode = CombatMode.Magic;
                 else
                 {
+                    // JawnTide: cast before the server was in magic mode (see Player.TryFixCombatModeForAttack)
+                    if (casterItem == null && TryFixCombatModeForAttack(CombatMode.Magic, () => HandleActionCastTargetedSpell(targetGuid, spellId, null), () => SendUseDoneEvent()))
+                        return;
+
                     SendUseDoneEvent();
                     return;
                 }
@@ -283,6 +287,10 @@ namespace ACE.Server.WorldObjects
                     CombatMode = CombatMode.Magic;
                 else
                 {
+                    // JawnTide: cast before the server was in magic mode (see Player.TryFixCombatModeForAttack)
+                    if (TryFixCombatModeForAttack(CombatMode.Magic, () => HandleActionMagicCastUnTargetedSpell(spellId), () => SendUseDoneEvent()))
+                        return;
+
                     SendUseDoneEvent();
                     return;
                 }
