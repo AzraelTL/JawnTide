@@ -3435,6 +3435,14 @@
    "area": "Server & everything else"
   },
   {
+   "key": "universal_masteries",
+   "type": "bool",
+   "default": "true",
+   "jawntide": false,
+   "desc": "if TRUE, matches end of retail masteries - players wielding almost any weapon get +5 DR, except if the weapon \"seems tough to master\". if FALSE, players start with mastery of 1 melee and 1 ranged weapon type based on heritage, and can later re-select these 2 masteries",
+   "area": "Server & everything else"
+  },
+  {
    "key": "unlimited_sequence_gaps",
    "type": "bool",
    "default": "false",

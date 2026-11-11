@@ -728,7 +728,25 @@ COMMANDS = {"bool": ("modifybool", "fetchbool"), "long": ("modifylong", "fetchlo
             "double": ("modifydouble", "fetchdouble"), "string": ("modifystring", "fetchstring")}
 
 
+LIVE_SOURCE = os.environ.get("PROPERTY_MANAGER_FILE", "/app/PropertyManager.cs")
+_catalog_cache = {"mtime": None, "catalog": None}
+
+
 def load_catalog():
+    """The settings list. Built straight from the server's PropertyManager.cs when it's mounted into the container (so a
+    new setting shows up as soon as the code is pulled, with nothing to regenerate); otherwise settings_catalog.json."""
+    try:
+        mtime = os.path.getmtime(LIVE_SOURCE)
+        if _catalog_cache["mtime"] != mtime:
+            import make_settings_catalog
+            with open(LIVE_SOURCE, encoding="utf-8") as f:
+                catalog = make_settings_catalog.build(f.read())
+            if catalog["settings"]:
+                _catalog_cache.update(mtime=mtime, catalog=catalog)
+        if _catalog_cache["catalog"]:
+            return _catalog_cache["catalog"]
+    except Exception:
+        pass
     try:
         with open(CATALOG_FILE, encoding="utf-8") as f:
             return json.load(f)
