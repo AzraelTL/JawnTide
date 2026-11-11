@@ -2731,6 +2731,14 @@
    "area": "Combat & magic"
   },
   {
+   "key": "cloak_damage_reduction_max_proc",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": true,
+   "desc": "the highest proc chance of a damage reduction (-200) cloak, 0 to 1 (0.10 = 10%). 1.0 = no extra cap: by default these cloaks reach 15% plus 1.25% per cloak level (20% at level 5) on hits of 30%+ of max health; smaller hits proc less (2/3 of the hit's share of max health)",
+   "area": "Combat & magic"
+  },
+  {
    "key": "cloak_max_proc_base",
    "type": "double",
    "default": "0.25",

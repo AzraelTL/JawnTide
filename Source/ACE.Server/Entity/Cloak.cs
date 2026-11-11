@@ -123,6 +123,10 @@ namespace ACE.Server.Entity
             maxProcRate = Math.Min(maxProcRate, (float)Managers.PropertyManager.GetDouble("cloak_max_proc_rate", 0.25f).Item);
             maxProcRate = Math.Clamp(maxProcRate, 0f, 1f);
 
+            // JawnTide: a separate cap for the damage reduction (-200) cloaks
+            if (HasDamageProc(cloak))
+                maxProcRate = Math.Min(maxProcRate, (float)Math.Clamp(PropertyManager.GetDouble("cloak_damage_reduction_max_proc").Item, 0.0, 1.0));
+
             if (UseCustomMath)
             {
                 // The proc chance should only plateau for damage above a certain configured percentage

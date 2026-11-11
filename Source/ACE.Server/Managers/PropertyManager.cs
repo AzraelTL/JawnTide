@@ -779,6 +779,7 @@ namespace ACE.Server.Managers
                 ("event_boss_look_shade", new Property<double>(0.5, "JawnTide live events: shade for the event boss look")),
                 ("event_boss_scale", new Property<double>(2.0, "JawnTide live events: size of the event boss while the event runs (1 = normal)")),
                 ("cantrip_drop_rate", new Property<double>(1.0, "Scales the chance for cantrips to drop in each tier. Defaults to 1.0, as per end of retail")),
+                ("cloak_damage_reduction_max_proc", new Property<double>(1.0, "JawnTide: the highest proc chance of a damage reduction (-200) cloak, 0 to 1 (0.10 = 10%). 1.0 = no extra cap: by default these cloaks reach 15% plus 1.25% per cloak level (20% at level 5) on hits of 30%+ of max health; smaller hits proc less (2/3 of the hit's share of max health)")),
                 ("cloak_cooldown_seconds", new Property<double>(5.0, "The number of seconds between possible cloak procs.")),
                 ("cloak_max_proc_base", new Property<double>(0.25, "The max proc chance of a cloak.")),
                 ("cloak_max_proc_damage_percentage", new Property<double>(0.30, "The damage percentage at which cloak proc chance plateaus.")),
