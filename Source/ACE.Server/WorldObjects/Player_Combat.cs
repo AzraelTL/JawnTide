@@ -802,6 +802,44 @@ namespace ACE.Server.WorldObjects
 
         public CombatMode LastCombatMode;
 
+        /// <summary>JawnTide: set while the server is switching a player into combat mode for an attack that arrived too early.</summary>
+        private bool combatModeFixPending;
+
+        /// <summary>
+        /// JawnTide: an attack arrived while the server still had the player out of that combat mode (the client, usually a
+        /// macro, switched weapon or stance faster than the server). Switches into the mode the equipped weapon needs, then
+        /// retries the attack once. Returns false when it can't help (turned off, busy, wrong weapon, or already retried),
+        /// and the attack is dropped as before. Setting: combat_mode_attack_fix.
+        /// </summary>
+        public bool TryFixCombatModeForAttack(CombatMode mode, Action retry)
+        {
+            if (!PropertyManager.GetBool("combat_mode_attack_fix").Item || combatModeFixPending)
+                return false;
+
+            if (IsBusy || Teleporting || IsDead || suicideInProgress || IsArenaObserver || CombatMode == CombatMode.Magic)
+                return false;
+
+            // only the mode the equipped weapon is for
+            var missile = GetEquippedMissileWeapon();
+            var wand = GetEquippedWand();
+            if (mode == CombatMode.Missile && missile == null) return false;
+            if (mode == CombatMode.Melee && (missile != null || wand != null)) return false;
+
+            combatModeFixPending = true;
+
+            HandleActionChangeCombatMode(mode, false, () =>
+            {
+                combatModeFixPending = false;
+
+                if (CombatMode == mode)
+                    retry();
+                else
+                    OnAttackDone();
+            });
+
+            return true;
+        }
+
         public const float UseTimeEpsilon = 0.05f;
 
         /// <summary>

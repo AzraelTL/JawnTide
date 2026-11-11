@@ -60,6 +60,11 @@ namespace ACE.Server.WorldObjects
                     CombatMode = CombatMode.Melee;
                 else
                 {
+                    // JawnTide: the client (often a macro) attacked before the server had it in melee mode. Rather than
+                    // dropping the attack silently, which stalls macros, enter melee mode and make the attack once it's done.
+                    if (TryFixCombatModeForAttack(CombatMode.Melee, () => HandleActionTargetedMeleeAttack(targetGuid, attackHeight, powerLevel)))
+                        return;
+
                     OnAttackDone();
                     return;
                 }
