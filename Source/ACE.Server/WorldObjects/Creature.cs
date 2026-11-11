@@ -109,6 +109,21 @@ namespace ACE.Server.WorldObjects
             }
         }
 
+        /// <summary>
+        /// JawnTide: scales a Town Control crystal's Magic Defense by town_control_crystal_magic_defense_percent (the whole skill,
+        /// attribute bonus included, so 50 means half). Applies when a crystal spawns.
+        /// </summary>
+        private void ScaleTownControlCrystal()
+        {
+            var percent = Math.Clamp(PropertyManager.GetLong("town_control_crystal_magic_defense_percent").Item, 0, 1000);
+            if (percent == 100 || !Skills.TryGetValue(Skill.MagicDefense, out var magicDefense))
+                return;
+
+            var wanted = magicDefense.Base * percent / 100.0;
+            var fromElsewhere = (double)(magicDefense.Base - magicDefense.InitLevel);
+            magicDefense.InitLevel = (uint)Math.Max(0, Math.Round(wanted - fromElsewhere));
+        }
+
         private void InitializePropertyDictionaries()
         {
             if (Biota.PropertiesAttribute == null)
@@ -148,6 +163,10 @@ namespace ACE.Server.WorldObjects
             // JawnTide: the Town Control governors can be scaled down for the early loot stages
             if (!(this is Player) && TownControlBosses.IsTownControlInitBoss(WeenieClassId))
                 ScaleTownControlGovernor();
+
+            // JawnTide: the Town Control crystals' magic defense (how often they resist spells) can be scaled
+            if (!(this is Player) && TownControlBosses.IsTownControlConflictBoss(WeenieClassId))
+                ScaleTownControlCrystal();
 
             if (Health.Current <= 0)
                 Health.Current = Health.MaxValue;
