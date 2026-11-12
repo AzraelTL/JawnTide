@@ -27,6 +27,21 @@ MAX_PLAN_ITEMS = 500
 KEEP_PLANS = 50
 
 
+def _spell_names(d):
+    """The item's spells as shown on the page: its own spells, plus a cloak's surge ("Surge: ...", including the damage
+    reduction surge, which has no spell) or a weapon's cast on strike."""
+    I = d.get("int", {})
+    cloak = int(I.get("ValidLocations") or 0) & 0x8000000
+    out = [x["name"] for x in d.get("spells", []) if x.get("name") and not x.get("proc") and not x.get("use")]
+    for x in d.get("spells", []):
+        if x.get("name") and x.get("proc"):
+            n = x["name"]
+            out.append((n if n.lower().startswith("surge") else "Surge: " + n) if cloak else "Cast on strike: " + n)
+    if cloak and int(I.get("CloakWeaveProc") or 0) == 2:
+        out.append("Surge: Damage Reduction (reduces a hit by up to 200)")
+    return out
+
+
 def _item(row, src="me"):
     (guid, name, material, stack, itype, icon, ov, ov2, under, ui, attuned, bonded, details) = row
     if not details:
@@ -50,7 +65,7 @@ def _wearable(d, guid, full, icons, ui, itype, attuned, src):
         r = N.get(f"WieldRequirements{n}")
         if r and r != "Invalid":
             reqs.append([r, market.pretty(N.get(f"WieldSkillType{n}") or ""), I.get(f"WieldDifficulty{n}") or 0])
-    spells = [s["name"] for s in d.get("spells", []) if s.get("name") and not s.get("proc") and not s.get("use")]
+    spells = _spell_names(d)
     ratings = {k: I[k] for k, _ in RATINGS if I.get(k)}
     return dict(g=int(guid), src=src, n=full, ic=[i for i in icons if i], ui=int(ui or 0), t=int(itype or 0), vl=vl, cov=cov,
                 al=int(I.get("ArmorLevel") or 0), set=market.pretty(N.get("EquipmentSetId")) if N.get("EquipmentSetId") not in (None, "Invalid") else "",
@@ -69,7 +84,7 @@ def _row(d, guid, full, icons, ui, itype, attuned, src, stack=1):
                 al=int(I.get("ArmorLevel") or 0), lv=market._wield_level(d) or 0, lore=int(I.get("ItemDifficulty") or 0), wk=work,
                 val=int(I.get("Value") or 0), dmg=int(I.get("Damage") or 0), dv=round(F.get("DamageVariance") or 0, 2),
                 ws=market.pretty(N.get("WeaponSkill") or N.get("WieldSkillType") or ""), imb=market.pretty(imbue) if imbue and imbue != "Undef" else "",
-                sp=[x["name"] for x in d.get("spells", []) if x.get("name") and not x.get("use")],
+                sp=_spell_names(d),
                 rt={k: I[k] for k, _ in RATINGS if I.get(k)}, st=int(stack or 1), att=bool(attuned and attuned >= 1))
 
 
@@ -357,7 +372,7 @@ const S={slots:new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd')),want:[],set:'',
   noatt:false,locked:new Set(),excluded:new Set(),results:null,busy:false,msg:'',src:new Set((D.sources||[]).filter(x=>x.on).map(x=>x.k))};
 // which spells to list: only cantrips (Minor/Major/Epic/Legendary), or every spell; remembered in this browser
 try{S.allSpells=localStorage.getItem('suitAllSpells')==='1'}catch(e){S.allSpells=false}
-const showSpell=n=>S.allSpells||parse(n).c;
+const showSpell=n=>S.allSpells||parse(n).c||/^(Surge|Cast on strike)\b/i.test(n);
 const SRCNAME={};(D.sources||[]).forEach(x=>SRCNAME[x.k]=x.n);
 function applyTemplate(key){const T=TEMPLATES[key];if(!T||!T.k)return;
   if(!T.add){S.want=[];S.slots=new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd'))}
