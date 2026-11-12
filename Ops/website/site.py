@@ -22,6 +22,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 import market
+import suit
 import wiki
 
 DB = dict(host=os.environ.get("DB_HOST", "ace-db"), port=int(os.environ.get("DB_PORT", "3306")),
@@ -727,6 +728,8 @@ def render(path, query, snap):
 class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
+            if suit.handle(self, "POST"):
+                return
             if market.handle(self, "POST"):
                 return
             if wiki.handle(self, "POST"):
@@ -739,6 +742,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         url = urlparse(self.path)
         try:
+            if suit.handle(self, "GET"):
+                return
             if market.handle(self, "GET"):
                 return
             if wiki.handle(self, "GET"):

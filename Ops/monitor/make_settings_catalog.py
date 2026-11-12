@@ -28,7 +28,7 @@ AREAS = [
     ("PvP & player killers", r"(^|_)pk|pvp|respite|cleave|zerg"),
     ("XP, levels & luminance", r"xp|level|rolling|luminance|lum_|aug"),
     ("Loot & salvage", r"loot|rare|salvage|tier|mutat|treasure|equipmentset|rating|burning_coals"),
-    ("Bank, audit & economy", r"^transfer_audit|^economy_stats|^bank_|^market_"),
+    ("Bank, audit & economy", r"^transfer_audit|^economy_stats|^bank_|^market_|^mule_"),
     ("Housing", r"house|housing|slumlord|mansion"),
     ("Allegiance & fellowship", r"alleg|fellow|monarch|patron"),
     ("Vendors & economy", r"vendor|pyreal|trade|coin|currency|price|value|stipend"),

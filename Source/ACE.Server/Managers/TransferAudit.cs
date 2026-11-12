@@ -159,6 +159,20 @@ namespace ACE.Server.Managers
             Record(kind, from, to.Account.AccountId, to.Guid.Full, to.Name, IpOf(to), list, null);
         }
 
+        /// <summary>JawnTide My Mule guests: items with the amount actually moved (a mule stack can be bigger than what's taken).</summary>
+        public static void RecordItemAmounts(string kind, Player from, Player to, IEnumerable<(WorldObject item, int amount)> items)
+        {
+            if (from?.Account == null || to?.Account == null)
+                return;
+
+            var list = items.Where(i => i.item != null).Select(i => (i.item.WeenieClassId, i.item.Guid.Full, i.item.Name, (long)i.amount,
+                (long)((i.item.Value ?? 0) / Math.Max(1, i.item.StackSize ?? 1) * i.amount))).ToList();
+            if (list.Count == 0)
+                return;
+
+            Record(kind, from, to.Account.AccountId, to.Guid.Full, to.Name, IpOf(to), list, null);
+        }
+
         public static void OnDropped(Player dropper, WorldObject item)
         {
             if (dropper?.Account == null || item == null || !Enabled)

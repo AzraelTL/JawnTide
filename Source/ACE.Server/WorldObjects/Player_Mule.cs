@@ -511,7 +511,9 @@ namespace ACE.Server.WorldObjects
         {
             var allItems = vendor.MuleContainers.SelectMany(c => c.Inventory.Values);
 
-            var display = vendor.MuleSearchRegex != null
+            var display = vendor.MuleSuitGuids != null
+                ? allItems.Where(item => vendor.MuleSuitGuids.Contains(item.Guid.Full)).OrderBy(i => i.Name)
+                : vendor.MuleSearchRegex != null
                 ? allItems.Where(item => MatchesMuleSearch(item, vendor.MuleSearchRegex)).OrderBy(i => i.Name)
                 : SortMuleItems(allItems);
 
@@ -549,10 +551,11 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public void ClearMuleSearchFilter(Vendor vendor)
         {
-            if (vendor.MuleSearchRegex == null)
+            if (vendor.MuleSearchRegex == null && vendor.MuleSuitGuids == null)
                 return;
 
             vendor.MuleSearchRegex = null;
+            vendor.MuleSuitGuids = null;
 
             vendor.UniqueItemsForSale.Clear();
 
@@ -580,6 +583,8 @@ namespace ACE.Server.WorldObjects
                 SendTransientError("You must have your mule's window open to search it.");
                 return;
             }
+
+            vendor.MuleSuitGuids = null;
 
             if (string.IsNullOrWhiteSpace(pattern))
             {
@@ -615,6 +620,61 @@ namespace ACE.Server.WorldObjects
                 ChatMessageType.Broadcast));
         }
 
+        /// <summary>
+        /// JawnTide Suit Builder: "/mule suit CODE" filters the open mule window to the items of a suit saved on the website
+        /// (suit_plan, which belongs to the mule's account). Reopening the mule clears it, like /mule search.
+        /// </summary>
+        public void ShowMuleSuit(string code)
+        {
+            var vendor = CurrentLandblock?.GetObject(LastOpenedContainerId) as Vendor;
+
+            if (vendor == null || !vendor.MuleOwnerId.HasValue || vendor.MuleContainers == null || !CanAccessMuleStorage(vendor))
+            {
+                SendTransientError("Open your mule first, then type /mule suit CODE.");
+                return;
+            }
+
+            code = (code ?? "").Trim().ToUpperInvariant();
+            if (!Regex.IsMatch(code, "^[A-Z0-9]{4,8}$"))
+            {
+                Session.Network.EnqueueSend(new GameMessageSystemChat("Usage: /mule suit CODE (the code from the Suit Builder page on the website).", ChatMessageType.Broadcast));
+                return;
+            }
+
+            List<object[]> rows;
+            try
+            {
+                rows = DatabaseManager.Shard.BaseDatabase.PvpToolsQuery("SELECT name, items FROM suit_plan WHERE account_Id = @a AND code = @c LIMIT 1;",
+                    ("@a", vendor.MuleOwnerAccountId.Value), ("@c", code));
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[MULE] /mule suit {code}: {ex.Message}");
+                rows = null;
+            }
+
+            if (rows == null || rows.Count == 0)
+            {
+                Session.Network.EnqueueSend(new GameMessageSystemChat($"This mule has no saved suit {code}.", ChatMessageType.Broadcast));
+                return;
+            }
+
+            var guids = new HashSet<uint>();
+            foreach (var part in (rows[0][1]?.ToString() ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries))
+                if (uint.TryParse(part.Trim(), out var g))
+                    guids.Add(g);
+
+            vendor.MuleSearchRegex = null;
+            vendor.MuleSuitGuids = guids;
+
+            RefreshMuleVendorDisplay(vendor, VendorType.Undef);
+
+            var found = vendor.UniqueItemsForSale.Count;
+            Session.Network.EnqueueSend(new GameMessageSystemChat(
+                $"Suit {code} ({rows[0][0]}): showing {found} of its {guids.Count} items" + (found < guids.Count ? " (the rest aren't in this mule anymore)." : ".") +
+                " Reopen the mule to see everything again.", ChatMessageType.Broadcast));
+        }
+
         private bool MatchesMuleSearch(WorldObject item, Regex regex)
         {
             try
@@ -646,9 +706,34 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         private bool CanAccessMuleStorage(Vendor vendor)
         {
-            // JawnTide: only characters on the owner's account (no house storage guests)
+            // JawnTide: characters on the owner's account, plus the account's mule guests (/mule storage add NAME)
             return vendor.MuleOwnerId.HasValue && vendor.MuleOwnerAccountId.HasValue && Account != null
-                && Account.AccountId == vendor.MuleOwnerAccountId.Value;
+                && (Account.AccountId == vendor.MuleOwnerAccountId.Value || ACE.Server.Managers.MuleGuests.IsGuest(vendor.MuleOwnerAccountId.Value, Guid.Full));
+        }
+
+        /// <summary>JawnTide: true when this player is using someone else's mule as a guest (not a character on the owner's account).</summary>
+        private bool IsMuleGuestOf(Vendor vendor) => vendor.MuleOwnerAccountId.HasValue && Account != null && Account.AccountId != vendor.MuleOwnerAccountId.Value;
+
+        /// <summary>JawnTide: audits a guest's deposit or withdrawal as a transfer and tells the mule's owner.</summary>
+        private void ReportMuleGuestUse(Vendor vendor, bool deposit, List<(WorldObject item, int amount)> moved)
+        {
+            if (moved.Count == 0 || !vendor.MuleOwnerId.HasValue)
+                return;
+
+            var owner = ACE.Server.Managers.PlayerManager.GetOnlinePlayer(vendor.MuleOwnerId.Value);
+
+            if (owner != null)
+            {
+                if (deposit)
+                    ACE.Server.Managers.TransferAudit.RecordItemAmounts("mule_guest_deposit", this, owner, moved);
+                else
+                    ACE.Server.Managers.TransferAudit.RecordItemAmounts("mule_guest_withdraw", owner, this, moved);
+
+                var what = string.Join(", ", moved.Take(5).Select(m => m.amount > 1 ? $"{m.amount} {m.item.Name}" : m.item.Name)) + (moved.Count > 5 ? $" and {moved.Count - 5} more" : "");
+                owner.Session.Network.EnqueueSend(new GameMessageSystemChat($"{Name} {(deposit ? "stored" : "took")} {what} {(deposit ? "in" : "from")} your mule.", ChatMessageType.Broadcast));
+            }
+
+            log.Info($"[MULE] guest {Name} (0x{Guid}) {(deposit ? "deposited into" : "withdrew from")} account {vendor.MuleOwnerAccountId} mule: {string.Join(", ", moved.Select(m => $"{m.item.Name} x{m.amount} (0x{m.item.Guid})"))}");
         }
 
         /// <summary>JawnTide: whether this player may open or search the given mule vendor at all (owner's account only).</summary>
@@ -945,6 +1030,39 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
+        /// JawnTide: sets the My Mule gem's description to what it does plus how many of this account's mule slots are used.
+        /// Counted from the loaded mule if it's been summoned this session, otherwise from the database.
+        /// </summary>
+        public void UpdateMuleGemText(WorldObject gem)
+        {
+            var total = MuleInfo.MaxContainers * 255;
+            int? used = null;
+
+            try
+            {
+                if (ActiveMuleContainers != null)
+                    used = ActiveMuleContainers.Sum(c => c.Inventory.Count);
+                else if (Account != null)
+                {
+                    var db = DatabaseManager.Shard.BaseDatabase;
+                    used = db.MarketGetMuleChain(Account.AccountId).Sum(c => db.MarketCountContainerItems(c));
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Warn($"[MULE] {Name} couldn't count mule slots for the gem: {ex.Message}");
+            }
+
+            var text = "Summons your account's mule: storage shared by every character on your account, and by any guests you add with /mule storage add NAME. " +
+                       "Use it again to send the mule away. Store items by selling them to it and take them back by buying them, free.";
+
+            if (used.HasValue)
+                text += $"\n\nMule storage: {used.Value:N0} of {total:N0} slots used ({total - used.Value:N0} free).";
+
+            gem.SetProperty(PropertyString.LongDesc, text);
+        }
+
+        /// <summary>
         /// Called from Player_Commerce.HandleActionSellItem when the target vendor is a mule.
         /// Deposits items into the mule's persistent storage at no cost. Allowed for the owner, or
         /// any character the owner's house has granted storage access to (see
@@ -969,6 +1087,7 @@ namespace ACE.Server.WorldObjects
             var allPossessions = GetAllPossessions().ToDictionary(i => i.Guid.Full, i => i);
             var processedGuids = new HashSet<uint>();
             var touched = new HashSet<WorldObject>();
+            var guestMoved = IsMuleGuestOf(vendor) ? new List<(WorldObject item, int amount)>() : null;
 
             // JawnTide: say why an item was skipped, so nothing leaves the sell window without a trace (log and player)
             void Skip(string why, uint guid, WorldObject item, int amount)
@@ -1071,6 +1190,8 @@ namespace ACE.Server.WorldObjects
                 // ~20 years so this timestamp never actually causes the item to rot/be removed.
                 toDeposit.SoldTimestamp = Time.GetUnixTime();
 
+                guestMoved?.Add((toDeposit, toDeposit.StackSize ?? 1));
+
                 StoreDepositedItem(vendor.MuleContainers, toDeposit, touched);
             }
 
@@ -1086,6 +1207,9 @@ namespace ACE.Server.WorldObjects
 
                 RefreshMuleVendorDisplay(vendor, VendorType.Sell);
             }
+
+            if (guestMoved != null)
+                ReportMuleGuestUse(vendor, true, guestMoved);
 
             SendUseDoneEvent();
         }
@@ -1154,6 +1278,10 @@ namespace ACE.Server.WorldObjects
                 SendUseDoneEvent();
                 return;
             }
+
+            // JawnTide: a guest's withdrawal is recorded now, while the items still have their names and values
+            if (IsMuleGuestOf(vendor))
+                ReportMuleGuestUse(vendor, false, withdrawals.Select(w => (w.item, w.amount)).ToList());
 
             // Every biota actually mutated (items and/or containers) -- saved exactly once at the
             // end instead of blanket-resaving every item in every touched container.

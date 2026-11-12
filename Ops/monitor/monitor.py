@@ -754,6 +754,59 @@ def load_catalog():
         return {"areas": [], "settings": []}
 
 
+COMMAND_SOURCE = os.environ.get("COMMAND_HANDLER_DIR", "/app/Handlers")
+_command_cache = {"stamp": None, "commands": []}
+
+
+def load_commands():
+    """Every admin command (Advocate and up), read from the server's command handler files (re-read when they change)."""
+    try:
+        stamp = max(os.path.getmtime(os.path.join(COMMAND_SOURCE, f)) for f in os.listdir(COMMAND_SOURCE) if f.endswith(".cs"))
+        if _command_cache["stamp"] != stamp:
+            import make_command_catalog
+            _command_cache.update(stamp=stamp, commands=[c for c in make_command_catalog.build(COMMAND_SOURCE) if c["level"] != "Player"])
+    except Exception:
+        pass
+    return _command_cache["commands"]
+
+
+def commands_section():
+    cmds = load_commands()
+    if not cmds:
+        return ('<h2 id="commands">Admin commands</h2><p class="muted">The command list isn\'t available: the server\'s Command/Handlers folder '
+                'isn\'t mounted (see compose.yml).</p>')
+    levels = ["Admin", "Developer", "Envoy", "Sentinel", "Advocate"]
+    rows = []
+    for c in cmds:
+        names = "".join(f'<br><code>@{e(a)}</code>' for a in c["aliases"])
+        usage = f'<div class="muted wrapd">{e(c["usage"])}</div>' if c["usage"] else ""
+        text = (c["name"] + " " + " ".join(c["aliases"]) + " " + c["desc"] + " " + c["usage"]).lower()
+        console = "<br><span class=muted>console</span>" if c["console"] else ""
+        rows.append(f'<tr class="c" data-level="{e(c["level"])}" data-text="{e(text)}">'
+                    f'<td><code>@{e(c["name"])}</code>{names}</td><td>{e(c["level"])}{console}</td>'
+                    f'<td class="wrapd">{e(c["desc"]) or "<span class=muted>(no description)</span>"}{usage}</td><td class="muted">{e(c["file"])}</td></tr>')
+    opts = "".join(f"<option>{lv}</option>" for lv in levels)
+    return f"""<h2 id="commands">Admin commands ({len(cmds)})</h2>
+<p class="muted">Every command above player level, read from the server code (so it matches what's pulled on this machine). A level can use its own commands and every level below it: Admin &gt; Developer &gt; Envoy &gt; Sentinel &gt; Advocate. "console" means the server console only. Type them with @ or /.</p>
+<div class="filters"><input id="cq" type="search" placeholder="Search commands" aria-label="Search commands">
+<select id="cl" aria-label="Level"><option value="">All levels</option>{opts}</select> <span id="ccnt" class="muted"></span></div>
+<div class="wrap"><table id="ct"><thead><tr><th>Command</th><th>Level</th><th>What it does</th><th>File</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>
+<script>
+(function(){{
+  var q=document.getElementById('cq'), l=document.getElementById('cl'), cnt=document.getElementById('ccnt');
+  function run(){{
+    var words=q.value.toLowerCase().split(/\\s+/).filter(Boolean), n=0;
+    document.querySelectorAll('#ct tr.c').forEach(function(tr){{
+      var ok=(!l.value||tr.dataset.level===l.value)&&words.every(function(w){{return tr.dataset.text.indexOf(w)>=0;}});
+      tr.hidden=!ok; if(ok)n++;
+    }});
+    cnt.textContent=n+' shown';
+  }}
+  [q,l].forEach(function(el){{el.addEventListener('input',run);}}); run();
+}})();
+</script>"""
+
+
 def live_settings():
     """Every setting stored in ace_shard (read fresh on each page load). Settings never changed in game are not stored."""
     stored = {}
@@ -833,9 +886,11 @@ Change with <code>@modifybool</code>, <code>@modifylong</code>, <code>@modifydou
 <div class="filters"><input id="q" type="search" placeholder="Search names and descriptions" aria-label="Search settings">
 <select id="area" aria-label="Area"><option value="">All areas</option>{areas}</select>
 <label><input id="chg" type="checkbox"> Changed from default only</label> <span id="cnt" class="muted"></span></div>
+<p><a href="#commands">Admin commands ↓</a></p>
 <div class="wrap"><table id="t"><thead><tr><th>Setting</th><th class="n">Current</th><th class="n">Default</th><th>What it does</th><th>Commands</th></tr></thead>
 <tbody>{"".join(rows)}</tbody></table></div>
 {extra_html}
+{commands_section()}
 <script>
 (function(){{
   var q=document.getElementById('q'), a=document.getElementById('area'), c=document.getElementById('chg'), cnt=document.getElementById('cnt');
@@ -1060,28 +1115,38 @@ def dummies_section(note):
                 f'on its first start with this version): {e(ex)}</p>')
     presets = "".join(f'<option value="{e(k)}">{e(t)}</option>' for k, t in DUMMY_BUFF_PRESETS)
     forms = []
+    rows = sorted(rows, key=lambda r: r[0] != 0)   # the defaults row (dummy_Guid 0) first
+    placed = [r[0] for r in rows if r[0] != 0]
     for r in rows:
         guid, vals, desc, updated = r[0], r[1:1 + len(DUMMY_FIELDS)], r[-2], r[-1]
+        is_default = guid == 0
         fields = "".join(f'<label>{e(label)}<br><input name="{f}" value="{v}" size="6" inputmode="numeric"></label>'
                          for (f, _, label), v in zip(DUMMY_FIELDS, vals))
         forms.append(
-            f'<details open><summary><b>Target Drudge 0x{guid:08X}</b> <span class="muted">saved {fmt_t(updated)} UTC</span></summary>'
-            f'<p class="wrapd">{e(desc or "(setup not described yet)")}</p>'
+            (f'<details open><summary><b>Defaults for new Target Drudges</b> <span class="muted">saved {fmt_t(updated)} UTC</span></summary>'
+             f'<p class="muted">A drudge starts with this setup the first time it\'s in the world. Tick the box below to also apply it to every placed drudge now.</p>'
+             if is_default else
+             f'<details open><summary><b>Target Drudge 0x{guid:08X}</b> <span class="muted">saved {fmt_t(updated)} UTC</span></summary>')
+            + f'<p class="wrapd">{e(desc or "(setup not described yet)")}</p>'
             f'<form method="post" action="/dummy-set"><input type="hidden" name="guid" value="{guid}">'
             f'<div class="filters">{fields}</div>'
             f'<div class="filters"><label>Buffs<br><select name="preset">{presets}</select></label>'
             f'<label>Extra buffs (spell names or ids, comma-separated)<br><input name="extra" size="48" placeholder="e.g. Incantation of Armor Self, 4407"></label>'
-            f'<label>Worn items<br><select name="worn"><option value="keep">Keep</option><option value="strip_under">Take off underclothes</option>'
-            f'<option value="strip">Take off everything</option></select></label>'
-            f'<label><input type="checkbox" name="clean" value="1"> Remove players\' debuffs</label></div>'
-            f'<div class="filters"><input type="password" name="password" placeholder="Edit password" aria-label="Edit password" autocomplete="current-password">'
+            + (f'<label><input type="checkbox" name="all" value="1"> Also apply to all {len(placed)} placed drudge{"s" if len(placed) != 1 else ""} now</label></div>'
+               if is_default else
+               f'<label>Worn items<br><select name="worn"><option value="keep">Keep</option><option value="strip_under">Take off underclothes</option>'
+               f'<option value="strip">Take off everything</option></select></label>'
+               f'<label><input type="checkbox" name="clean" value="1"> Remove players\' debuffs</label></div>')
+            + f'<div class="filters"><input type="password" name="password" placeholder="Edit password" aria-label="Edit password" autocomplete="current-password">'
             f'<input name="by" placeholder="Your name" size="12" aria-label="Your name"> <button>Save</button>'
             f'<span class="muted">Copying worn gear needs <code>/dummy wear</code> in game.</span></div></form></details>')
-    hist = "".join(f'<tr><td>{fmt_t(t)}</td><td>0x{g:08X}</td><td>{e(b or "")}</td>'
+    hist = "".join(f'<tr><td>{fmt_t(t)}</td><td>{"defaults" if g == 0 else f"0x{g:08X}"}</td><td>{e(b or "")}</td>'
                    f'<td class="{"yes" if st == "applied" else "no" if st == "rejected" else "muted"}">{e(st)}</td><td class="muted wrapd">{e(m or "")}</td></tr>'
                    for g, t, b, st, m in reqs)
     none = '<p class="muted">None yet. Place one in game with <code>@createinst 4290001</code>.</p>'
-    return (f"<h2>Placed Target Drudges</h2>{note}" + ("".join(forms) or none)
+    if not placed:
+        forms.append(none)
+    return (f"<h2>Placed Target Drudges</h2>{note}" + "".join(forms)
             + '<h2>Recent dummy changes</h2><div class="wrap"><table><thead><tr><th>When (UTC)</th><th>Dummy</th><th>By</th><th>Status</th><th></th></tr></thead>'
             + f'<tbody>{hist or "<tr><td colspan=5 class=muted>None yet</td></tr>"}</tbody></table></div>')
 
@@ -1119,8 +1184,13 @@ def dummy_set(form):
     conn = pymysql.connect(database="ace_shard", autocommit=True, **DB)
     try:
         with conn.cursor() as cur:
-            cur.execute("INSERT INTO training_dummy_request (requested_At, requested_By, dummy_Guid, request) VALUES (UTC_TIMESTAMP(), %s, %s, %s)",
-                        (by, int(g), json.dumps(req)))
+            targets = [int(g)]
+            if int(g) == 0 and form.get("all", [""])[0] == "1":
+                cur.execute("SELECT dummy_Guid FROM training_dummy WHERE dummy_Guid <> 0")
+                targets += [int(x[0]) for x in cur.fetchall()]
+            for t in targets:
+                cur.execute("INSERT INTO training_dummy_request (requested_At, requested_By, dummy_Guid, request) VALUES (UTC_TIMESTAMP(), %s, %s, %s)",
+                            (by, t, json.dumps(req)))
     finally:
         conn.close()
     print(f"[dummy] {by} queued a change for 0x{int(g):08X}: {json.dumps(req)}", flush=True)

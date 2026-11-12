@@ -152,8 +152,9 @@ namespace ACE.Server.WorldObjects
             var guid = Guid.Full;
             DatabaseManager.Shard.MarketEnqueue(() =>
             {
+                // its own saved setup, or (first time in the world) the defaults row, dummy_Guid 0, set on the LAN admin page
                 var rows = DatabaseManager.Shard.BaseDatabase.PvpToolsQuery(
-                    "SELECT armor, armor_Extremities, melee_Defense, missile_Defense, magic_Defense, damage_Resist_Rating, crit_Damage_Resist_Rating, pk_Damage_Resist_Rating, spells, worn_Items FROM training_dummy WHERE dummy_Guid = @g;",
+                    "SELECT armor, armor_Extremities, melee_Defense, missile_Defense, magic_Defense, damage_Resist_Rating, crit_Damage_Resist_Rating, pk_Damage_Resist_Rating, spells, worn_Items, dummy_Guid FROM training_dummy WHERE dummy_Guid IN (@g, 0) ORDER BY dummy_Guid DESC;",
                     ("@g", guid));
 
                 if (rows == null)
@@ -161,12 +162,15 @@ namespace ACE.Server.WorldObjects
 
                 if (rows.Count == 0)
                 {
-                    // first time in the world: save its setup so it shows on the LAN admin page
+                    // first time in the world and no defaults: save its setup so it shows on the LAN admin page
                     EnqueueAction(new ActionEventDelegate(SaveSetup));
                     return;
                 }
 
                 var r = rows[0];
+                var fromDefaults = Convert.ToUInt32(r[10]) == 0;
+                if (fromDefaults)
+                    r[9] = null;   // worn copies aren't part of the defaults
 
                 // the worn items, read from the database here (off the game thread)
                 var wornIds = ParseIds(r[9]?.ToString());
@@ -193,6 +197,8 @@ namespace ACE.Server.WorldObjects
                     foreach (var b in wornBiotas)
                         WearCopy(b, new System.Threading.ReaderWriterLockSlim());
                     ApplySetup();
+                    if (fromDefaults)
+                        SaveSetup();
                 }));
             });
 
@@ -261,7 +267,7 @@ namespace ACE.Server.WorldObjects
             }
         }
 
-        private static List<uint> ParseIds(string csv) =>
+        public static List<uint> ParseIds(string csv) =>
             (csv ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).Select(s => uint.TryParse(s, out var id) ? id : 0).Where(id => id != 0).ToList();
 
         // ---------------------------------------------------------------- worn items
@@ -455,6 +461,19 @@ namespace ACE.Server.WorldObjects
         }
 
         public static string SpellName(uint id) => new Spell(id) is var s && !s.NotFound ? s.Name : $"spell {id}";
+
+        /// <summary>What a player sees in chat when they ID it: buffed armor level per body part, defenses and active buffs.</summary>
+        public string DescribeForAppraisal()
+        {
+            var al = new ACE.Server.Network.Structure.ArmorLevel(this);
+            static string A(uint v) => v >= 9999 ? $"{v - 9999}*" : v.ToString();
+            var active = Buffs.Where(id => EnchantmentManager.GetEnchantment(id) != null).Select(SpellName).ToList();
+            return $"{Name} armor (buffed): head {A(al.Head)}, chest {A(al.Chest)}, abdomen {A(al.Abdomen)}, upper arm {A(al.UpperArm)}, lower arm {A(al.LowerArm)}, " +
+                   $"hands {A(al.Hand)}, upper leg {A(al.UpperLeg)}, lower leg {A(al.LowerLeg)}, feet {A(al.Foot)}. " +
+                   $"Defense (buffed): melee {DefenseCurrent(Skill.MeleeDefense)}, missile {DefenseCurrent(Skill.MissileDefense)}, magic {DefenseCurrent(Skill.MagicDefense)}. " +
+                   $"Ratings: damage resist {Drr}, crit damage resist {Cdr}, PK damage resist {Pkdr}. " +
+                   $"Buffs on it: {(active.Count == 0 ? "none" : string.Join(", ", active))}.";
+        }
 
         public string DescribeSetup()
         {

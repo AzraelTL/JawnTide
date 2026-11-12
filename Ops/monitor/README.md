@@ -39,6 +39,8 @@ A small web page for the LAN that shows, per account:
   read live from `Source/ACE.Server/Managers/PropertyManager.cs` (mounted into the container by compose.yml), so every
   setting in the code pulled on Linux shows up with nothing to regenerate. `settings_catalog.json` is the fallback when that file
   isn't mounted; refresh it with `python Ops/monitor/make_settings_catalog.py` from the repo root.
+  Below the settings, **Admin commands** lists every command above player level (name, aliases, level, description, usage,
+  file), read live from `Source/ACE.Server/Command/Handlers/*.cs` (also mounted by compose.yml), with search and a level filter.
 
 - **PvP damage** (`/pvp`): every setting about damage (the whole PvP damage tuning area plus any other setting whose name is about
   damage, crits, armor or resistance) with its live value, and **editable**: change values, enter the edit password and Save. The monitor

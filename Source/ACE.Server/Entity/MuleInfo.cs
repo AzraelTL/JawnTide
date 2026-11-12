@@ -24,10 +24,10 @@ namespace ACE.Server.Entity
 
         /// <summary>
         /// Hard ceiling on how many overflow containers a single account's mule chain may grow to
-        /// (10 containers x 255 items each = 2550 total item slots), so a pathological deposit loop
+        /// (20 containers x 255 items each = 5100 total item slots; raised from 10), so a pathological deposit loop
         /// can't spin up an unbounded number of biotas.
         /// </summary>
-        public const int MaxContainers = 10;
+        public const int MaxContainers = 20;
 
         /// <summary>
         /// Accepted for deposit -- everything except currency and nested containers, which are
