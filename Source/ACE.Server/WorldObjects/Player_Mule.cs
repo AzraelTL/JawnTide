@@ -644,8 +644,9 @@ namespace ACE.Server.WorldObjects
             List<object[]> rows;
             try
             {
-                rows = DatabaseManager.Shard.BaseDatabase.PvpToolsQuery("SELECT name, items FROM suit_plan WHERE account_Id = @a AND code = @c LIMIT 1;",
-                    ("@a", vendor.MuleOwnerAccountId.Value), ("@c", code));
+                // the mule's account, or (a guest using someone else's mule) this player's own account
+                rows = DatabaseManager.Shard.BaseDatabase.PvpToolsQuery("SELECT name, items FROM suit_plan WHERE account_Id IN (@a, @me) AND code = @c ORDER BY account_Id = @me DESC LIMIT 1;",
+                    ("@a", vendor.MuleOwnerAccountId.Value), ("@me", Account.AccountId), ("@c", code));
             }
             catch (Exception ex)
             {
@@ -655,7 +656,7 @@ namespace ACE.Server.WorldObjects
 
             if (rows == null || rows.Count == 0)
             {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"This mule has no saved suit {code}.", ChatMessageType.Broadcast));
+                Session.Network.EnqueueSend(new GameMessageSystemChat($"There's no saved suit {code} for this mule or your account.", ChatMessageType.Broadcast));
                 return;
             }
 
