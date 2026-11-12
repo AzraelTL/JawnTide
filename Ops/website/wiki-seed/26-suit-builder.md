@@ -17,7 +17,7 @@ Next to the tabs, **Show** picks which spells are listed on items and in the spe
 
 ## Suit search
 1. **Start from a template**: Heavy, Light, Finesse, Two Handed, Dual Wield, Missile, War, Void, Life or Tinker (crafting). It ticks every slot and adds the cantrips for that build: the attributes, the three defenses (Invulnerability, Impregnability, Magic Resistance) and the build's skills. **Add: the seven wards** adds the wards on top of what you have.
-2. **Slots to fill**: untick the slots you already have covered. Only items that fit entirely in the ticked slots are used, so a hauberk needs chest, upper arms and lower arms ticked (or tailoring reductions, below).
+2. **Slots to fill**: untick the slots you already have covered. Only items that fit entirely in the ticked slots are used, so a hauberk needs chest, upper arms and lower arms ticked, unless it's used as a reduced chest piece (tailoring reductions, below).
 3. **Spells you need**: for each spell, the lowest level you'll accept (Minor, Major, Epic or Legendary) and whether it's **Must have** or **Nice to have**. The **Set all** row changes every spell at once. Add any other spell your items have from the list at the bottom.
 4. **Extras**: armor sets, tailoring reductions, Impenetrability, how much armor level matters, ratings and the character (see *Extras* below).
 5. **Item filters** (optional, items that fail them are never used): minimum base armor level for body pieces and for extremities, a wield level range, how many Legendary (or Epic or better) spells each item must have, minimum offensive, defensive or total ratings, and a name or spell pattern.
@@ -25,7 +25,7 @@ Next to the tabs, **Show** picks which spells are listed on items and in the spe
 
 ### Extras
 - **Armor sets**: up to two, each with how many pieces (for example 5 of one set and 4 of another). Tick "body armor only from these sets" to leave out other sets' armor.
-- **Tailoring reductions**: a multi-slot piece can be used as if reduced to one slot (a hauberk as a chest piece). It's marked "tailor-reduce to this" in the results.
+- **Tailoring reductions** (on by default): a multi-slot loot armor piece can be used in any single slot it can be tailored down to, following the game's reduction kits. Sleeves can be upper or lower arms; leggings upper or lower legs; a girth-and-leggings piece abdomen, upper or lower legs; anything with a chest becomes a chest piece. It's marked "tailor-reduce to this" in the results. Only loot armor (with workmanship) can be reduced.
 - **Armor made of**: Metal, Leather and hide, Cloth, Other (pieces with no material). Untick the ones you don't want, for example only Metal for a metal suit. It applies to armor pieces only; underclothes and jewelry aren't affected. The Item search has a **Material** filter too.
 - **Covenant armor**: **leave out** (the default), **allow**, or **Covenant armor only** (every armor slot is a Covenant piece; underclothes and jewelry are picked as usual). The Item search has the same choice: show, hide or only.
 - **Impenetrability**: on each armor piece and on each underclothes piece, doesn't matter, prefer or require, with the lowest level you'll accept. It counts per piece because it raises that piece's own armor level.

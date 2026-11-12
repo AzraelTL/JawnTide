@@ -305,12 +305,20 @@ const NB=SLOTS.length;
 const EQ=[[0x1,'head'],[0x2,'shirt'],[0x4,'uabd'],[0x8,'shirt'],[0x10,'shirt'],[0x20,'hands'],[0x40,'pants'],[0x80,'pants'],[0x100,'feet'],
  [0x200,'chest'],[0x400,'abdomen'],[0x800,'uarms'],[0x1000,'larms'],[0x2000,'ulegs'],[0x4000,'llegs']];
 const JEW=0x8000|0x10000|0x20000|0x40000|0x80000|0x4000000|0x8000000;
-// tailoring: a multi-slot armor piece can be reduced to one of these slots (the same rules as Mag-SuitBuilder)
-const REDUCE={'larms,uarms':['uarms','larms'],'llegs,ulegs':['ulegs','llegs'],'feet,llegs':['feet'],'abdomen,chest':['chest'],'abdomen,chest,uarms':['chest'],
- 'chest,larms,uarms':['chest'],'chest,uarms':['chest'],'abdomen,llegs,ulegs':['abdomen','ulegs','llegs'],'abdomen,chest,larms,uarms':['chest'],'abdomen,ulegs':['abdomen']};
+// tailoring: which single slots a multi-slot loot armor piece can be reduced to, by the server's own rules (Tailoring.TailorReduceArmor):
+//   main reduction tool: chest if it has chest, else upper arms, else abdomen
+//   lower tool (never for chest pieces): lower arms if it has upper arms, else lower legs if it has upper legs, else feet if it has lower legs and feet
+//   middle tool: upper legs if it has upper legs
+// Only loot armor (it has workmanship) can be reduced.
 function slotNames(m){return SLOTS.filter((s,b)=>m&(1<<b)).map(s=>s[0])}
-function reductions(it){if(!it.pl.length)return[];const names=slotNames(it.pl[0]);if(names.length<2)return[];
-  return(REDUCE[names.slice().sort().join(',')]||[]).map(n=>BIT[n])}
+function reductions(it){if(!it.pl.length||!it.wk)return[];const v=it.vl;const has=b=>(v&b)===b;
+  const C=0x200,AB=0x400,UA=0x800,UL=0x2000,LL=0x4000,FT=0x100;
+  if(slotNames(it.pl[0]).length<2)return[];
+  const out=new Set();
+  if(has(C))out.add('chest');else if(has(UA))out.add('uarms');else if(has(AB))out.add('abdomen');
+  if(!has(C)){if(has(UA))out.add('larms');else if(has(UL))out.add('llegs');else if(has(LL|FT))out.add('feet')}
+  if(has(UL))out.add('ulegs');
+  return[...out].map(n=>BIT[n])}
 // each item -> one or more placements (a ring can go on either hand)
 function placements(it){
   const vl=it.vl;let m=0;for(const[b,s]of EQ)if(vl&b)m|=BIT[s];if(m)return[m];
@@ -375,7 +383,7 @@ function resolve(k){const kk=k.toLowerCase();
   return FAMLIST.find(f=>FAMS[f].c&&f.toLowerCase()===kk)||FAMLIST.find(f=>FAMS[f].c&&f.toLowerCase().includes(kk))||FAMLIST.find(f=>f.toLowerCase().includes(kk))||null}
 
 // ---- state
-const S={slots:new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd')),want:[],set:'',setN:5,set2:'',setN2:4,onlySets:false,reduce:false,cov:'out',mats:new Set(['metal','leather','cloth','other']),
+const S={slots:new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd')),want:[],set:'',setN:5,set2:'',setN2:4,onlySets:false,reduce:true,cov:'out',mats:new Set(['metal','leather','cloth','other']),
   F:{alBody:'',alExt:'',lvMin:'',lvMax:'',re:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:''},obs:null,al:1,rate:{},imp:{armor:{m:'off',t:4},under:{m:'off',t:4}},char:D.chars[0]?D.chars[0].n:'',noreq:false,
   noatt:false,locked:new Set(),excluded:new Set(),results:null,busy:false,msg:'',src:new Set((D.sources||[]).filter(x=>x.on).map(x=>x.k))};
 // which spells to list: only cantrips (Minor/Major/Epic/Legendary), or every spell; remembered in this browser
@@ -485,7 +493,7 @@ function render(){
       <label>second set <select id=set2><option value="">(none)</option>${sets2}</select></label>
       <label>pieces <input type=number id=setn2 min=2 max=9 value="${S.setN2}"></label>
       <label><input type=checkbox id=onlysets${S.onlySets?' checked':''}> body armor only from these sets</label></div>
-    <div class=row><label><input type=checkbox id=reduce${S.reduce?' checked':''}> allow tailoring reductions (a multi-slot piece can be reduced to one slot)</label></div>
+    <div class=row><label><input type=checkbox id=reduce${S.reduce?' checked':''}> allow tailoring reductions (a multi-slot loot piece can be used in any one slot it can be reduced to)</label></div>
     <div class=row><span>Armor made of:</span>${MATS.map(([k,l])=>`<label><input type=checkbox data-mat="${k}"${S.mats.has(k)?' checked':''}> ${l}</label>`).join('')}
       <span class="sm muted">applies to armor pieces only; "other" includes pieces with no material</span></div>
     <div class=row><label>Covenant armor <select id=cov><option value=out${S.cov==='out'?' selected':''}>leave out</option><option value=ok${S.cov==='ok'?' selected':''}>allow</option><option value=only${S.cov==='only'?' selected':''}>Covenant armor only</option></select></label>
