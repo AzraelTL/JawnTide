@@ -9,9 +9,11 @@ Sign in with your wiki login (linked to your game account).
 At the top, tick where items can come from:
 - **My mule**: your own [[My Mule]] (always available).
 - **Mules you're a guest of**: any mule whose owner added one of your characters with `/mule storage add`.
+- **My characters**: everything your characters wear and carry in their packs and side packs, as of each character's last login or logout. Results say where it is, for example "on Az (worn)".
+- **My house storage chests**: the storage chests of houses your characters own, as of the last time each chest was closed.
 - **Items for sale on the Market**: every active [[Market]] listing, with its price and a link to buy it.
 
-When two items are otherwise equal, the Suit search uses your own first, then guest mules, then the Market.
+When two items are otherwise equal, the Suit search uses your own (mule, characters, chests) first, then guest mules, then the Market.
 
 Next to the tabs, **Show** picks which spells are listed on items and in the spell picker: **cantrips only** (Minor, Major, Epic and Legendary) or **cantrips and all spells**. Your browser remembers the choice.
 
@@ -42,7 +44,7 @@ Press **Save for /mule suit** on a suit to get a short code. In game, open the m
 - `/mule suit CODE` shows only that suit's items in the mule window, so you can buy them out. Reopen the mule to see everything again.
 - `/mule suit CODE take` moves every item of the suit into the pack of the character you're on (for example your [[Tinker characters|Tinker]]) in one go. It's refused if they don't all fit.
 
-Both work on a mule you're a guest of too. Market items aren't part of a saved suit: buy them first.
+Both work on a mule you're a guest of too. Market items aren't part of a saved suit (buy them first), and neither are items already on your characters or in your house chests (the results say where they are).
 
 ## Item search
 The **Item search** tab lists every item in the places you ticked, not just armor and jewelry, with its type, slots, set, armor level, wield level, arcane lore, workmanship, Legendary and Epic counts, ratings, damage, imbue, value and where it is.
@@ -57,7 +59,6 @@ It shows the first 500 matches; narrow the filters to see the rest.
 **Find items in my mule that another of my items beats** lists every item you have a strictly better copy of: same equip slots, every spell at the same level or better, armor level and ratings at least as high, the same armor set (or none) and no higher level requirement. Save the list, then in game open your mule and use `/mule suit CODE` to look at them, or `/mule purge suit:CODE` to remove them (with the usual warning and 7-day undo, see [[My Mule]]).
 
 ## Good to know
-- Only your mule, guest mules and the Market are searched, not your packs or house chests.
-- An item the game server hasn't read yet can't be used. Summon your mule once in game and reload the page.
+- An item the game server hasn't read yet can't be used: summon your mule, log the character in and out, or open and close the house chest once, then reload the page.
 
 See also [[My Mule]], [[Market]], [[Player commands]].

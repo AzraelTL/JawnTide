@@ -1483,7 +1483,10 @@ namespace ACE.Server.Managers
         /// My Market page can show them (with pictures and the ID panel) before they're listed. Each item is done once per server
         /// run; the work happens on the save queue, not the player's thread.
         /// </summary>
-        public static void QueueIcons(IEnumerable<WorldObject> items)
+        public static void QueueIcons(IEnumerable<WorldObject> items) => QueueIcons(items, false);
+
+        /// <summary>refresh: export the details again even if this item was already done this server run (it may have changed).</summary>
+        public static void QueueIcons(IEnumerable<WorldObject> items, bool refresh)
         {
             var ids = new List<uint>();
             var newItems = new List<WorldObject>();
@@ -1499,7 +1502,7 @@ namespace ACE.Server.Managers
                         ids.Add(id);
                 }
 
-                if (knownDetails.TryAdd(item.Guid.Full, 1))
+                if (knownDetails.TryAdd(item.Guid.Full, 1) || refresh)
                     newItems.Add(item);
             }
 

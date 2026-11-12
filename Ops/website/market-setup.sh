@@ -5,6 +5,7 @@
 #   read  ace_web.market_mule_item: a view of mule contents (name, stack, icons, attuned/bonded, details) and nothing else about items
 #   read  ace_web.market_chest_key: the same for Darkbeat/Hera/Shimmering Skeleton keys in house storage chests
 #   read, add and delete ace_shard.suit_plan: suits saved on the Suit Builder page (/suit), for /mule suit CODE in game
+#   read  ace_web.suit_char_item: what the account's characters carry and what's in their house storage chests (Suit Builder)
 #   read ace_shard.mule_guest: which mules the Suit Builder may also search (ones the account's characters are guests of)
 # Grants go to every host entry web already has. Prints the grants it made.
 set -euo pipefail
@@ -94,6 +95,55 @@ LEFT JOIN ace_shard.biota_properties_d_i_d o2 ON o2.object_Id = b.id AND o2.type
 LEFT JOIN ace_shard.biota_properties_d_i_d ul ON ul.object_Id = b.id AND ul.type = 52
 LEFT JOIN ace_shard.market_item_detail dt    ON dt.item_Guid = b.id
 WHERE b.weenie_Class_Id IN (480608, 490364, 30258);
+-- JawnTide Suit Builder: items the account's characters carry (worn, main pack, side packs) and items in house storage chests
+-- the account's characters own. Same columns as market_mule_item, plus who has it and where. Containers (side packs) aren't listed.
+CREATE OR REPLACE SQL SECURITY DEFINER VIEW ace_web.suit_char_item AS
+SELECT o.account_Id, o.char_Name, o.loc,
+       o.item AS item_Guid,
+       nm.value                           AS name,
+       NULL                               AS material,
+       IFNULL(st.value, 1)                AS stack_Size,
+       IFNULL(it.value, 0)                AS item_Type,
+       IFNULL(ic.value, 0)                AS icon_Id,
+       IFNULL(o1.value, 0)                AS icon_Overlay_Id,
+       IFNULL(o2.value, 0)                AS icon_Overlay2_Id,
+       IFNULL(ul.value, 0)                AS icon_Underlay_Id,
+       IFNULL(ui.value, 0)                AS ui_Effects,
+       IFNULL(at.value, 0)                AS attuned,
+       IFNULL(bo.value, 0)                AS bonded,
+       dt.details                         AS details
+FROM (
+    SELECT ch.account_Id, ch.name AS char_Name, 'pack' AS loc, c.object_Id AS item
+    FROM ace_shard.`character` ch JOIN ace_shard.biota_properties_i_i_d c ON c.type = 2 AND c.value = ch.id
+    WHERE ch.is_Deleted = 0
+    UNION ALL
+    SELECT ch.account_Id, ch.name, 'side pack', c.object_Id
+    FROM ace_shard.`character` ch JOIN ace_shard.biota_properties_i_i_d p ON p.type = 2 AND p.value = ch.id
+    JOIN ace_shard.biota_properties_i_i_d c ON c.type = 2 AND c.value = p.object_Id
+    WHERE ch.is_Deleted = 0
+    UNION ALL
+    SELECT ch.account_Id, ch.name, 'worn', w.object_Id
+    FROM ace_shard.`character` ch JOIN ace_shard.biota_properties_i_i_d w ON w.type = 3 AND w.value = ch.id
+    WHERE ch.is_Deleted = 0
+    UNION ALL
+    SELECT ch.account_Id, ch.name, 'house chest', c.object_Id
+    FROM ace_shard.`character` ch JOIN ace_shard.biota_properties_i_i_d ho ON ho.type = 32 AND ho.value = ch.id
+    JOIN ace_shard.biota chest ON chest.id = ho.object_Id AND chest.weenie_Type = 57
+    JOIN ace_shard.biota_properties_i_i_d c ON c.type = 2 AND c.value = chest.id
+    WHERE ch.is_Deleted = 0
+) o
+JOIN ace_shard.biota b                        ON b.id = o.item AND b.weenie_Type <> 21
+JOIN ace_shard.biota_properties_string nm     ON nm.object_Id = o.item AND nm.type = 1
+LEFT JOIN ace_shard.biota_properties_int st   ON st.object_Id = o.item AND st.type = 12
+LEFT JOIN ace_shard.biota_properties_int it   ON it.object_Id = o.item AND it.type = 1
+LEFT JOIN ace_shard.biota_properties_int ui   ON ui.object_Id = o.item AND ui.type = 18
+LEFT JOIN ace_shard.biota_properties_int at   ON at.object_Id = o.item AND at.type = 114
+LEFT JOIN ace_shard.biota_properties_int bo   ON bo.object_Id = o.item AND bo.type = 33
+LEFT JOIN ace_shard.biota_properties_d_i_d ic ON ic.object_Id = o.item AND ic.type = 8
+LEFT JOIN ace_shard.biota_properties_d_i_d o1 ON o1.object_Id = o.item AND o1.type = 50
+LEFT JOIN ace_shard.biota_properties_d_i_d o2 ON o2.object_Id = o.item AND o2.type = 51
+LEFT JOIN ace_shard.biota_properties_d_i_d ul ON ul.object_Id = o.item AND ul.type = 52
+LEFT JOIN ace_shard.market_item_detail dt    ON dt.item_Guid = o.item;
 SQL
 docker compose exec -T ace-db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -N -e "
   SELECT CONCAT(\"GRANT SELECT ON ace_shard.market_listing TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
@@ -102,6 +152,7 @@ docker compose exec -T ace-db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -
   UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_shard.market_bid TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
   UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_web.market_mule_item TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
   UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_web.market_chest_key TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
+  UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_web.suit_char_item TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
   UNION ALL SELECT CONCAT(\"GRANT SELECT, INSERT, DELETE ON ace_shard.suit_plan TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
     AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = \"ace_shard\" AND table_name = \"suit_plan\")
   UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_shard.mule_guest TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
