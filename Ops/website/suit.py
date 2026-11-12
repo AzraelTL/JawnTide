@@ -58,6 +58,41 @@ def _wearable(d, guid, full, icons, ui, itype, attuned, src):
                 rt=ratings, att=bool(attuned and attuned >= 1), wk=int(I.get("ItemWorkmanship") or 0))
 
 
+def _row(d, guid, full, icons, ui, itype, attuned, src, stack=1):
+    """One row of the Item search table (every item, not just wearable ones)."""
+    I, N, F = d.get("int", {}), d.get("names", {}), d.get("float", {})
+    nmat = I.get("NumItemsInMaterial") or 1
+    work = round(I["ItemWorkmanship"] / nmat, 2) if I.get("ItemWorkmanship") else 0
+    imbue = N.get("ImbuedEffect")
+    return dict(g=int(guid), src=src, n=full, ic=[i for i in icons if i], ui=int(ui or 0), cat=market._category(int(itype or 0)),
+                vl=int(I.get("ValidLocations") or 0), set=market.pretty(N.get("EquipmentSetId")) if N.get("EquipmentSetId") not in (None, "Invalid") else "",
+                al=int(I.get("ArmorLevel") or 0), lv=market._wield_level(d) or 0, lore=int(I.get("ItemDifficulty") or 0), wk=work,
+                val=int(I.get("Value") or 0), dmg=int(I.get("Damage") or 0), dv=round(F.get("DamageVariance") or 0, 2),
+                ws=market.pretty(N.get("WeaponSkill") or N.get("WieldSkillType") or ""), imb=market.pretty(imbue) if imbue and imbue != "Undef" else "",
+                sp=[x["name"] for x in d.get("spells", []) if x.get("name") and not x.get("use")],
+                rt={k: I[k] for k, _ in RATINGS if I.get(k)}, st=int(stack or 1), att=bool(attuned and attuned >= 1))
+
+
+def _rows_for(rows, src, inv, items):
+    """Adds a mule's items to the Item search rows (inv) and the wearable ones to the suit search items. Returns how many lack details."""
+    missing = 0
+    for r in rows:
+        (guid, name, material, stack, itype, icon, ov, ov2, under, ui, attuned, bonded, details) = r
+        if not details:
+            missing += 1
+            continue
+        try:
+            d = json.loads(details)
+            full = f"{material} {name}" if material and not str(name).startswith(str(material)) else name
+            inv.append(_row(d, guid, full, (under, icon, ov, ov2), ui, itype, attuned, src, stack))
+            it = _wearable(d, int(guid), full, (under, icon, ov, ov2), ui, itype, attuned, src)
+            if it:
+                items.append(it)
+        except Exception:
+            continue
+    return missing
+
+
 def _characters(account):
     try:
         rows = market._q("SELECT c.name, COALESCE(l.value, 1) FROM `character` c LEFT JOIN biota_properties_int l ON l.object_Id = c.id AND l.type = 25 "
@@ -78,21 +113,27 @@ def _guest_mules(account):
 
 
 def _market_items():
-    out = []
+    """(wearable items for the suit search, every listing for the Item search), both from the Market's active listings."""
+    out, rows = [], []
     try:
         for r in market.active_listings():
-            it = _wearable(r["details"] or {}, int(r["id"]), r["name"], r["icons"], r["ui"], r["item_type"], 0, "m")
+            price = []
+            if r["mmd"]:
+                price.append(f'{r["mmd"]:,} MMD')
+            if r["trophies"]:
+                price.append(f'{r["trophies"]:,} PK Trophies')
+            extra = dict(price=(" or ".join(price) or "?") + (" (auction)" if r["auction"] else ""), seller=r["seller"])
+            d = r["details"] or {}
+            row = _row(d, int(r["id"]), r["name"], r["icons"], r["ui"], r["item_type"], 0, "m", r["stack"])
+            row.update(extra)
+            rows.append(row)
+            it = _wearable(d, int(r["id"]), r["name"], r["icons"], r["ui"], r["item_type"], 0, "m")
             if it:
-                price = []
-                if r["mmd"]:
-                    price.append(f'{r["mmd"]:,} MMD')
-                if r["trophies"]:
-                    price.append(f'{r["trophies"]:,} PK Trophies')
-                it.update(price=(" or ".join(price) or "?") + (" (auction)" if r["auction"] else ""), seller=r["seller"])
+                it.update(extra)
                 out.append(it)
     except Exception:
         traceback.print_exc()
-    return out
+    return out, rows
 
 
 def _plans(account):
@@ -109,36 +150,22 @@ def page(h, user, query):
     if account is None:
         return market._page(h, "Suit Builder", '<h1>Suit Builder</h1><p>Your wiki login isn\'t linked to a game account. '
                             '<a href="/wiki/link">Link it</a> first.</p>', user)
-    rows = market._mule_items(account)
-    items, missing = [], 0
-    for r in rows:
-        try:
-            it = _item(r)
-        except Exception:
-            it = None
-        if it:
-            items.append(it)
-        elif not r[-1]:
-            missing += 1
+    items, inv = [], []
+    missing = _rows_for(market._mule_items(account), "me", inv, items)
     sources = [dict(k="me", n="My mule", on=True)]
     for owner, label in _guest_mules(account):
-        for r in market._mule_items(owner):
-            try:
-                it = _item(r, f"g:{owner}")
-            except Exception:
-                it = None
-            if it:
-                items.append(it)
+        _rows_for(market._mule_items(owner), f"g:{owner}", inv, items)
         sources.append(dict(k=f"g:{owner}", n=label, on=False))
-    market_items = _market_items()
+    market_items, market_rows = _market_items()
     items.extend(market_items)
-    sources.append(dict(k="m", n=f"Items for sale on the Market ({len(market_items)})", on=False))
-    data = dict(items=items, sources=sources, chars=_characters(account), ratings=RATINGS, csrf=user["csrf"],
+    inv.extend(market_rows)
+    sources.append(dict(k="m", n=f"Items for sale on the Market ({len(market_rows)})", on=False))
+    data = dict(items=items, inv=inv, sources=sources, chars=_characters(account), ratings=RATINGS, csrf=user["csrf"],
                 plans=[dict(code=p[0], name=p[1], n=len([x for x in (p[2] or "").split(",") if x]), at=p[3].strftime("%b %d")) for p in _plans(account)])
     note = (f'<p class="muted">{missing} mule item{"s" if missing != 1 else ""} can\'t be used yet: the game server hasn\'t read '
             f'{"their" if missing != 1 else "its"} details. Summon your mule once in game and reload this page.</p>' if missing else "")
     blob = json.dumps(data, default=str).replace("</", "<\\/")
-    body = (f'<h1>Suit Builder</h1><p>Finds the best suit in your mule (and, if you like, the mules you\'re a guest of and the Market) for the slots and spells you pick. '
+    body = (f'<h1>Suit Builder</h1><p><b>Suit search</b> finds the best suit in your mule (and, if you like, the mules you\'re a guest of and the Market) for the slots and spells you pick; <b>Item search</b> lists every item in a sortable table with filters. '
             f'Save a suit, then in game open your mule and type <code>/mule suit CODE</code> to show just those items. '
             f'See <a href="/wiki/suit-builder">Suit Builder</a> on the wiki.</p>{note}'
             f'<div id="suitapp"><p class="muted">Loading…</p></div>'
@@ -237,6 +264,9 @@ SUIT_CSS = """
 #suitapp code.cmd{font-size:1.05rem;padding:.2rem .45rem;background:var(--deep);border-radius:4px}
 #suitapp .sm{font-size:.85rem}
 #suitapp details.sbox summary{cursor:pointer}
+#suitapp .tabs button{font-weight:700;padding:.45rem 1rem}#suitapp .tabs button.on{background:var(--portal);color:#111;border-color:var(--portal)}
+#suitapp table.inv{font-size:.88rem;min-width:900px}#suitapp table.inv th{position:sticky;top:0;background:var(--panel)}
+#suitapp table.inv td,#suitapp table.inv th{padding:.25rem .35rem;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 @media (max-width:640px){#suitapp .want .fam{min-width:0;width:100%}}
 """
 
@@ -334,8 +364,63 @@ function applyTemplate(key){const T=TEMPLATES[key];if(!T||!T.k)return;
   S.msg=miss.length?'None of your items have: '+miss.join(', ')+'.':'';
 }
 
+// ---- Item search: every item in a sortable, filterable table (after Mag-SuitBuilder's inventory grid)
+const CATS=[['armor','Armor'],['clothing','Clothing'],['jewelry','Jewelry'],['melee','Melee'],['missile','Missile'],['caster','Casters'],['salvage','Salvage'],['gem','Gems'],['other','Other']];
+const RSHORT={GearDamage:'D',GearDamageResist:'DR',GearCrit:'C',GearCritResist:'CR',GearCritDamage:'CD',GearCritDamageResist:'CDR',GearHealingBoost:'Heal',GearMaxHealth:'Vit',GearPKDamageRating:'PvP D',GearPKDamageResistRating:'PvP DR'};
+const BYKEY={};for(const it of ITEMS)BYKEY[it.src+':'+it.g]=it;
+const INV=(D.inv||[]).map(r=>{let leg=0,epic=0;for(const n of r.sp){const p=parse(n);if(p.c&&p.t>=4)leg++;if(p.c&&p.t>=3)epic++}
+  const sl=r.vl?SLOTS.filter((s,b)=>{const m=placements({vl:r.vl});return m.some(x=>x&(1<<b))}).filter(s=>s[0]!=='uabd').map(s=>s[1]).join(', '):'';
+  const rsum=ks=>ks.reduce((a,k)=>a+Math.max(0,r.rt[k]||0),0);
+  return Object.assign(r,{leg,epic,sl,off:rsum(['GearDamage','GearCrit','GearCritDamage']),def:rsum(['GearDamageResist','GearCritResist','GearCritDamageResist']),tot:Object.values(r.rt).reduce((a,x)=>a+Math.max(0,x),0),
+    cat:CATS.some(c=>c[0]===r.cat)?r.cat:'other',where:r.src==='m'?'Market':r.src==='me'?'My mule':(SRCNAME[r.src]||'guest mule'),it:BYKEY[r.src+':'+r.g]})});
+const IMBUES=[...new Set(INV.map(r=>r.imb).filter(Boolean))].sort();
+const IS={q:'',cats:new Set(CATS.map(c=>c[0])),slot:'',set:'',imb:'',alMin:'',alMax:'',lvMin:'',lvMax:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:'',wkMax:'',sort:'n',dir:1};
+const COLS=[['n','Item'],['cat','Type'],['sl','Slots'],['set','Set'],['al','AL'],['lv','Level'],['lore','Lore'],['wk','Work'],['leg','Leg'],['epic','Epic+'],
+  ['tot','Ratings'],['dmg','Damage'],['imb','Imbue'],['val','Value'],['where','Where']];
+function invRows(){let rx=null;if(IS.q){try{rx=new RegExp(IS.q,'i')}catch(e){rx=null}}
+  const n=v=>v===''?null:+v;
+  const out=INV.filter(r=>{if(!S.src.has(r.src)||!IS.cats.has(r.cat))return false;
+    if(rx&&!rx.test(r.n)&&!rx.test(r.sp.join(', ')))return false;
+    if(IS.slot&&!r.sl.split(', ').includes(IS.slot))return false;
+    if(IS.set&&r.set!==IS.set)return false;
+    if(IS.imb&&r.imb!==IS.imb)return false;
+    const chk=(v,min,max)=>!((n(min)!=null&&v<n(min))||(n(max)!=null&&v>n(max)));
+    return chk(r.al,IS.alMin,IS.alMax)&&chk(r.lv,IS.lvMin,IS.lvMax)&&chk(r.leg,IS.minLeg,'')&&chk(r.epic,IS.minEpic,'')&&chk(r.off,IS.minOff,'')
+      &&chk(r.def,IS.minDef,'')&&chk(r.tot,IS.minTot,'')&&(IS.wkMax===''||!r.wk||r.wk<=+IS.wkMax)});
+  const k=IS.sort,d=IS.dir;
+  out.sort((a,b)=>{const x=a[k],y=b[k];return(typeof x==='number'&&typeof y==='number'?x-y:String(x).localeCompare(String(y)))*d||a.n.localeCompare(b.n)});
+  return out}
+function itemsView(){
+  const rows=invRows(),shown=rows.slice(0,500);
+  const fi=(k,l)=>`<label>${l} <input type=number data-if="${k}" value="${esc(IS[k])}"></label>`;
+  const sel=(k,l,opts)=>`<label>${l} <select data-if="${k}"><option value="">(any)</option>${opts.map(o=>`<option${IS[k]===o?' selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
+  const head=COLS.map(([k,l])=>`<th data-sort="${k}" style="cursor:pointer;white-space:nowrap">${l}${IS.sort===k?(IS.dir>0?' ▲':' ▼'):''}</th>`).join('');
+  const body=shown.map(r=>{const icon=`<span class=micon>${r.ic.map(x=>`<img src="/market/icon/${x}.png" alt="" loading=lazy>`).join('')}</span>`;
+    const rts=Object.entries(r.rt).map(([k,v])=>(RSHORT[k]||k)+' '+v).join(' ');
+    const where=r.src==='m'?`<a href="/market/item/${r.g}" target=_blank>${esc(r.price)}</a>`:esc(r.where);
+    const acts=r.it?`<button class=x data-lock="${r.it.i}" title="Always use in Suit search">🔒</button><button class=x data-ex="${r.it.i}" title="Never use in Suit search">🚫</button>`:'';
+    return `<tr><td>${icon} <b>${esc(r.n)}</b>${r.st>1?' ×'+r.st:''}<div class="sm muted">${esc(r.sp.join(', '))}</div></td><td>${esc(r.cat)}</td><td class=sm>${esc(r.sl)}</td><td class=sm>${esc(r.set)}</td>
+      <td>${r.al||''}</td><td>${r.lv||''}</td><td>${r.lore||''}</td><td>${r.wk||''}</td><td>${r.leg||''}</td><td>${r.epic||''}</td><td class=sm>${esc(rts)}</td>
+      <td>${r.dmg?r.dmg+(r.dv?' ('+Math.round(r.dv*100)+'%)':''):''}${r.ws?'<div class="sm muted">'+esc(r.ws)+'</div>':''}</td><td class=sm>${esc(r.imb)}</td><td>${r.val?r.val.toLocaleString():''}</td><td class=sm>${where} ${acts}</td></tr>`}).join('');
+  return `<div class=sbox><h2>Item search</h2>
+    <div class=row><input type=text data-if="q" value="${esc(IS.q)}" placeholder="Name or spell (regular expression, e.g. legendary.*legendary)" style="min-width:min(100%,24rem)"><button id=ifclear>Clear filters</button></div>
+    <div class=row>${CATS.map(([k,l])=>`<label><input type=checkbox data-icat="${k}"${IS.cats.has(k)?' checked':''}> ${l}</label>`).join('')}</div>
+    <div class=row>${sel('slot','Slot',SLOTS.filter(s=>s[0]!=='uabd').map(s=>s[1]))}${sel('set','Set',Object.keys(SETS).sort())}${sel('imb','Imbue',IMBUES)}</div>
+    <div class=row>${fi('alMin','AL from')}${fi('alMax','to')}${fi('lvMin','Level from')}${fi('lvMax','to')}${fi('wkMax','Workmanship at most')}</div>
+    <div class=row>${fi('minLeg','At least N Legendary')}${fi('minEpic','Epic or better')}${fi('minOff','Offensive ratings')}${fi('minDef','Defensive')}${fi('minTot','Total ratings')}</div>
+    <div class=row><span class=muted>${rows.length.toLocaleString()} item${rows.length===1?'':'s'}${rows.length>500?', showing the first 500: narrow the filters':''}. Click a column to sort.</span><button id=ifcsv>Download as CSV (spreadsheet)</button></div></div>
+  <div class="res" style="overflow-x:auto"><table class=inv><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`}
+function invCsv(){const rows=invRows();const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const hdr=['Item','Stack','Type','Slots','Set','AL','Level','Lore','Workmanship','Legendary','Epic+','Ratings','Damage','Imbue','Value','Where','Price','Spells'];
+  const lines=[hdr.map(q).join(',')].concat(rows.map(r=>[r.n,r.st,r.cat,r.sl,r.set,r.al,r.lv,r.lore,r.wk,r.leg,r.epic,Object.entries(r.rt).map(([k,v])=>(RSHORT[k]||k)+' '+v).join(' '),r.dmg,r.imb,r.val,r.where,r.price||'',r.sp.join('; ')].map(q).join(',')));
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines.join('\r\n')],{type:'text/csv'}));a.download='jawntide-items.csv';document.body.appendChild(a);a.click();a.remove()}
+
 // ---- render
+function srcBox(){return `<div class=sbox><h2>Where to look</h2><div class=row>${(D.sources||[]).map(x=>`<label><input type=checkbox data-src="${esc(x.k)}"${S.src.has(x.k)?' checked':''}> ${esc(x.n)} <span class=muted>(${INV.filter(r=>r.src===x.k).length})</span></label>`).join('')}</div>
+    <p class="sm muted">In Suit search, your own items are preferred when two items are otherwise equal, then guest mules, then the Market.</p></div>
+  <div class="row tabs"><button data-tab=suit class="${S.tab!=='items'?'on':''}">Suit search</button><button data-tab=items class="${S.tab==='items'?'on':''}">Item search</button></div>`}
 function render(){
+  if(S.tab==='items'){app.innerHTML=srcBox()+itemsView();return}
   const ch=D.chars.map(c=>`<option${c.n===S.char?' selected':''}>${esc(c.n)}</option>`).join('');
   const slots=SLOTS.filter(s=>s[0]!=='uabd').map(s=>`<label><input type=checkbox data-slot="${s[0]}"${S.slots.has(s[0])?' checked':''}> ${s[1]}</label>`).join('');
   const wants=S.want.map((w,i)=>{const F=FAMS[w.f]||{c:0,max:0,n:0};
@@ -352,9 +437,7 @@ function render(){
   const pinned=[...S.locked].map(i=>`<span>🔒 ${esc(ITEMS[i].n)} <button class=x data-unlock="${i}">✕</button></span>`).concat(
     [...S.excluded].map(i=>`<span>🚫 ${esc(ITEMS[i].n)} <button class=x data-unex="${i}">✕</button></span>`)).join('');
   const plans=D.plans.length?'<p class="sm muted">Saved suits: '+D.plans.map(p=>`<b>${esc(p.code)}</b> ${esc(p.name)} (${p.n} items, ${esc(p.at)})`).join(' · ')+'</p>':'';
-  app.innerHTML=`
-  <div class=sbox><h2>Where to look</h2><div class=row>${(D.sources||[]).map(x=>`<label><input type=checkbox data-src="${esc(x.k)}"${S.src.has(x.k)?' checked':''}> ${esc(x.n)} <span class=muted>(${ITEMS.filter(it=>it.src===x.k).length})</span></label>`).join('')}</div>
-    <p class="sm muted">Your own items are preferred when two items are otherwise equal, then guest mules, then the Market.</p></div>
+  app.innerHTML=srcBox()+`
   <div class=sbox><h2>1. Start from a template</h2><div class=row>
     <select id=tpl>${Object.entries(TEMPLATES).map(([k,t])=>`<option value="${k}">${esc(t.n)}</option>`).join('')}</select>
     <button id=tplgo>Use template</button><span class=muted>${ITEMS.filter(it=>it.src==='me').length} wearable items in your mule.</span></div>
@@ -433,7 +516,7 @@ function passesFilters(it){const F=S.F,k=pieceKind(it);
   if(num(F.minOff)!=null&&sum(OFF)<num(F.minOff))return false;
   if(num(F.minDef)!=null&&sum(DEFR)<num(F.minDef))return false;
   if(num(F.minTot)!=null&&Object.values(it.rt).reduce((a,x)=>a+Math.max(0,x),0)<num(F.minTot))return false;
-  if(F.re){let rx;try{rx=new RegExp(F.re,'i')}catch(e){return true}if(!rx.test(it.n)&&!it.sp.some(n=>rx.test(n)))return false}
+  if(F.re){let rx;try{rx=new RegExp(F.re,'i')}catch(e){return true}if(!rx.test(it.n)&&!rx.test(it.sp.join(', ')))return false}
   return true}
 
 // ---- items another of your items beats (Mag-SuitBuilder's upgrades view, turned around): same equip slots, every spell
@@ -568,7 +651,12 @@ async function saveSuit(ri){const r=S.results[ri];const out=document.getElementB
   catch(err){out.innerHTML=`<span class=no>${esc(err.message)}</span>`}}
 
 // ---- events
-app.addEventListener('click',ev=>{const t=ev.target.closest('button');if(!t)return;const d=t.dataset;
+app.addEventListener('click',ev=>{const th=ev.target.closest('th[data-sort]');
+  if(th){const k=th.dataset.sort;if(IS.sort===k)IS.dir=-IS.dir;else{IS.sort=k;IS.dir=['n','cat','sl','set','imb','where'].includes(k)?1:-1}render();return}
+  const t=ev.target.closest('button');if(!t)return;const d=t.dataset;
+  if(d.tab){S.tab=d.tab;render();return}
+  if(t.id==='ifclear'){Object.assign(IS,{q:'',cats:new Set(CATS.map(c=>c[0])),slot:'',set:'',imb:'',alMin:'',alMax:'',lvMin:'',lvMax:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:'',wkMax:''});render();return}
+  if(t.id==='ifcsv'){invCsv();return}
   if(t.id==='tplgo'){applyTemplate(document.getElementById('tpl').value);render();return}
   if(t.id==='sall'){S.slots=new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd'))}
   else if(t.id==='snone'){S.slots=new Set()}
@@ -587,6 +675,8 @@ app.addEventListener('click',ev=>{const t=ev.target.closest('button');if(!t)retu
   else return;
   render()});
 app.addEventListener('change',ev=>{const t=ev.target;const d=t.dataset;
+  if(d.icat){t.checked?IS.cats.add(d.icat):IS.cats.delete(d.icat);render();return}
+  if(d.if!=null&&t.tagName==='SELECT'){IS[d.if]=t.value;render();return}
   if(d.slot){t.checked?S.slots.add(d.slot):S.slots.delete(d.slot);return}
   if(d.rate){S.rate[d.rate]=t.checked;return}
   if(d.wt!=null){S.want[+d.wt].t=+t.value;return}
@@ -609,7 +699,10 @@ app.addEventListener('change',ev=>{const t=ev.target;const d=t.dataset;
   if(t.id==='char'){S.char=t.value;return}
   if(t.id==='noreq'){S.noreq=t.checked;return}
   if(t.id==='noatt'){S.noatt=t.checked;return}
-  if(d.src){t.checked?S.src.add(d.src):S.src.delete(d.src);return}});
+  if(d.src){t.checked?S.src.add(d.src):S.src.delete(d.src);if(S.tab==='items')render();return}});
+let itimer=null;
+app.addEventListener('input',ev=>{const t=ev.target;if(t.dataset.if==null||t.tagName==='SELECT')return;IS[t.dataset.if]=t.value.trim();
+  clearTimeout(itimer);itimer=setTimeout(()=>{const k=t.dataset.if,pos=t.selectionStart;render();const el=app.querySelector(`[data-if="${k}"]`);if(el){el.focus();try{el.setSelectionRange(pos,pos)}catch(e){}}},250)});
 render();
 })();
 """
