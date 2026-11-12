@@ -7,6 +7,7 @@ Commands added on JawnTide on top of the normal ACE ones.
 | `/top bank` | The 25 richest banks (add `trophies` or `luminance` for those). See [[Bank]] |
 | `/lhs` and `/lhr` | Luminance you sent / received through the bank in the last 7 days. See [[Bank]] |
 | `/mule` | Your account mule. See [[My Mule]] |
+| `/mule storage add NAME` | Let another account's character use your mule while it's summoned (`remove NAME`, `remove -all`, `list`). See [[My Mule]] |
 | `/arena` | Arena queues and stats. See [[Arena]] |
 | `/town-owners` | Who owns each town. See [[Town Control]] |
 | `/town-control-respite TOWN` | When your allegiance can attack a town again |

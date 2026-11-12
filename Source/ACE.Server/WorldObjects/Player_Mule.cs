@@ -646,9 +646,34 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         private bool CanAccessMuleStorage(Vendor vendor)
         {
-            // JawnTide: only characters on the owner's account (no house storage guests)
+            // JawnTide: characters on the owner's account, plus the account's mule guests (/mule storage add NAME)
             return vendor.MuleOwnerId.HasValue && vendor.MuleOwnerAccountId.HasValue && Account != null
-                && Account.AccountId == vendor.MuleOwnerAccountId.Value;
+                && (Account.AccountId == vendor.MuleOwnerAccountId.Value || ACE.Server.Managers.MuleGuests.IsGuest(vendor.MuleOwnerAccountId.Value, Guid.Full));
+        }
+
+        /// <summary>JawnTide: true when this player is using someone else's mule as a guest (not a character on the owner's account).</summary>
+        private bool IsMuleGuestOf(Vendor vendor) => vendor.MuleOwnerAccountId.HasValue && Account != null && Account.AccountId != vendor.MuleOwnerAccountId.Value;
+
+        /// <summary>JawnTide: audits a guest's deposit or withdrawal as a transfer and tells the mule's owner.</summary>
+        private void ReportMuleGuestUse(Vendor vendor, bool deposit, List<(WorldObject item, int amount)> moved)
+        {
+            if (moved.Count == 0 || !vendor.MuleOwnerId.HasValue)
+                return;
+
+            var owner = ACE.Server.Managers.PlayerManager.GetOnlinePlayer(vendor.MuleOwnerId.Value);
+
+            if (owner != null)
+            {
+                if (deposit)
+                    ACE.Server.Managers.TransferAudit.RecordItemAmounts("mule_guest_deposit", this, owner, moved);
+                else
+                    ACE.Server.Managers.TransferAudit.RecordItemAmounts("mule_guest_withdraw", owner, this, moved);
+
+                var what = string.Join(", ", moved.Take(5).Select(m => m.amount > 1 ? $"{m.amount} {m.item.Name}" : m.item.Name)) + (moved.Count > 5 ? $" and {moved.Count - 5} more" : "");
+                owner.Session.Network.EnqueueSend(new GameMessageSystemChat($"{Name} {(deposit ? "stored" : "took")} {what} {(deposit ? "in" : "from")} your mule.", ChatMessageType.Broadcast));
+            }
+
+            log.Info($"[MULE] guest {Name} (0x{Guid}) {(deposit ? "deposited into" : "withdrew from")} account {vendor.MuleOwnerAccountId} mule: {string.Join(", ", moved.Select(m => $"{m.item.Name} x{m.amount} (0x{m.item.Guid})"))}");
         }
 
         /// <summary>JawnTide: whether this player may open or search the given mule vendor at all (owner's account only).</summary>
@@ -969,6 +994,7 @@ namespace ACE.Server.WorldObjects
             var allPossessions = GetAllPossessions().ToDictionary(i => i.Guid.Full, i => i);
             var processedGuids = new HashSet<uint>();
             var touched = new HashSet<WorldObject>();
+            var guestMoved = IsMuleGuestOf(vendor) ? new List<(WorldObject item, int amount)>() : null;
 
             // JawnTide: say why an item was skipped, so nothing leaves the sell window without a trace (log and player)
             void Skip(string why, uint guid, WorldObject item, int amount)
@@ -1071,6 +1097,8 @@ namespace ACE.Server.WorldObjects
                 // ~20 years so this timestamp never actually causes the item to rot/be removed.
                 toDeposit.SoldTimestamp = Time.GetUnixTime();
 
+                guestMoved?.Add((toDeposit, toDeposit.StackSize ?? 1));
+
                 StoreDepositedItem(vendor.MuleContainers, toDeposit, touched);
             }
 
@@ -1086,6 +1114,9 @@ namespace ACE.Server.WorldObjects
 
                 RefreshMuleVendorDisplay(vendor, VendorType.Sell);
             }
+
+            if (guestMoved != null)
+                ReportMuleGuestUse(vendor, true, guestMoved);
 
             SendUseDoneEvent();
         }
@@ -1154,6 +1185,10 @@ namespace ACE.Server.WorldObjects
                 SendUseDoneEvent();
                 return;
             }
+
+            // JawnTide: a guest's withdrawal is recorded now, while the items still have their names and values
+            if (IsMuleGuestOf(vendor))
+                ReportMuleGuestUse(vendor, false, withdrawals.Select(w => (w.item, w.amount)).ToList());
 
             // Every biota actually mutated (items and/or containers) -- saved exactly once at the
             // end instead of blanket-resaving every item in every touched container.

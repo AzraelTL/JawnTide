@@ -503,6 +503,7 @@ namespace ACE.Server.Managers
                 ("combat_mode_attack_fix", new Property<bool>(true, "JawnTide: when a melee or missile attack or a spell cast arrives while the server still has the player in peace mode (macros switching weapon or stance quickly), switch into the mode the wielded weapon or wand needs and make the attack or cast instead of dropping it")),
                 ("transfer_audit_enabled", new Property<bool>(true, "JawnTide bank audit: log bank sends, gives, trades and ground drop-then-pickups between different accounts to transfer_log (/bankaudit)")),
                 ("transfer_audit_notify", new Property<bool>(true, "JawnTide bank audit: tell online staff (Sentinel and up) when a transfer is flagged")),
+                ("mule_guests_enabled", new Property<bool>(true, "JawnTide My Mule: characters added with /mule storage add NAME can use that account's mule while it is summoned (off = owner's account only; the lists are kept)")),
                 ("economy_stats_enabled", new Property<bool>(true, "JawnTide economy stats: count daily luminance earned/spent and vendor pyreals to economy_daily (/economystats)")),
                 ("account_login_boots_in_use", new Property<bool>(true, "if FALSE, oldest connection to account is not booted when new connection occurs")),
                 ("advanced_combat_pets", new Property<bool>(false, "(non-retail function) If enabled, Combat Pets can cast spells")),

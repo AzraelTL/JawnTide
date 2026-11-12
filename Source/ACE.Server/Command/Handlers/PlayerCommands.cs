@@ -2017,9 +2017,67 @@ namespace ACE.Server.Command.Handlers
         [CommandHandler("mule", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
             "Grants you a My Mule summon gem, or searches your mule storage for items matching a spell regex.",
             "search <pattern>\n" +
+            "storage add <name> | storage remove <name> | storage remove -all | storage list - who else may use your mule while it's summoned\n" +
             "Searches your open mule window for items whose spells match <pattern>, a .NET regular expression matched case-insensitively against the item's spell names. That mule's buy window is filtered down to just the matches. Run with no pattern (\"/mule search\"), or just double-click the mule to reopen it, to clear the filter and go back to the normal listing.\n" +
             "Examples: \"/mule search legendary.*legendary\" (double legendary gear), \"/mule search legendary (frost|flame|acid)\" (any of several cantrips), \"/mule search legendary frost.*legendary acid\" (both cantrips present).\n" +
             "With no parameters, grants a My Mule summon gem if you don't already have one.")]
+        private static void HandleMuleStorage(Player player, string[] args)
+        {
+            void Say(string text) => player.Session.Network.EnqueueSend(new GameMessageSystemChat(text, ChatMessageType.Broadcast));
+
+            var accountId = player.Account.AccountId;
+            var verb = args.Length > 0 ? args[0].ToLowerInvariant() : "list";
+            var name = string.Join(" ", args.Skip(1)).Trim();
+
+            if (!MuleGuests.Enabled && verb != "list")
+            {
+                Say("Mule guests are turned off right now.");
+                return;
+            }
+
+            switch (verb)
+            {
+                case "list":
+                    var guests = MuleGuests.List(accountId);
+                    Say(guests.Count == 0
+                        ? "Nobody else can use your mule. Add someone with /mule storage add NAME."
+                        : $"Can use your mule while it's summoned ({guests.Count}/{MuleGuests.MaxGuests}): {string.Join(", ", guests.Select(g => g.name))}");
+                    return;
+
+                case "add":
+                {
+                    if (name.Length == 0) { Say("Usage: /mule storage add NAME"); return; }
+                    var target = PlayerManager.FindByName(name);
+                    if (target == null) { Say($"There's no character named {name}."); return; }
+                    if (target.Account != null && target.Account.AccountId == accountId) { Say($"{target.Name} is on your own account and can already use your mule."); return; }
+                    if (!MuleGuests.Add(accountId, target.Guid.Full, target.Name, player.Name)) { Say($"Your mule already has {MuleGuests.MaxGuests} guests. Remove one first."); return; }
+                    Say($"{target.Name} can now use your mule while one of your characters has it summoned.");
+                    log.Info($"[MULE] {player.Name} (account {accountId}) added mule guest {target.Name} (0x{target.Guid.Full:X8})");
+                    return;
+                }
+
+                case "remove":
+                {
+                    if (name.Equals("-all", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Say($"Removed {MuleGuests.Clear(accountId)} mule guests.");
+                        return;
+                    }
+                    if (name.Length == 0) { Say("Usage: /mule storage remove NAME (or -all)"); return; }
+                    var match = MuleGuests.List(accountId).FirstOrDefault(g => g.name.Equals(name, StringComparison.OrdinalIgnoreCase)
+                        || g.name.TrimStart('+').Equals(name.TrimStart('+'), StringComparison.OrdinalIgnoreCase));
+                    if (match.name == null || !MuleGuests.Remove(accountId, match.id)) { Say($"{name} isn't on your mule's guest list."); return; }
+                    Say($"{match.name} can no longer use your mule.");
+                    log.Info($"[MULE] {player.Name} (account {accountId}) removed mule guest {match.name}");
+                    return;
+                }
+
+                default:
+                    Say("Usage: /mule storage add NAME | /mule storage remove NAME | /mule storage remove -all | /mule storage list");
+                    return;
+            }
+        }
+
         public static void HandleMule(Session session, params string[] parameters)
         {
             var player = session.Player;
@@ -2028,6 +2086,13 @@ namespace ACE.Server.Command.Handlers
             {
                 var pattern = string.Join(" ", parameters.Skip(1));
                 player.SearchMuleInventory(pattern);
+                return;
+            }
+
+            // JawnTide: mule guests, like house storage guests: /mule storage add|remove NAME, /mule storage remove -all, /mule storage list
+            if (parameters.Length > 0 && (parameters[0].Equals("storage", StringComparison.OrdinalIgnoreCase) || parameters[0].Equals("guest", StringComparison.OrdinalIgnoreCase)))
+            {
+                HandleMuleStorage(player, parameters.Skip(1).ToArray());
                 return;
             }
 
