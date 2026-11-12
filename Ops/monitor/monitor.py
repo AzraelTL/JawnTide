@@ -1127,6 +1127,100 @@ def dummy_set(form):
     return ""
 
 
+SOURCE_COLS = ["label", "kind", "skill", "weapon_type", "attack_type", "combat_style", "imbue", "damage_type", "damage", "variance", "damage_mod",
+               "elemental_damage_mod", "speed", "offense", "crit_frequency", "crit_multiplier", "ignore_armor", "slayer", "slayer_bonus", "cast_on_strike",
+               "workmanship", "tinkers", "wield_requirement", "spells", "buffs", "ammo_name", "ammo_damage", "ammo_damage_mod", "spell", "spell_level", "spell_shape",
+               "caster_name", "caster_elemental_damage_mod", "caster_spells", "caster_buffs", "attacker_skill", "attacker_skill_current", "attacker_skill_base",
+               "attacks", "hits", "misses", "crits", "damage_total", "min", "max", "avg"]
+GROUP_KEYS = ("kind", "skill", "weapon_type", "attack_type", "imbue", "spell_shape")
+
+
+def _sources(sj):
+    try:
+        rows = json.loads(sj or "[]")
+        return rows if isinstance(rows, list) else []
+    except ValueError:
+        return []
+
+
+def _source_table(rows):
+    """One session's weapons and spells: what was used (with its stats) and how it did."""
+    if not rows:
+        return '<p class="muted">No weapon details (session from before weapon stats were recorded).</p>'
+    out = []
+    for r in rows:
+        stats = ", ".join(f"{k.replace('_', ' ')} {r[k]}" for k in SOURCE_COLS[1:38] if k in r)
+        hits, att = r.get("hits", 0), r.get("attacks", 0)
+        out.append(f'<tr><td><b>{e(r.get("label"))}</b><br><span class="muted wrapd">{e(stats)}</span></td>'
+                   f'<td class="n">{r.get("damage_total", 0):,}</td><td class="n">{hits}/{att}</td><td class="n">{r.get("avg", 0):,}</td>'
+                   f'<td class="n">{r.get("min", 0):,}</td><td class="n">{r.get("max", 0):,}</td>'
+                   f'<td class="n">{(100.0 * r.get("crits", 0) / hits) if hits else 0:.1f}%</td><td class="n">{(100.0 * r.get("misses", 0) / att) if att else 0:.1f}%</td></tr>')
+    return ('<table><thead><tr><th>Weapon or spell, and its stats</th><th class="n">Damage</th><th class="n">Hits</th><th class="n">Avg</th><th class="n">Min</th><th class="n">Max</th>'
+            '<th class="n">Crit</th><th class="n">Missed</th></tr></thead><tbody>' + "".join(out) + "</tbody></table>")
+
+
+def balance_summary(all_sources):
+    """Every session's weapons and spells grouped by kind, skill, weapon type, attack type, imbue and spell shape."""
+    groups = {}
+    for r in all_sources:
+        key = tuple(r.get(k, "") or "" for k in GROUP_KEYS)
+        g = groups.setdefault(key, {"sessions": set(), "attacks": 0, "hits": 0, "misses": 0, "crits": 0, "damage": 0, "min": None, "max": 0, "skill": []})
+        g["sessions"].add(r["_session"])
+        for k in ("attacks", "hits", "misses", "crits"):
+            g[k] += r.get(k, 0) or 0
+        g["damage"] += r.get("damage_total", 0) or 0
+        if (r.get("hits") or 0) > 0:
+            g["min"] = r.get("min", 0) if g["min"] is None else min(g["min"], r.get("min", 0))
+            g["max"] = max(g["max"], r.get("max", 0) or 0)
+        if r.get("attacker_skill_current"):
+            g["skill"].append(r["attacker_skill_current"])
+    out = []
+    for key, g in sorted(groups.items(), key=lambda kv: (-kv[1]["hits"])):
+        avg = g["damage"] / g["hits"] if g["hits"] else 0
+        sk = sum(g["skill"]) / len(g["skill"]) if g["skill"] else 0
+        out.append("<tr>" + "".join(f"<td>{e(v)}</td>" for v in key)
+                   + f'<td class="n">{len(g["sessions"])}</td><td class="n">{g["hits"]:,}/{g["attacks"]:,}</td><td class="n"><b>{avg:,.1f}</b></td>'
+                   + f'<td class="n">{g["min"] or 0:,}</td><td class="n">{g["max"]:,}</td>'
+                   + f'<td class="n">{(100.0 * g["crits"] / g["hits"]) if g["hits"] else 0:.1f}%</td>'
+                   + f'<td class="n">{(100.0 * g["misses"] / g["attacks"]) if g["attacks"] else 0:.1f}%</td><td class="n">{sk:,.0f}</td></tr>')
+    if not out:
+        return '<p class="muted">No weapon details recorded yet.</p>'
+    return ('<div class="wrap"><table><thead><tr><th>Kind</th><th>Skill</th><th>Weapon type</th><th>Attack type</th><th>Imbue</th><th>Spell shape</th>'
+            '<th class="n">Sessions</th><th class="n">Hits</th><th class="n">Avg hit</th><th class="n">Min</th><th class="n">Max</th><th class="n">Crit</th>'
+            '<th class="n">Missed</th><th class="n">Avg skill</th></tr></thead><tbody>' + "".join(out) + "</tbody></table></div>")
+
+
+def dummy_csv(name, days):
+    """One row per weapon or spell per session, for a spreadsheet."""
+    import csv
+    import io
+    args, where = [], []
+    if name:
+        where.append("character_Name = %s")
+        args.append(name)
+    if days:
+        where.append("ended_At >= UTC_TIMESTAMP() - INTERVAL %s DAY")
+        args.append(int(days))
+    rows = shard_rows("SELECT id, ended_At, character_Name, character_Level, seconds, dps, dummy_Setup, settings, sources_json FROM training_dummy_session "
+                      + (("WHERE " + " AND ".join(where)) if where else "") + " ORDER BY id", args)
+    cat = {r["key"]: r for r in load_catalog()["settings"]}
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["session", "ended_utc", "character", "character_level", "session_seconds", "session_dps"] + SOURCE_COLS + ["damage_types", "dummy_setup", "pvp_settings_changed"])
+    for sid, ended, who, lvl, secs, dps, setup, settings, sj in rows:
+        try:
+            snap = json.loads(settings or "{}")
+        except ValueError:
+            snap = {}
+        changed = "; ".join(f"{k}={norm(cat[k]['type'], v)}" for k, v in sorted(snap.items())
+                            if k in cat and norm(cat[k]["type"], v) != norm(cat[k]["type"], cat[k]["default"]))
+        for r in _sources(sj):
+            vals = [r.get(c, "") for c in SOURCE_COLS]
+            w.writerow([sid, fmt_t(ended), who, lvl, round(secs or 0, 1), round(dps or 0, 1)] + ["" if v is None else v for v in vals]
+                       + [json.dumps(r.get("damage_types", {})), setup or "", changed])
+    return buf.getvalue()
+
+
 def dummy_page(name, sent="", bad=""):
     cat = {r["key"]: r for r in load_catalog()["settings"]}
     args, where = [], ""
@@ -1134,7 +1228,7 @@ def dummy_page(name, sent="", bad=""):
         where, args = "WHERE character_Name = %s", [name]
     try:
         rows = shard_rows("SELECT id, ended_At, character_Name, character_Level, seconds, attacks, hits, evaded, resisted, crits, damage, dps, "
-                          f"dummy_Setup, sources, settings FROM training_dummy_session {where} ORDER BY id DESC LIMIT 100", args)
+                          f"dummy_Setup, sources, settings, sources_json FROM training_dummy_session {where} ORDER BY id DESC LIMIT 100", args)
         err = ""
     except Exception as ex:
         rows, err = [], f'<p class="err">Could not read training_dummy_session: {e(ex)}</p>'
@@ -1143,7 +1237,11 @@ def dummy_page(name, sent="", bad=""):
         return f"{100.0 * n / of:.1f}%" if of else "-"
 
     out = []
-    for (sid, ended, who, lvl, secs, attacks, hits, evaded, resisted, crits, dmg, dps, setup, sources, settings) in rows:
+    all_sources = []
+    for (sid, ended, who, lvl, secs, attacks, hits, evaded, resisted, crits, dmg, dps, setup, sources, settings, sj) in rows:
+        srcs = _sources(sj)
+        for r in srcs:
+            all_sources.append(dict(r, _session=sid))
         try:
             snap = json.loads(settings or "{}")
         except ValueError:
@@ -1157,12 +1255,18 @@ def dummy_page(name, sent="", bad=""):
                    f'<td><a href="/dummy?name={quote(who or "")}">{e(who or "")}</a> <span class="muted">{lvl}</span></td>'
                    f'<td class="n">{secs:.0f}s</td><td class="n"><b>{dps:,.1f}</b></td><td class="n">{dmg:,}</td>'
                    f'<td class="n">{hits}/{attacks}</td><td class="n">{pct(crits, hits)}</td><td class="n">{pct(evaded, attacks)}</td><td class="n">{pct(resisted, attacks)}</td>'
-                   f'<td class="wrapd"><details><summary>{e((setup or "")[:80])}...</summary><p>{e(setup or "")}</p><pre>{e(sources or "")}</pre>'
+                   f'<td class="wrapd"><details><summary>{e((setup or "")[:80])}...</summary><p>{e(setup or "")}</p>{_source_table(srcs) if srcs else "<pre>" + e(sources or "") + "</pre>"}'
                    f'<p><b>Settings changed from default ({len(diff)}):</b><br>{"<br>".join(e(d) for d in diff) or "none"}</p></details></td></tr>')
     note = (('<p class="yes">Sent. The game server applies it within about 5 seconds (see Recent dummy changes).</p>' if sent else "")
             + (f'<p class="err">{e(bad)}</p>' if bad else "")
             + ("" if EDIT_PASSWORD else '<p class="err">Editing is off: MONITOR_EDIT_PASSWORD is not set (see README.md).</p>'))
-    body = dummies_section(note) + f"""<h2>Target Drudge sessions</h2>
+    csv_link = f'/dummy.csv{"?name=" + quote(name) if name else ""}'
+    body = dummies_section(note) + f"""<h2>Balance summary</h2>
+<p class="muted">Every weapon and spell from the sessions below (the last 100{', ' + e(name) + ' only' if name else ''}), grouped by kind, skill, weapon type, attack type,
+imbue and spell shape. Avg hit is damage per landed hit; Missed is evaded or resisted. <a href="{csv_link}">Download every session as CSV</a> (one row per weapon or spell per
+session, with all its stats, the dummy's setup and the PvP settings changed from default; add <code>?days=7</code> to limit it).</p>
+{balance_summary(all_sources)}
+<h2>Target Drudge sessions</h2>
 <p class="muted">Each row is one attack session on a Target Drudge (it ends 15 seconds after the last hit). A player's hits on it use the PvP damage path, with the
 dummy's armor, defenses, ratings and buffs (set in game with <code>/dummy</code>). Open a row for the per-weapon/spell breakdown and the PvP settings that were in effect.
 Change settings on <a href="/pvp">PvP damage</a>, then attack again to compare.{' Showing ' + e(name) + ' only: <a href="/dummy">show everyone</a>.' if name else ''}</p>
@@ -1236,6 +1340,16 @@ class Handler(BaseHTTPRequestHandler):
                 body = settings_page()
             elif url.path == "/pvp":
                 body = pvp_page(q.get("sent", [""])[0] if q.get("sent", ["0"])[0] != "0" else "", q.get("bad", [""])[0])
+            elif url.path == "/dummy.csv":
+                d = q.get("days", [""])[0]
+                data = dummy_csv(q.get("name", [""])[0], d if d.isdigit() else "").encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/csv; charset=utf-8")
+                self.send_header("Content-Disposition", 'attachment; filename="target-drudge-sessions.csv"')
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+                return
             elif url.path == "/dummy":
                 body = dummy_page(q.get("name", [""])[0], q.get("sent", [""])[0], q.get("bad", [""])[0])
             elif url.path == "/health":
