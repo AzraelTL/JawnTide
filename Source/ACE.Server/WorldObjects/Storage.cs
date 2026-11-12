@@ -45,6 +45,14 @@ namespace ACE.Server.WorldObjects
             BumpVelocity = true;
         }
 
+        /// <summary>JawnTide Suit Builder: a house storage chest's items are exported for the website whenever it's closed.</summary>
+        public override void FinishClose(Player player)
+        {
+            base.FinishClose(player);
+
+            try { ACE.Server.Managers.MarketManager.QueueIcons(System.Linq.Enumerable.ToList(Inventory.Values), true); } catch (System.Exception) { }
+        }
+
         public override ActivationResult CheckUseRequirements(WorldObject activator)
         {
             var baseRequirements = base.CheckUseRequirements(activator);

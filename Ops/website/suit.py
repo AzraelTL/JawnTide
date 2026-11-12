@@ -92,10 +92,11 @@ def _row(d, guid, full, icons, ui, itype, attuned, src, stack=1):
                 rt={k: I[k] for k, _ in RATINGS if I.get(k)}, st=int(stack or 1), att=bool(attuned and attuned >= 1), mt=int(I.get("MaterialType") or 0))
 
 
-def _rows_for(rows, src, inv, items):
-    """Adds a mule's items to the Item search rows (inv) and the wearable ones to the suit search items. Returns how many lack details."""
+def _rows_for(rows, src, inv, items, locs=None):
+    """Adds a mule's items to the Item search rows (inv) and the wearable ones to the suit search items. Returns how many lack details.
+    locs: where each row is ("on Az (worn)"), for characters and house chests."""
     missing = 0
-    for r in rows:
+    for n_, r in enumerate(rows):
         (guid, name, material, stack, itype, icon, ov, ov2, under, ui, attuned, bonded, details) = r
         if not details:
             missing += 1
@@ -103,13 +104,34 @@ def _rows_for(rows, src, inv, items):
         try:
             d = json.loads(details)
             full = f"{material} {name}" if material and not str(name).startswith(str(material)) else name
-            inv.append(_row(d, guid, full, (under, icon, ov, ov2), ui, itype, attuned, src, stack))
+            row = _row(d, guid, full, (under, icon, ov, ov2), ui, itype, attuned, src, stack)
             it = _wearable(d, int(guid), full, (under, icon, ov, ov2), ui, itype, attuned, src)
+            if locs:
+                row["loc"] = locs[n_]
+                if it:
+                    it["loc"] = locs[n_]
+            inv.append(row)
             if it:
                 items.append(it)
         except Exception:
             continue
     return missing
+
+
+def _carried(account):
+    """(character rows, their locations, chest rows, their locations) from ace_web.suit_char_item; empty until market-setup.sh made it."""
+    cols = "char_Name, loc, item_Guid, name, material, stack_Size, item_Type, icon_Id, icon_Overlay_Id, icon_Overlay2_Id, icon_Underlay_Id, ui_Effects, attuned, bonded, details"
+    try:
+        rows = market._q(f"SELECT {cols} FROM {market.VIEW_DB}.suit_char_item WHERE account_Id = %s LIMIT 10000", (account,))
+    except Exception:
+        return [], [], [], []
+    ch, chl, hs, hsl = [], [], [], []
+    for r in rows:
+        if r[1] == "house chest":
+            hs.append(r[2:]); hsl.append(f"{r[0]}'s house chest")
+        else:
+            ch.append(r[2:]); chl.append(f"on {r[0]} ({r[1]})")
+    return ch, chl, hs, hsl
 
 
 def _characters(account):
@@ -172,6 +194,10 @@ def page(h, user, query):
     items, inv = [], []
     missing = _rows_for(market._mule_items(account), "me", inv, items)
     sources = [dict(k="me", n="My mule", on=True)]
+    ch, chl, hs, hsl = _carried(account)
+    missing += _rows_for(ch, "c", inv, items, chl)
+    missing += _rows_for(hs, "h", inv, items, hsl)
+    sources += [dict(k="c", n="My characters (worn and in packs)", on=False), dict(k="h", n="My house storage chests", on=False)]
     for owner, label in _guest_mules(account):
         _rows_for(market._mule_items(owner), f"g:{owner}", inv, items)
         sources.append(dict(k=f"g:{owner}", n=label, on=False))
@@ -181,8 +207,8 @@ def page(h, user, query):
     sources.append(dict(k="m", n=f"Items for sale on the Market ({len(market_rows)})", on=False))
     data = dict(items=items, inv=inv, sources=sources, chars=_characters(account), ratings=RATINGS, csrf=user["csrf"],
                 plans=[dict(code=p[0], name=p[1], n=len([x for x in (p[2] or "").split(",") if x]), at=p[3].strftime("%b %d")) for p in _plans(account)])
-    note = (f'<p class="muted">{missing} mule item{"s" if missing != 1 else ""} can\'t be used yet: the game server hasn\'t read '
-            f'{"their" if missing != 1 else "its"} details. Summon your mule once in game and reload this page.</p>' if missing else "")
+    note = (f'<p class="muted">{missing} item{"s" if missing != 1 else ""} can\'t be used yet: the game server hasn\'t read '
+            f'{"their" if missing != 1 else "its"} details. Summon your mule, log the character in and out, or open and close the house chest once, then reload this page.</p>' if missing else "")
     blob = json.dumps(data, default=str).replace("</", "<\\/")
     body = (f'<h1>Suit Builder</h1><p><b>Suit search</b> finds the best suit in your mule (and, if you like, the mules you\'re a guest of and the Market) for the slots and spells you pick; <b>Item search</b> lists every item in a sortable table with filters. '
             f'Save a suit, then in game open your mule and type <code>/mule suit CODE</code> to show just those items. '
@@ -406,7 +432,7 @@ const INV=(D.inv||[]).map(r=>{let leg=0,epic=0;for(const n of r.sp){const p=pars
   const sl=r.vl?SLOTS.filter((s,b)=>{const m=placements({vl:r.vl});return m.some(x=>x&(1<<b))}).filter(s=>s[0]!=='uabd').map(s=>s[1]).join(', '):'';
   const rsum=ks=>ks.reduce((a,k)=>a+Math.max(0,r.rt[k]||0),0);
   return Object.assign(r,{leg,epic,sl,off:rsum(['GearDamage','GearCrit','GearCritDamage']),def:rsum(['GearDamageResist','GearCritResist','GearCritDamageResist']),tot:Object.values(r.rt).reduce((a,x)=>a+Math.max(0,x),0),
-    cat:CATS.some(c=>c[0]===r.cat)?r.cat:'other',where:r.src==='m'?'Market':r.src==='me'?'My mule':(SRCNAME[r.src]||'guest mule'),it:BYKEY[r.src+':'+r.g]})});
+    cat:CATS.some(c=>c[0]===r.cat)?r.cat:'other',where:r.src==='m'?'Market':r.src==='me'?'My mule':r.loc?r.loc:(SRCNAME[r.src]||'guest mule'),it:BYKEY[r.src+':'+r.g]})});
 const IMBUES=[...new Set(INV.map(r=>r.imb).filter(Boolean))].sort();
 const IS={q:'',cats:new Set(CATS.map(c=>c[0])),slot:'',set:'',imb:'',cov:'',mat:'',alMin:'',alMax:'',lvMin:'',lvMax:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:'',wkMax:'',sort:'n',dir:1};
 const COLS=[['n','Item'],['cat','Type'],['sl','Slots'],['set','Set'],['al','AL'],['lv','Level'],['lore','Lore'],['wk','Work'],['leg','Leg'],['epic','Epic+'],
@@ -454,7 +480,7 @@ function invCsv(){const rows=invRows();const q=v=>'"'+String(v==null?'':v).repla
 
 // ---- render
 function srcBox(){return `<div class=sbox><h2>Where to look</h2><div class=row>${(D.sources||[]).map(x=>`<label><input type=checkbox data-src="${esc(x.k)}"${S.src.has(x.k)?' checked':''}> ${esc(x.n)} <span class=muted>(${INV.filter(r=>r.src===x.k).length})</span></label>`).join('')}</div>
-    <p class="sm muted">In Suit search, your own items are preferred when two items are otherwise equal, then guest mules, then the Market.</p></div>
+    <p class="sm muted">In Suit search, your own items (mule, characters, house chests) are preferred when two items are otherwise equal, then guest mules, then the Market. Characters' items are as of their last login or logout; a house chest's as of the last time it was closed.</p></div>
   <div class="row tabs"><button data-tab=suit class="${S.tab!=='items'?'on':''}">Suit search</button><button data-tab=items class="${S.tab==='items'?'on':''}">Item search</button>
     <label class=sm>Show <select id=spshow><option value=c${S.allSpells?'':' selected'}>cantrips only</option><option value=all${S.allSpells?' selected':''}>cantrips and all spells</option></select></label></div>`}
 function render(){
@@ -530,7 +556,7 @@ function results(){
       const icon=`<span class=micon>${it.ic.map(x=>`<img src="/market/icon/${x}.png" alt="" loading=lazy>`).join('')}</span>`;
       const meta=[it.al?'AL '+it.al:'',it.set,it.lv?'level '+it.lv:'',it.lore?'lore '+it.lore:'',...Object.entries(it.rt).map(([k,v])=>(D.ratings.find(x=>x[0]===k)||[k,k])[1]+' '+v)].filter(Boolean).join(' · ');
       const from=it.src==='m'?`<div class=sm><span class=part>Market:</span> <a href="/market/item/${it.g}" target=_blank>${esc(it.price)}</a> <span class=muted>from ${esc(it.seller)}</span></div>`
-        :it.src!=='me'?`<div class="sm part">${esc(SRCNAME[it.src]||'guest mule')}</div>`:'';
+        :it.loc?`<div class="sm part">${esc(it.loc)}</div>`:it.src!=='me'?`<div class="sm part">${esc(SRCNAME[it.src]||'guest mule')}</div>`:'';
       return `<tr><td>${esc(where)}</td><td>${icon} <b>${esc(it.n)}</b>${from}<div class="sm muted">${esc(meta)}</div><div class=tags>${tags}</div></td>
         <td class=sm><button class=x data-lock="${i}" title="Always use this item">🔒</button> <button class=x data-ex="${i}" title="Never use this item">🚫</button></td></tr>`}).join('');
     const empty=SLOTS.filter((s,b)=>S.slots.has(s[0])&&!(r.occ&(1<<b))).map(s=>s[1]);
@@ -596,7 +622,7 @@ function buildProblem(){
     if(!isLocked&&pieceKind(it)==='armor'&&!S.mats.has(matGroup(it)))continue;
     if(!isLocked&&S.onlySets&&(S.set||S.set2)&&(it.vl&0x7E00)&&it.set!==S.set&&it.set!==S.set2)continue;
     const tv=fams.map(f=>it.fams[f]||0);
-    const bonus=(it.src==='m'?-0.6:it.src==='me'?0:-0.3)+S.al*it.al/1000+rkeys.reduce((a,k)=>a+(it.rt[k]||0),0)+(io&&io.m==='prefer'&&itier>=io.t?2:0);
+    const bonus=(it.src==='m'?-0.6:it.src==='me'||it.src==='c'||it.src==='h'?0:-0.3)+S.al*it.al/1000+rkeys.reduce((a,k)=>a+(it.rt[k]||0),0)+(io&&io.m==='prefer'&&itier>=io.t?2:0);
     const spots=S.reduce||isLocked?it.pl.concat(it.red):it.pl;
     for(const occ of spots){
       if(!isLocked&&(occ&~allowed))continue;
@@ -682,8 +708,9 @@ async function saveObsolete(){const out=document.getElementById('obssv');
   catch(err){out.innerHTML=`<span class=no>${esc(err.message)}</span>`}}
 async function saveSuit(ri){const r=S.results[ri];const out=document.getElementById('sv'+ri);
   const name=(document.getElementById('sn'+ri).value||'').trim()||'Suit';
-  const mules=r.picks.map(([i])=>ITEMS[i]).filter(it=>it.src!=='m');const buy=r.picks.length-mules.length;
-  if(!mules.length){out.innerHTML='<span class=no>This suit is all Market items: buy them first (links above).</span>';return}
+  const mules=r.picks.map(([i])=>ITEMS[i]).filter(it=>it.src==='me'||it.src.startsWith('g:'));const buy=r.picks.filter(([i])=>ITEMS[i].src==='m').length;
+  const carried=r.picks.length-mules.length-buy;
+  if(!mules.length){out.innerHTML='<span class=no>None of this suit is in a mule: '+(buy?'buy the Market items first (links above)':'')+(buy&&carried?' and ':'')+(carried?'the rest is already on your characters or in your house chests':'')+'.</span>';return}
   const body=new URLSearchParams({csrf:D.csrf,name,items:[...new Set(mules.map(it=>it.g))].join(',')});
   out.textContent='Saving…';
   try{const res=await fetch('/suit/save',{method:'POST',body,headers:{'Content-Type':'application/x-www-form-urlencoded'}});const j=await res.json();
@@ -691,7 +718,8 @@ async function saveSuit(ri){const r=S.results[ri];const out=document.getElementB
     D.plans.unshift({code:j.code,name:j.name,n:r.picks.length,at:'today'});
     out.innerHTML=`Saved. In game, open the mule and type <code class=cmd>/mule suit ${esc(j.code)}</code>`+
       (mules.some(it=>it.src!=='me')?' (it works on a mule you\'re a guest of too: open that mule and type the same).':'')+
-      (buy?` <span class=part>${buy} Market item${buy===1?' isn\'t':'s aren\'t'} in the saved suit: buy ${buy===1?'it':'them'} first.</span>`:'')}
+      (buy?` <span class=part>${buy} Market item${buy===1?' isn\'t':'s aren\'t'} in the saved suit: buy ${buy===1?'it':'them'} first.</span>`:'')+
+      (carried?` <span class=part>${carried} item${carried===1?' is':'s are'} on your characters or in your house chests, so ${carried===1?'it isn\'t':'they aren\'t'} in the saved suit (see where above).</span>`:'')}
   catch(err){out.innerHTML=`<span class=no>${esc(err.message)}</span>`}}
 
 // ---- events

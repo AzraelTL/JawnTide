@@ -644,6 +644,9 @@ namespace ACE.Server.WorldObjects
 
         public void LogOut_Inner(bool clientSessionTerminatedAbruptly = false)
         {
+            // JawnTide Suit Builder: export what this character carries now, for the website (the details may have changed since login)
+            try { ACE.Server.Managers.MarketManager.QueueIcons(GetAllPossessions(), true); } catch (Exception ex) { log.Warn($"[MARKET] Couldn't export {Name}'s items: {ex.Message}"); }
+
             EventBossManager.OnLogout(this);
 
             IsBusy = true;

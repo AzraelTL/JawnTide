@@ -22,6 +22,9 @@ namespace ACE.Server.WorldObjects
         public void PlayerEnterWorld()
         {
             PlayerManager.SwitchPlayerFromOfflineToOnline(this);
+
+            // JawnTide Suit Builder: export what this character carries (worn and in its packs) for the website
+            try { MarketManager.QueueIcons(GetAllPossessions()); } catch (Exception ex) { log.Warn($"[MARKET] Couldn't export {Name}'s items: {ex.Message}"); }
             Teleporting = true;
 
             // Save the the LoginTimestamp
