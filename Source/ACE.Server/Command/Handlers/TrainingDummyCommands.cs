@@ -13,19 +13,21 @@ namespace ACE.Server.Command.Handlers
     /// <summary>JawnTide Target Drudge (TrainingDummy) setup.</summary>
     public static class TrainingDummyCommands
     {
+        // SpellId names: the spell table's own names for these aren't "Armor Self VII" style, so names didn't resolve
         private static readonly string[] PvpBuffs8 =
         {
-            "Incantation of Armor Self", "Incantation of Acid Protection Self", "Incantation of Blade Protection Self",
-            "Incantation of Bludgeoning Protection Self", "Incantation of Cold Protection Self", "Incantation of Fire Protection Self",
-            "Incantation of Lightning Protection Self", "Incantation of Piercing Protection Self", "Incantation of Invulnerability Self",
-            "Incantation of Impregnability Self", "Incantation of Magic Resistance Self"
+            nameof(ACE.Entity.Enum.SpellId.ArmorSelf8), nameof(ACE.Entity.Enum.SpellId.AcidProtectionSelf8), nameof(ACE.Entity.Enum.SpellId.BladeProtectionSelf8),
+            nameof(ACE.Entity.Enum.SpellId.BludgeonProtectionSelf8), nameof(ACE.Entity.Enum.SpellId.ColdProtectionSelf8), nameof(ACE.Entity.Enum.SpellId.FireProtectionSelf8),
+            nameof(ACE.Entity.Enum.SpellId.LightningProtectionSelf8), nameof(ACE.Entity.Enum.SpellId.PiercingProtectionSelf8), nameof(ACE.Entity.Enum.SpellId.InvulnerabilitySelf8),
+            nameof(ACE.Entity.Enum.SpellId.ImpregnabilitySelf8), nameof(ACE.Entity.Enum.SpellId.MagicResistanceSelf8)
         };
 
         private static readonly string[] PvpBuffs7 =
         {
-            "Armor Self VII", "Acid Protection Self VII", "Blade Protection Self VII", "Bludgeoning Protection Self VII", "Cold Protection Self VII",
-            "Fire Protection Self VII", "Lightning Protection Self VII", "Piercing Protection Self VII", "Invulnerability Self VII",
-            "Impregnability Self VII", "Magic Resistance Self VII"
+            nameof(ACE.Entity.Enum.SpellId.ArmorSelf7), nameof(ACE.Entity.Enum.SpellId.AcidProtectionSelf7), nameof(ACE.Entity.Enum.SpellId.BladeProtectionSelf7),
+            nameof(ACE.Entity.Enum.SpellId.BludgeonProtectionSelf7), nameof(ACE.Entity.Enum.SpellId.ColdProtectionSelf7), nameof(ACE.Entity.Enum.SpellId.FireProtectionSelf7),
+            nameof(ACE.Entity.Enum.SpellId.LightningProtectionSelf7), nameof(ACE.Entity.Enum.SpellId.PiercingProtectionSelf7), nameof(ACE.Entity.Enum.SpellId.InvulnerabilitySelf7),
+            nameof(ACE.Entity.Enum.SpellId.ImpregnabilitySelf7), nameof(ACE.Entity.Enum.SpellId.MagicResistanceSelf7)
         };
 
         private static readonly string[] ArmorBuffs8 =
