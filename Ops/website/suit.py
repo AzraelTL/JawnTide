@@ -228,6 +228,10 @@ function parse(name){
   return{f:name,t:1,c:0};
 }
 const TIERN={1:'Minor',2:'Major',3:'Epic',4:'Legendary'};
+const IMP='Impenetrability';
+const OUTER=0x4000|0x400|0x800|0x1000|0x2000|0x8000|0x100|0x200|0x10000,UNDER=0x2|0x4|0x8|0x10|0x20|0x40;
+const pieceKind=it=>it.cov&OUTER?'armor':(it.cov&UNDER?'under':null);
+const impOn=it=>{const k=pieceKind(it);return k&&S.imp[k].m!=='off'};
 const tierName=(f,t)=>FAMS[f]&&FAMS[f].c?(TIERN[t]||t):(t>1?'level '+t:'any');
 
 // index the items
@@ -259,7 +263,7 @@ function resolve(k){const kk=k.toLowerCase();
   return FAMLIST.find(f=>FAMS[f].c&&f.toLowerCase()===kk)||FAMLIST.find(f=>FAMS[f].c&&f.toLowerCase().includes(kk))||FAMLIST.find(f=>f.toLowerCase().includes(kk))||null}
 
 // ---- state
-const S={slots:new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd')),want:[],set:'',setN:4,al:1,rate:{},char:D.chars[0]?D.chars[0].n:'',noreq:false,
+const S={slots:new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd')),want:[],set:'',setN:4,al:1,rate:{},imp:{armor:{m:'off',t:4},under:{m:'off',t:4}},char:D.chars[0]?D.chars[0].n:'',noreq:false,
   noatt:false,locked:new Set(),excluded:new Set(),results:null,busy:false,msg:''};
 function applyTemplate(key){const T=TEMPLATES[key];if(!T||!T.k)return;
   if(!T.add){S.want=[];S.slots=new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd'))}
@@ -300,6 +304,9 @@ function render(){
   <div class=sbox><h2>4. Extras</h2>
     <div class=row><label>Armor set <select id=set><option value="">(any)</option>${sets}</select></label>
       <label>pieces <input type=number id=setn min=2 max=9 value="${S.setN}"></label></div>
+    ${['armor','under'].map(k=>{const o=S.imp[k];return `<div class=row><span>Impenetrability cantrip on each ${k==='armor'?'armor piece':'underclothes piece (shirt, pants)'}:</span>
+      <select data-impm="${k}"><option value=off${o.m==='off'?' selected':''}>doesn't matter</option><option value=prefer${o.m==='prefer'?' selected':''}>prefer</option><option value=require${o.m==='require'?' selected':''}>require</option></select>
+      <select data-impt="${k}">${[1,2,3,4].map(t=>`<option value=${t}${o.t===t?' selected':''}>${TIERN[t]}${t<4?' or better':''}</option>`).join('')}</select></div>`}).join('')}
     <div class=row><label>Armor level <select id=al><option value=0${S.al==0?' selected':''}>doesn't matter</option><option value=1${S.al==1?' selected':''}>tie-breaker</option><option value=5${S.al==5?' selected':''}>important</option></select></label></div>
     <div class=row><span>Ratings to collect:</span>${rates}</div>
     <div class=row><label>Character <select id=char>${ch}</select></label>
@@ -317,14 +324,16 @@ function results(){
     const met=S.want.map(w=>{const got=r.tiers[w.f]||0;const cls=got>=w.t?'ok':got?'part':'no';
       return `<span class=${cls}>${esc(w.f)}${got&&got<w.t?' ('+esc(tierName(w.f,got))+')':''}${got?'':' ✕'}</span>`}).join(' · ');
     const rows=r.picks.map(([i,occ])=>{const it=ITEMS[i];const where=SLOTS.filter((s,b)=>occ&(1<<b)&&s[0]!=='uabd').map(s=>s[1]).join(', ');
-      const tags=it.sp.map(n=>{const p=parse(n);const hit=S.want.find(w=>w.f===p.f);return `<span${hit?' class=hit':''}>${esc(n)}</span>`}).join('');
+      const tags=it.sp.map(n=>{const p=parse(n);const hit=S.want.find(w=>w.f===p.f)||(p.f===IMP&&impOn(it));return `<span${hit?' class=hit':''}>${esc(n)}</span>`}).join('');
       const icon=`<span class=micon>${it.ic.map(x=>`<img src="/market/icon/${x}.png" alt="" loading=lazy>`).join('')}</span>`;
       const meta=[it.al?'AL '+it.al:'',it.set,it.lv?'level '+it.lv:'',it.lore?'lore '+it.lore:'',...Object.entries(it.rt).map(([k,v])=>(D.ratings.find(x=>x[0]===k)||[k,k])[1]+' '+v)].filter(Boolean).join(' · ');
       return `<tr><td>${esc(where)}</td><td>${icon} <b>${esc(it.n)}</b><div class="sm muted">${esc(meta)}</div><div class=tags>${tags}</div></td>
         <td class=sm><button class=x data-lock="${i}" title="Always use this item">🔒</button> <button class=x data-ex="${i}" title="Never use this item">🚫</button></td></tr>`}).join('');
     const empty=SLOTS.filter((s,b)=>S.slots.has(s[0])&&!(r.occ&(1<<b))).map(s=>s[1]);
     const rt=Object.entries(r.rt).map(([k,v])=>(D.ratings.find(x=>x[0]===k)||[k,k])[1]+' '+v).join(', ');
-    return `<div class=res><div class=row><b>Suit ${ri+1}</b><span class=muted>armor level ${r.al}${r.set?' · '+esc(S.set)+' '+r.set+' pieces':''}${rt?' · '+esc(rt):''}</span></div>
+    const pcs=r.picks.map(([i])=>ITEMS[i]).filter(it=>pieceKind(it));
+    const imp=pcs.length&&(S.imp.armor.m!=='off'||S.imp.under.m!=='off')?` · Impenetrability on ${pcs.filter(it=>(it.fams[IMP]||0)>=S.imp[pieceKind(it)].t).length} of ${pcs.length} pieces`:'';
+    return `<div class=res><div class=row><b>Suit ${ri+1}</b><span class=muted>armor level ${r.al}${r.set?' · '+esc(S.set)+' '+r.set+' pieces':''}${rt?' · '+esc(rt):''}${imp}</span></div>
       <p>${met||'<span class=muted>no spells picked</span>'}</p>${empty.length?`<p class="sm muted">Left empty: ${esc(empty.join(', '))}</p>`:''}
       <table><tbody>${rows}</tbody></table>
       <div class=row><input type=text id=sn${ri} value="Suit ${ri+1}" maxlength=64 aria-label="Suit name"><button data-save="${ri}">Save for /mule suit</button><span id=sv${ri}></span></div></div>`}).join('');
@@ -341,8 +350,11 @@ function buildProblem(){
     if(S.excluded.has(it.i))continue;
     const isLocked=S.locked.has(it.i);
     if(!isLocked){if(S.noatt&&it.att)continue;if(!S.noreq&&it.lv>lvl)continue}
+    // Impenetrability is per piece (it raises that piece's armor level), so it's a rule on each armor/underclothes piece
+    const ik=pieceKind(it),io=ik?S.imp[ik]:null,itier=it.fams[IMP]||0;
+    if(!isLocked&&io&&io.m==='require'&&itier<io.t)continue;
     const tv=fams.map(f=>it.fams[f]||0);
-    const bonus=S.al*it.al/1000+rkeys.reduce((a,k)=>a+(it.rt[k]||0),0);
+    const bonus=S.al*it.al/1000+rkeys.reduce((a,k)=>a+(it.rt[k]||0),0)+(io&&io.m==='prefer'&&itier>=io.t?2:0);
     for(const occ of it.pl){
       if(!isLocked&&(occ&~allowed))continue;
       const c={i:it.i,occ,tv,set:S.set&&it.set===S.set?1:0,bonus};
@@ -451,6 +463,8 @@ app.addEventListener('change',ev=>{const t=ev.target;const d=t.dataset;
   if(t.id==='set'){S.set=t.value;return}
   if(t.id==='setn'){S.setN=Math.max(2,Math.min(9,+t.value||4));return}
   if(t.id==='al'){S.al=+t.value;return}
+  if(d.impm){S.imp[d.impm].m=t.value;return}
+  if(d.impt){S.imp[d.impt].t=+t.value;return}
   if(t.id==='char'){S.char=t.value;return}
   if(t.id==='noreq'){S.noreq=t.checked;return}
   if(t.id==='noatt'){S.noatt=t.checked;return}});
