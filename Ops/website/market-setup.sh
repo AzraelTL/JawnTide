@@ -5,6 +5,7 @@
 #   read  ace_web.market_mule_item: a view of mule contents (name, stack, icons, attuned/bonded, details) and nothing else about items
 #   read  ace_web.market_chest_key: the same for Darkbeat/Hera/Shimmering Skeleton keys in house storage chests
 #   read, add and delete ace_shard.suit_plan: suits saved on the Suit Builder page (/suit), for /mule suit CODE in game
+#   read ace_shard.mule_guest: which mules the Suit Builder may also search (ones the account's characters are guests of)
 # Grants go to every host entry web already has. Prints the grants it made.
 set -euo pipefail
 cd ~/jawntide-server
@@ -102,6 +103,8 @@ docker compose exec -T ace-db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -
   UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_web.market_mule_item TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
   UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_web.market_chest_key TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
   UNION ALL SELECT CONCAT(\"GRANT SELECT, INSERT, DELETE ON ace_shard.suit_plan TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
-    AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = \"ace_shard\" AND table_name = \"suit_plan\")" > /tmp/market-grants.sql
+    AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = \"ace_shard\" AND table_name = \"suit_plan\")
+  UNION ALL SELECT CONCAT(\"GRANT SELECT ON ace_shard.mule_guest TO web@\", QUOTE(host), \";\") FROM mysql.user WHERE user = \"web\"
+    AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = \"ace_shard\" AND table_name = \"mule_guest\")" > /tmp/market-grants.sql
   cat /tmp/market-grants.sql; mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" < /tmp/market-grants.sql; rm -f /tmp/market-grants.sql'
 echo "marketplace ready for the website"

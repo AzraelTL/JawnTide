@@ -27,7 +27,7 @@ MAX_PLAN_ITEMS = 40
 KEEP_PLANS = 50
 
 
-def _item(row):
+def _item(row, src="me"):
     (guid, name, material, stack, itype, icon, ov, ov2, under, ui, attuned, bonded, details) = row
     if not details:
         return None
@@ -35,6 +35,12 @@ def _item(row):
         d = json.loads(details)
     except ValueError:
         return None
+    full = f"{material} {name}" if material and not str(name).startswith(str(material)) else name
+    return _wearable(d, int(guid), full, (under, icon, ov, ov2), ui, itype, attuned, src)
+
+
+def _wearable(d, guid, full, icons, ui, itype, attuned, src):
+    """The Suit Builder's view of one item (None if it isn't worn armor, clothing or jewelry). src: "me", "g:<account>" or "m"."""
     I, N = d.get("int", {}), d.get("names", {})
     vl, cov = int(I.get("ValidLocations") or 0), int(I.get("ClothingPriority") or 0)
     if not vl & WEARABLE or vl & 0x00F00000:   # not worn, or a weapon/shield
@@ -46,8 +52,7 @@ def _item(row):
             reqs.append([r, market.pretty(N.get(f"WieldSkillType{n}") or ""), I.get(f"WieldDifficulty{n}") or 0])
     spells = [s["name"] for s in d.get("spells", []) if s.get("name") and not s.get("proc") and not s.get("use")]
     ratings = {k: I[k] for k, _ in RATINGS if I.get(k)}
-    full = f"{material} {name}" if material and not str(name).startswith(str(material)) else name
-    return dict(g=int(guid), n=full, ic=[i for i in (under, icon, ov, ov2) if i], ui=int(ui or 0), t=int(itype or 0), vl=vl, cov=cov,
+    return dict(g=int(guid), src=src, n=full, ic=[i for i in icons if i], ui=int(ui or 0), t=int(itype or 0), vl=vl, cov=cov,
                 al=int(I.get("ArmorLevel") or 0), set=market.pretty(N.get("EquipmentSetId")) if N.get("EquipmentSetId") not in (None, "Invalid") else "",
                 sp=spells, rq=reqs, lv=market._wield_level(d) or 0, lore=int(I.get("ItemDifficulty") or 0),
                 rt=ratings, att=bool(attuned and attuned >= 1), wk=int(I.get("ItemWorkmanship") or 0))
@@ -60,6 +65,34 @@ def _characters(account):
         return [dict(n=r[0], lv=int(r[1])) for r in rows]
     except Exception:
         return []
+
+
+def _guest_mules(account):
+    """Mules this account's characters were added to as guests: [(owner account, name to show)]."""
+    try:
+        rows = market._q("SELECT g.account_Id, MIN(g.added_By), MIN(c.name) FROM mule_guest g JOIN `character` c ON c.id = g.guest_Id "
+                         "WHERE c.account_Id = %s AND c.is_Deleted = 0 AND g.account_Id <> %s GROUP BY g.account_Id", (account, account))
+        return [(int(r[0]), f"{r[1] or 'another player'}'s mule (guest as {r[2]})") for r in rows]
+    except Exception:
+        return []
+
+
+def _market_items():
+    out = []
+    try:
+        for r in market.active_listings():
+            it = _wearable(r["details"] or {}, int(r["id"]), r["name"], r["icons"], r["ui"], r["item_type"], 0, "m")
+            if it:
+                price = []
+                if r["mmd"]:
+                    price.append(f'{r["mmd"]:,} MMD')
+                if r["trophies"]:
+                    price.append(f'{r["trophies"]:,} PK Trophies')
+                it.update(price=(" or ".join(price) or "?") + (" (auction)" if r["auction"] else ""), seller=r["seller"])
+                out.append(it)
+    except Exception:
+        traceback.print_exc()
+    return out
 
 
 def _plans(account):
@@ -87,12 +120,25 @@ def page(h, user, query):
             items.append(it)
         elif not r[-1]:
             missing += 1
-    data = dict(items=items, chars=_characters(account), ratings=RATINGS, csrf=user["csrf"],
+    sources = [dict(k="me", n="My mule", on=True)]
+    for owner, label in _guest_mules(account):
+        for r in market._mule_items(owner):
+            try:
+                it = _item(r, f"g:{owner}")
+            except Exception:
+                it = None
+            if it:
+                items.append(it)
+        sources.append(dict(k=f"g:{owner}", n=label, on=False))
+    market_items = _market_items()
+    items.extend(market_items)
+    sources.append(dict(k="m", n=f"Items for sale on the Market ({len(market_items)})", on=False))
+    data = dict(items=items, sources=sources, chars=_characters(account), ratings=RATINGS, csrf=user["csrf"],
                 plans=[dict(code=p[0], name=p[1], n=len([x for x in (p[2] or "").split(",") if x]), at=p[3].strftime("%b %d")) for p in _plans(account)])
     note = (f'<p class="muted">{missing} mule item{"s" if missing != 1 else ""} can\'t be used yet: the game server hasn\'t read '
             f'{"their" if missing != 1 else "its"} details. Summon your mule once in game and reload this page.</p>' if missing else "")
     blob = json.dumps(data, default=str).replace("</", "<\\/")
-    body = (f'<h1>Suit Builder</h1><p>Finds the best suit in your mule for the slots and spells you pick. '
+    body = (f'<h1>Suit Builder</h1><p>Finds the best suit in your mule (and, if you like, the mules you\'re a guest of and the Market) for the slots and spells you pick. '
             f'Save a suit, then in game open your mule and type <code>/mule suit CODE</code> to show just those items. '
             f'See <a href="/wiki/suit-builder">Suit Builder</a> on the wiki.</p>{note}'
             f'<div id="suitapp"><p class="muted">Loading…</p></div>'
@@ -121,6 +167,8 @@ def save(h, user):
     if not guids or len(guids) > MAX_PLAN_ITEMS:
         return out(400, {"error": "Pick between 1 and 40 items."})
     mine = {int(r[0]) for r in market._mule_items(account)}
+    for owner, _ in _guest_mules(account):
+        mine |= {int(r[0]) for r in market._mule_items(owner)}
     if any(g not in mine for g in guids):
         return out(400, {"error": "Some of those items aren't in your mule anymore. Reload the page and search again."})
     code = None
@@ -228,11 +276,16 @@ function parse(name){
   return{f:name,t:1,c:0};
 }
 const TIERN={1:'Minor',2:'Major',3:'Epic',4:'Legendary'};
+const IMP='Impenetrability';
+const OUTER=0x4000|0x400|0x800|0x1000|0x2000|0x8000|0x100|0x200|0x10000,UNDER=0x2|0x4|0x8|0x10|0x20|0x40;
+const pieceKind=it=>it.cov&OUTER?'armor':(it.cov&UNDER?'under':null);
+const impOn=it=>{const k=pieceKind(it);return k&&S.imp[k].m!=='off'};
 const tierName=(f,t)=>FAMS[f]&&FAMS[f].c?(TIERN[t]||t):(t>1?'level '+t:'any');
 
 // index the items
-const ITEMS=D.items.map((it,i)=>{const sp={};for(const n of it.sp){const p=parse(n);if(!sp[p.f]||sp[p.f]<p.t)sp[p.f]=p.t}
-  return Object.assign(it,{i,pl:placements(it),fams:sp})}).filter(it=>it.pl.length);
+// i is the item's index in ITEMS (everything refers to items by it), so items that can't be worn anywhere are dropped first
+const ITEMS=D.items.filter(it=>placements(it).length).map((it,i)=>{const sp={};for(const n of it.sp){const p=parse(n);if(!sp[p.f]||sp[p.f]<p.t)sp[p.f]=p.t}
+  return Object.assign(it,{i,pl:placements(it),fams:sp})});
 const FAMS={};
 for(const it of ITEMS)for(const n of it.sp){const p=parse(n);const F=FAMS[p.f]||(FAMS[p.f]={c:p.c,max:0,n:0});F.max=Math.max(F.max,p.t);F.n++}
 const FAMLIST=Object.keys(FAMS).sort((a,b)=>(FAMS[b].c-FAMS[a].c)||a.localeCompare(b));
@@ -259,8 +312,9 @@ function resolve(k){const kk=k.toLowerCase();
   return FAMLIST.find(f=>FAMS[f].c&&f.toLowerCase()===kk)||FAMLIST.find(f=>FAMS[f].c&&f.toLowerCase().includes(kk))||FAMLIST.find(f=>f.toLowerCase().includes(kk))||null}
 
 // ---- state
-const S={slots:new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd')),want:[],set:'',setN:4,al:1,rate:{},char:D.chars[0]?D.chars[0].n:'',noreq:false,
-  noatt:false,locked:new Set(),excluded:new Set(),results:null,busy:false,msg:''};
+const S={slots:new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd')),want:[],set:'',setN:4,al:1,rate:{},imp:{armor:{m:'off',t:4},under:{m:'off',t:4}},char:D.chars[0]?D.chars[0].n:'',noreq:false,
+  noatt:false,locked:new Set(),excluded:new Set(),results:null,busy:false,msg:'',src:new Set((D.sources||[]).filter(x=>x.on).map(x=>x.k))};
+const SRCNAME={};(D.sources||[]).forEach(x=>SRCNAME[x.k]=x.n);
 function applyTemplate(key){const T=TEMPLATES[key];if(!T||!T.k)return;
   if(!T.add){S.want=[];S.slots=new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd'))}
   const miss=[];
@@ -286,9 +340,11 @@ function render(){
     [...S.excluded].map(i=>`<span>🚫 ${esc(ITEMS[i].n)} <button class=x data-unex="${i}">✕</button></span>`)).join('');
   const plans=D.plans.length?'<p class="sm muted">Saved suits: '+D.plans.map(p=>`<b>${esc(p.code)}</b> ${esc(p.name)} (${p.n} items, ${esc(p.at)})`).join(' · ')+'</p>':'';
   app.innerHTML=`
+  <div class=sbox><h2>Where to look</h2><div class=row>${(D.sources||[]).map(x=>`<label><input type=checkbox data-src="${esc(x.k)}"${S.src.has(x.k)?' checked':''}> ${esc(x.n)} <span class=muted>(${ITEMS.filter(it=>it.src===x.k).length})</span></label>`).join('')}</div>
+    <p class="sm muted">Your own items are preferred when two items are otherwise equal, then guest mules, then the Market.</p></div>
   <div class=sbox><h2>1. Start from a template</h2><div class=row>
     <select id=tpl>${Object.entries(TEMPLATES).map(([k,t])=>`<option value="${k}">${esc(t.n)}</option>`).join('')}</select>
-    <button id=tplgo>Use template</button><span class=muted>${ITEMS.length} wearable items in your mule.</span></div>
+    <button id=tplgo>Use template</button><span class=muted>${ITEMS.filter(it=>it.src==='me').length} wearable items in your mule.</span></div>
     ${S.msg?`<p class=part>${esc(S.msg)}</p>`:''}</div>
   <div class=sbox><h2>2. Slots to fill</h2><p class="sm muted">Only items that fit entirely in the ticked slots are used, so untick slots you already have covered.</p>
     <div class=slots>${slots}</div><div class=row><button id=sall>All</button><button id=snone>None</button>
@@ -300,6 +356,9 @@ function render(){
   <div class=sbox><h2>4. Extras</h2>
     <div class=row><label>Armor set <select id=set><option value="">(any)</option>${sets}</select></label>
       <label>pieces <input type=number id=setn min=2 max=9 value="${S.setN}"></label></div>
+    ${['armor','under'].map(k=>{const o=S.imp[k];return `<div class=row><span>Impenetrability cantrip on each ${k==='armor'?'armor piece':'underclothes piece (shirt, pants)'}:</span>
+      <select data-impm="${k}"><option value=off${o.m==='off'?' selected':''}>doesn't matter</option><option value=prefer${o.m==='prefer'?' selected':''}>prefer</option><option value=require${o.m==='require'?' selected':''}>require</option></select>
+      <select data-impt="${k}">${[1,2,3,4].map(t=>`<option value=${t}${o.t===t?' selected':''}>${TIERN[t]}${t<4?' or better':''}</option>`).join('')}</select></div>`}).join('')}
     <div class=row><label>Armor level <select id=al><option value=0${S.al==0?' selected':''}>doesn't matter</option><option value=1${S.al==1?' selected':''}>tie-breaker</option><option value=5${S.al==5?' selected':''}>important</option></select></label></div>
     <div class=row><span>Ratings to collect:</span>${rates}</div>
     <div class=row><label>Character <select id=char>${ch}</select></label>
@@ -317,14 +376,18 @@ function results(){
     const met=S.want.map(w=>{const got=r.tiers[w.f]||0;const cls=got>=w.t?'ok':got?'part':'no';
       return `<span class=${cls}>${esc(w.f)}${got&&got<w.t?' ('+esc(tierName(w.f,got))+')':''}${got?'':' ✕'}</span>`}).join(' · ');
     const rows=r.picks.map(([i,occ])=>{const it=ITEMS[i];const where=SLOTS.filter((s,b)=>occ&(1<<b)&&s[0]!=='uabd').map(s=>s[1]).join(', ');
-      const tags=it.sp.map(n=>{const p=parse(n);const hit=S.want.find(w=>w.f===p.f);return `<span${hit?' class=hit':''}>${esc(n)}</span>`}).join('');
+      const tags=it.sp.map(n=>{const p=parse(n);const hit=S.want.find(w=>w.f===p.f)||(p.f===IMP&&impOn(it));return `<span${hit?' class=hit':''}>${esc(n)}</span>`}).join('');
       const icon=`<span class=micon>${it.ic.map(x=>`<img src="/market/icon/${x}.png" alt="" loading=lazy>`).join('')}</span>`;
       const meta=[it.al?'AL '+it.al:'',it.set,it.lv?'level '+it.lv:'',it.lore?'lore '+it.lore:'',...Object.entries(it.rt).map(([k,v])=>(D.ratings.find(x=>x[0]===k)||[k,k])[1]+' '+v)].filter(Boolean).join(' · ');
-      return `<tr><td>${esc(where)}</td><td>${icon} <b>${esc(it.n)}</b><div class="sm muted">${esc(meta)}</div><div class=tags>${tags}</div></td>
+      const from=it.src==='m'?`<div class=sm><span class=part>Market:</span> <a href="/market/item/${it.g}" target=_blank>${esc(it.price)}</a> <span class=muted>from ${esc(it.seller)}</span></div>`
+        :it.src!=='me'?`<div class="sm part">${esc(SRCNAME[it.src]||'guest mule')}</div>`:'';
+      return `<tr><td>${esc(where)}</td><td>${icon} <b>${esc(it.n)}</b>${from}<div class="sm muted">${esc(meta)}</div><div class=tags>${tags}</div></td>
         <td class=sm><button class=x data-lock="${i}" title="Always use this item">🔒</button> <button class=x data-ex="${i}" title="Never use this item">🚫</button></td></tr>`}).join('');
     const empty=SLOTS.filter((s,b)=>S.slots.has(s[0])&&!(r.occ&(1<<b))).map(s=>s[1]);
     const rt=Object.entries(r.rt).map(([k,v])=>(D.ratings.find(x=>x[0]===k)||[k,k])[1]+' '+v).join(', ');
-    return `<div class=res><div class=row><b>Suit ${ri+1}</b><span class=muted>armor level ${r.al}${r.set?' · '+esc(S.set)+' '+r.set+' pieces':''}${rt?' · '+esc(rt):''}</span></div>
+    const pcs=r.picks.map(([i])=>ITEMS[i]).filter(it=>pieceKind(it));
+    const imp=pcs.length&&(S.imp.armor.m!=='off'||S.imp.under.m!=='off')?` · Impenetrability on ${pcs.filter(it=>(it.fams[IMP]||0)>=S.imp[pieceKind(it)].t).length} of ${pcs.length} pieces`:'';
+    return `<div class=res><div class=row><b>Suit ${ri+1}</b><span class=muted>armor level ${r.al}${r.set?' · '+esc(S.set)+' '+r.set+' pieces':''}${rt?' · '+esc(rt):''}${imp}</span></div>
       <p>${met||'<span class=muted>no spells picked</span>'}</p>${empty.length?`<p class="sm muted">Left empty: ${esc(empty.join(', '))}</p>`:''}
       <table><tbody>${rows}</tbody></table>
       <div class=row><input type=text id=sn${ri} value="Suit ${ri+1}" maxlength=64 aria-label="Suit name"><button data-save="${ri}">Save for /mule suit</button><span id=sv${ri}></span></div></div>`}).join('');
@@ -339,10 +402,14 @@ function buildProblem(){
   const cands=[];const locked=[];
   for(const it of ITEMS){
     if(S.excluded.has(it.i))continue;
+    if(!S.src.has(it.src)&&!S.locked.has(it.i))continue;
     const isLocked=S.locked.has(it.i);
     if(!isLocked){if(S.noatt&&it.att)continue;if(!S.noreq&&it.lv>lvl)continue}
+    // Impenetrability is per piece (it raises that piece's armor level), so it's a rule on each armor/underclothes piece
+    const ik=pieceKind(it),io=ik?S.imp[ik]:null,itier=it.fams[IMP]||0;
+    if(!isLocked&&io&&io.m==='require'&&itier<io.t)continue;
     const tv=fams.map(f=>it.fams[f]||0);
-    const bonus=S.al*it.al/1000+rkeys.reduce((a,k)=>a+(it.rt[k]||0),0);
+    const bonus=(it.src==='m'?-0.6:it.src==='me'?0:-0.3)+S.al*it.al/1000+rkeys.reduce((a,k)=>a+(it.rt[k]||0),0)+(io&&io.m==='prefer'&&itier>=io.t?2:0);
     for(const occ of it.pl){
       if(!isLocked&&(occ&~allowed))continue;
       const c={i:it.i,occ,tv,set:S.set&&it.set===S.set?1:0,bonus};
@@ -414,12 +481,16 @@ const low=o=>{for(let b=0;b<NB;b++)if(o&(1<<b))return b;return NB};
 
 async function saveSuit(ri){const r=S.results[ri];const out=document.getElementById('sv'+ri);
   const name=(document.getElementById('sn'+ri).value||'').trim()||'Suit';
-  const body=new URLSearchParams({csrf:D.csrf,name,items:[...new Set(r.picks.map(([i])=>ITEMS[i].g))].join(',')});
+  const mules=r.picks.map(([i])=>ITEMS[i]).filter(it=>it.src!=='m');const buy=r.picks.length-mules.length;
+  if(!mules.length){out.innerHTML='<span class=no>This suit is all Market items: buy them first (links above).</span>';return}
+  const body=new URLSearchParams({csrf:D.csrf,name,items:[...new Set(mules.map(it=>it.g))].join(',')});
   out.textContent='Saving…';
   try{const res=await fetch('/suit/save',{method:'POST',body,headers:{'Content-Type':'application/x-www-form-urlencoded'}});const j=await res.json();
     if(!res.ok)throw new Error(j.error||'Could not save');
     D.plans.unshift({code:j.code,name:j.name,n:r.picks.length,at:'today'});
-    out.innerHTML=`Saved. In game, open your mule and type <code class=cmd>/mule suit ${esc(j.code)}</code>`}
+    out.innerHTML=`Saved. In game, open the mule and type <code class=cmd>/mule suit ${esc(j.code)}</code>`+
+      (mules.some(it=>it.src!=='me')?' (it works on a mule you\'re a guest of too: open that mule and type the same).':'')+
+      (buy?` <span class=part>${buy} Market item${buy===1?' isn\'t':'s aren\'t'} in the saved suit: buy ${buy===1?'it':'them'} first.</span>`:'')}
   catch(err){out.innerHTML=`<span class=no>${esc(err.message)}</span>`}}
 
 // ---- events
@@ -451,9 +522,12 @@ app.addEventListener('change',ev=>{const t=ev.target;const d=t.dataset;
   if(t.id==='set'){S.set=t.value;return}
   if(t.id==='setn'){S.setN=Math.max(2,Math.min(9,+t.value||4));return}
   if(t.id==='al'){S.al=+t.value;return}
+  if(d.impm){S.imp[d.impm].m=t.value;return}
+  if(d.impt){S.imp[d.impt].t=+t.value;return}
   if(t.id==='char'){S.char=t.value;return}
   if(t.id==='noreq'){S.noreq=t.checked;return}
-  if(t.id==='noatt'){S.noatt=t.checked;return}});
+  if(t.id==='noatt'){S.noatt=t.checked;return}
+  if(d.src){t.checked?S.src.add(d.src):S.src.delete(d.src);return}});
 render();
 })();
 """
