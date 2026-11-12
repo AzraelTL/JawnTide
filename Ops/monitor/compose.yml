@@ -22,6 +22,8 @@ services:
       - monitor-data:/data
       # the server's settings list, read live for the Settings and PvP damage pages (a git pull updates it)
       - ../../Source/ACE.Server/Managers/PropertyManager.cs:/app/PropertyManager.cs:ro
+      # the server's command handlers, read live for the admin command list on the Settings page
+      - ../../Source/ACE.Server/Command/Handlers:/app/Handlers:ro
     ports:
       # LAN only: bound to the server's LAN address; the router does not forward TCP 8080.
       - "192.168.0.190:8080:8080"

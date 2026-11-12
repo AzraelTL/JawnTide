@@ -754,6 +754,59 @@ def load_catalog():
         return {"areas": [], "settings": []}
 
 
+COMMAND_SOURCE = os.environ.get("COMMAND_HANDLER_DIR", "/app/Handlers")
+_command_cache = {"stamp": None, "commands": []}
+
+
+def load_commands():
+    """Every admin command (Advocate and up), read from the server's command handler files (re-read when they change)."""
+    try:
+        stamp = max(os.path.getmtime(os.path.join(COMMAND_SOURCE, f)) for f in os.listdir(COMMAND_SOURCE) if f.endswith(".cs"))
+        if _command_cache["stamp"] != stamp:
+            import make_command_catalog
+            _command_cache.update(stamp=stamp, commands=[c for c in make_command_catalog.build(COMMAND_SOURCE) if c["level"] != "Player"])
+    except Exception:
+        pass
+    return _command_cache["commands"]
+
+
+def commands_section():
+    cmds = load_commands()
+    if not cmds:
+        return ('<h2 id="commands">Admin commands</h2><p class="muted">The command list isn\'t available: the server\'s Command/Handlers folder '
+                'isn\'t mounted (see compose.yml).</p>')
+    levels = ["Admin", "Developer", "Envoy", "Sentinel", "Advocate"]
+    rows = []
+    for c in cmds:
+        names = "".join(f'<br><code>@{e(a)}</code>' for a in c["aliases"])
+        usage = f'<div class="muted wrapd">{e(c["usage"])}</div>' if c["usage"] else ""
+        text = (c["name"] + " " + " ".join(c["aliases"]) + " " + c["desc"] + " " + c["usage"]).lower()
+        console = "<br><span class=muted>console</span>" if c["console"] else ""
+        rows.append(f'<tr class="c" data-level="{e(c["level"])}" data-text="{e(text)}">'
+                    f'<td><code>@{e(c["name"])}</code>{names}</td><td>{e(c["level"])}{console}</td>'
+                    f'<td class="wrapd">{e(c["desc"]) or "<span class=muted>(no description)</span>"}{usage}</td><td class="muted">{e(c["file"])}</td></tr>')
+    opts = "".join(f"<option>{lv}</option>" for lv in levels)
+    return f"""<h2 id="commands">Admin commands ({len(cmds)})</h2>
+<p class="muted">Every command above player level, read from the server code (so it matches what's pulled on this machine). A level can use its own commands and every level below it: Admin &gt; Developer &gt; Envoy &gt; Sentinel &gt; Advocate. "console" means the server console only. Type them with @ or /.</p>
+<div class="filters"><input id="cq" type="search" placeholder="Search commands" aria-label="Search commands">
+<select id="cl" aria-label="Level"><option value="">All levels</option>{opts}</select> <span id="ccnt" class="muted"></span></div>
+<div class="wrap"><table id="ct"><thead><tr><th>Command</th><th>Level</th><th>What it does</th><th>File</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>
+<script>
+(function(){{
+  var q=document.getElementById('cq'), l=document.getElementById('cl'), cnt=document.getElementById('ccnt');
+  function run(){{
+    var words=q.value.toLowerCase().split(/\\s+/).filter(Boolean), n=0;
+    document.querySelectorAll('#ct tr.c').forEach(function(tr){{
+      var ok=(!l.value||tr.dataset.level===l.value)&&words.every(function(w){{return tr.dataset.text.indexOf(w)>=0;}});
+      tr.hidden=!ok; if(ok)n++;
+    }});
+    cnt.textContent=n+' shown';
+  }}
+  [q,l].forEach(function(el){{el.addEventListener('input',run);}}); run();
+}})();
+</script>"""
+
+
 def live_settings():
     """Every setting stored in ace_shard (read fresh on each page load). Settings never changed in game are not stored."""
     stored = {}
@@ -833,9 +886,11 @@ Change with <code>@modifybool</code>, <code>@modifylong</code>, <code>@modifydou
 <div class="filters"><input id="q" type="search" placeholder="Search names and descriptions" aria-label="Search settings">
 <select id="area" aria-label="Area"><option value="">All areas</option>{areas}</select>
 <label><input id="chg" type="checkbox"> Changed from default only</label> <span id="cnt" class="muted"></span></div>
+<p><a href="#commands">Admin commands ↓</a></p>
 <div class="wrap"><table id="t"><thead><tr><th>Setting</th><th class="n">Current</th><th class="n">Default</th><th>What it does</th><th>Commands</th></tr></thead>
 <tbody>{"".join(rows)}</tbody></table></div>
 {extra_html}
+{commands_section()}
 <script>
 (function(){{
   var q=document.getElementById('q'), a=document.getElementById('area'), c=document.getElementById('chg'), cnt=document.getElementById('cnt');
