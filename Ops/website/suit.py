@@ -27,6 +27,25 @@ MAX_PLAN_ITEMS = 500
 KEEP_PLANS = 50
 
 
+def _spell_names(d):
+    """The item's spells as shown on the page: its own spells, plus a cloak's surge ("Surge: ...", including the damage
+    reduction surge, which has no spell) or a weapon's cast on strike."""
+    I = d.get("int", {})
+    cloak = int(I.get("ValidLocations") or 0) & 0x8000000
+    out = [x["name"] for x in d.get("spells", []) if x.get("name") and not x.get("proc") and not x.get("use")]
+    # a cloak's skill (its set, e.g. CloakTwoHandedCombat -> "Two Handed Combat Cloak") comes first
+    set_name = str(d.get("names", {}).get("EquipmentSetId") or "")
+    if cloak and set_name.startswith("Cloak") and len(set_name) > 5:
+        out.insert(0, market.pretty(set_name[5:]) + " Cloak")
+    for x in d.get("spells", []):
+        if x.get("name") and x.get("proc"):
+            n = x["name"]
+            out.append((n if n.lower().startswith("surge") else "Surge: " + n) if cloak else "Cast on strike: " + n)
+    if cloak and int(I.get("CloakWeaveProc") or 0) == 2:
+        out.append("Surge: Damage Reduction (reduces a hit by up to 200)")
+    return out
+
+
 def _item(row, src="me"):
     (guid, name, material, stack, itype, icon, ov, ov2, under, ui, attuned, bonded, details) = row
     if not details:
@@ -50,7 +69,7 @@ def _wearable(d, guid, full, icons, ui, itype, attuned, src):
         r = N.get(f"WieldRequirements{n}")
         if r and r != "Invalid":
             reqs.append([r, market.pretty(N.get(f"WieldSkillType{n}") or ""), I.get(f"WieldDifficulty{n}") or 0])
-    spells = [s["name"] for s in d.get("spells", []) if s.get("name") and not s.get("proc") and not s.get("use")]
+    spells = _spell_names(d)
     ratings = {k: I[k] for k, _ in RATINGS if I.get(k)}
     return dict(g=int(guid), src=src, n=full, ic=[i for i in icons if i], ui=int(ui or 0), t=int(itype or 0), vl=vl, cov=cov,
                 al=int(I.get("ArmorLevel") or 0), set=market.pretty(N.get("EquipmentSetId")) if N.get("EquipmentSetId") not in (None, "Invalid") else "",
@@ -69,7 +88,7 @@ def _row(d, guid, full, icons, ui, itype, attuned, src, stack=1):
                 al=int(I.get("ArmorLevel") or 0), lv=market._wield_level(d) or 0, lore=int(I.get("ItemDifficulty") or 0), wk=work,
                 val=int(I.get("Value") or 0), dmg=int(I.get("Damage") or 0), dv=round(F.get("DamageVariance") or 0, 2),
                 ws=market.pretty(N.get("WeaponSkill") or N.get("WieldSkillType") or ""), imb=market.pretty(imbue) if imbue and imbue != "Undef" else "",
-                sp=[x["name"] for x in d.get("spells", []) if x.get("name") and not x.get("use")],
+                sp=_spell_names(d),
                 rt={k: I[k] for k, _ in RATINGS if I.get(k)}, st=int(stack or 1), att=bool(attuned and attuned >= 1))
 
 
@@ -355,6 +374,9 @@ function resolve(k){const kk=k.toLowerCase();
 const S={slots:new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd')),want:[],set:'',setN:5,set2:'',setN2:4,onlySets:false,reduce:false,
   F:{alBody:'',alExt:'',lvMin:'',lvMax:'',re:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:''},obs:null,al:1,rate:{},imp:{armor:{m:'off',t:4},under:{m:'off',t:4}},char:D.chars[0]?D.chars[0].n:'',noreq:false,
   noatt:false,locked:new Set(),excluded:new Set(),results:null,busy:false,msg:'',src:new Set((D.sources||[]).filter(x=>x.on).map(x=>x.k))};
+// which spells to list: only cantrips (Minor/Major/Epic/Legendary), or every spell; remembered in this browser
+try{S.allSpells=localStorage.getItem('suitAllSpells')==='1'}catch(e){S.allSpells=false}
+const showSpell=n=>S.allSpells||parse(n).c||/^(Surge|Cast on strike)\b/i.test(n)||/ Cloak$/.test(n);
 const SRCNAME={};(D.sources||[]).forEach(x=>SRCNAME[x.k]=x.n);
 function applyTemplate(key){const T=TEMPLATES[key];if(!T||!T.k)return;
   if(!T.add){S.want=[];S.slots=new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd'))}
@@ -399,7 +421,7 @@ function itemsView(){
     const rts=Object.entries(r.rt).map(([k,v])=>(RSHORT[k]||k)+' '+v).join(' ');
     const where=r.src==='m'?`<a href="/market/item/${r.g}" target=_blank>${esc(r.price)}</a>`:esc(r.where);
     const acts=r.it?`<button class=x data-lock="${r.it.i}" title="Always use in Suit search">🔒</button><button class=x data-ex="${r.it.i}" title="Never use in Suit search">🚫</button>`:'';
-    return `<tr><td>${icon} <b>${esc(r.n)}</b>${r.st>1?' ×'+r.st:''}<div class="sm muted">${esc(r.sp.join(', '))}</div></td><td>${esc(r.cat)}</td><td class=sm>${esc(r.sl)}</td><td class=sm>${esc(r.set)}</td>
+    return `<tr><td>${icon} <b>${esc(r.n)}</b>${r.st>1?' ×'+r.st:''}<div class="sm muted">${esc(r.sp.filter(showSpell).join(', '))}</div></td><td>${esc(r.cat)}</td><td class=sm>${esc(r.sl)}</td><td class=sm>${esc(r.set)}</td>
       <td>${r.al||''}</td><td>${r.lv||''}</td><td>${r.lore||''}</td><td>${r.wk||''}</td><td>${r.leg||''}</td><td>${r.epic||''}</td><td class=sm>${esc(rts)}</td>
       <td>${r.dmg?r.dmg+(r.dv?' ('+Math.round(r.dv*100)+'%)':''):''}${r.ws?'<div class="sm muted">'+esc(r.ws)+'</div>':''}</td><td class=sm>${esc(r.imb)}</td><td>${r.val?r.val.toLocaleString():''}</td><td class=sm>${where} ${acts}</td></tr>`}).join('');
   return `<div class=sbox><h2>Item search</h2>
@@ -418,7 +440,8 @@ function invCsv(){const rows=invRows();const q=v=>'"'+String(v==null?'':v).repla
 // ---- render
 function srcBox(){return `<div class=sbox><h2>Where to look</h2><div class=row>${(D.sources||[]).map(x=>`<label><input type=checkbox data-src="${esc(x.k)}"${S.src.has(x.k)?' checked':''}> ${esc(x.n)} <span class=muted>(${INV.filter(r=>r.src===x.k).length})</span></label>`).join('')}</div>
     <p class="sm muted">In Suit search, your own items are preferred when two items are otherwise equal, then guest mules, then the Market.</p></div>
-  <div class="row tabs"><button data-tab=suit class="${S.tab!=='items'?'on':''}">Suit search</button><button data-tab=items class="${S.tab==='items'?'on':''}">Item search</button></div>`}
+  <div class="row tabs"><button data-tab=suit class="${S.tab!=='items'?'on':''}">Suit search</button><button data-tab=items class="${S.tab==='items'?'on':''}">Item search</button>
+    <label class=sm>Show <select id=spshow><option value=c${S.allSpells?'':' selected'}>cantrips only</option><option value=all${S.allSpells?' selected':''}>cantrips and all spells</option></select></label></div>`}
 function render(){
   if(S.tab==='items'){app.innerHTML=srcBox()+itemsView();return}
   const ch=D.chars.map(c=>`<option${c.n===S.char?' selected':''}>${esc(c.n)}</option>`).join('');
@@ -429,7 +452,7 @@ function render(){
     return `<div class=want><span class=fam>${esc(w.f)}</span><select data-wt="${i}">${opts}</select>
       <select data-wp="${i}"><option value=need${w.p==='need'?' selected':''}>Must have</option><option value=nice${w.p==='nice'?' selected':''}>Nice to have</option></select>
       <span class=cnt>${F.n} item${F.n===1?'':'s'}, best ${esc(tierName(w.f,F.max))}</span><button class=x data-wdel="${i}" title="Remove">✕</button></div>`}).join('')||'<p class=muted>No spells picked yet. Choose a template above or add spells below.</p>';
-  const famOpts=FAMLIST.filter(f=>!S.want.find(w=>w.f===f)).map(f=>`<option value="${esc(f)}">${esc(f)}${FAMS[f].c?'':' (spell)'} — ${FAMS[f].n}</option>`).join('');
+  const famOpts=FAMLIST.filter(f=>!S.want.find(w=>w.f===f)&&(S.allSpells||FAMS[f].c)).map(f=>`<option value="${esc(f)}">${esc(f)}${FAMS[f].c?'':' (spell)'} — ${FAMS[f].n}</option>`).join('');
   const sets=Object.keys(SETS).sort().map(s=>`<option${s===S.set?' selected':''} value="${esc(s)}">${esc(s)} (${SETS[s]})</option>`).join('');
   const sets2=Object.keys(SETS).sort().map(s=>`<option${s===S.set2?' selected':''} value="${esc(s)}">${esc(s)} (${SETS[s]})</option>`).join('');
   const fi=(k,label,w,ph)=>`<label>${label} <input type=${w||'number'} data-f="${k}" value="${esc(S.F[k])}"${ph?` placeholder="${ph}"`:''}></label>`;
@@ -484,7 +507,7 @@ function results(){
     const met=S.want.map(w=>{const got=r.tiers[w.f]||0;const cls=got>=w.t?'ok':got?'part':'no';
       return `<span class=${cls}>${esc(w.f)}${got&&got<w.t?' ('+esc(tierName(w.f,got))+')':''}${got?'':' ✕'}</span>`}).join(' · ');
     const rows=r.picks.map(([i,occ])=>{const it=ITEMS[i];const where=SLOTS.filter((s,b)=>occ&(1<<b)&&s[0]!=='uabd').map(s=>s[1]).join(', ')+(it.pl.includes(occ)?'':' (tailor-reduce to this)');
-      const tags=it.sp.map(n=>{const p=parse(n);const hit=S.want.find(w=>w.f===p.f)||(p.f===IMP&&impOn(it));return `<span${hit?' class=hit':''}>${esc(n)}</span>`}).join('');
+      const tags=it.sp.filter(showSpell).map(n=>{const p=parse(n);const hit=S.want.find(w=>w.f===p.f)||(p.f===IMP&&impOn(it));return `<span${hit?' class=hit':''}>${esc(n)}</span>`}).join('');
       const icon=`<span class=micon>${it.ic.map(x=>`<img src="/market/icon/${x}.png" alt="" loading=lazy>`).join('')}</span>`;
       const meta=[it.al?'AL '+it.al:'',it.set,it.lv?'level '+it.lv:'',it.lore?'lore '+it.lore:'',...Object.entries(it.rt).map(([k,v])=>(D.ratings.find(x=>x[0]===k)||[k,k])[1]+' '+v)].filter(Boolean).join(' · ');
       const from=it.src==='m'?`<div class=sm><span class=part>Market:</span> <a href="/market/item/${it.g}" target=_blank>${esc(it.price)}</a> <span class=muted>from ${esc(it.seller)}</span></div>`
@@ -675,6 +698,7 @@ app.addEventListener('click',ev=>{const th=ev.target.closest('th[data-sort]');
   else return;
   render()});
 app.addEventListener('change',ev=>{const t=ev.target;const d=t.dataset;
+  if(t.id==='spshow'){S.allSpells=t.value==='all';try{localStorage.setItem('suitAllSpells',S.allSpells?'1':'0')}catch(e){}render();return}
   if(d.icat){t.checked?IS.cats.add(d.icat):IS.cats.delete(d.icat);render();return}
   if(d.if!=null&&t.tagName==='SELECT'){IS[d.if]=t.value;render();return}
   if(d.slot){t.checked?S.slots.add(d.slot):S.slots.delete(d.slot);return}
