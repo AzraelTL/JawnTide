@@ -331,6 +331,10 @@ namespace ACE.Server.WorldObjects
             RequestedAppraisalTarget = objectGuid;
             AppraisalRequestedTimestamp = currentTime;
 
+            // JawnTide: the My Mule gem's description shows how full the account's mule is
+            if (wo.WeenieClassId == MuleInfo.GemWeenieClassId)
+                UpdateMuleGemText(wo);
+
             Examine(wo);
         }
 

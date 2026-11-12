@@ -5,6 +5,7 @@ using System.Threading;
 using log4net;
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 
 using ACE.Database;
@@ -143,10 +144,20 @@ namespace ACE.Server.Managers
                     sets.Add($"{col} = @{field}");
                     args.Add(($"@{field}", v));
                 }
-                if (buffs != null && replace)
+                if (buffs != null)
                 {
+                    // adding to what it already keeps up: merge with its saved list
+                    var list = buffs;
+                    if (!replace)
+                    {
+                        var cur = db.PvpToolsQuery("SELECT spells FROM training_dummy WHERE dummy_Guid = @g;", ("@g", guid));
+                        list = TrainingDummy.ParseIds(cur != null && cur.Count > 0 ? cur[0][0]?.ToString() : null);
+                        foreach (var spellId in buffs)
+                            if (!list.Contains(spellId))
+                                list.Add(spellId);
+                    }
                     sets.Add("spells = @spells");
-                    args.Add(("@spells", string.Join(",", buffs)));
+                    args.Add(("@spells", string.Join(",", list)));
                 }
                 var worn = req.TryGetProperty("worn", out var w) ? w.GetString() : "keep";
                 if (worn == "strip")
@@ -154,8 +165,24 @@ namespace ACE.Server.Managers
 
                 sets.Add("updated_At = @t");
                 var n = db.PvpToolsExecute($"UPDATE training_dummy SET {string.Join(", ", sets)} WHERE dummy_Guid = @g;", args.ToArray());
-                Done(n > 0 ? "applied" : "rejected", (n > 0 ? "saved; it isn't loaded right now, so it takes effect when its area loads" : "no such dummy") +
-                    (buffs != null && !replace ? "; adding buffs needs it loaded" : "") + (worn == "strip_under" ? "; taking off underclothes needs it loaded" : "") + note);
+                if (n > 0)
+                {
+                    // the page shows this row's setup in words; a loaded drudge writes its own, so write it here
+                    var row = db.PvpToolsQuery("SELECT armor, armor_Extremities, melee_Defense, missile_Defense, magic_Defense, damage_Resist_Rating, " +
+                        "crit_Damage_Resist_Rating, pk_Damage_Resist_Rating, spells FROM training_dummy WHERE dummy_Guid = @g;", ("@g", guid));
+                    if (row != null && row.Count > 0)
+                    {
+                        var x = row[0];
+                        var spellNames = TrainingDummy.ParseIds(x[8]?.ToString()).Select(TrainingDummy.SpellName).ToList();
+                        var text = (guid == 0 ? "Defaults for new Target Drudges: " : "") +
+                            $"armor {x[0]} (head, hands, feet {x[1]}), melee defense {x[2]}, missile defense {x[3]}, magic defense {x[4]}, " +
+                            $"damage resist rating {x[5]}, crit damage resist rating {x[6]}, PK damage resist rating {x[7]}, buffs: {(spellNames.Count == 0 ? "none" : string.Join(", ", spellNames))}";
+                        db.PvpToolsExecute("UPDATE training_dummy SET description = @d WHERE dummy_Guid = @g;", ("@d", text.Length > 2000 ? text.Substring(0, 2000) : text), ("@g", guid));
+                    }
+                }
+
+                var what = guid == 0 ? "saved as the defaults for new drudges" : "saved; it isn't loaded right now, so it takes effect when its area loads";
+                Done(n > 0 ? "applied" : "rejected", (n > 0 ? what : "no such dummy") + (worn == "strip_under" && guid != 0 ? "; taking off underclothes needs it loaded" : "") + note);
             }
         }
 

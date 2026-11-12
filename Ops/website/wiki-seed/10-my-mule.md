@@ -7,6 +7,8 @@ Your own storage mule, shared by every character on your account. Summon it almo
 3. **Store items** by selling them to the mule. Nothing is charged.
 4. **Take items back** by buying them from the mule. Nothing is charged.
 
+ID (appraise) the gem to see how many of your mule's storage slots are used and how many are free.
+
 Everything you store is shared by all the characters on your account.
 
 ## Where and when

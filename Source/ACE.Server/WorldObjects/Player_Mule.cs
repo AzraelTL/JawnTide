@@ -1030,6 +1030,39 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
+        /// JawnTide: sets the My Mule gem's description to what it does plus how many of this account's mule slots are used.
+        /// Counted from the loaded mule if it's been summoned this session, otherwise from the database.
+        /// </summary>
+        public void UpdateMuleGemText(WorldObject gem)
+        {
+            var total = MuleInfo.MaxContainers * 255;
+            int? used = null;
+
+            try
+            {
+                if (ActiveMuleContainers != null)
+                    used = ActiveMuleContainers.Sum(c => c.Inventory.Count);
+                else if (Account != null)
+                {
+                    var db = DatabaseManager.Shard.BaseDatabase;
+                    used = db.MarketGetMuleChain(Account.AccountId).Sum(c => db.MarketCountContainerItems(c));
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Warn($"[MULE] {Name} couldn't count mule slots for the gem: {ex.Message}");
+            }
+
+            var text = "Summons your account's mule: storage shared by every character on your account, and by any guests you add with /mule storage add NAME. " +
+                       "Use it again to send the mule away. Store items by selling them to it and take them back by buying them, free.";
+
+            if (used.HasValue)
+                text += $"\n\nMule storage: {used.Value:N0} of {total:N0} slots used ({total - used.Value:N0} free).";
+
+            gem.SetProperty(PropertyString.LongDesc, text);
+        }
+
+        /// <summary>
         /// Called from Player_Commerce.HandleActionSellItem when the target vendor is a mule.
         /// Deposits items into the mule's persistent storage at no cost. Allowed for the owner, or
         /// any character the owner's house has granted storage access to (see

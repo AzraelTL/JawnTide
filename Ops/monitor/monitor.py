@@ -1060,28 +1060,38 @@ def dummies_section(note):
                 f'on its first start with this version): {e(ex)}</p>')
     presets = "".join(f'<option value="{e(k)}">{e(t)}</option>' for k, t in DUMMY_BUFF_PRESETS)
     forms = []
+    rows = sorted(rows, key=lambda r: r[0] != 0)   # the defaults row (dummy_Guid 0) first
+    placed = [r[0] for r in rows if r[0] != 0]
     for r in rows:
         guid, vals, desc, updated = r[0], r[1:1 + len(DUMMY_FIELDS)], r[-2], r[-1]
+        is_default = guid == 0
         fields = "".join(f'<label>{e(label)}<br><input name="{f}" value="{v}" size="6" inputmode="numeric"></label>'
                          for (f, _, label), v in zip(DUMMY_FIELDS, vals))
         forms.append(
-            f'<details open><summary><b>Target Drudge 0x{guid:08X}</b> <span class="muted">saved {fmt_t(updated)} UTC</span></summary>'
-            f'<p class="wrapd">{e(desc or "(setup not described yet)")}</p>'
+            (f'<details open><summary><b>Defaults for new Target Drudges</b> <span class="muted">saved {fmt_t(updated)} UTC</span></summary>'
+             f'<p class="muted">A drudge starts with this setup the first time it\'s in the world. Tick the box below to also apply it to every placed drudge now.</p>'
+             if is_default else
+             f'<details open><summary><b>Target Drudge 0x{guid:08X}</b> <span class="muted">saved {fmt_t(updated)} UTC</span></summary>')
+            + f'<p class="wrapd">{e(desc or "(setup not described yet)")}</p>'
             f'<form method="post" action="/dummy-set"><input type="hidden" name="guid" value="{guid}">'
             f'<div class="filters">{fields}</div>'
             f'<div class="filters"><label>Buffs<br><select name="preset">{presets}</select></label>'
             f'<label>Extra buffs (spell names or ids, comma-separated)<br><input name="extra" size="48" placeholder="e.g. Incantation of Armor Self, 4407"></label>'
-            f'<label>Worn items<br><select name="worn"><option value="keep">Keep</option><option value="strip_under">Take off underclothes</option>'
-            f'<option value="strip">Take off everything</option></select></label>'
-            f'<label><input type="checkbox" name="clean" value="1"> Remove players\' debuffs</label></div>'
-            f'<div class="filters"><input type="password" name="password" placeholder="Edit password" aria-label="Edit password" autocomplete="current-password">'
+            + (f'<label><input type="checkbox" name="all" value="1"> Also apply to all {len(placed)} placed drudge{"s" if len(placed) != 1 else ""} now</label></div>'
+               if is_default else
+               f'<label>Worn items<br><select name="worn"><option value="keep">Keep</option><option value="strip_under">Take off underclothes</option>'
+               f'<option value="strip">Take off everything</option></select></label>'
+               f'<label><input type="checkbox" name="clean" value="1"> Remove players\' debuffs</label></div>')
+            + f'<div class="filters"><input type="password" name="password" placeholder="Edit password" aria-label="Edit password" autocomplete="current-password">'
             f'<input name="by" placeholder="Your name" size="12" aria-label="Your name"> <button>Save</button>'
             f'<span class="muted">Copying worn gear needs <code>/dummy wear</code> in game.</span></div></form></details>')
-    hist = "".join(f'<tr><td>{fmt_t(t)}</td><td>0x{g:08X}</td><td>{e(b or "")}</td>'
+    hist = "".join(f'<tr><td>{fmt_t(t)}</td><td>{"defaults" if g == 0 else f"0x{g:08X}"}</td><td>{e(b or "")}</td>'
                    f'<td class="{"yes" if st == "applied" else "no" if st == "rejected" else "muted"}">{e(st)}</td><td class="muted wrapd">{e(m or "")}</td></tr>'
                    for g, t, b, st, m in reqs)
     none = '<p class="muted">None yet. Place one in game with <code>@createinst 4290001</code>.</p>'
-    return (f"<h2>Placed Target Drudges</h2>{note}" + ("".join(forms) or none)
+    if not placed:
+        forms.append(none)
+    return (f"<h2>Placed Target Drudges</h2>{note}" + "".join(forms)
             + '<h2>Recent dummy changes</h2><div class="wrap"><table><thead><tr><th>When (UTC)</th><th>Dummy</th><th>By</th><th>Status</th><th></th></tr></thead>'
             + f'<tbody>{hist or "<tr><td colspan=5 class=muted>None yet</td></tr>"}</tbody></table></div>')
 
@@ -1119,8 +1129,13 @@ def dummy_set(form):
     conn = pymysql.connect(database="ace_shard", autocommit=True, **DB)
     try:
         with conn.cursor() as cur:
-            cur.execute("INSERT INTO training_dummy_request (requested_At, requested_By, dummy_Guid, request) VALUES (UTC_TIMESTAMP(), %s, %s, %s)",
-                        (by, int(g), json.dumps(req)))
+            targets = [int(g)]
+            if int(g) == 0 and form.get("all", [""])[0] == "1":
+                cur.execute("SELECT dummy_Guid FROM training_dummy WHERE dummy_Guid <> 0")
+                targets += [int(x[0]) for x in cur.fetchall()]
+            for t in targets:
+                cur.execute("INSERT INTO training_dummy_request (requested_At, requested_By, dummy_Guid, request) VALUES (UTC_TIMESTAMP(), %s, %s, %s)",
+                            (by, t, json.dumps(req)))
     finally:
         conn.close()
     print(f"[dummy] {by} queued a change for 0x{int(g):08X}: {json.dumps(req)}", flush=True)
