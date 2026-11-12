@@ -27,7 +27,9 @@ JawnTide is a red Asheron's Call server running on ACEmulator, forked from DocTi
 - [[Mercenaries]]: summonable fighters from Artemis.
 - [[Tinker characters]]: one crafting-only character per account.
 - [[Allegiance limits]]: caps on allegiance size in some areas.
-- [[Bank]] and [[My Mule]]: account-wide storage.
+- [[Bank]] and [[My Mule]]: account-wide storage. Share your mule with guests, clear it out in batches with /mule purge.
+- [[Market]]: buy and sell items with other players on the website.
+- [[Suit Builder]]: find the best suit of armor and jewelry in your mule on the website.
 - [[Player commands]]: every custom command.
 
 > New to the wiki? See [[Editing the wiki]].
