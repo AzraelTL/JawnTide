@@ -357,13 +357,13 @@ def appraise(d):
 
 # ---------------------------------------------------------------- pages
 
-def _page(h, title, body, user, status=200, refresh=None):
+def _page(h, title, body, user, status=200, refresh=None, nav="/market"):
     bar = (f'<div class="wikibar"><a href="/market">Market</a><a href="/market/mine">My market</a><a href="/suit">Suit Builder</a>'
            f'<form class="wsearch" action="/market" method="get"><input name="q" placeholder="Search the market" aria-label="Search the market"></form>'
            + (f'<span class="who">Signed in as <b>{e(user["name"])}</b></span>' if user
               else '<span class="who"><a href="/wiki/login?next=/market/mine">Sign in</a> or <a href="/wiki/link">link your game account</a></span>')
            + '</div>')
-    page = _layout("/market", title, f"<style>{CSS}</style>" + bar + body, None)
+    page = _layout(nav, title, f"<style>{CSS}</style>" + bar + body, None)
     if refresh:
         page = page.replace("<head>", f'<head><meta http-equiv="refresh" content="{refresh}">', 1)
     wiki._send(h, status, page)

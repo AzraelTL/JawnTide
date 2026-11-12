@@ -168,7 +168,7 @@ def page(h, user, query):
     account = market._account(user)
     if account is None:
         return market._page(h, "Suit Builder", '<h1>Suit Builder</h1><p>Your wiki login isn\'t linked to a game account. '
-                            '<a href="/wiki/link">Link it</a> first.</p>', user)
+                            '<a href="/wiki/link">Link it</a> first.</p>', user, nav="/suit")
     items, inv = [], []
     missing = _rows_for(market._mule_items(account), "me", inv, items)
     sources = [dict(k="me", n="My mule", on=True)]
@@ -190,7 +190,7 @@ def page(h, user, query):
             f'<div id="suitapp"><p class="muted">Loading…</p></div>'
             f'<script id="suitdata" type="application/json">{blob}</script>'
             f'<style>{SUIT_CSS}</style><script>{SUIT_JS}</script>')
-    market._page(h, "Suit Builder", body, user)
+    market._page(h, "Suit Builder", body, user, nav="/suit")
 
 
 def save(h, user):
