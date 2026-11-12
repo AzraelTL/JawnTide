@@ -174,6 +174,7 @@ SUIT_CSS = """
 #suitapp .want{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin:.25rem 0;padding:.25rem 0;border-bottom:1px solid var(--line)}
 #suitapp .want .fam{min-width:14rem;font-weight:700}
 #suitapp .want .cnt{color:var(--dim);font-size:.85rem}
+#suitapp .want.setall{background:var(--deep);border-radius:4px;padding:.35rem .45rem}
 #suitapp button{font:inherit;cursor:pointer;color:var(--bone);background:var(--deep);border:1px solid var(--line);border-radius:4px;padding:.3rem .6rem}
 #suitapp button.go{background:var(--portal);color:#111;border-color:var(--portal);font-weight:700;padding:.45rem 1rem}
 #suitapp button.x{padding:.1rem .45rem}
@@ -292,7 +293,9 @@ function render(){
   <div class=sbox><h2>2. Slots to fill</h2><p class="sm muted">Only items that fit entirely in the ticked slots are used, so untick slots you already have covered.</p>
     <div class=slots>${slots}</div><div class=row><button id=sall>All</button><button id=snone>None</button>
     <button id=sarmor>Armor only</button><button id=sjew>Jewelry only</button></div></div>
-  <div class=sbox><h2>3. Spells you need</h2>${wants}
+  <div class=sbox><h2>3. Spells you need</h2>${S.want.length>1?`<div class="want setall"><span class=fam>Set all</span>
+    <select id=allt><option value="">level…</option><option value=1>Minor or better</option><option value=2>Major or better</option><option value=3>Epic or better</option><option value=4>Legendary</option></select>
+    <select id=allp><option value="">priority…</option><option value=need>Must have</option><option value=nice>Nice to have</option></select></div>`:''}${wants}
     <div class=row><select id=addf><option value="">Add a spell…</option>${famOpts}</select></div></div>
   <div class=sbox><h2>4. Extras</h2>
     <div class=row><label>Armor set <select id=set><option value="">(any)</option>${sets}</select></label>
@@ -440,6 +443,10 @@ app.addEventListener('change',ev=>{const t=ev.target;const d=t.dataset;
   if(d.rate){S.rate[d.rate]=t.checked;return}
   if(d.wt!=null){S.want[+d.wt].t=+t.value;return}
   if(d.wp!=null){S.want[+d.wp].p=t.value;return}
+  if(t.id==='allt'&&t.value){const v=+t.value;
+    // cantrips take the level as is; other spells (roman numeral levels) keep theirs
+    S.want.forEach(w=>{if(FAMS[w.f]&&FAMS[w.f].c)w.t=v});render();return}
+  if(t.id==='allp'&&t.value){S.want.forEach(w=>w.p=t.value);render();return}
   if(t.id==='addf'&&t.value){const f=t.value;S.want.push({f,t:FAMS[f].c?4:FAMS[f].max,p:'need'});render();return}
   if(t.id==='set'){S.set=t.value;return}
   if(t.id==='setn'){S.setN=Math.max(2,Math.min(9,+t.value||4));return}
