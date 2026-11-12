@@ -194,6 +194,8 @@ namespace ACE.Entity.Enum.Properties
         IsSplitArrow = 19018,
         IsBountyHighPriorityTarget = 19019,
         IsTinkerCharacter = 19020,
+        /// <summary>JawnTide: flagged with /muleflag (extra pack slot, never gains experience). The same id the old Ghost Mule system used.</summary>
+        IsMuleCharacter = 19021,
 
         /// <summary>JawnTide Bank: old opt-out flag for sale proceeds (no longer read; sales pay coins unless BankSaleProceedsToBank)</summary>
         BankSaleProceedsToPack = 20001,
