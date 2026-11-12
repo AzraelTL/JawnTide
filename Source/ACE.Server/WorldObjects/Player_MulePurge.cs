@@ -20,6 +20,7 @@ namespace ACE.Server.WorldObjects
     ///   type:armor|shield|clothing|jewelry|melee|missile|caster|weapon|salvage|gem|food|key|manastone|component|misc
     ///   al, level, value, work, lore, dmg, spells   compared with &lt; &lt;= &gt; &gt;= = (e.g. al&lt;200, level&lt;=150, work&gt;=8)
     ///   spell:TEXT / -spell:TEXT     has / hasn't a spell whose name matches TEXT (a regular expression, e.g. -spell:legendary)
+    ///   material:cloth|leather|metal|gem|stone|wood|ceramic, or a material name (steel, satin); -material: for "not"
     ///   set:TEXT                     its armor set name contains TEXT
     ///   name:TEXT / -name:TEXT, or a plain word: its name contains / doesn't contain TEXT
     /// Use "quotes" for text with spaces, e.g. spell:"legendary strength".
@@ -72,7 +73,7 @@ namespace ACE.Server.WorldObjects
                 pendingMulePurge = null;
                 Say(args.Length == 0
                     ? "Usage: /mule purge FILTER, then /mule purge confirm. Filters: type:armor|shield|clothing|jewelry|melee|missile|caster|weapon|salvage|gem|..., " +
-                      "al/level/value/work/lore/dmg/spells with < <= > >= = (al<200), spell:TEXT, -spell:TEXT, set:TEXT, name:TEXT, -name:TEXT."
+                      "al/level/value/work/lore/dmg/spells with < <= > >= = (al<200), material:cloth|leather|metal|..., spell:TEXT, -spell:TEXT, set:TEXT, name:TEXT, -name:TEXT."
                     : "Mule purge canceled.");
                 return;
             }
@@ -104,6 +105,11 @@ namespace ACE.Server.WorldObjects
                             try { rx = new Regex(val, RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200)); }
                             catch (ArgumentException) { Say($"That spell pattern isn't valid: {val}"); return; }
                             f = wo => GetSearchableSpellIds(wo).Any(id => SafeMatch(rx, new ACE.Server.Entity.Spell(id, false).Name));
+                            break;
+                        case "material":
+                        case "mat":
+                            var mat = PurgeMaterial(val);
+                            f = wo => wo.MaterialType.HasValue && mat((uint)wo.MaterialType.Value);
                             break;
                         case "set":
                             f = wo => (wo.EquipmentSetId?.ToString() ?? "").Contains(val.Replace(" ", ""), StringComparison.OrdinalIgnoreCase);
@@ -225,6 +231,23 @@ namespace ACE.Server.WorldObjects
         {
             try { return text != null && rx.IsMatch(text); }
             catch (RegexMatchTimeoutException) { return false; }
+        }
+
+        /// <summary>material:cloth|leather|metal|gem|stone|wood|ceramic (the groups), or any material name or part of one (steel, satin, hide).</summary>
+        private static Func<uint, bool> PurgeMaterial(string name)
+        {
+            switch (name.ToLowerInvariant())
+            {
+                case "ceramic": return m => m >= 1 && m <= 2;
+                case "cloth": return m => m >= 3 && m <= 8;
+                case "gem": return m => m >= 9 && m <= 50;
+                case "leather": return m => m >= 52 && m <= 55;
+                case "metal": return m => m >= 56 && m <= 64;
+                case "stone": return m => m >= 65 && m <= 71;
+                case "wood": return m => m >= 72 && m <= 77;
+            }
+            var key = name.Replace(" ", "");
+            return m => ((MaterialType)m).ToString().Contains(key, StringComparison.OrdinalIgnoreCase);
         }
 
         private static double? PurgeWieldLevel(WorldObject wo)
