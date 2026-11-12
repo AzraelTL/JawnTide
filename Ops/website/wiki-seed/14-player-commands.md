@@ -17,6 +17,7 @@ Commands added on JawnTide on top of the normal ACE ones.
 | `/buytitle TITLE` | Give your character a custom title for 200 PK Trophies (32 characters max) |
 | `/spendallxp` | Spend all your unspent XP on attributes, vitals and skills |
 | `/flagtinker` | Make a level 1 character a Tinker. See [[Tinker characters]] |
+| `/muleflag` | Make a character of level 5 or lower a mule: it gets an extra pack slot (after relogging) and never gains experience again. Permanent; it asks first |
 | `/OfflineSwear NAME` | Swear allegiance to an offline character on your own account |
 | `/ForceLogoffStuckCharacter NAME` | Log off a stuck character on your own account |
 | `/fixinvisible` or `/fi` | Resend nearby monsters and NPCs if some are invisible |

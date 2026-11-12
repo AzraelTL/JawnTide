@@ -1111,6 +1111,49 @@ namespace ACE.Server.Command.Handlers
         }
 
         // flagtinker
+        // JawnTide: muleflag
+        [CommandHandler("muleflag", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
+            "Permanently makes this character a mule: an extra pack slot (after relogging), and it never gains experience again. " +
+            "Requirements: level 5 or lower and not a Tinker. This can't be undone.")]
+        public static void HandleMuleFlag(Session session, params string[] parameters)
+        {
+            HandleMuleFlag(session, false);
+        }
+
+        private static void HandleMuleFlag(Session session, bool confirmed)
+        {
+            var player = session.Player;
+            if (player == null)
+                return;
+
+            // flagged before (the old Ghost Mule system) but without the pack slot: just open it
+            if (player.IsMule && player.AugmentationExtraPackSlot == 0)
+            {
+                player.FlagAsMule();
+                return;
+            }
+
+            var error = player.GetMuleFlagError();
+            if (error != null)
+            {
+                player.SendMessage(error);
+                return;
+            }
+
+            if (!confirmed)
+            {
+                var msg = $"Make {player.Name} a mule? This is PERMANENT and can't be undone.\n\n" +
+                          $"{player.Name} will never gain experience again and stays at level {player.Level ?? 1}. " +
+                          "It gets an extra pack slot the next time you log in on it.";
+
+                if (!player.ConfirmationManager.EnqueueSend(new Confirmation_Custom(player.Guid, () => HandleMuleFlag(session, true)), msg))
+                    player.SendWeenieError(WeenieError.ConfirmationInProgress);
+                return;
+            }
+
+            player.FlagAsMule();
+        }
+
         [CommandHandler("flagtinker", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
             "Permanently designates this character as a Tinker. " +
             "Requirements: character must be level 1 and the account must not already have a Tinker character. " +
@@ -1136,6 +1179,13 @@ namespace ACE.Server.Command.Handlers
             if (player.IsTinker)
             {
                 player.FlagAsTinker();
+                return;
+            }
+
+            // JawnTide: a /muleflag mule can't also be a Tinker
+            if (player.IsMule)
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat("A mule cannot become a Tinker.", ChatMessageType.Broadcast));
                 return;
             }
 
