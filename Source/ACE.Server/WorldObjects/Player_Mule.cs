@@ -624,7 +624,7 @@ namespace ACE.Server.WorldObjects
         /// JawnTide Suit Builder: "/mule suit CODE" filters the open mule window to the items of a suit saved on the website
         /// (suit_plan, which belongs to the mule's account). Reopening the mule clears it, like /mule search.
         /// </summary>
-        public void ShowMuleSuit(string code)
+        public void ShowMuleSuit(string code, bool take = false)
         {
             var vendor = CurrentLandblock?.GetObject(LastOpenedContainerId) as Vendor;
 
@@ -671,9 +671,25 @@ namespace ACE.Server.WorldObjects
             RefreshMuleVendorDisplay(vendor, VendorType.Undef);
 
             var found = vendor.UniqueItemsForSale.Count;
+
+            // "/mule suit CODE take": withdraw every item of the suit into this character's pack at once (the normal
+            // withdraw: free, and refused as a whole if they don't all fit in the pack)
+            if (take)
+            {
+                if (found == 0)
+                {
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"None of suit {code}'s items are in this mule.", ChatMessageType.Broadcast));
+                    return;
+                }
+
+                var profiles = vendor.UniqueItemsForSale.Values.Select(wo => new ItemProfile(wo.StackSize ?? 1, wo.Guid.Full)).ToList();
+                Session.Network.EnqueueSend(new GameMessageSystemChat($"Taking suit {code} ({found} item{(found == 1 ? "" : "s")}) out of the mule.", ChatMessageType.Broadcast));
+                HandleMuleWithdraw(vendor, profiles);
+                return;
+            }
             Session.Network.EnqueueSend(new GameMessageSystemChat(
                 $"Suit {code} ({rows[0][0]}): showing {found} of its {guids.Count} items" + (found < guids.Count ? " (the rest aren't in this mule anymore)." : ".") +
-                " Reopen the mule to see everything again.", ChatMessageType.Broadcast));
+                " Reopen the mule to see everything again, or type /mule suit " + code + " take to take them all.", ChatMessageType.Broadcast));
         }
 
         private bool MatchesMuleSearch(WorldObject item, Regex regex)
