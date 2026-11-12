@@ -13,6 +13,8 @@ At the top, tick where items can come from:
 
 When two items are otherwise equal, the Suit search uses your own first, then guest mules, then the Market.
 
+Next to the tabs, **Show** picks which spells are listed on items and in the spell picker: **cantrips only** (Minor, Major, Epic and Legendary) or **cantrips and all spells**. Your browser remembers the choice.
+
 ## Suit search
 1. **Start from a template**: Heavy, Light, Finesse, Two Handed, Dual Wield, Missile, War, Void, Life or Tinker (crafting). It ticks every slot and adds the cantrips for that build: the attributes, the three defenses (Invulnerability, Impregnability, Magic Resistance) and the build's skills. **Add: the seven wards** adds the wards on top of what you have.
 2. **Slots to fill**: untick the slots you already have covered. Only items that fit entirely in the ticked slots are used, so a hauberk needs chest, upper arms and lower arms ticked (or tailoring reductions, below).
