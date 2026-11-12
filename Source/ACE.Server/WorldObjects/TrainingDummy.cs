@@ -395,6 +395,19 @@ namespace ACE.Server.WorldObjects
 
         public static string SpellName(uint id) => new Spell(id) is var s && !s.NotFound ? s.Name : $"spell {id}";
 
+        /// <summary>What a player sees in chat when they ID it: buffed armor level per body part, defenses and active buffs.</summary>
+        public string DescribeForAppraisal()
+        {
+            var al = new ACE.Server.Network.Structure.ArmorLevel(this);
+            static string A(uint v) => v >= 9999 ? $"{v - 9999}*" : v.ToString();
+            var active = Buffs.Where(id => EnchantmentManager.GetEnchantment(id) != null).Select(SpellName).ToList();
+            return $"{Name} armor (buffed): head {A(al.Head)}, chest {A(al.Chest)}, abdomen {A(al.Abdomen)}, upper arm {A(al.UpperArm)}, lower arm {A(al.LowerArm)}, " +
+                   $"hands {A(al.Hand)}, upper leg {A(al.UpperLeg)}, lower leg {A(al.LowerLeg)}, feet {A(al.Foot)}. " +
+                   $"Defense (buffed): melee {DefenseCurrent(Skill.MeleeDefense)}, missile {DefenseCurrent(Skill.MissileDefense)}, magic {DefenseCurrent(Skill.MagicDefense)}. " +
+                   $"Ratings: damage resist {Drr}, crit damage resist {Cdr}, PK damage resist {Pkdr}. " +
+                   $"Buffs on it: {(active.Count == 0 ? "none" : string.Join(", ", active))}.";
+        }
+
         public string DescribeSetup()
         {
             var buffs = Buffs.Count == 0 ? "none" : string.Join(", ", Buffs.Select(SpellName));
