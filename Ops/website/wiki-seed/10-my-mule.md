@@ -20,7 +20,7 @@ Everything you store is shared by all the characters on your account.
 | Who can use it | Characters on your own account, plus any guests you add (see *Mule guests* below). |
 
 ## What it holds
-- Up to **2,550** stacks or items (10 storage containers of 255, added automatically as they fill).
+- Up to **5,100** stacks or items (20 storage containers of 255, added automatically as they fill).
 - Not allowed: pyreals, containers (packs) and attuned items.
 - Gems, keys, spell components, mana stones and other plain items **stack up to 1,000** in the mule. When you take them out, you get fresh copies in normal stack sizes.
 
