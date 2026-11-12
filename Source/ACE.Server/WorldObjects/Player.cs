@@ -384,6 +384,10 @@ namespace ACE.Server.WorldObjects
             if (!success && obj is Player player && !player.SquelchManager.Squelches.Contains(this, ChatMessageType.Appraisal))
                 player.Session.Network.EnqueueSend(new GameMessageSystemChat($"{Name} tried and failed to assess you!", ChatMessageType.Appraisal));
 
+            // JawnTide: the client doesn't draw armor levels on a monster's ID panel, so a Target Drudge's are sent as text
+            if (success && obj is TrainingDummy dummy)
+                Session.Network.EnqueueSend(new GameMessageSystemChat(dummy.DescribeForAppraisal(), ChatMessageType.Broadcast));
+
             // pooky logic - handle monsters attacking on appraisal
             if (obj is Creature creature && creature.MonsterState == State.Idle)
             {
