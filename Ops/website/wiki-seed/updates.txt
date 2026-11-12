@@ -20,3 +20,4 @@
 2026-11-12-suit-mag 26-suit-builder.md
 2026-11-12-purge-suit 10-my-mule.md
 2026-11-12-suit-item-search 26-suit-builder.md
+2026-11-12-suit-builder-rewrite 26-suit-builder.md
