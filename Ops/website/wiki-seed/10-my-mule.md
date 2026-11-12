@@ -29,6 +29,19 @@ Everything you store is shared by all the characters on your account.
 ## Suit Builder
 The website's [[Suit Builder]] finds the best suit in your mule for the slots and spells you pick. Save it, then open your mule and type `/mule suit CODE` to show just those items.
 
+## Clearing out your mule
+`/mule purge FILTER` deletes many items at once. Open your mule first. It only **shows** what matches (the mule window filters to those items); type `/mule purge confirm` within 2 minutes to delete them for good, or `/mule purge cancel`. Guests can't purge.
+
+| Filter | Meaning |
+|---|---|
+| `type:shield` | armor, shield, clothing, jewelry, melee, missile, caster, weapon, salvage, gem, food, key, manastone, component, misc (several type: words mean any of them) |
+| `al<200` | compare armor level; also `level` (wield level), `value`, `work` (workmanship), `lore` (arcane lore), `dmg`, `spells` (how many). Use `<` `<=` `>` `>=` `=` |
+| `spell:legendary` / `-spell:legendary` | has / hasn't a spell whose name matches |
+| `set:defender` | armor set name contains |
+| `name:robe` / `-name:robe` (or just `robe`) | name contains / doesn't contain |
+
+All filters must match. Examples: `/mule purge type:shield al<200`, `/mule purge type:armor -spell:legendary -spell:epic`, `/mule purge type:salvage work<6`. An item without a value counts as 0 (no armor level, no level requirement).
+
 ## Mule guests
 Like storage guests on a house chest, you can let characters on other accounts use your mule.
 

@@ -9,6 +9,7 @@ Commands added on JawnTide on top of the normal ACE ones.
 | `/mule` | Your account mule. See [[My Mule]] |
 | `/mule storage add NAME` | Let another account's character use your mule while it's summoned (`remove NAME`, `remove -all`, `list`). See [[My Mule]] |
 | `/mule suit CODE` | Show only the items of a suit saved on the website's Suit Builder in your open mule. See [[Suit Builder]] |
+| `/mule purge FILTER` | Delete many mule items at once, e.g. `/mule purge type:shield al<200`. Shows the matches first; `/mule purge confirm` deletes them. See [[My Mule]] |
 | `/arena` | Arena queues and stats. See [[Arena]] |
 | `/town-owners` | Who owns each town. See [[Town Control]] |
 | `/town-control-respite TOWN` | When your allegiance can attack a town again |
