@@ -17,6 +17,13 @@ On any item in a result, 🔒 always uses that item and 🚫 never uses it. Sear
 ## Taking the suit out of your mule
 Press **Save for /mule suit** on a suit to get a short code. In game, open your mule and type `/mule suit CODE`: the mule window shows only that suit's items, so you can buy them out. Type `/mule suit CODE take` instead to move every item of the suit into the pack of the character you're on (for example your Tinker) in one go; it's refused if they don't all fit. It works the same on a mule you're a guest of. Reopen the mule to see everything again. Market items aren't part of a saved suit: buy them first.
 
+## Item search
+The **Item search** tab lists every item in the places you tick (your mule, guest mules, the Market), not just armor and jewelry, in a sortable table: type, slots, set, armor level, wield level, arcane lore, workmanship, how many Legendary and Epic spells, ratings, damage, imbue, value and where it is (with the price and a buy link for Market items).
+- Filter by name or spells (a regular expression, e.g. `legendary.*legendary` for two Legendary spells), type, slot, set, imbue, armor level and wield level ranges, workmanship, Legendary/Epic counts and ratings.
+- Click a column heading to sort by it (click again to reverse).
+- **Download as CSV** opens the filtered list in a spreadsheet (Excel, Google Sheets).
+- 🔒 and 🚫 on an armor or jewelry row lock or exclude it in the Suit search.
+
 ## Cleaning out your mule
 **Find items in my mule that another of my items beats** lists every item you have a strictly better copy of: same equip slots, every spell at the same level or better, armor level and ratings at least as high, the same armor set (or none) and no higher level requirement. Save the list, then in game open your mule and use `/mule suit CODE` to look at them or `/mule purge suit:CODE` to remove them (with the usual warning and 7-day undo).
 
