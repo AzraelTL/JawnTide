@@ -19,3 +19,5 @@ Commands added on JawnTide on top of the normal ACE ones.
 | `/fixinvisible` or `/fi` | Resend nearby monsters and NPCs if some are invisible |
 | `/objsend` | Resend everything you can see, for rare invisible-object bugs |
 | `/wiki CODE` | Link your account to the wiki (the code is shown on the wiki) |
+
+**Stuck in peace mode?** If you can move but can't switch weapons, use a kit or go back into combat, wait: the server clears it on its own after 2 minutes. Logging out to character select also fixes it.
