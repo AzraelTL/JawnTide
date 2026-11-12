@@ -13,7 +13,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SOURCE = os.path.join(HERE, "..", "..", "Source", "ACE.Server", "Managers", "PropertyManager.cs")
 OUT = os.path.join(HERE, "settings_catalog.json")
 
-LINE = re.compile(r'\("([a-z0-9_]+)",\s*new Property<(bool|long|double|string)>\((.*?),\s*"((?:[^"\\]|\\.)*)"\)\)')
+# One setting: ("key", new Property<type>(default, "description")), where the description may be several "..." + "..." parts
+# split over lines.
+ENTRY = re.compile(r'\("([a-z0-9_]+)",\s*new Property<(bool|long|double|string)>\(((?:"(?:[^"\\]|\\.)*"|[^,"])*?),\s*((?:"(?:[^"\\]|\\.)*"\s*\+?\s*)+)\)\)', re.S)
+PART = re.compile(r'"((?:[^"\\]|\\.)*)"')
 
 # first match wins; order matters
 AREAS = [
@@ -24,13 +27,14 @@ AREAS = [
     ("PvP damage tuning", r"^pvp_(dmg_mod|ratings_mod|void_hybrid|cs_critrate|damage_cap|cloak_max)|^ignore_magic_"),
     ("PvP & player killers", r"(^|_)pk|pvp|respite|cleave|zerg"),
     ("XP, levels & luminance", r"xp|level|rolling|luminance|lum_|aug"),
-    ("Loot & salvage", r"loot|rare|salvage|tier|mutat|treasure|equipmentset|rating"),
+    ("Loot & salvage", r"loot|rare|salvage|tier|mutat|treasure|equipmentset|rating|burning_coals"),
+    ("Bank, audit & economy", r"^transfer_audit|^economy_stats|^bank_|^market_"),
     ("Housing", r"house|housing|slumlord|mansion"),
     ("Allegiance & fellowship", r"alleg|fellow|monarch|patron"),
     ("Vendors & economy", r"vendor|pyreal|trade|coin|currency|price|value|stipend"),
     ("Chat, Discord & messages", r"chat|webhook|discord|motd|popup|broadcast|global|message|welcome"),
     ("Accounts, logins & security", r"vpn|ip_|account|login|proxycheck|session|ban|whitelist|logoff|logout"),
-    ("Combat & magic", r"spell|magic|comp|damage|dmg|combat|melee|missile|attack|defense|armor|resist|heal|vitae|death|corpse|cloak|dispel"),
+    ("Combat & magic", r"spell|magic|comp|damage|dmg|combat|melee|missile|attack|defense|armor|resist|heal|vitae|death|corpse|cloak|dispel|stuck_state"),
 ]
 OTHER = "Server & everything else"
 
@@ -42,14 +46,16 @@ def area(key):
     return OTHER
 
 
-def main():
+def build(text):
+    """The catalog ({"areas": [...], "settings": [...]}) for the text of PropertyManager.cs."""
     rows = []
-    with open(SOURCE, encoding="utf-8") as f:
-        for line in f:
-            m = LINE.search(line)
-            if not m:
+    seen = set()
+    for m in ENTRY.finditer(text):
+            key, typ, default, desc_parts = m.groups()
+            if key in seen:
                 continue
-            key, typ, default, desc = m.groups()
+            seen.add(key)
+            desc = "".join(PART.findall(desc_parts))
             default = default.strip()
             if typ == "string":
                 default = default.strip('"')
@@ -60,9 +66,15 @@ def main():
                          "area": area(key)})
     order = [a for a, _ in AREAS] + [OTHER]
     rows.sort(key=lambda r: (order.index(r["area"]), r["key"]))
+    return {"areas": order, "settings": rows}
+
+
+def main():
+    with open(SOURCE, encoding="utf-8") as f:
+        catalog = build(f.read())
     with open(OUT, "w", encoding="utf-8") as f:
-        json.dump({"areas": order, "settings": rows}, f, indent=1)
-    print(f"{len(rows)} settings written to {OUT}")
+        json.dump(catalog, f, indent=1)
+    print(f"{len(catalog['settings'])} settings written to {OUT}")
 
 
 if __name__ == "__main__":

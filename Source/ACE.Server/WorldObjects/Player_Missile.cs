@@ -49,6 +49,10 @@ namespace ACE.Server.WorldObjects
                     CombatMode = CombatMode.Missile;
                 else
                 {
+                    // JawnTide: see HandleActionTargetedMeleeAttack
+                    if (TryFixCombatModeForAttack(CombatMode.Missile, () => HandleActionTargetedMissileAttack(targetGuid, attackHeight, accuracyLevel)))
+                        return;
+
                     OnAttackDone();
                     return;
                 }

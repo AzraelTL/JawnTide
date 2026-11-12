@@ -70,7 +70,21 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public Landblock CurrentLandblock { get; internal set; }
 
-        public bool IsBusy { get; set; }
+        private bool isBusy;
+
+        /// <summary>JawnTide: when IsBusy last turned on (to spot a busy state that never ended).</summary>
+        public DateTime BusySince { get; private set; }
+
+        public bool IsBusy
+        {
+            get => isBusy;
+            set
+            {
+                if (value && !isBusy)
+                    BusySince = DateTime.UtcNow;
+                isBusy = value;
+            }
+        }
         public bool IsShield { get => CombatUse != null && CombatUse == ACE.Entity.Enum.CombatUse.Shield; }
         // ValidLocations is bugged for some older two-handed weapons, still contains MeleeWeapon instead of TwoHanded?
         //public bool IsTwoHanded { get => CurrentWieldedLocation != null && CurrentWieldedLocation == EquipMask.TwoHanded; }

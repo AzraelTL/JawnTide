@@ -127,6 +127,10 @@ namespace ACE.Server.WorldObjects
 
             MuleTick();     // JawnTide My Mule: leaves on PK tag, landblock change or distance
 
+            // JawnTide: a busy state that hasn't ended in 2 minutes is stuck (an action that never finished); clear it
+            if (IsBusy && (DateTime.UtcNow - BusySince).TotalSeconds >= 120 && PropertyManager.GetBool("stuck_state_auto_fix").Item)
+                ClearStuckState(120);
+
             GagsTick();
 
             TownControlTick();

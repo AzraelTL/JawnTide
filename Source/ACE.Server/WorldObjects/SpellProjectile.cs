@@ -594,7 +594,7 @@ namespace ACE.Server.WorldObjects
                 var slayerMod = GetWeaponCreatureSlayerModifier(weapon, sourceCreature, target);
 
                 //Gear Creature Slayer Rating - Custom
-                int gearSlayerRating = sourceCreature.GetEquippedItemsCreatureSlayerRatingSum(target.CreatureType ?? ACE.Entity.Enum.CreatureType.Invalid);
+                int gearSlayerRating = sourceCreature?.GetEquippedItemsCreatureSlayerRatingSum(target.CreatureType ?? ACE.Entity.Enum.CreatureType.Invalid) ?? 0; // null when a trapped chest casts
                 if (gearSlayerRating > 0)
                 {
                     slayerMod = Creature.AdditiveCombine(slayerMod, Creature.GetPositiveRatingMod(gearSlayerRating));
@@ -632,7 +632,7 @@ namespace ACE.Server.WorldObjects
                     resistanceMod = (float)Math.Max(0.0f, target.GetResistanceMod(resistanceType, this, null, weaponResistanceMod));
 
                     //Gear Creature Resist Rating - custom
-                    int gearCreatureResistRating = target.GetEquippedItemsCreatureResistRatingSum(sourceCreature.CreatureType ?? ACE.Entity.Enum.CreatureType.Invalid);
+                    int gearCreatureResistRating = target.GetEquippedItemsCreatureResistRatingSum(sourceCreature?.CreatureType ?? ACE.Entity.Enum.CreatureType.Invalid);
                     float gearCreatureResistRatingMod = 1.0f;
                     if (gearCreatureResistRating > 0)
                     {
@@ -715,7 +715,7 @@ namespace ACE.Server.WorldObjects
                     resistanceMod = (float)Math.Max(0.0f, target.GetResistanceMod(resistanceType, this, null, weaponResistanceMod));
 
                     //Gear Creature Resist Rating - custom
-                    int gearCreatureResistRating = target.GetEquippedItemsCreatureResistRatingSum(sourceCreature.CreatureType ?? ACE.Entity.Enum.CreatureType.Invalid);
+                    int gearCreatureResistRating = target.GetEquippedItemsCreatureResistRatingSum(sourceCreature?.CreatureType ?? ACE.Entity.Enum.CreatureType.Invalid);
                     float gearCreatureResistRatingMod = 1.0f;
                     if (gearCreatureResistRating > 0)
                     {

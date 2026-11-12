@@ -16,7 +16,6 @@ Most of the stock is the same in every town. Each town also sells a few things n
 | **Platinum Horn of Leadership** | 750 | Casts Call of Leadership V (+10 Health) on your fellowship. Never runs out, 30-second cooldown. |
 | **Boxed Gem of Rare Damage Boost V** | 20 | Level 200 to open. One Luminous Crystal: +5 Damage Rating for 3 hours. Removed when you enter an arena match. |
 | **Boxed Gem of Rare Damage Reduction Boost V** | 20 | Level 200 to open. One Luminous Crystal: +5 Damage Resistance Rating for 3 hours. Removed when you enter an arena match. |
-| **Boxed Burning Coals** | 15 | Three Burning Coals. Each casts Blazing Heart on you once. |
 | **Boxed Luminance Exchange Token** | 10 | One Luminance Exchange Token. Hand it to Hera in the Abandoned Mine with 150,000 luminance for a spin of her reward wheel. |
 | **Darkbeat's Lost Storage Key** | 100 | Opens Darkbeat's Storage Locker (see [[Darkbeat]]). One use, level 40, expires 4 hours after you get it. |
 
@@ -88,7 +87,7 @@ These go on your house hooks. The travel ones need a **mansion floor or yard hoo
 | **Yaraq Outpost** | 200 | Mansion floor or yard hook. Travel to the Yaraq Governor. |
 | **Withered Way** | 250 | Mansion floor or yard hook. Travel to Withered. |
 | **Chieftain's Passage** | 250 | Mansion floor or yard hook. Travel into the Dark Design. |
-| **Campfire** | 250 | House hook. Once a day: 2 Burning Coals. |
+| **Campfire** | 250 | House hook. Gives 2 Burning Coals a day once Burning Coals return (Stage 2). |
 | **Explorer's Backpack** | 100 | A side pack that holds 48 items. |
 | **Pumpkin Backpack** | 100 | A side pack that holds 48 items. Weighs almost nothing. |
 | **Box of Ten Promissory Notes** | 10 | Ten Promissory Notes. |

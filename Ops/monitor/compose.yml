@@ -20,6 +20,8 @@ services:
       TZ: America/New_York
     volumes:
       - monitor-data:/data
+      # the server's settings list, read live for the Settings and PvP damage pages (a git pull updates it)
+      - ../../Source/ACE.Server/Managers/PropertyManager.cs:/app/PropertyManager.cs:ro
     ports:
       # LAN only: bound to the server's LAN address; the router does not forward TCP 8080.
       - "192.168.0.190:8080:8080"

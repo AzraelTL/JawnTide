@@ -498,6 +498,9 @@ namespace ACE.Server.Managers
 
         public static readonly ReadOnlyDictionary<string, Property<bool>> DefaultBooleanProperties =
             DictOf(
+                ("burning_coals_enabled", new Property<bool>(false, "JawnTide: Burning Coals (460000, 480613) can be used. Off until Stage 2; turn on with the Stage 2 vendor and Campfire files (Ops/loot-stages/DISABLED.md)")),
+                ("stuck_state_auto_fix", new Property<bool>(true, "JawnTide: clear a player's busy state when it has lasted 2 minutes (stuck after an action that never finished: can move but can't change stance, wield, use kits or attack). /fixbusy does it after 10 seconds")),
+                ("combat_mode_attack_fix", new Property<bool>(true, "JawnTide: when a melee or missile attack or a spell cast arrives while the server still has the player in peace mode (macros switching weapon or stance quickly), switch into the mode the wielded weapon or wand needs and make the attack or cast instead of dropping it")),
                 ("transfer_audit_enabled", new Property<bool>(true, "JawnTide bank audit: log bank sends, gives, trades and ground drop-then-pickups between different accounts to transfer_log (/bankaudit)")),
                 ("transfer_audit_notify", new Property<bool>(true, "JawnTide bank audit: tell online staff (Sentinel and up) when a transfer is flagged")),
                 ("economy_stats_enabled", new Property<bool>(true, "JawnTide economy stats: count daily luminance earned/spent and vendor pyreals to economy_daily (/economystats)")),
@@ -681,6 +684,7 @@ namespace ACE.Server.Managers
                 ("transfer_audit_window_minutes", new Property<long>(60, "JawnTide bank audit: the time window for the repeat and funnel flags")),
                 ("world_boss_tokens_per_ip", new Property<long>(2, "JawnTide: world boss tokens (Claw, Blood, Cloak, Fang, Knucklebone, Shroud) one IP address can pick up from the ground per world boss kill; 0 = no limit. Admins are exempt")),
                 ("town_control_governor_vitals_percent", new Property<long>(100, "JawnTide: the Town Control governors' health, stamina and mana as a percent of normal (100 = unchanged, 1 to 1000). Applies when a governor spawns")),
+                ("town_control_crystal_magic_defense_percent", new Property<long>(100, "JawnTide: the Town Control crystals' magic defense (how often they resist spells) as a percent of normal (100 = unchanged, 0 to 1000). Applies when a crystal spawns")),
                 ("town_control_governor_defense_percent", new Property<long>(100, "JawnTide: the Town Control governors' melee, missile and magic defense as a percent of normal (100 = unchanged, 0 to 1000). Applies when a governor spawns")),
                 ("town_control_reentries", new Property<long>(3, "JawnTide: how many times a character may re-enter a town control area after its first entry, per town control event (0 = one entry only). Re-entries do not count again toward town_control_allegiance_player_limit or the IP restriction")),
                 ("char_delete_time", new Property<long>(3600, "the amount of time in seconds a deleted character can be restored")),
@@ -775,6 +779,7 @@ namespace ACE.Server.Managers
                 ("event_boss_look_shade", new Property<double>(0.5, "JawnTide live events: shade for the event boss look")),
                 ("event_boss_scale", new Property<double>(2.0, "JawnTide live events: size of the event boss while the event runs (1 = normal)")),
                 ("cantrip_drop_rate", new Property<double>(1.0, "Scales the chance for cantrips to drop in each tier. Defaults to 1.0, as per end of retail")),
+                ("cloak_damage_reduction_max_proc", new Property<double>(1.0, "JawnTide: the highest proc chance of a damage reduction (-200) cloak, 0 to 1 (0.10 = 10%). 1.0 = no extra cap: by default these cloaks reach 15% plus 1.25% per cloak level (20% at level 5) on hits of 30%+ of max health; smaller hits proc less (2/3 of the hit's share of max health)")),
                 ("cloak_cooldown_seconds", new Property<double>(5.0, "The number of seconds between possible cloak procs.")),
                 ("cloak_max_proc_base", new Property<double>(0.25, "The max proc chance of a cloak.")),
                 ("cloak_max_proc_damage_percentage", new Property<double>(0.30, "The damage percentage at which cloak proc chance plateaus.")),

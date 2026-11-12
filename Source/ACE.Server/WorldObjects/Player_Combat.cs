@@ -802,6 +802,111 @@ namespace ACE.Server.WorldObjects
 
         public CombatMode LastCombatMode;
 
+        /// <summary>JawnTide: set while the server is switching a player into combat mode for an attack that arrived too early.</summary>
+        private bool combatModeFixPending;
+
+        /// <summary>JawnTide: when the player last asked for peace mode themselves (an attack or cast arriving just after is
+        /// left alone, so pressing peace to run in PvP is never undone by a late packet).</summary>
+        private DateTime lastPeaceRequest = DateTime.MinValue;
+
+        /// <summary>
+        /// JawnTide: clears a player stuck "busy" (can move, but can't change stance, wield, use kits or attack) after an action
+        /// that never finished. A busy state is only cleared once it has lasted minBusySeconds, and never mid trade, teleport
+        /// or logout, so a real action in progress is left alone. Also ends a cast or attack that never finished, then puts the
+        /// player in peace mode so the client and server agree. Returns what it cleared (empty when nothing was stuck).
+        /// </summary>
+        public string ClearStuckState(double minBusySeconds)
+        {
+            var cleared = new List<string>();
+            var now = DateTime.UtcNow;
+
+            if (TradeTransferInProgress || Teleporting || IsLoggingOut || IsDead)
+                return "";
+
+            if (IsBusy && (now - BusySince).TotalSeconds >= minBusySeconds)
+            {
+                IsBusy = false;
+                cleared.Add($"busy for {(now - BusySince).TotalSeconds:0}s");
+            }
+
+            if (MagicState.IsCasting && (now - MagicState.StartTime).TotalSeconds >= Math.Max(10, minBusySeconds))
+            {
+                FailCast(false);
+                cleared.Add("an unfinished cast");
+            }
+
+            if (Attacking && !IsBusy)
+            {
+                Attacking = false;
+                cleared.Add("an unfinished attack");
+            }
+
+            if (NextUseTime > now.AddSeconds(5))
+            {
+                NextUseTime = now;
+                cleared.Add("a stance/use lock");
+            }
+
+            combatModeFixPending = false;
+
+            if (cleared.Count == 0)
+                return "";
+
+            log.Warn($"[STUCK] {Name}: cleared {string.Join(", ", cleared)}");
+
+            SendUseDoneEvent();
+            LastCombatMode = CombatMode.NonCombat;
+            SetCombatMode(CombatMode.NonCombat);
+
+            return string.Join(", ", cleared);
+        }
+
+        /// <summary>
+        /// JawnTide: an attack arrived while the server still had the player out of that combat mode (the client, usually a
+        /// macro, switched weapon or stance faster than the server). Switches into the mode the equipped weapon needs (melee,
+        /// missile, or magic with a wand or orb), then retries the attack or cast once. Returns false when it can't help (turned off, busy, wrong weapon, or already retried),
+        /// and the attack is dropped as before. Setting: combat_mode_attack_fix.
+        /// </summary>
+        public bool TryFixCombatModeForAttack(CombatMode mode, Action retry, Action giveUp = null)
+        {
+            if (!PropertyManager.GetBool("combat_mode_attack_fix").Item || combatModeFixPending)
+                return false;
+
+            if (IsBusy || Teleporting || IsDead || suicideInProgress || IsArenaObserver)
+                return false;
+
+            // only when the server has the player in peace mode and no other stance was asked for: if the player has just
+            // asked for another mode (say magic, mid weapon swap), a late attack must never pull them out of it
+            if (CombatMode != CombatMode.NonCombat || LastCombatMode != CombatMode.NonCombat)
+                return false;
+
+            if ((DateTime.UtcNow - lastPeaceRequest).TotalSeconds < 3)
+                return false;
+
+            // only the mode the equipped weapon is for
+            var missile = GetEquippedMissileWeapon();
+            var wand = GetEquippedWand();
+            if (mode == CombatMode.Missile && missile == null) return false;
+            if (mode == CombatMode.Melee && (missile != null || wand != null)) return false;
+            if (mode == CombatMode.Magic && wand == null) return false;
+
+            combatModeFixPending = true;
+
+            HandleActionChangeCombatMode(mode, false, () =>
+            {
+                combatModeFixPending = false;
+
+                if (CombatMode == mode)
+                    retry();
+                else if (giveUp != null)
+                    giveUp();
+                else
+                    OnAttackDone();
+            });
+
+            return true;
+        }
+
         public const float UseTimeEpsilon = 0.05f;
 
         /// <summary>
@@ -838,6 +943,9 @@ namespace ACE.Server.WorldObjects
             }
 
             LastCombatMode = newCombatMode;
+
+            if (newCombatMode == CombatMode.NonCombat)
+                lastPeaceRequest = DateTime.UtcNow;
             
             if (DateTime.UtcNow >= NextUseTime.AddSeconds(UseTimeEpsilon))
                 HandleActionChangeCombatMode_Inner(newCombatMode, forceHandCombat, callback);
