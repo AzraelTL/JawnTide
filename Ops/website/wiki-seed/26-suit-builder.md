@@ -26,6 +26,7 @@ Next to the tabs, **Show** picks which spells are listed on items and in the spe
 ### Extras
 - **Armor sets**: up to two, each with how many pieces (for example 5 of one set and 4 of another). Tick "body armor only from these sets" to leave out other sets' armor.
 - **Tailoring reductions**: a multi-slot piece can be used as if reduced to one slot (a hauberk as a chest piece). It's marked "tailor-reduce to this" in the results.
+- **Covenant armor**: **leave out** (the default), **allow**, or **Covenant armor only** (every armor slot is a Covenant piece; underclothes and jewelry are picked as usual). The Item search has the same choice: show, hide or only.
 - **Impenetrability**: on each armor piece and on each underclothes piece, doesn't matter, prefer or require, with the lowest level you'll accept. It counts per piece because it raises that piece's own armor level.
 - **Armor level**: doesn't matter, tie-breaker or important.
 - **Ratings** to collect (damage, crit damage, resists and so on).
