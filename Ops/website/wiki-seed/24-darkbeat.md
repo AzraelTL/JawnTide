@@ -9,9 +9,9 @@ Unless noted, these only work on **loot-generated** items that aren't attuned, a
 | Item | Price | What it does |
 |---|---|---|
 | **Morph Gem of Strength / Endurance / Coordination / Quickness / Focus / Willpower** | 50 each | Adds Zongo's Fist, Hunter's Hardiness, Brighteyes' Favor, Bobo's Quickening, Ketnan's Eye or Duke Raoul's Pride to magical armor, clothing or jewelry. Always works; not if the item already has that spell. |
-| **Blazing Heart Morph Gem** | 10 | Adds Blazing Heart to magical armor, clothing or jewelry. Always works. |
+| **Blazing Heart Morph Gem** | 10 | Adds Blazing Heart (+30 Health) to magical armor, clothing or jewelry. Always works. Doesn't stack with Essence Glutton. |
 | **Foolproof Hematite** | 20 | Adds Warrior's Vitality to magical armor, clothing or jewelry. Always works. |
-| **Salvaged Obsidian** (full bag) | 10 | An imbue for magical loot jewelry: adds Blazing Heart, +25 Arcane Lore, +25 Spellcraft and +15,000 value. Uses your Magic Item Tinkering imbue chance; **failure destroys the item**. |
+| **Salvaged Obsidian** (full bag) | 10 | An imbue for magical loot jewelry: adds Blazing Heart (+30 Health), +25 Arcane Lore, +25 Spellcraft and +15,000 value. Uses your Magic Item Tinkering imbue chance; **failure destroys the item**. |
 | **Imbue Altering Morph Gem** | 5 | On a weapon imbued with Armor Rending, Crippling Blow or Critical Strike: changes it to one of the other two (50/50). |
 | **Oil of Creature Slaying** | 50 | Adds a random 1.8 slayer to a loot melee weapon, caster, bow or thrown weapon that has no slayer. A Slayer Morph Gem can reroll the creature type later. |
 | **Player Wield Requirement Morph Gem** | 10 | Removes the "can only be wielded by (name)" lock. Works on quest items too. |

@@ -4,3 +4,5 @@
 2026-11-10-player-commands 14-player-commands.md
 2026-11-11-coals-held-back 23-town-treasurers.md
 2026-11-11-coals-held-back-db 24-darkbeat.md
+2026-11-12-blazing-heart-30 24-darkbeat.md
+2026-11-12-stuck-peace-mode 14-player-commands.md
