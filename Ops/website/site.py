@@ -416,6 +416,7 @@ PAGES = [("/", "Home"), ("/pk", "PK kills"), ("/towns", "Town Control"), ("/aren
 def layout(path, title, body, snap):
     nav = "".join(f'<a href="{p}"{" aria-current=page" if p == path else ""}>{t}</a>' for p, t in PAGES)
     nav += f'<a href="/market"{" aria-current=page" if path == "/market" else ""}>Market</a>'
+    nav += f'<a href="/suit"{" aria-current=page" if path == "/suit" else ""}>Suit Builder</a>'
     nav += f'<a href="/wiki"{" aria-current=page" if path == "/wiki" else ""}>Wiki</a>'
     nav += f'<a class="play" href="{e(TANKS_URL)}">JawnTanks</a>'
     stamp = f'<p class="stamp">Updated {e(snap["taken"].strftime("%b %d, %I:%M %p"))} server time. Refreshes every {INTERVAL // 60} minutes.</p>' if snap else ""
