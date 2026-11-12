@@ -30,7 +30,12 @@ Everything you store is shared by all the characters on your account.
 The website's [[Suit Builder]] finds the best suit in your mule for the slots and spells you pick. Save it, then open your mule and type `/mule suit CODE` to show just those items.
 
 ## Clearing out your mule
-`/mule purge FILTER` deletes many items at once. Open your mule first. It only **shows** what matches (the mule window filters to those items); type `/mule purge confirm` within 2 minutes to delete them for good, or `/mule purge cancel`. Guests can't purge.
+`/mule purge FILTER` removes many items at once. Open your mule first.
+1. `/mule purge FILTER` only **shows** what matches: the mule window filters to those items. Check them.
+2. `/mule purge confirm` (within 2 minutes) asks you to agree to a warning. Say No if anything you want to keep is in the list.
+3. Removed items are **held for 7 days**. `/mule purge undo` brings the last purge back, `/mule purge list` shows the purges you can still undo and `/mule purge undo N` brings back an older one. After 7 days they're deleted for good.
+
+`/mule purge cancel` stops a purge before you confirm it. Guests can't purge.
 
 | Filter | Meaning |
 |---|---|

@@ -6,7 +6,10 @@ using System.Text.RegularExpressions;
 
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Database;
 using ACE.Server.Entity;
+using ACE.Server.Entity.Actions;
+using ACE.Server.Factories;
 using ACE.Server.Network.GameMessages.Messages;
 
 namespace ACE.Server.WorldObjects
@@ -30,6 +33,7 @@ namespace ACE.Server.WorldObjects
         private HashSet<uint> pendingMulePurge;
         private DateTime pendingMulePurgeAt;
         private uint pendingMulePurgeVendor;
+        private string pendingMulePurgeFilter;
 
         private const int MulePurgeConfirmMinutes = 2;
 
@@ -65,6 +69,18 @@ namespace ACE.Server.WorldObjects
             if (args.Equals("confirm", StringComparison.OrdinalIgnoreCase))
             {
                 ConfirmMulePurge(vendor, Say);
+                return;
+            }
+
+            if (args.Equals("list", StringComparison.OrdinalIgnoreCase))
+            {
+                ListMulePurges(Say);
+                return;
+            }
+
+            if (args.StartsWith("undo", StringComparison.OrdinalIgnoreCase))
+            {
+                UndoMulePurge(vendor, args.Substring(4).Trim(), Say);
                 return;
             }
 
@@ -183,6 +199,7 @@ namespace ACE.Server.WorldObjects
             pendingMulePurge = matches.Select(wo => wo.Guid.Full).ToHashSet();
             pendingMulePurgeAt = DateTime.UtcNow;
             pendingMulePurgeVendor = vendor.Guid.Full;
+            pendingMulePurgeFilter = args.Length > 255 ? args.Substring(0, 255) : args;
 
             // show just these in the mule window, so they can be checked before confirming
             vendor.MuleSearchRegex = null;
@@ -192,7 +209,7 @@ namespace ACE.Server.WorldObjects
             var units = matches.Sum(wo => wo.StackSize ?? 1);
             var sample = string.Join(", ", matches.Take(6).Select(wo => wo.NameWithMaterial ?? wo.Name)) + (matches.Count > 6 ? $" and {matches.Count - 6} more" : "");
             Say($"{matches.Count} mule item{(matches.Count == 1 ? "" : "s")} match{(matches.Count == 1 ? "es" : "")} ({units:N0} counting stacks): {sample}. " +
-                $"The mule window now shows only these. To DELETE them for good, type /mule purge confirm within {MulePurgeConfirmMinutes} minutes. /mule purge cancel to stop.");
+                $"The mule window now shows only these: check them. To remove them, type /mule purge confirm within {MulePurgeConfirmMinutes} minutes (you'll get a warning to agree to). /mule purge cancel to stop.");
         }
 
         private void ConfirmMulePurge(Vendor vendor, Action<string> Say)
@@ -204,11 +221,66 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            var count = pendingMulePurge.Count;
+            var days = ACE.Server.Managers.MulePurgeManager.HoldDays;
+            var msg = $"WARNING: remove {count} item{(count == 1 ? "" : "s")} from your mule?\n\n" +
+                      "Check the mule window first: it shows exactly what will be removed. If your filter caught items you meant to keep, say No.\n\n" +
+                      (days > 0
+                        ? $"The items are held for {days} day{(days == 1 ? "" : "s")}: /mule purge undo brings the last purge back (/mule purge list shows them). After that they are deleted for good and can't be recovered."
+                        : "They are deleted for good right away and can't be recovered.");
+
+            if (!ConfirmationManager.EnqueueSend(new Confirmation_Custom(Guid, () => ExecuteMulePurge(vendor)), msg))
+                Say("You already have a question waiting. Answer it first.");
+        }
+
+        /// <summary>After the popup's Yes: takes the items out of the mule into the account's purge bin, held for mule_purge_hold_days.</summary>
+        private void ExecuteMulePurge(Vendor vendor)
+        {
+            void Say(string text) => Session.Network.EnqueueSend(new GameMessageSystemChat(text, ChatMessageType.Broadcast));
+
+            if (pendingMulePurge == null || vendor == null || vendor.IsDestroyed || vendor.MuleContainers == null || pendingMulePurgeVendor != vendor.Guid.Full
+                || DateTime.UtcNow - pendingMulePurgeAt > TimeSpan.FromMinutes(MulePurgeConfirmMinutes + 2))
+            {
+                pendingMulePurge = null;
+                Say("That purge expired or your mule left. Nothing was removed.");
+                return;
+            }
+
             var guids = pendingMulePurge;
+            var filter = pendingMulePurgeFilter;
             pendingMulePurge = null;
 
+            var db = DatabaseManager.Shard.BaseDatabase;
+            var accountId = Account.AccountId;
+            var days = ACE.Server.Managers.MulePurgeManager.HoldDays;
+
+            // the account's purge bin: a storage container that isn't part of the mule, so held items don't show or count
+            uint binGuid = 0;
+            if (days > 0)
+            {
+                var rows = db.PvpToolsQuery("SELECT container_Id FROM mule_purge_bin WHERE account_Id = @a;", ("@a", accountId));
+                if (rows == null)
+                {
+                    Say("The purge couldn't start (database). Nothing was removed.");
+                    return;
+                }
+                if (rows.Count > 0)
+                    binGuid = Convert.ToUInt32(rows[0][0]);
+                else
+                {
+                    var bin = CreateNewMuleContainer();
+                    if (bin == null)
+                    {
+                        Say("The purge couldn't start. Nothing was removed.");
+                        return;
+                    }
+                    binGuid = bin.Guid.Full;
+                    db.PvpToolsExecute("INSERT INTO mule_purge_bin (account_Id, container_Id) VALUES (@a, @c);", ("@a", accountId), ("@c", binGuid));
+                }
+            }
+
             var touched = new HashSet<WorldObject>();
-            var deleted = new List<string>();
+            var moved = new List<(uint guid, string name, int stack)>();
 
             foreach (var guid in guids)
             {
@@ -219,8 +291,15 @@ namespace ACE.Server.WorldObjects
 
                 vendor.UniqueItemsForSale.Remove(objGuid);
                 touched.Add(container);
-                deleted.Add($"{item.NameWithMaterial ?? item.Name} x{item.StackSize ?? 1} (0x{guid:X8})");
-                item.Destroy();   // handles its own database removal
+                moved.Add((guid, (item.NameWithMaterial ?? item.Name ?? "?").Length > 128 ? (item.NameWithMaterial ?? item.Name).Substring(0, 128) : (item.NameWithMaterial ?? item.Name ?? "?"), item.StackSize ?? 1));
+
+                if (days > 0)
+                {
+                    item.ContainerId = binGuid;
+                    item.SaveBiotaToDatabase();
+                }
+                else
+                    item.Destroy();   // handles its own database removal
             }
 
             foreach (var c in touched)
@@ -229,8 +308,126 @@ namespace ACE.Server.WorldObjects
             vendor.MuleSuitGuids = null;
             RefreshMuleVendorDisplay(vendor, VendorType.Undef);
 
-            log.Info($"[MULE] {Name} (0x{Guid}, account {Account.AccountId}) purged {deleted.Count} mule items: {string.Join(", ", deleted)}");
-            Say($"Deleted {deleted.Count} item{(deleted.Count == 1 ? "" : "s")} from your mule.");
+            if (moved.Count > 0)
+            {
+                var by = Name;
+                var batch = DateTime.UtcNow.Ticks;
+                var status = days > 0 ? "held" : "deleted";
+                DatabaseManager.Shard.MarketEnqueue(() =>
+                {
+                    foreach (var m in moved)
+                        db.PvpToolsExecute("INSERT INTO mule_purge (account_Id, batch_Id, item_Guid, item_Name, stack_Size, filter, purged_By, purged_At, status, done_At) " +
+                                           "VALUES (@a, @b, @g, @n, @s, @f, @by, @t, @st, @d);",
+                            ("@a", accountId), ("@b", batch), ("@g", m.guid), ("@n", m.name), ("@s", m.stack), ("@f", filter), ("@by", by),
+                            ("@t", DateTime.UtcNow), ("@st", status), ("@d", days > 0 ? null : (object)DateTime.UtcNow));
+                });
+            }
+
+            log.Info($"[MULE] {Name} (0x{Guid}, account {accountId}) purged {moved.Count} mule items ({(days > 0 ? $"held {days} days" : "deleted")}), filter \"{filter}\": " +
+                     string.Join(", ", moved.Select(m => $"{m.name} x{m.stack} (0x{m.guid:X8})")));
+            Say(days > 0
+                ? $"Removed {moved.Count} item{(moved.Count == 1 ? "" : "s")} from your mule. They're held for {days} day{(days == 1 ? "" : "s")}: /mule purge undo brings them back."
+                : $"Deleted {moved.Count} item{(moved.Count == 1 ? "" : "s")} from your mule.");
+        }
+
+        /// <summary>/mule purge list: this account's purges still held.</summary>
+        private void ListMulePurges(Action<string> Say)
+        {
+            var rows = DatabaseManager.Shard.BaseDatabase.PvpToolsQuery(
+                "SELECT batch_Id, MIN(purged_At), COUNT(*), MIN(filter), MIN(purged_By) FROM mule_purge WHERE account_Id = @a AND status = 'held' GROUP BY batch_Id ORDER BY batch_Id DESC LIMIT 10;",
+                ("@a", Account.AccountId));
+            if (rows == null || rows.Count == 0)
+            {
+                Say("No purged items are being held for your account.");
+                return;
+            }
+            var days = ACE.Server.Managers.MulePurgeManager.HoldDays;
+            var i = 0;
+            Say("Purges you can still undo (newest first; /mule purge undo N brings one back, /mule purge undo the newest):");
+            foreach (var r in rows)
+            {
+                i++;
+                var at = (DateTime)r[1];
+                var left = at.AddDays(days) - DateTime.UtcNow;
+                Say($"  {i}. {Convert.ToInt32(r[2])} items, \"{r[3]}\" by {r[4]}, deleted for good in {(left.TotalHours >= 24 ? $"{(int)left.TotalDays} days" : $"{Math.Max(0, (int)left.TotalHours)} hours")}");
+            }
+        }
+
+        /// <summary>/mule purge undo [N]: brings a held purge back into the open mule (newest, or the Nth from /mule purge list).</summary>
+        private void UndoMulePurge(Vendor vendor, string which, Action<string> Say)
+        {
+            var n = 1;
+            if (!string.IsNullOrWhiteSpace(which) && (!int.TryParse(which, out n) || n < 1 || n > 10))
+            {
+                Say("Usage: /mule purge undo [N], where N is a number from /mule purge list.");
+                return;
+            }
+
+            var accountId = Account.AccountId;
+            var db = DatabaseManager.Shard.BaseDatabase;
+
+            DatabaseManager.Shard.MarketEnqueue(() =>
+            {
+                var batches = db.PvpToolsQuery("SELECT batch_Id FROM mule_purge WHERE account_Id = @a AND status = 'held' GROUP BY batch_Id ORDER BY batch_Id DESC LIMIT 10;", ("@a", accountId));
+                if (batches == null || batches.Count < n)
+                {
+                    EnqueueAction(new ActionEventDelegate(() => Say("There's no held purge to undo. /mule purge list shows them.")));
+                    return;
+                }
+                var batch = Convert.ToInt64(batches[n - 1][0]);
+                var rows = db.PvpToolsQuery("SELECT id, item_Guid FROM mule_purge WHERE account_Id = @a AND batch_Id = @b AND status = 'held';", ("@a", accountId), ("@b", batch));
+
+                // read the held items here, off the game thread
+                var items = new List<(long id, ACE.Database.Models.Shard.Biota biota)>();
+                foreach (var r in rows ?? new List<object[]>())
+                {
+                    var b = db.GetBiota(Convert.ToUInt32(r[1]));
+                    if (b != null)
+                        items.Add((Convert.ToInt64(r[0]), b));
+                }
+
+                EnqueueAction(new ActionEventDelegate(() =>
+                {
+                    if (vendor == null || vendor.IsDestroyed || vendor.MuleContainers == null)
+                    {
+                        Say("Your mule left. Open it again and retry /mule purge undo.");
+                        return;
+                    }
+
+                    // only as many as the mule has room for; the rest stay held for another undo
+                    var free = vendor.MuleContainers.Sum(c => Math.Max(0, (c.ItemCapacity ?? 0) - c.Inventory.Count))
+                               + Math.Max(0, MuleInfo.MaxContainers - vendor.MuleContainers.Count) * 255;
+                    var skipped = Math.Max(0, items.Count - free);
+
+                    var touched = new HashSet<WorldObject>();
+                    var restored = new List<long>();
+                    foreach (var (id, biota) in items.Take(free))
+                    {
+                        var wo = WorldObjectFactory.CreateWorldObject(biota);
+                        if (wo == null)
+                            continue;
+                        wo.ContainerId = null;
+                        AddToMuleStorage(vendor.MuleContainers, wo, touched);
+                        restored.Add(id);
+                    }
+
+                    foreach (var wo in touched)
+                        wo.SaveBiotaToDatabase();
+
+                    ACE.Server.Managers.MarketManager.QueueIcons(touched);
+                    RefreshMuleVendorDisplay(vendor, VendorType.Undef);
+
+                    DatabaseManager.Shard.MarketEnqueue(() =>
+                    {
+                        foreach (var id in restored)
+                            db.PvpToolsExecute("UPDATE mule_purge SET status = 'restored', done_At = @t WHERE id = @id;", ("@t", DateTime.UtcNow), ("@id", id));
+                    });
+
+                    log.Info($"[MULE] {Name} (0x{Guid}, account {accountId}) undid a purge: {restored.Count} items back in the mule");
+                    Say($"Brought {restored.Count} item{(restored.Count == 1 ? "" : "s")} back into your mule." +
+                        (skipped > 0 ? $" {skipped} more didn't fit and are still held: make room and run /mule purge undo again." : ""));
+                }));
+            });
         }
 
         private static bool SafeMatch(Regex rx, string text)

@@ -309,6 +309,7 @@ namespace ACE.Server
 
             log.Info("Initializing SettingsRequests...");
             SettingsRequests.Initialize();
+            MulePurgeManager.Initialize();
 
             log.Info("Initializing ArenaManager...");
             ArenaManager.Initialize();
