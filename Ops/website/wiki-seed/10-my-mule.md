@@ -44,6 +44,7 @@ The website's [[Suit Builder]] finds the best suit in your mule for the slots an
 | `material:leather` / `-material:metal` | made of cloth, leather, metal, gem, stone, wood or ceramic, or one material by name (`material:steel`, `material:satin`) |
 | `spell:legendary` / `-spell:legendary` | has / hasn't a spell whose name matches |
 | `set:defender` | armor set name contains |
+| `suit:CODE` | one of the items of a list saved on the website's [[Suit Builder]] (for example its "beaten items" list) |
 | `name:robe` / `-name:robe` (or just `robe`) | name contains / doesn't contain |
 
 All filters must match. Examples: `/mule purge type:shield al<200`, `/mule purge type:armor material:cloth`, `/mule purge type:armor -spell:legendary -spell:epic`, `/mule purge type:salvage work<6`. The purge errs on the side of caution: an item that doesn't have what a filter checks is never deleted by it. `al<200` skips items with no armor level, `level<150` skips items with no level requirement, and `-material:metal` skips items with no material.
