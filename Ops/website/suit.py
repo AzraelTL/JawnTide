@@ -33,6 +33,10 @@ def _spell_names(d):
     I = d.get("int", {})
     cloak = int(I.get("ValidLocations") or 0) & 0x8000000
     out = [x["name"] for x in d.get("spells", []) if x.get("name") and not x.get("proc") and not x.get("use")]
+    # a cloak's skill (its set, e.g. CloakTwoHandedCombat -> "Two Handed Combat Cloak") comes first
+    set_name = str(d.get("names", {}).get("EquipmentSetId") or "")
+    if cloak and set_name.startswith("Cloak") and len(set_name) > 5:
+        out.insert(0, market.pretty(set_name[5:]) + " Cloak")
     for x in d.get("spells", []):
         if x.get("name") and x.get("proc"):
             n = x["name"]
@@ -372,7 +376,7 @@ const S={slots:new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd')),want:[],set:'',
   noatt:false,locked:new Set(),excluded:new Set(),results:null,busy:false,msg:'',src:new Set((D.sources||[]).filter(x=>x.on).map(x=>x.k))};
 // which spells to list: only cantrips (Minor/Major/Epic/Legendary), or every spell; remembered in this browser
 try{S.allSpells=localStorage.getItem('suitAllSpells')==='1'}catch(e){S.allSpells=false}
-const showSpell=n=>S.allSpells||parse(n).c||/^(Surge|Cast on strike)\b/i.test(n);
+const showSpell=n=>S.allSpells||parse(n).c||/^(Surge|Cast on strike)\b/i.test(n)||/ Cloak$/.test(n);
 const SRCNAME={};(D.sources||[]).forEach(x=>SRCNAME[x.k]=x.n);
 function applyTemplate(key){const T=TEMPLATES[key];if(!T||!T.k)return;
   if(!T.add){S.want=[];S.slots=new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd'))}
