@@ -74,7 +74,7 @@ def _wearable(d, guid, full, icons, ui, itype, attuned, src):
     return dict(g=int(guid), src=src, n=full, ic=[i for i in icons if i], ui=int(ui or 0), t=int(itype or 0), vl=vl, cov=cov,
                 al=int(I.get("ArmorLevel") or 0), set=market.pretty(N.get("EquipmentSetId")) if N.get("EquipmentSetId") not in (None, "Invalid") else "",
                 sp=spells, rq=reqs, lv=market._wield_level(d) or 0, lore=int(I.get("ItemDifficulty") or 0),
-                rt=ratings, att=bool(attuned and attuned >= 1), wk=int(I.get("ItemWorkmanship") or 0))
+                rt=ratings, att=bool(attuned and attuned >= 1), wk=int(I.get("ItemWorkmanship") or 0), mt=int(I.get("MaterialType") or 0))
 
 
 def _row(d, guid, full, icons, ui, itype, attuned, src, stack=1):
@@ -89,7 +89,7 @@ def _row(d, guid, full, icons, ui, itype, attuned, src, stack=1):
                 val=int(I.get("Value") or 0), dmg=int(I.get("Damage") or 0), dv=round(F.get("DamageVariance") or 0, 2),
                 ws=market.pretty(N.get("WeaponSkill") or N.get("WieldSkillType") or ""), imb=market.pretty(imbue) if imbue and imbue != "Undef" else "",
                 sp=_spell_names(d),
-                rt={k: I[k] for k, _ in RATINGS if I.get(k)}, st=int(stack or 1), att=bool(attuned and attuned >= 1))
+                rt={k: I[k] for k, _ in RATINGS if I.get(k)}, st=int(stack or 1), att=bool(attuned and attuned >= 1), mt=int(I.get("MaterialType") or 0))
 
 
 def _rows_for(rows, src, inv, items):
@@ -335,6 +335,9 @@ function parse(name){
 const TIERN={1:'Minor',2:'Major',3:'Epic',4:'Legendary'};
 const IMP='Impenetrability';
 const ARMORVL=0x1|0x20|0x100|0x200|0x400|0x800|0x1000|0x2000|0x4000,UNDERVL=0x2|0x4|0x8|0x10|0x40|0x80,EXTVL=0x1|0x20|0x100;
+// armor material groups (the item's material: Steel, Satin, Gromnie Hide, ...)
+const MATS=[['metal','Metal'],['leather','Leather and hide'],['cloth','Cloth'],['other','Other']];
+const matGroup=it=>{const m=it.mt||0;return m>=56&&m<=64?'metal':m>=52&&m<=55?'leather':m>=3&&m<=8?'cloth':'other'};
 const isCov=it=>/\bcovenant\b/i.test(it.n);
 const pieceKind=it=>it.vl&ARMORVL?'armor':(it.vl&UNDERVL?'under':null);
 const impOn=it=>{const k=pieceKind(it);return k&&S.imp[k].m!=='off'};
@@ -372,7 +375,7 @@ function resolve(k){const kk=k.toLowerCase();
   return FAMLIST.find(f=>FAMS[f].c&&f.toLowerCase()===kk)||FAMLIST.find(f=>FAMS[f].c&&f.toLowerCase().includes(kk))||FAMLIST.find(f=>f.toLowerCase().includes(kk))||null}
 
 // ---- state
-const S={slots:new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd')),want:[],set:'',setN:5,set2:'',setN2:4,onlySets:false,reduce:false,cov:'out',
+const S={slots:new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd')),want:[],set:'',setN:5,set2:'',setN2:4,onlySets:false,reduce:false,cov:'out',mats:new Set(['metal','leather','cloth','other']),
   F:{alBody:'',alExt:'',lvMin:'',lvMax:'',re:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:''},obs:null,al:1,rate:{},imp:{armor:{m:'off',t:4},under:{m:'off',t:4}},char:D.chars[0]?D.chars[0].n:'',noreq:false,
   noatt:false,locked:new Set(),excluded:new Set(),results:null,busy:false,msg:'',src:new Set((D.sources||[]).filter(x=>x.on).map(x=>x.k))};
 // which spells to list: only cantrips (Minor/Major/Epic/Legendary), or every spell; remembered in this browser
@@ -397,7 +400,7 @@ const INV=(D.inv||[]).map(r=>{let leg=0,epic=0;for(const n of r.sp){const p=pars
   return Object.assign(r,{leg,epic,sl,off:rsum(['GearDamage','GearCrit','GearCritDamage']),def:rsum(['GearDamageResist','GearCritResist','GearCritDamageResist']),tot:Object.values(r.rt).reduce((a,x)=>a+Math.max(0,x),0),
     cat:CATS.some(c=>c[0]===r.cat)?r.cat:'other',where:r.src==='m'?'Market':r.src==='me'?'My mule':(SRCNAME[r.src]||'guest mule'),it:BYKEY[r.src+':'+r.g]})});
 const IMBUES=[...new Set(INV.map(r=>r.imb).filter(Boolean))].sort();
-const IS={q:'',cats:new Set(CATS.map(c=>c[0])),slot:'',set:'',imb:'',cov:'',alMin:'',alMax:'',lvMin:'',lvMax:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:'',wkMax:'',sort:'n',dir:1};
+const IS={q:'',cats:new Set(CATS.map(c=>c[0])),slot:'',set:'',imb:'',cov:'',mat:'',alMin:'',alMax:'',lvMin:'',lvMax:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:'',wkMax:'',sort:'n',dir:1};
 const COLS=[['n','Item'],['cat','Type'],['sl','Slots'],['set','Set'],['al','AL'],['lv','Level'],['lore','Lore'],['wk','Work'],['leg','Leg'],['epic','Epic+'],
   ['tot','Ratings'],['dmg','Damage'],['imb','Imbue'],['val','Value'],['where','Where']];
 function invRows(){let rx=null;if(IS.q){try{rx=new RegExp(IS.q,'i')}catch(e){rx=null}}
@@ -407,6 +410,7 @@ function invRows(){let rx=null;if(IS.q){try{rx=new RegExp(IS.q,'i')}catch(e){rx=
     if(IS.slot&&!r.sl.split(', ').includes(IS.slot))return false;
     if(IS.set&&r.set!==IS.set)return false;
     if(IS.imb&&r.imb!==IS.imb)return false;
+    if(IS.mat&&matGroup(r)!==IS.mat)return false;
     if(IS.cov==='out'&&isCov(r))return false;
     if(IS.cov==='only'&&!isCov(r))return false;
     const chk=(v,min,max)=>!((n(min)!=null&&v<n(min))||(n(max)!=null&&v>n(max)));
@@ -430,7 +434,7 @@ function itemsView(){
   return `<div class=sbox><h2>Item search</h2>
     <div class=row><input type=text data-if="q" value="${esc(IS.q)}" placeholder="Name or spell (regular expression, e.g. legendary.*legendary)" style="min-width:min(100%,24rem)"><button id=ifclear>Clear filters</button></div>
     <div class=row>${CATS.map(([k,l])=>`<label><input type=checkbox data-icat="${k}"${IS.cats.has(k)?' checked':''}> ${l}</label>`).join('')}</div>
-    <div class=row>${sel('slot','Slot',SLOTS.filter(s=>s[0]!=='uabd').map(s=>s[1]))}${sel('set','Set',Object.keys(SETS).sort())}${sel('imb','Imbue',IMBUES)}<label>Covenant armor <select data-if="cov"><option value=""${IS.cov===''?' selected':''}>show</option><option value=out${IS.cov==='out'?' selected':''}>hide</option><option value=only${IS.cov==='only'?' selected':''}>only</option></select></label></div>
+    <div class=row>${sel('slot','Slot',SLOTS.filter(s=>s[0]!=='uabd').map(s=>s[1]))}${sel('set','Set',Object.keys(SETS).sort())}${sel('imb','Imbue',IMBUES)}<label>Material <select data-if="mat"><option value="">(any)</option>${MATS.map(([k,l])=>`<option value=${k}${IS.mat===k?' selected':''}>${l}</option>`).join('')}</select></label><label>Covenant armor <select data-if="cov"><option value=""${IS.cov===''?' selected':''}>show</option><option value=out${IS.cov==='out'?' selected':''}>hide</option><option value=only${IS.cov==='only'?' selected':''}>only</option></select></label></div>
     <div class=row>${fi('alMin','AL from')}${fi('alMax','to')}${fi('lvMin','Level from')}${fi('lvMax','to')}${fi('wkMax','Workmanship at most')}</div>
     <div class=row>${fi('minLeg','At least N Legendary')}${fi('minEpic','Epic or better')}${fi('minOff','Offensive ratings')}${fi('minDef','Defensive')}${fi('minTot','Total ratings')}</div>
     <div class=row><span class=muted>${rows.length.toLocaleString()} item${rows.length===1?'':'s'}${rows.length>500?', showing the first 500: narrow the filters':''}. Click a column to sort.</span><button id=ifcsv>Download as CSV (spreadsheet)</button></div></div>
@@ -482,6 +486,8 @@ function render(){
       <label>pieces <input type=number id=setn2 min=2 max=9 value="${S.setN2}"></label>
       <label><input type=checkbox id=onlysets${S.onlySets?' checked':''}> body armor only from these sets</label></div>
     <div class=row><label><input type=checkbox id=reduce${S.reduce?' checked':''}> allow tailoring reductions (a multi-slot piece can be reduced to one slot)</label></div>
+    <div class=row><span>Armor made of:</span>${MATS.map(([k,l])=>`<label><input type=checkbox data-mat="${k}"${S.mats.has(k)?' checked':''}> ${l}</label>`).join('')}
+      <span class="sm muted">applies to armor pieces only; "other" includes pieces with no material</span></div>
     <div class=row><label>Covenant armor <select id=cov><option value=out${S.cov==='out'?' selected':''}>leave out</option><option value=ok${S.cov==='ok'?' selected':''}>allow</option><option value=only${S.cov==='only'?' selected':''}>Covenant armor only</option></select></label>
       <span class="sm muted">"Covenant armor only" uses Covenant pieces for every armor slot; underclothes and jewelry are picked as usual.</span></div>
     ${['armor','under'].map(k=>{const o=S.imp[k];return `<div class=row><span>Impenetrability cantrip on each ${k==='armor'?'armor piece':'underclothes piece (shirt, pants)'}:</span>
@@ -579,6 +585,7 @@ function buildProblem(){
     if(!isLocked&&io&&io.m==='require'&&itier<io.t)continue;
     if(!isLocked&&!passesFilters(it))continue;
     if(!isLocked&&S.cov!=='ok'&&pieceKind(it)==='armor'&&isCov(it)!==(S.cov==='only'))continue;
+    if(!isLocked&&pieceKind(it)==='armor'&&!S.mats.has(matGroup(it)))continue;
     if(!isLocked&&S.onlySets&&(S.set||S.set2)&&(it.vl&0x7E00)&&it.set!==S.set&&it.set!==S.set2)continue;
     const tv=fams.map(f=>it.fams[f]||0);
     const bonus=(it.src==='m'?-0.6:it.src==='me'?0:-0.3)+S.al*it.al/1000+rkeys.reduce((a,k)=>a+(it.rt[k]||0),0)+(io&&io.m==='prefer'&&itier>=io.t?2:0);
@@ -684,7 +691,7 @@ app.addEventListener('click',ev=>{const th=ev.target.closest('th[data-sort]');
   if(th){const k=th.dataset.sort;if(IS.sort===k)IS.dir=-IS.dir;else{IS.sort=k;IS.dir=['n','cat','sl','set','imb','where'].includes(k)?1:-1}render();return}
   const t=ev.target.closest('button');if(!t)return;const d=t.dataset;
   if(d.tab){S.tab=d.tab;render();return}
-  if(t.id==='ifclear'){Object.assign(IS,{q:'',cats:new Set(CATS.map(c=>c[0])),slot:'',set:'',imb:'',cov:'',alMin:'',alMax:'',lvMin:'',lvMax:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:'',wkMax:''});render();return}
+  if(t.id==='ifclear'){Object.assign(IS,{q:'',cats:new Set(CATS.map(c=>c[0])),slot:'',set:'',imb:'',cov:'',mat:'',alMin:'',alMax:'',lvMin:'',lvMax:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:'',wkMax:''});render();return}
   if(t.id==='ifcsv'){invCsv();return}
   if(t.id==='tplgo'){applyTemplate(document.getElementById('tpl').value);render();return}
   if(t.id==='sall'){S.slots=new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd'))}
@@ -723,6 +730,7 @@ app.addEventListener('change',ev=>{const t=ev.target;const d=t.dataset;
   if(t.id==='onlysets'){S.onlySets=t.checked;return}
   if(t.id==='reduce'){S.reduce=t.checked;return}
   if(t.id==='cov'){S.cov=t.value;return}
+  if(d.mat){t.checked?S.mats.add(d.mat):S.mats.delete(d.mat);return}
   if(d.f){S.F[d.f]=t.value.trim();return}
   if(t.id==='al'){S.al=+t.value;return}
   if(d.impm){S.imp[d.impm].m=t.value;return}
