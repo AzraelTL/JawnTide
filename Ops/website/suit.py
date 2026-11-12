@@ -186,7 +186,12 @@ def _plans(account):
 
 def page(h, user, query):
     if not user:
-        return wiki._redirect(h, "/wiki/login?next=/suit")
+        return market._page(h, "Suit Builder", '<h1>Suit Builder</h1><p>The Suit Builder searches your mule (and, if you like, your characters, '
+                             'house chests, mules you\'re a guest of and the Market) for the best suit for the slots and spells you pick.</p>'
+                             '<p>It needs your game account, so sign in first. It\'s the same sign-in as the wiki and the Market.</p>'
+                             '<p><a class="btn" href="/wiki/login?next=/suit">Sign in</a> <a class="btn" href="/wiki/link">Register (first time)</a></p>'
+                             '<p class="muted">First time? Registering takes a minute: get a code on the website, type <code>/wiki CODE</code> in game, '
+                             'then pick a password. See <a href="/wiki/website-account">Website account</a>.</p>', None, nav="/suit")
     account = market._account(user)
     if account is None:
         return market._page(h, "Suit Builder", '<h1>Suit Builder</h1><p>Your wiki login isn\'t linked to a game account. '

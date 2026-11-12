@@ -1,5 +1,5 @@
 # Market
-Buy and sell items with other players on the [Market page](/market). Sign in with your wiki login.
+Buy and sell items with other players on the [Market page](/market). Sign in first: it's the same sign-in as the wiki and the [[Suit Builder]]. First time? See [[Website account]].
 
 ## Buying
 - Pay with the **MMDs** or **PK Trophies** in your [[Bank]]. The seller picks which currencies they take; if they take both, you choose.

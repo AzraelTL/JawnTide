@@ -3,7 +3,7 @@ The **Suit Builder** (the **Suit Builder** tab at the top of the website, or [/s
 - **Suit search** finds the best suit of armor, underclothes and jewelry for the slots and spells you choose.
 - **Item search** lists your items in a sortable table, like a spreadsheet.
 
-Sign in with your wiki login (linked to your game account).
+Sign in first: it's the same sign-in as the wiki and the Market. First time? See [[Website account]] (it takes a minute).
 
 ## Where to look
 At the top, tick where items can come from:
