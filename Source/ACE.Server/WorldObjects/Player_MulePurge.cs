@@ -93,6 +93,7 @@ namespace ACE.Server.WorldObjects
                     key = key.TrimStart('-');
 
                     Func<WorldObject, bool> f;
+                    Func<WorldObject, bool> known = wo => true;   // whether the item says what this filter looks at
                     switch (key)
                     {
                         case "type":
@@ -109,7 +110,8 @@ namespace ACE.Server.WorldObjects
                         case "material":
                         case "mat":
                             var mat = PurgeMaterial(val);
-                            f = wo => wo.MaterialType.HasValue && mat((uint)wo.MaterialType.Value);
+                            known = wo => wo.MaterialType.HasValue && wo.MaterialType.Value != ACE.Entity.Enum.MaterialType.Unknown;
+                            f = wo => known(wo) && mat((uint)wo.MaterialType.Value);
                             break;
                         case "set":
                             f = wo => (wo.EquipmentSetId?.ToString() ?? "").Contains(val.Replace(" ", ""), StringComparison.OrdinalIgnoreCase);
@@ -121,7 +123,8 @@ namespace ACE.Server.WorldObjects
                             Say($"Unknown filter: {m.Value}");
                             return;
                     }
-                    filters.Add(not ? wo => !f(wo) : f);
+                    // erring on the side of caution: "not X" never matches an item that doesn't say what it is
+                    filters.Add(not ? wo => known(wo) && !f(wo) : f);
                 }
                 else if (m.Groups[3].Success)
                 {
@@ -142,10 +145,13 @@ namespace ACE.Server.WorldObjects
                     };
                     if (get == null) { Say($"Unknown field: {field}. Use al, level, value, work, lore, dmg or spells."); return; }
 
-                    // an item without the property counts as 0 (no armor level, no level requirement, ...)
+                    // erring on the side of caution: an item without the property never matches (no armor level, no level requirement, ...)
                     filters.Add(wo =>
                     {
-                        var v = get(wo) ?? 0;
+                        var got = get(wo);
+                        if (!got.HasValue)
+                            return false;
+                        var v = got.Value;
                         return op switch { "<" => v < num, "<=" => v <= num, ">" => v > num, ">=" => v >= num, _ => Math.Abs(v - num) < 0.0001 };
                     });
                 }

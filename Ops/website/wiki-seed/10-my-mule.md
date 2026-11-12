@@ -41,7 +41,7 @@ The website's [[Suit Builder]] finds the best suit in your mule for the slots an
 | `set:defender` | armor set name contains |
 | `name:robe` / `-name:robe` (or just `robe`) | name contains / doesn't contain |
 
-All filters must match. Examples: `/mule purge type:shield al<200`, `/mule purge type:armor material:cloth`, `/mule purge type:armor -spell:legendary -spell:epic`, `/mule purge type:salvage work<6`. An item without a value counts as 0 (no armor level, no level requirement).
+All filters must match. Examples: `/mule purge type:shield al<200`, `/mule purge type:armor material:cloth`, `/mule purge type:armor -spell:legendary -spell:epic`, `/mule purge type:salvage work<6`. The purge errs on the side of caution: an item that doesn't have what a filter checks is never deleted by it. `al<200` skips items with no armor level, `level<150` skips items with no level requirement, and `-material:metal` skips items with no material.
 
 ## Mule guests
 Like storage guests on a house chest, you can let characters on other accounts use your mule.
