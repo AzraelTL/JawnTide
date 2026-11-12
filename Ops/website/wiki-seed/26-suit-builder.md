@@ -12,7 +12,7 @@ The **Suit Builder** on the website ([/suit](/suit)) searches your [[My Mule]] f
 On any item in a result, 🔒 always uses that item and 🚫 never uses it. Search again after locking or excluding.
 
 ## Taking the suit out of your mule
-Press **Save for /mule suit** on a suit to get a short code. In game, open your mule and type `/mule suit CODE`: the mule window shows only that suit's items, so you can buy them out. It works the same on a mule you're a guest of. Reopen the mule to see everything again. Market items aren't part of a saved suit: buy them first.
+Press **Save for /mule suit** on a suit to get a short code. In game, open your mule and type `/mule suit CODE`: the mule window shows only that suit's items, so you can buy them out. Type `/mule suit CODE take` instead to move every item of the suit into the pack of the character you're on (for example your Tinker) in one go; it's refused if they don't all fit. It works the same on a mule you're a guest of. Reopen the mule to see everything again. Market items aren't part of a saved suit: buy them first.
 
 ## Good to know
 - Your mule, guest mules and the Market are searched, not your packs or house chests.

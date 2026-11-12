@@ -27,7 +27,7 @@ Everything you store is shared by all the characters on your account.
 > Charged mana stones and other items with their own charge or state come back as fresh copies, so take out what you need before you store partly used items.
 
 ## Suit Builder
-The website's [[Suit Builder]] finds the best suit in your mule for the slots and spells you pick. Save it, then open your mule and type `/mule suit CODE` to show just those items.
+The website's [[Suit Builder]] finds the best suit in your mule for the slots and spells you pick. Save it, then open your mule and type `/mule suit CODE` to show just those items, or `/mule suit CODE take` to move them all into your pack at once.
 
 ## Clearing out your mule
 `/mule purge FILTER` removes many items at once. Open your mule first.

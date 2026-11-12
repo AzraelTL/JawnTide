@@ -14,3 +14,6 @@
 2026-11-12-home-suit-market 01-jawntide.md
 2026-11-12-suit-builder-impen 26-suit-builder.md
 2026-11-12-suit-builder-sources 26-suit-builder.md
+2026-11-12-suit-take 26-suit-builder.md
+2026-11-12-suit-take-cmd 14-player-commands.md
+2026-11-12-suit-take-mule 10-my-mule.md
