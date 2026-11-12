@@ -358,7 +358,7 @@ def appraise(d):
 # ---------------------------------------------------------------- pages
 
 def _page(h, title, body, user, status=200, refresh=None):
-    bar = (f'<div class="wikibar"><a href="/market">Market</a><a href="/market/mine">My market</a>'
+    bar = (f'<div class="wikibar"><a href="/market">Market</a><a href="/market/mine">My market</a><a href="/suit">Suit Builder</a>'
            f'<form class="wsearch" action="/market" method="get"><input name="q" placeholder="Search the market" aria-label="Search the market"></form>'
            + (f'<span class="who">Signed in as <b>{e(user["name"])}</b></span>' if user
               else '<span class="who"><a href="/wiki/login?next=/market/mine">Sign in</a> or <a href="/wiki/link">link your game account</a></span>')

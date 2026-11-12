@@ -2017,6 +2017,7 @@ namespace ACE.Server.Command.Handlers
         [CommandHandler("mule", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0,
             "Grants you a My Mule summon gem, or searches your mule storage for items matching a spell regex.",
             "search <pattern>\n" +
+            "suit <code> - shows only the items of a suit you saved on the website's Suit Builder\n" +
             "storage add <name> | storage remove <name> | storage remove -all | storage list - who else may use your mule while it's summoned\n" +
             "Searches your open mule window for items whose spells match <pattern>, a .NET regular expression matched case-insensitively against the item's spell names. That mule's buy window is filtered down to just the matches. Run with no pattern (\"/mule search\"), or just double-click the mule to reopen it, to clear the filter and go back to the normal listing.\n" +
             "Examples: \"/mule search legendary.*legendary\" (double legendary gear), \"/mule search legendary (frost|flame|acid)\" (any of several cantrips), \"/mule search legendary frost.*legendary acid\" (both cantrips present).\n" +
@@ -2086,6 +2087,13 @@ namespace ACE.Server.Command.Handlers
             {
                 var pattern = string.Join(" ", parameters.Skip(1));
                 player.SearchMuleInventory(pattern);
+                return;
+            }
+
+            // JawnTide Suit Builder: filter the open mule window to a suit saved on the website
+            if (parameters.Length > 0 && parameters[0].Equals("suit", StringComparison.OrdinalIgnoreCase))
+            {
+                player.ShowMuleSuit(parameters.Length > 1 ? parameters[1] : "");
                 return;
             }
 

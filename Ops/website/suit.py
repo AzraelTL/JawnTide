@@ -1,0 +1,452 @@
+"""
+JawnTide Suit Builder (/suit): finds the best suit of armor, underclothes and jewelry in a player's mule for the slots and
+spells they choose. The search runs in the browser (SUIT_JS); the site only hands over the account's wearable mule items
+(from the ace_web.market_mule_item view the market already uses) and saves finished suits to ace_shard.suit_plan, so in
+game "/mule suit CODE" can filter the mule window to them. Sign-in is the wiki login.
+
+Database access (see market-setup.sh): read ace_web.market_mule_item and the account's characters' names and levels;
+read and insert ace_shard.suit_plan. Nothing else.
+"""
+import json
+import re
+import secrets
+import traceback
+from urllib.parse import urlparse
+
+import market
+import wiki
+
+e = market.e
+
+# EquipMask bits that mean "worn": clothing and armor (0x1-0x7FFF), jewelry (neck, wrists, rings), trinket, cloak
+WEARABLE = 0x7FFF | 0x8000 | 0x10000 | 0x20000 | 0x40000 | 0x80000 | 0x4000000 | 0x8000000
+RATINGS = [("GearDamage", "Damage"), ("GearDamageResist", "Damage resist"), ("GearCrit", "Crit"), ("GearCritResist", "Crit resist"),
+           ("GearCritDamage", "Crit damage"), ("GearCritDamageResist", "Crit damage resist"), ("GearHealingBoost", "Healing boost"),
+           ("GearMaxHealth", "Max health"), ("GearPKDamageRating", "PK damage"), ("GearPKDamageResistRating", "PK damage resist")]
+MAX_PLAN_ITEMS = 40
+KEEP_PLANS = 50
+
+
+def _item(row):
+    (guid, name, material, stack, itype, icon, ov, ov2, under, ui, attuned, bonded, details) = row
+    if not details:
+        return None
+    try:
+        d = json.loads(details)
+    except ValueError:
+        return None
+    I, N = d.get("int", {}), d.get("names", {})
+    vl, cov = int(I.get("ValidLocations") or 0), int(I.get("ClothingPriority") or 0)
+    if not vl & WEARABLE or vl & 0x00F00000:   # not worn, or a weapon/shield
+        return None
+    reqs = []
+    for n in ("", "2", "3", "4"):
+        r = N.get(f"WieldRequirements{n}")
+        if r and r != "Invalid":
+            reqs.append([r, market.pretty(N.get(f"WieldSkillType{n}") or ""), I.get(f"WieldDifficulty{n}") or 0])
+    spells = [s["name"] for s in d.get("spells", []) if s.get("name") and not s.get("proc") and not s.get("use")]
+    ratings = {k: I[k] for k, _ in RATINGS if I.get(k)}
+    full = f"{material} {name}" if material and not str(name).startswith(str(material)) else name
+    return dict(g=int(guid), n=full, ic=[i for i in (under, icon, ov, ov2) if i], ui=int(ui or 0), t=int(itype or 0), vl=vl, cov=cov,
+                al=int(I.get("ArmorLevel") or 0), set=market.pretty(N.get("EquipmentSetId")) if N.get("EquipmentSetId") not in (None, "Invalid") else "",
+                sp=spells, rq=reqs, lv=market._wield_level(d) or 0, lore=int(I.get("ItemDifficulty") or 0),
+                rt=ratings, att=bool(attuned and attuned >= 1), wk=int(I.get("ItemWorkmanship") or 0))
+
+
+def _characters(account):
+    try:
+        rows = market._q("SELECT c.name, COALESCE(l.value, 1) FROM `character` c LEFT JOIN biota_properties_int l ON l.object_Id = c.id AND l.type = 25 "
+                         "WHERE c.account_Id = %s AND c.is_Deleted = 0 ORDER BY c.name", (account,))
+        return [dict(n=r[0], lv=int(r[1])) for r in rows]
+    except Exception:
+        return []
+
+
+def _plans(account):
+    try:
+        return market._q("SELECT code, name, items, created_At FROM suit_plan WHERE account_Id = %s ORDER BY id DESC LIMIT 20", (account,))
+    except Exception:
+        return []
+
+
+def page(h, user, query):
+    if not user:
+        return wiki._redirect(h, "/wiki/login?next=/suit")
+    account = market._account(user)
+    if account is None:
+        return market._page(h, "Suit Builder", '<h1>Suit Builder</h1><p>Your wiki login isn\'t linked to a game account. '
+                            '<a href="/wiki/link">Link it</a> first.</p>', user)
+    rows = market._mule_items(account)
+    items, missing = [], 0
+    for r in rows:
+        try:
+            it = _item(r)
+        except Exception:
+            it = None
+        if it:
+            items.append(it)
+        elif not r[-1]:
+            missing += 1
+    data = dict(items=items, chars=_characters(account), ratings=RATINGS, csrf=user["csrf"],
+                plans=[dict(code=p[0], name=p[1], n=len([x for x in (p[2] or "").split(",") if x]), at=p[3].strftime("%b %d")) for p in _plans(account)])
+    note = (f'<p class="muted">{missing} mule item{"s" if missing != 1 else ""} can\'t be used yet: the game server hasn\'t read '
+            f'{"their" if missing != 1 else "its"} details. Summon your mule once in game and reload this page.</p>' if missing else "")
+    blob = json.dumps(data, default=str).replace("</", "<\\/")
+    body = (f'<h1>Suit Builder</h1><p>Finds the best suit in your mule for the slots and spells you pick. '
+            f'Save a suit, then in game open your mule and type <code>/mule suit CODE</code> to show just those items. '
+            f'See <a href="/wiki/suit-builder">Suit Builder</a> on the wiki.</p>{note}'
+            f'<div id="suitapp"><p class="muted">Loading…</p></div>'
+            f'<script id="suitdata" type="application/json">{blob}</script>'
+            f'<style>{SUIT_CSS}</style><script>{SUIT_JS}</script>')
+    market._page(h, "Suit Builder", body, user)
+
+
+def save(h, user):
+    f = wiki._form(h)
+    out = lambda status, obj: wiki._send(h, status, json.dumps(obj), "application/json")
+    if not user:
+        return out(401, {"error": "Sign in first."})
+    if not wiki._csrf_ok(h, f, user):
+        return out(403, {"error": "That page expired. Reload it and try again."})
+    account = market._account(user)
+    if account is None:
+        return out(403, {"error": "Your wiki login isn't linked to a game account."})
+    if wiki._limited(f"suit:{account}", 20, 60):
+        return out(429, {"error": "Too many saves. Wait a minute."})
+    name = re.sub(r"\s+", " ", (f.get("name") or "").strip())[:64] or "Suit"
+    try:
+        guids = sorted({int(x) for x in (f.get("items") or "").split(",") if x.strip()})
+    except ValueError:
+        return out(400, {"error": "Bad item list."})
+    if not guids or len(guids) > MAX_PLAN_ITEMS:
+        return out(400, {"error": "Pick between 1 and 40 items."})
+    mine = {int(r[0]) for r in market._mule_items(account)}
+    if any(g not in mine for g in guids):
+        return out(400, {"error": "Some of those items aren't in your mule anymore. Reload the page and search again."})
+    code = None
+    for _ in range(10):
+        c = "".join(secrets.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(5))
+        if not market._q("SELECT 1 FROM suit_plan WHERE account_Id = %s AND code = %s", (account, c), one=True):
+            code = c
+            break
+    if not code:
+        return out(503, {"error": "Try again."})
+    market._x("INSERT INTO suit_plan (account_Id, code, name, items, created_At) VALUES (%s, %s, %s, %s, UTC_TIMESTAMP())",
+              (account, code, name, ",".join(map(str, guids))))
+    try:
+        market._x("DELETE FROM suit_plan WHERE account_Id = %s AND id NOT IN (SELECT id FROM (SELECT id FROM suit_plan WHERE account_Id = %s "
+                  "ORDER BY id DESC LIMIT %s) k)", (account, account, KEEP_PLANS))
+    except Exception:
+        pass   # no DELETE grant: old suits just stay
+    return out(200, {"code": code, "name": name})
+
+
+def handle(h, method):
+    """Serves /suit and /suit/save. Returns True when it handled the request."""
+    path = urlparse(h.path).path.rstrip("/") or "/"
+    if path not in ("/suit", "/suit/save"):
+        return False
+    try:
+        user = wiki._current_user(h)
+        if path == "/suit/save" and method == "POST":
+            save(h, user)
+        elif path == "/suit" and method == "GET":
+            page(h, user, None)
+        else:
+            wiki._send(h, 405, "Method not allowed", "text/plain")
+    except Exception:
+        traceback.print_exc()
+        try:
+            wiki._send(h, 503, "<h1>The Suit Builder is unavailable</h1><p>Try again in a minute.</p>")
+        except Exception:
+            pass
+    return True
+
+
+SUIT_CSS = """
+#suitapp .sbox{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:.7rem .85rem;margin:.6rem 0}
+#suitapp h2{font-size:1.1rem;margin:.1rem 0 .5rem}
+#suitapp select,#suitapp input[type=text],#suitapp input[type=number]{font:inherit;color:var(--bone);background:var(--deep);border:1px solid var(--line);border-radius:4px;padding:.3rem .45rem}
+#suitapp input[type=number]{width:4.5rem}
+#suitapp .row{display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:center;margin:.3rem 0}
+#suitapp .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(9.5rem,1fr));gap:.25rem .6rem}
+#suitapp label{cursor:pointer}
+#suitapp .want{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin:.25rem 0;padding:.25rem 0;border-bottom:1px solid var(--line)}
+#suitapp .want .fam{min-width:14rem;font-weight:700}
+#suitapp .want .cnt{color:var(--dim);font-size:.85rem}
+#suitapp button{font:inherit;cursor:pointer;color:var(--bone);background:var(--deep);border:1px solid var(--line);border-radius:4px;padding:.3rem .6rem}
+#suitapp button.go{background:var(--portal);color:#111;border-color:var(--portal);font-weight:700;padding:.45rem 1rem}
+#suitapp button.x{padding:.1rem .45rem}
+#suitapp .muted{color:var(--dim)}
+#suitapp .ok{color:#7fd17f}#suitapp .no{color:var(--blood)}#suitapp .part{color:var(--gold)}
+#suitapp .res{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:.7rem .85rem;margin:.7rem 0}
+#suitapp .res table{width:100%;border-collapse:collapse;font-size:.92rem}
+#suitapp .res td,#suitapp .res th{padding:.25rem .35rem;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+#suitapp .tags span{display:inline-block;margin:.1rem .25rem .1rem 0;padding:0 .35rem;border-radius:3px;background:var(--deep);font-size:.85rem}
+#suitapp .tags span.hit{background:#26442a;color:#bff0bf}
+#suitapp .chips span{display:inline-block;margin:.1rem .3rem .1rem 0;padding:.05rem .4rem;border-radius:3px;font-size:.88rem;background:var(--deep)}
+#suitapp code.cmd{font-size:1.05rem;padding:.2rem .45rem;background:var(--deep);border-radius:4px}
+#suitapp .sm{font-size:.85rem}
+@media (max-width:640px){#suitapp .want .fam{min-width:0;width:100%}}
+"""
+
+SUIT_JS = r"""
+(()=>{
+const D=JSON.parse(document.getElementById('suitdata').textContent);
+const app=document.getElementById('suitapp');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ---- slots: one bit each, in search order
+const SLOTS=[['head','Head'],['chest','Chest'],['abdomen','Abdomen'],['uarms','Upper arms'],['larms','Lower arms'],['hands','Hands'],
+ ['ulegs','Upper legs'],['llegs','Lower legs'],['feet','Feet'],['shirt','Shirt'],['uabd','(underclothes abdomen)'],['pants','Pants'],
+ ['neck','Necklace'],['lwrist','Left bracelet'],['rwrist','Right bracelet'],['lring','Left ring'],['rring','Right ring'],['trinket','Trinket'],['cloak','Cloak']];
+const BIT={};SLOTS.forEach((s,i)=>BIT[s[0]]=1<<i);
+const NB=SLOTS.length;
+const COV=[[0x4000,'head'],[0x400,'chest'],[0x800,'abdomen'],[0x1000,'uarms'],[0x2000,'larms'],[0x8000,'hands'],[0x100,'ulegs'],[0x200,'llegs'],
+ [0x10000,'feet'],[0x8,'shirt'],[0x20,'shirt'],[0x40,'shirt'],[0x10,'uabd'],[0x2,'pants'],[0x4,'pants']];
+const JEW=0x8000|0x10000|0x20000|0x40000|0x80000|0x4000000|0x8000000;
+// each item -> one or more placements (a ring can go on either hand)
+function placements(it){
+  if(it.cov){let m=0;for(const[b,s]of COV)if(it.cov&b)m|=BIT[s];return m?[m]:[]}
+  const out=[];const vl=it.vl;
+  if(vl&0x8000)out.push(BIT.neck);if(vl&0x10000)out.push(BIT.lwrist);if(vl&0x20000)out.push(BIT.rwrist);
+  if(vl&0x40000)out.push(BIT.lring);if(vl&0x80000)out.push(BIT.rring);if(vl&0x4000000)out.push(BIT.trinket);if(vl&0x8000000)out.push(BIT.cloak);
+  return out;
+}
+
+// ---- spells: "Legendary Strength" -> family Strength, tier 4; "Strength Self VII" -> family "Strength Self", tier 7
+const TW={minor:1,lesser:1,major:2,greater:2,epic:3,legendary:4};
+const ROMAN={I:1,II:2,III:3,IV:4,V:5,VI:6,VII:7,VIII:8};
+function parse(name){
+  let m=name.match(/^(Minor|Lesser|Major|Greater|Epic|Legendary)\s+(.+)$/i);
+  if(m)return{f:m[2],t:TW[m[1].toLowerCase()],c:1};
+  m=name.match(/^(.+?)\s+(I|II|III|IV|V|VI|VII|VIII)$/);
+  if(m)return{f:m[1],t:ROMAN[m[2]],c:0};
+  m=name.match(/^Incantation of (.+)$/i);
+  if(m)return{f:m[1],t:8,c:0};
+  return{f:name,t:1,c:0};
+}
+const TIERN={1:'Minor',2:'Major',3:'Epic',4:'Legendary'};
+const tierName=(f,t)=>FAMS[f]&&FAMS[f].c?(TIERN[t]||t):(t>1?'level '+t:'any');
+
+// index the items
+const ITEMS=D.items.map((it,i)=>{const sp={};for(const n of it.sp){const p=parse(n);if(!sp[p.f]||sp[p.f]<p.t)sp[p.f]=p.t}
+  return Object.assign(it,{i,pl:placements(it),fams:sp})}).filter(it=>it.pl.length);
+const FAMS={};
+for(const it of ITEMS)for(const n of it.sp){const p=parse(n);const F=FAMS[p.f]||(FAMS[p.f]={c:p.c,max:0,n:0});F.max=Math.max(F.max,p.t);F.n++}
+const FAMLIST=Object.keys(FAMS).sort((a,b)=>(FAMS[b].c-FAMS[a].c)||a.localeCompare(b));
+const SETS={};for(const it of ITEMS)if(it.set)SETS[it.set]=(SETS[it.set]||0)+1;
+const RATED={};for(const it of ITEMS)for(const k in it.rt)RATED[k]=1;
+
+// ---- templates: keywords matched against the families your items actually have
+const DEF=['Invulnerability','Impregnability','Magic Resistance'];
+const ATTR=['Strength','Endurance','Coordination','Quickness','Focus','Willpower'];
+const TEMPLATES={
+ custom:{n:'Custom (keep my picks)'},
+ heavy:{n:'Melee: Heavy Weapons',k:ATTR.concat(DEF,['Heavy Weapon','Healing'])},
+ light:{n:'Melee: Light Weapons',k:ATTR.concat(DEF,['Light Weapon','Healing'])},
+ finesse:{n:'Melee: Finesse Weapons',k:ATTR.concat(DEF,['Finesse Weapon','Healing'])},
+ twohand:{n:'Melee: Two Handed',k:ATTR.concat(DEF,['Two Handed','Healing'])},
+ missile:{n:'Missile',k:ATTR.concat(DEF,['Missile Weapon','Healing'])},
+ war:{n:'Mage: War Magic',k:ATTR.concat(DEF,['War Magic','Mana Conversion','Arcane'])},
+ void:{n:'Mage: Void Magic',k:ATTR.concat(DEF,['Void Magic','Mana Conversion','Arcane'])},
+ life:{n:'Mage: Life Magic',k:ATTR.concat(DEF,['Life Magic','Mana Conversion','Arcane'])},
+ wards:{n:'Add: the seven wards',k:['Acid Ward','Bludgeoning Ward','Flame Ward','Frost Ward','Piercing Ward','Slashing Ward','Storm Ward'],add:1},
+};
+function resolve(k){const kk=k.toLowerCase();
+  // a cantrip family named exactly that, else one containing it, else the first non-cantrip containing it
+  return FAMLIST.find(f=>FAMS[f].c&&f.toLowerCase()===kk)||FAMLIST.find(f=>FAMS[f].c&&f.toLowerCase().includes(kk))||FAMLIST.find(f=>f.toLowerCase().includes(kk))||null}
+
+// ---- state
+const S={slots:new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd')),want:[],set:'',setN:4,al:1,rate:{},char:D.chars[0]?D.chars[0].n:'',noreq:false,
+  noatt:false,locked:new Set(),excluded:new Set(),results:null,busy:false,msg:''};
+function applyTemplate(key){const T=TEMPLATES[key];if(!T||!T.k)return;
+  if(!T.add){S.want=[];S.slots=new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd'))}
+  const miss=[];
+  for(const k of T.k){const f=resolve(k);if(!f){miss.push(k);continue}
+    if(!S.want.find(w=>w.f===f))S.want.push({f,t:FAMS[f].c?4:FAMS[f].max,p:'need'})}
+  S.msg=miss.length?'None of your items have: '+miss.join(', ')+'.':'';
+}
+
+// ---- render
+function render(){
+  const ch=D.chars.map(c=>`<option${c.n===S.char?' selected':''}>${esc(c.n)}</option>`).join('');
+  const slots=SLOTS.filter(s=>s[0]!=='uabd').map(s=>`<label><input type=checkbox data-slot="${s[0]}"${S.slots.has(s[0])?' checked':''}> ${s[1]}</label>`).join('');
+  const wants=S.want.map((w,i)=>{const F=FAMS[w.f]||{c:0,max:0,n:0};
+    const tiers=F.c?[1,2,3,4]:Array.from({length:Math.max(1,F.max)},(_,j)=>j+1);
+    const opts=tiers.map(t=>`<option value="${t}"${t===w.t?' selected':''}>${esc(tierName(w.f,t))}${t===4&&F.c||(!F.c&&t===F.max)?'':' or better'}</option>`).join('');
+    return `<div class=want><span class=fam>${esc(w.f)}</span><select data-wt="${i}">${opts}</select>
+      <select data-wp="${i}"><option value=need${w.p==='need'?' selected':''}>Must have</option><option value=nice${w.p==='nice'?' selected':''}>Nice to have</option></select>
+      <span class=cnt>${F.n} item${F.n===1?'':'s'}, best ${esc(tierName(w.f,F.max))}</span><button class=x data-wdel="${i}" title="Remove">✕</button></div>`}).join('')||'<p class=muted>No spells picked yet. Choose a template above or add spells below.</p>';
+  const famOpts=FAMLIST.filter(f=>!S.want.find(w=>w.f===f)).map(f=>`<option value="${esc(f)}">${esc(f)}${FAMS[f].c?'':' (spell)'} — ${FAMS[f].n}</option>`).join('');
+  const sets=Object.keys(SETS).sort().map(s=>`<option${s===S.set?' selected':''} value="${esc(s)}">${esc(s)} (${SETS[s]})</option>`).join('');
+  const rates=D.ratings.filter(r=>RATED[r[0]]).map(r=>`<label><input type=checkbox data-rate="${r[0]}"${S.rate[r[0]]?' checked':''}> ${esc(r[1])}</label>`).join('')||'<span class=muted>None of your items have ratings.</span>';
+  const pinned=[...S.locked].map(i=>`<span>🔒 ${esc(ITEMS[i].n)} <button class=x data-unlock="${i}">✕</button></span>`).concat(
+    [...S.excluded].map(i=>`<span>🚫 ${esc(ITEMS[i].n)} <button class=x data-unex="${i}">✕</button></span>`)).join('');
+  const plans=D.plans.length?'<p class="sm muted">Saved suits: '+D.plans.map(p=>`<b>${esc(p.code)}</b> ${esc(p.name)} (${p.n} items, ${esc(p.at)})`).join(' · ')+'</p>':'';
+  app.innerHTML=`
+  <div class=sbox><h2>1. Start from a template</h2><div class=row>
+    <select id=tpl>${Object.entries(TEMPLATES).map(([k,t])=>`<option value="${k}">${esc(t.n)}</option>`).join('')}</select>
+    <button id=tplgo>Use template</button><span class=muted>${ITEMS.length} wearable items in your mule.</span></div>
+    ${S.msg?`<p class=part>${esc(S.msg)}</p>`:''}</div>
+  <div class=sbox><h2>2. Slots to fill</h2><p class="sm muted">Only items that fit entirely in the ticked slots are used, so untick slots you already have covered.</p>
+    <div class=slots>${slots}</div><div class=row><button id=sall>All</button><button id=snone>None</button>
+    <button id=sarmor>Armor only</button><button id=sjew>Jewelry only</button></div></div>
+  <div class=sbox><h2>3. Spells you need</h2>${wants}
+    <div class=row><select id=addf><option value="">Add a spell…</option>${famOpts}</select></div></div>
+  <div class=sbox><h2>4. Extras</h2>
+    <div class=row><label>Armor set <select id=set><option value="">(any)</option>${sets}</select></label>
+      <label>pieces <input type=number id=setn min=2 max=9 value="${S.setN}"></label></div>
+    <div class=row><label>Armor level <select id=al><option value=0${S.al==0?' selected':''}>doesn't matter</option><option value=1${S.al==1?' selected':''}>tie-breaker</option><option value=5${S.al==5?' selected':''}>important</option></select></label></div>
+    <div class=row><span>Ratings to collect:</span>${rates}</div>
+    <div class=row><label>Character <select id=char>${ch}</select></label>
+      <label><input type=checkbox id=noreq${S.noreq?' checked':''}> ignore level requirements</label>
+      <label><input type=checkbox id=noatt${S.noatt?' checked':''}> skip attuned items</label></div>
+    ${pinned?`<div class="row chips">${pinned}</div>`:''}</div>
+  <div class=row><button class=go id=go${S.busy?' disabled':''}>${S.busy?'Searching…':'Find suits'}</button><span id=prog class=muted></span></div>
+  <div id=results>${results()}</div>${plans}`;
+}
+
+function results(){
+  if(!S.results)return'';
+  if(!S.results.length)return'<p class=no>No suit found. Tick more slots, or make some spells "Nice to have".</p>';
+  return S.results.map((r,ri)=>{
+    const met=S.want.map(w=>{const got=r.tiers[w.f]||0;const cls=got>=w.t?'ok':got?'part':'no';
+      return `<span class=${cls}>${esc(w.f)}${got&&got<w.t?' ('+esc(tierName(w.f,got))+')':''}${got?'':' ✕'}</span>`}).join(' · ');
+    const rows=r.picks.map(([i,occ])=>{const it=ITEMS[i];const where=SLOTS.filter((s,b)=>occ&(1<<b)&&s[0]!=='uabd').map(s=>s[1]).join(', ');
+      const tags=it.sp.map(n=>{const p=parse(n);const hit=S.want.find(w=>w.f===p.f);return `<span${hit?' class=hit':''}>${esc(n)}</span>`}).join('');
+      const icon=`<span class=micon>${it.ic.map(x=>`<img src="/market/icon/${x}.png" alt="" loading=lazy>`).join('')}</span>`;
+      const meta=[it.al?'AL '+it.al:'',it.set,it.lv?'level '+it.lv:'',it.lore?'lore '+it.lore:'',...Object.entries(it.rt).map(([k,v])=>(D.ratings.find(x=>x[0]===k)||[k,k])[1]+' '+v)].filter(Boolean).join(' · ');
+      return `<tr><td>${esc(where)}</td><td>${icon} <b>${esc(it.n)}</b><div class="sm muted">${esc(meta)}</div><div class=tags>${tags}</div></td>
+        <td class=sm><button class=x data-lock="${i}" title="Always use this item">🔒</button> <button class=x data-ex="${i}" title="Never use this item">🚫</button></td></tr>`}).join('');
+    const empty=SLOTS.filter((s,b)=>S.slots.has(s[0])&&!(r.occ&(1<<b))).map(s=>s[1]);
+    const rt=Object.entries(r.rt).map(([k,v])=>(D.ratings.find(x=>x[0]===k)||[k,k])[1]+' '+v).join(', ');
+    return `<div class=res><div class=row><b>Suit ${ri+1}</b><span class=muted>armor level ${r.al}${r.set?' · '+esc(S.set)+' '+r.set+' pieces':''}${rt?' · '+esc(rt):''}</span></div>
+      <p>${met||'<span class=muted>no spells picked</span>'}</p>${empty.length?`<p class="sm muted">Left empty: ${esc(empty.join(', '))}</p>`:''}
+      <table><tbody>${rows}</tbody></table>
+      <div class=row><input type=text id=sn${ri} value="Suit ${ri+1}" maxlength=64 aria-label="Suit name"><button data-save="${ri}">Save for /mule suit</button><span id=sv${ri}></span></div></div>`}).join('');
+}
+
+// ---- search (in a worker so the page stays responsive)
+function buildProblem(){
+  const allowed=SLOTS.reduce((m,s,b)=>S.slots.has(s[0])?m|(1<<b):m,0)|((S.slots.has('shirt')||S.slots.has('pants'))?BIT.uabd:0);
+  const lvl=(D.chars.find(c=>c.n===S.char)||{lv:999}).lv;
+  const fams=S.want.map(w=>w.f);
+  const rkeys=Object.keys(S.rate).filter(k=>S.rate[k]);
+  const cands=[];const locked=[];
+  for(const it of ITEMS){
+    if(S.excluded.has(it.i))continue;
+    const isLocked=S.locked.has(it.i);
+    if(!isLocked){if(S.noatt&&it.att)continue;if(!S.noreq&&it.lv>lvl)continue}
+    const tv=fams.map(f=>it.fams[f]||0);
+    const bonus=S.al*it.al/1000+rkeys.reduce((a,k)=>a+(it.rt[k]||0),0);
+    for(const occ of it.pl){
+      if(!isLocked&&(occ&~allowed))continue;
+      const c={i:it.i,occ,tv,set:S.set&&it.set===S.set?1:0,bonus};
+      (isLocked?locked:cands).push(c);
+    }
+  }
+  return{nb:NB,cands,locked,want:S.want.map(w=>({t:w.t,w:w.p==='need'?10:3})),setN:S.set?S.setN:0,top:5,ms:8000,rkeys};
+}
+
+const WORKER=`
+onmessage=ev=>{const P=ev.data;const NB=P.nb,W=P.want,NF=W.length;
+const low=o=>{for(let b=0;b<NB;b++)if(o&(1<<b))return b;return NB};
+function famVal(f,t){const w=W[f];if(t>=w.t)return w.w;return t?w.w*0.5*t/w.t:0}
+// keep only items that aren't beaten in every way by another item in the same spot
+const groups={};for(const c of P.cands)(groups[c.occ]=groups[c.occ]||[]).push(c);
+const heur=c=>c.tv.reduce((a,t,f)=>a+famVal(f,t),0)+c.set*5+c.bonus;
+const kept=[];
+for(const k in groups){const g=groups[k].sort((a,b)=>heur(b)-heur(a));const keep=[];
+  for(const c of g){if(keep.some(o=>o.set>=c.set&&o.bonus>=c.bonus&&o.tv.every((t,f)=>t>=c.tv[f])))continue;keep.push(c);if(keep.length>=14)break}
+  kept.push(...keep)}
+const byLow=Array.from({length:NB+1},()=>[]);for(const c of kept)byLow[low(c.occ)].push(c);
+for(const l of byLow)l.sort((a,b)=>heur(b)-heur(a));
+// optimistic tables from each position onward
+const remT=Array.from({length:NB+1},()=>new Array(NF).fill(0)),remSet=new Array(NB+1).fill(0),remBonus=new Array(NB+1).fill(0);
+for(let p=NB-1;p>=0;p--){for(let f=0;f<NF;f++)remT[p][f]=remT[p+1][f];remSet[p]=remSet[p+1];remBonus[p]=remBonus[p+1];
+  let mb=0,hs=0;for(const c of byLow[p]){for(let f=0;f<NF;f++)if(c.tv[f]>remT[p][f])remT[p][f]=c.tv[f];if(c.bonus>mb)mb=c.bonus;if(c.set)hs=1}
+  remSet[p]+=hs;remBonus[p]+=mb}
+const setVal=n=>P.setN?Math.min(n,P.setN)*4+(n>=P.setN?6:0):0;
+const tiers=new Array(NF).fill(0);let setCount=0,bonus=0,occ=0;const used=new Set(),picks=[];
+for(const c of P.locked){if(c.occ&occ||used.has(c.i))continue;occ|=c.occ;used.add(c.i);picks.push(c);c.tv.forEach((t,f)=>{if(t>tiers[f])tiers[f]=t});setCount+=c.set;bonus+=c.bonus}
+const best=[];let worst=-1,nodes=0,stop=false;const t0=Date.now();
+function score(p){let s=0;for(let f=0;f<NF;f++)s+=famVal(f,Math.max(tiers[f],p<NB?remT[p][f]:0));
+  return s+setVal(setCount+(p<NB?remSet[p]:0))+bonus+(p<NB?remBonus[p]:0)}
+function record(){const s=score(NB);if(best.length>=P.top&&s<=worst)return;
+  const key=picks.map(c=>c.i).sort((a,b)=>a-b).join(',');if(best.some(b=>b.key===key))return;
+  best.push({s,key,picks:picks.map(c=>[c.i,c.occ]),occ,tiers:tiers.slice(),set:setCount,bonus});best.sort((a,b)=>b.s-a.s);if(best.length>P.top)best.pop();
+  worst=best.length>=P.top?best[best.length-1].s:-1}
+function dfs(p){if(stop)return;if(++nodes%20000===0){if(Date.now()-t0>P.ms){stop=true;return}postMessage({prog:nodes})}
+  while(p<NB&&(occ&(1<<p)))p++;
+  if(best.length>=P.top&&score(p)<=worst+1e-9)return;
+  if(p>=NB){record();return}
+  for(const c of byLow[p]){if(c.occ&occ||used.has(c.i))continue;
+    const saved=tiers.slice();occ|=c.occ;used.add(c.i);picks.push(c);for(let f=0;f<NF;f++)if(c.tv[f]>tiers[f])tiers[f]=c.tv[f];setCount+=c.set;bonus+=c.bonus;
+    dfs(p+1);
+    for(let f=0;f<NF;f++)tiers[f]=saved[f];occ&=~c.occ;used.delete(c.i);picks.pop();setCount-=c.set;bonus-=c.bonus;if(stop)return}
+  const bit=1<<p;occ|=bit;dfs(p+1);occ&=~bit}
+dfs(0);
+postMessage({done:best,nodes,stopped:stop,kept:kept.length});};`;
+
+let worker=null;
+function search(){
+  const P=buildProblem();
+  if(!P.cands.length&&!P.locked.length){S.results=[];render();return}
+  S.busy=true;S.results=null;render();
+  if(worker)worker.terminate();
+  worker=new Worker(URL.createObjectURL(new Blob([WORKER],{type:'text/javascript'})));
+  worker.onerror=ev=>{S.busy=false;S.results=null;render();const pr=document.getElementById('prog');if(pr)pr.innerHTML='<span class=no>The search failed: '+esc(ev.message||'error')+'</span>'};
+  worker.onmessage=ev=>{const m=ev.data;const pr=document.getElementById('prog');
+    if(m.prog){if(pr)pr.textContent=`checked ${m.prog.toLocaleString()} combinations…`;return}
+    S.busy=false;worker.terminate();worker=null;
+    S.results=m.done.map(b=>{const t={};S.want.forEach((w,f)=>{if(b.tiers[f])t[w.f]=b.tiers[f]});
+      const rt={};let al=0;for(const[i]of b.picks){const it=ITEMS[i];al+=it.al;for(const k in it.rt)if(S.rate[k])rt[k]=(rt[k]||0)+it.rt[k]}
+      return{picks:b.picks.sort((x,y)=>low(x[1])-low(y[1])),occ:b.occ,tiers:t,set:b.set,al,rt}});
+    render();const pr2=document.getElementById('prog');
+    if(pr2)pr2.textContent=`${m.nodes.toLocaleString()} combinations of ${m.kept} useful items${m.stopped?' (stopped after 8 seconds: the best found so far)':''}.`};
+  worker.postMessage(P);
+}
+const low=o=>{for(let b=0;b<NB;b++)if(o&(1<<b))return b;return NB};
+
+async function saveSuit(ri){const r=S.results[ri];const out=document.getElementById('sv'+ri);
+  const name=(document.getElementById('sn'+ri).value||'').trim()||'Suit';
+  const body=new URLSearchParams({csrf:D.csrf,name,items:[...new Set(r.picks.map(([i])=>ITEMS[i].g))].join(',')});
+  out.textContent='Saving…';
+  try{const res=await fetch('/suit/save',{method:'POST',body,headers:{'Content-Type':'application/x-www-form-urlencoded'}});const j=await res.json();
+    if(!res.ok)throw new Error(j.error||'Could not save');
+    D.plans.unshift({code:j.code,name:j.name,n:r.picks.length,at:'today'});
+    out.innerHTML=`Saved. In game, open your mule and type <code class=cmd>/mule suit ${esc(j.code)}</code>`}
+  catch(err){out.innerHTML=`<span class=no>${esc(err.message)}</span>`}}
+
+// ---- events
+app.addEventListener('click',ev=>{const t=ev.target.closest('button');if(!t)return;const d=t.dataset;
+  if(t.id==='tplgo'){applyTemplate(document.getElementById('tpl').value);render();return}
+  if(t.id==='sall'){S.slots=new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd'))}
+  else if(t.id==='snone'){S.slots=new Set()}
+  else if(t.id==='sarmor'){S.slots=new Set(['head','chest','abdomen','uarms','larms','hands','ulegs','llegs','feet','shirt','pants'])}
+  else if(t.id==='sjew'){S.slots=new Set(['neck','lwrist','rwrist','lring','rring','trinket','cloak'])}
+  else if(t.id==='go'){search();return}
+  else if(d.wdel!=null){S.want.splice(+d.wdel,1)}
+  else if(d.lock!=null){S.locked.add(+d.lock);S.excluded.delete(+d.lock)}
+  else if(d.ex!=null){S.excluded.add(+d.ex);S.locked.delete(+d.ex)}
+  else if(d.unlock!=null){S.locked.delete(+d.unlock)}
+  else if(d.unex!=null){S.excluded.delete(+d.unex)}
+  else if(d.save!=null){saveSuit(+d.save);return}
+  else return;
+  render()});
+app.addEventListener('change',ev=>{const t=ev.target;const d=t.dataset;
+  if(d.slot){t.checked?S.slots.add(d.slot):S.slots.delete(d.slot);return}
+  if(d.rate){S.rate[d.rate]=t.checked;return}
+  if(d.wt!=null){S.want[+d.wt].t=+t.value;return}
+  if(d.wp!=null){S.want[+d.wp].p=t.value;return}
+  if(t.id==='addf'&&t.value){const f=t.value;S.want.push({f,t:FAMS[f].c?4:FAMS[f].max,p:'need'});render();return}
+  if(t.id==='set'){S.set=t.value;return}
+  if(t.id==='setn'){S.setN=Math.max(2,Math.min(9,+t.value||4));return}
+  if(t.id==='al'){S.al=+t.value;return}
+  if(t.id==='char'){S.char=t.value;return}
+  if(t.id==='noreq'){S.noreq=t.checked;return}
+  if(t.id==='noatt'){S.noatt=t.checked;return}});
+render();
+})();
+"""

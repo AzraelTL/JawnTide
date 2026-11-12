@@ -24,6 +24,9 @@ Everything you store is shared by all the characters on your account.
 
 > Charged mana stones and other items with their own charge or state come back as fresh copies, so take out what you need before you store partly used items.
 
+## Suit Builder
+The website's [[Suit Builder]] finds the best suit in your mule for the slots and spells you pick. Save it, then open your mule and type `/mule suit CODE` to show just those items.
+
 ## Mule guests
 Like storage guests on a house chest, you can let characters on other accounts use your mule.
 

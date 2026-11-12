@@ -47,6 +47,9 @@ namespace ACE.Server.WorldObjects
         /// <summary>JawnTide My Mule: the active /mule search filter for this mule's buy window, if any.</summary>
         public System.Text.RegularExpressions.Regex MuleSearchRegex;
 
+        /// <summary>JawnTide Suit Builder: the items of a saved suit (/mule suit CODE) this mule's buy window is filtered to, if any.</summary>
+        public HashSet<uint> MuleSuitGuids;
+
         private bool inventoryloaded { get; set; }
 
         /// <summary>

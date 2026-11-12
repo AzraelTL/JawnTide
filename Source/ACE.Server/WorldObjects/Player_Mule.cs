@@ -511,7 +511,9 @@ namespace ACE.Server.WorldObjects
         {
             var allItems = vendor.MuleContainers.SelectMany(c => c.Inventory.Values);
 
-            var display = vendor.MuleSearchRegex != null
+            var display = vendor.MuleSuitGuids != null
+                ? allItems.Where(item => vendor.MuleSuitGuids.Contains(item.Guid.Full)).OrderBy(i => i.Name)
+                : vendor.MuleSearchRegex != null
                 ? allItems.Where(item => MatchesMuleSearch(item, vendor.MuleSearchRegex)).OrderBy(i => i.Name)
                 : SortMuleItems(allItems);
 
@@ -549,10 +551,11 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public void ClearMuleSearchFilter(Vendor vendor)
         {
-            if (vendor.MuleSearchRegex == null)
+            if (vendor.MuleSearchRegex == null && vendor.MuleSuitGuids == null)
                 return;
 
             vendor.MuleSearchRegex = null;
+            vendor.MuleSuitGuids = null;
 
             vendor.UniqueItemsForSale.Clear();
 
@@ -580,6 +583,8 @@ namespace ACE.Server.WorldObjects
                 SendTransientError("You must have your mule's window open to search it.");
                 return;
             }
+
+            vendor.MuleSuitGuids = null;
 
             if (string.IsNullOrWhiteSpace(pattern))
             {
@@ -613,6 +618,61 @@ namespace ACE.Server.WorldObjects
             Session.Network.EnqueueSend(new GameMessageSystemChat(
                 $"Mule search found {matchCount} matching item{(matchCount == 1 ? "" : "s")}.",
                 ChatMessageType.Broadcast));
+        }
+
+        /// <summary>
+        /// JawnTide Suit Builder: "/mule suit CODE" filters the open mule window to the items of a suit saved on the website
+        /// (suit_plan, which belongs to the mule's account). Reopening the mule clears it, like /mule search.
+        /// </summary>
+        public void ShowMuleSuit(string code)
+        {
+            var vendor = CurrentLandblock?.GetObject(LastOpenedContainerId) as Vendor;
+
+            if (vendor == null || !vendor.MuleOwnerId.HasValue || vendor.MuleContainers == null || !CanAccessMuleStorage(vendor))
+            {
+                SendTransientError("Open your mule first, then type /mule suit CODE.");
+                return;
+            }
+
+            code = (code ?? "").Trim().ToUpperInvariant();
+            if (!Regex.IsMatch(code, "^[A-Z0-9]{4,8}$"))
+            {
+                Session.Network.EnqueueSend(new GameMessageSystemChat("Usage: /mule suit CODE (the code from the Suit Builder page on the website).", ChatMessageType.Broadcast));
+                return;
+            }
+
+            List<object[]> rows;
+            try
+            {
+                rows = DatabaseManager.Shard.BaseDatabase.PvpToolsQuery("SELECT name, items FROM suit_plan WHERE account_Id = @a AND code = @c LIMIT 1;",
+                    ("@a", vendor.MuleOwnerAccountId.Value), ("@c", code));
+            }
+            catch (Exception ex)
+            {
+                log.Error($"[MULE] /mule suit {code}: {ex.Message}");
+                rows = null;
+            }
+
+            if (rows == null || rows.Count == 0)
+            {
+                Session.Network.EnqueueSend(new GameMessageSystemChat($"This mule has no saved suit {code}.", ChatMessageType.Broadcast));
+                return;
+            }
+
+            var guids = new HashSet<uint>();
+            foreach (var part in (rows[0][1]?.ToString() ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries))
+                if (uint.TryParse(part.Trim(), out var g))
+                    guids.Add(g);
+
+            vendor.MuleSearchRegex = null;
+            vendor.MuleSuitGuids = guids;
+
+            RefreshMuleVendorDisplay(vendor, VendorType.Undef);
+
+            var found = vendor.UniqueItemsForSale.Count;
+            Session.Network.EnqueueSend(new GameMessageSystemChat(
+                $"Suit {code} ({rows[0][0]}): showing {found} of its {guids.Count} items" + (found < guids.Count ? " (the rest aren't in this mule anymore)." : ".") +
+                " Reopen the mule to see everything again.", ChatMessageType.Broadcast));
         }
 
         private bool MatchesMuleSearch(WorldObject item, Regex regex)

@@ -8,3 +8,5 @@
 2026-11-12-stuck-peace-mode 14-player-commands.md
 2026-11-12-mule-guests 10-my-mule.md
 2026-11-12-mule-guests-cmd 14-player-commands.md
+2026-11-12-suit-builder-cmd 14-player-commands.md
+2026-11-12-suit-builder-mule 10-my-mule.md

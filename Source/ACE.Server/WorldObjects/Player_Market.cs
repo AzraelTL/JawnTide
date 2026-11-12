@@ -86,7 +86,7 @@ namespace ACE.Server.WorldObjects
             foreach (var wo in touched)
                 wo.SaveBiotaToDatabase();
 
-            if (ActiveMule != null && !ActiveMule.IsDestroyed && ActiveMule.MuleSearchRegex == null)
+            if (ActiveMule != null && !ActiveMule.IsDestroyed && ActiveMule.MuleSearchRegex == null && ActiveMule.MuleSuitGuids == null)
                 ActiveMule.UniqueItemsForSale[item.Guid] = item;
 
             Session?.Network.EnqueueSend(new GameMessageSystemChat($"[Market] {item.NameWithMaterial ?? item.Name} is now in your mule.", ChatMessageType.Broadcast));
