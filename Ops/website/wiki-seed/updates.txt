@@ -11,3 +11,4 @@
 2026-11-12-suit-builder-cmd 14-player-commands.md
 2026-11-12-suit-builder-mule 10-my-mule.md
 2026-11-12-mule-gem-slots 10-my-mule.md
+2026-11-12-home-suit-market 01-jawntide.md
