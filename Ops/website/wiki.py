@@ -453,8 +453,8 @@ def _link_page(h, user, query):
     code = re.sub(r"[^A-Z0-9]", "", (query.get("code", [""])[0] or "").upper())[:8]
     if not code:
         return _page(h, "Link your game account",
-                     '<h1>Link your game account</h1><p class="lede">Anyone can read the wiki. To edit, register one character: type a code in game with it, then pick a wiki password. '
-                     'After you register, an admin must flag your character as a contributor before you can edit. '
+                     '<h1>Link your game account</h1><p class="lede">One sign-in for the wiki, the Market and the Suit Builder: register one character by typing a code in game with it, then pick a password. '
+                     'The Market and the Suit Builder work as soon as you\'re registered. To also edit the wiki, an admin must flag your character as a contributor. '
                      'Already registered but forgot your password? Do the same steps to set a new one (registering a different character '
                      'moves your wiki name to it, and it needs flagging again).</p>'
                      '<ol class="steps"><li>Get a code below.</li><li>Log in to JawnTide with the character you want on the wiki and type <code>/wiki CODE</code>.</li>'
@@ -518,14 +518,14 @@ def _link_finish(h, user):
 
 def _login(h, user, method, query):
     nxt = (query.get("next", ["/wiki"])[0] or "/wiki")
-    if not (nxt.startswith("/wiki") or nxt.startswith("/market")) or nxt.startswith("//"): nxt = "/wiki"
+    if not (nxt.startswith("/wiki") or nxt.startswith("/market") or nxt.startswith("/suit")) or nxt.startswith("//"): nxt = "/wiki"
     def form(err=""):
-        _page(h, "Sign in", f'<h1>Sign in to the wiki</h1>{f"<p class=err>{e(err)}</p>" if err else ""}'
+        _page(h, "Sign in", f'<h1>Sign in</h1><p class="lede">One sign-in for the wiki, the Market and the Suit Builder.</p>{f"<p class=err>{e(err)}</p>" if err else ""}'
               f'<form class="wedit" method="post" action="/wiki/login?next={quote(nxt)}">'
               f'<label for="lname">Character name you linked with</label><input id="lname" name="name" maxlength="32" required autocomplete="username">'
               f'<label for="lpw">Wiki password</label><input id="lpw" name="password" type="password" maxlength="200" required autocomplete="current-password">'
               f'<div class="row"><button class="btn">Sign in</button></div></form>'
-              f'<p>New here, or forgot your password? <a href="/wiki/link">Link your game account</a>.</p>', user)
+              f'<p>New here, or forgot your password? <a href="/wiki/link">Link your game account</a> (it takes a minute, see <a href="/wiki/website-account">Website account</a>).</p>', user)
     if method == "GET":
         return form()
     f = _form(h)

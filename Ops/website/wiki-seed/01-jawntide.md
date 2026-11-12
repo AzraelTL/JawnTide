@@ -30,5 +30,6 @@ JawnTide is a red Asheron's Call server running on ACEmulator, forked from DocTi
 - [[Market]]: buy and sell items with other players on the website.
 - [[Suit Builder]]: find the best suit of armor and jewelry in your mule on the website.
 - [[Player commands]]: every custom command.
+- [[Website account]]: one sign-in for the Market, the Suit Builder and the wiki.
 
 > New to the wiki? See [[Editing the wiki]].

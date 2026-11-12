@@ -2,6 +2,8 @@
 Anyone can read the wiki. Editing is for **contributors**. Every save is kept in the page history, so mistakes can be undone.
 
 ## Becoming a contributor
+First register (see [[Website account]]), then ask an admin to flag you.
+
 1. Go to [register](/wiki/link) and get a code.
 2. Log in to JawnTide with the character you want on the wiki and type `/wiki CODE` in chat.
 3. Back on the website, pick a wiki password. You sign in with your character name and that password.

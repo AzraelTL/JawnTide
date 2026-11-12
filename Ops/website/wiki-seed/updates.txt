@@ -27,3 +27,7 @@
 2026-11-12-suit-builder-tailoring 26-suit-builder.md
 2026-11-12-suit-builder-chars 26-suit-builder.md
 2026-11-12-muleflag 14-player-commands.md
+2026-11-12-website-account-suit 26-suit-builder.md
+2026-11-12-website-account-edit 09-editing.md
+2026-11-12-website-account-home 01-jawntide.md
+2026-11-12-website-account-market 19-market.md
