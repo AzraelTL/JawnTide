@@ -24,6 +24,7 @@ namespace ACE.Server.WorldObjects
     ///   al, level, value, work, lore, dmg, spells   compared with &lt; &lt;= &gt; &gt;= = (e.g. al&lt;200, level&lt;=150, work&gt;=8)
     ///   spell:TEXT / -spell:TEXT     has / hasn't a spell whose name matches TEXT (a regular expression, e.g. -spell:legendary)
     ///   material:cloth|leather|metal|gem|stone|wood|ceramic, or a material name (steel, satin); -material: for "not"
+    ///   suit:CODE                    is one of the items of a suit saved on the website (Suit Builder)
     ///   set:TEXT                     its armor set name contains TEXT
     ///   name:TEXT / -name:TEXT, or a plain word: its name contains / doesn't contain TEXT
     /// Use "quotes" for text with spaces, e.g. spell:"legendary strength".
@@ -128,6 +129,12 @@ namespace ACE.Server.WorldObjects
                             var mat = PurgeMaterial(val);
                             known = wo => wo.MaterialType.HasValue && wo.MaterialType.Value != ACE.Entity.Enum.MaterialType.Unknown;
                             f = wo => known(wo) && mat((uint)wo.MaterialType.Value);
+                            break;
+                        case "suit":
+                            // the items of a suit saved on the website (e.g. the Suit Builder's "beaten items" list)
+                            var suitGuids = LoadSuitPlanGuids(vendor, val);
+                            if (suitGuids == null) { Say($"There's no saved suit {val.ToUpperInvariant()} for this mule or your account."); return; }
+                            f = wo => suitGuids.Contains(wo.Guid.Full);
                             break;
                         case "set":
                             f = wo => (wo.EquipmentSetId?.ToString() ?? "").Contains(val.Replace(" ", ""), StringComparison.OrdinalIgnoreCase);
@@ -428,6 +435,22 @@ namespace ACE.Server.WorldObjects
                         (skipped > 0 ? $" {skipped} more didn't fit and are still held: make room and run /mule purge undo again." : ""));
                 }));
             });
+        }
+
+        private HashSet<uint> LoadSuitPlanGuids(Vendor vendor, string code)
+        {
+            code = (code ?? "").Trim().ToUpperInvariant();
+            if (!Regex.IsMatch(code, "^[A-Z0-9]{4,8}$"))
+                return null;
+            var rows = DatabaseManager.Shard.BaseDatabase.PvpToolsQuery("SELECT items FROM suit_plan WHERE account_Id IN (@a, @me) AND code = @c ORDER BY account_Id = @me DESC LIMIT 1;",
+                ("@a", vendor.MuleOwnerAccountId ?? 0), ("@me", Account.AccountId), ("@c", code));
+            if (rows == null || rows.Count == 0)
+                return null;
+            var set = new HashSet<uint>();
+            foreach (var part in (rows[0][0]?.ToString() ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries))
+                if (uint.TryParse(part.Trim(), out var g))
+                    set.Add(g);
+            return set;
         }
 
         private static bool SafeMatch(Regex rx, string text)

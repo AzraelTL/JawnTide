@@ -23,7 +23,7 @@ WEARABLE = 0x7FFF | 0x8000 | 0x10000 | 0x20000 | 0x40000 | 0x80000 | 0x4000000 |
 RATINGS = [("GearDamage", "Damage"), ("GearDamageResist", "Damage resist"), ("GearCrit", "Crit"), ("GearCritResist", "Crit resist"),
            ("GearCritDamage", "Crit damage"), ("GearCritDamageResist", "Crit damage resist"), ("GearHealingBoost", "Healing boost"),
            ("GearMaxHealth", "Max health"), ("GearPKDamageRating", "PK damage"), ("GearPKDamageResistRating", "PK damage resist")]
-MAX_PLAN_ITEMS = 40
+MAX_PLAN_ITEMS = 500
 KEEP_PLANS = 50
 
 
@@ -165,7 +165,7 @@ def save(h, user):
     except ValueError:
         return out(400, {"error": "Bad item list."})
     if not guids or len(guids) > MAX_PLAN_ITEMS:
-        return out(400, {"error": "Pick between 1 and 40 items."})
+        return out(400, {"error": f"Pick between 1 and {MAX_PLAN_ITEMS} items."})
     mine = {int(r[0]) for r in market._mule_items(account)}
     for owner, _ in _guest_mules(account):
         mine |= {int(r[0]) for r in market._mule_items(owner)}
@@ -236,6 +236,7 @@ SUIT_CSS = """
 #suitapp .chips span{display:inline-block;margin:.1rem .3rem .1rem 0;padding:.05rem .4rem;border-radius:3px;font-size:.88rem;background:var(--deep)}
 #suitapp code.cmd{font-size:1.05rem;padding:.2rem .45rem;background:var(--deep);border-radius:4px}
 #suitapp .sm{font-size:.85rem}
+#suitapp details.sbox summary{cursor:pointer}
 @media (max-width:640px){#suitapp .want .fam{min-width:0;width:100%}}
 """
 
@@ -251,13 +252,20 @@ const SLOTS=[['head','Head'],['chest','Chest'],['abdomen','Abdomen'],['uarms','U
  ['neck','Necklace'],['lwrist','Left bracelet'],['rwrist','Right bracelet'],['lring','Left ring'],['rring','Right ring'],['trinket','Trinket'],['cloak','Cloak']];
 const BIT={};SLOTS.forEach((s,i)=>BIT[s[0]]=1<<i);
 const NB=SLOTS.length;
-const COV=[[0x4000,'head'],[0x400,'chest'],[0x800,'abdomen'],[0x1000,'uarms'],[0x2000,'larms'],[0x8000,'hands'],[0x100,'ulegs'],[0x200,'llegs'],
- [0x10000,'feet'],[0x8,'shirt'],[0x20,'shirt'],[0x40,'shirt'],[0x10,'uabd'],[0x2,'pants'],[0x4,'pants']];
+// the game decides what can be worn together by each item's ValidLocations (equip slots), not by what it covers
+const EQ=[[0x1,'head'],[0x2,'shirt'],[0x4,'uabd'],[0x8,'shirt'],[0x10,'shirt'],[0x20,'hands'],[0x40,'pants'],[0x80,'pants'],[0x100,'feet'],
+ [0x200,'chest'],[0x400,'abdomen'],[0x800,'uarms'],[0x1000,'larms'],[0x2000,'ulegs'],[0x4000,'llegs']];
 const JEW=0x8000|0x10000|0x20000|0x40000|0x80000|0x4000000|0x8000000;
+// tailoring: a multi-slot armor piece can be reduced to one of these slots (the same rules as Mag-SuitBuilder)
+const REDUCE={'larms,uarms':['uarms','larms'],'llegs,ulegs':['ulegs','llegs'],'feet,llegs':['feet'],'abdomen,chest':['chest'],'abdomen,chest,uarms':['chest'],
+ 'chest,larms,uarms':['chest'],'chest,uarms':['chest'],'abdomen,llegs,ulegs':['abdomen','ulegs','llegs'],'abdomen,chest,larms,uarms':['chest'],'abdomen,ulegs':['abdomen']};
+function slotNames(m){return SLOTS.filter((s,b)=>m&(1<<b)).map(s=>s[0])}
+function reductions(it){if(!it.pl.length)return[];const names=slotNames(it.pl[0]);if(names.length<2)return[];
+  return(REDUCE[names.slice().sort().join(',')]||[]).map(n=>BIT[n])}
 // each item -> one or more placements (a ring can go on either hand)
 function placements(it){
-  if(it.cov){let m=0;for(const[b,s]of COV)if(it.cov&b)m|=BIT[s];return m?[m]:[]}
-  const out=[];const vl=it.vl;
+  const vl=it.vl;let m=0;for(const[b,s]of EQ)if(vl&b)m|=BIT[s];if(m)return[m];
+  const out=[];
   if(vl&0x8000)out.push(BIT.neck);if(vl&0x10000)out.push(BIT.lwrist);if(vl&0x20000)out.push(BIT.rwrist);
   if(vl&0x40000)out.push(BIT.lring);if(vl&0x80000)out.push(BIT.rring);if(vl&0x4000000)out.push(BIT.trinket);if(vl&0x8000000)out.push(BIT.cloak);
   return out;
@@ -277,15 +285,15 @@ function parse(name){
 }
 const TIERN={1:'Minor',2:'Major',3:'Epic',4:'Legendary'};
 const IMP='Impenetrability';
-const OUTER=0x4000|0x400|0x800|0x1000|0x2000|0x8000|0x100|0x200|0x10000,UNDER=0x2|0x4|0x8|0x10|0x20|0x40;
-const pieceKind=it=>it.cov&OUTER?'armor':(it.cov&UNDER?'under':null);
+const ARMORVL=0x1|0x20|0x100|0x200|0x400|0x800|0x1000|0x2000|0x4000,UNDERVL=0x2|0x4|0x8|0x10|0x40|0x80,EXTVL=0x1|0x20|0x100;
+const pieceKind=it=>it.vl&ARMORVL?'armor':(it.vl&UNDERVL?'under':null);
 const impOn=it=>{const k=pieceKind(it);return k&&S.imp[k].m!=='off'};
 const tierName=(f,t)=>FAMS[f]&&FAMS[f].c?(TIERN[t]||t):(t>1?'level '+t:'any');
 
 // index the items
 // i is the item's index in ITEMS (everything refers to items by it), so items that can't be worn anywhere are dropped first
 const ITEMS=D.items.filter(it=>placements(it).length).map((it,i)=>{const sp={};for(const n of it.sp){const p=parse(n);if(!sp[p.f]||sp[p.f]<p.t)sp[p.f]=p.t}
-  return Object.assign(it,{i,pl:placements(it),fams:sp})});
+  const o=Object.assign(it,{i,pl:placements(it),fams:sp});o.red=reductions(o);return o});
 const FAMS={};
 for(const it of ITEMS)for(const n of it.sp){const p=parse(n);const F=FAMS[p.f]||(FAMS[p.f]={c:p.c,max:0,n:0});F.max=Math.max(F.max,p.t);F.n++}
 const FAMLIST=Object.keys(FAMS).sort((a,b)=>(FAMS[b].c-FAMS[a].c)||a.localeCompare(b));
@@ -305,6 +313,8 @@ const TEMPLATES={
  war:{n:'Mage: War Magic',k:ATTR.concat(DEF,['War Magic','Mana Conversion','Arcane'])},
  void:{n:'Mage: Void Magic',k:ATTR.concat(DEF,['Void Magic','Mana Conversion','Arcane'])},
  life:{n:'Mage: Life Magic',k:ATTR.concat(DEF,['Life Magic','Mana Conversion','Arcane'])},
+ dual:{n:'Melee: Dual Wield',k:ATTR.concat(DEF,['Dual Wield','Healing'])},
+ tinker:{n:'Tinker (crafting)',k:['Strength','Endurance','Coordination','Focus','Item Tinkering','Armor Tinkering','Weapon Tinkering','Magic Item Tinkering']},
  wards:{n:'Add: the seven wards',k:['Acid Ward','Bludgeoning Ward','Flame Ward','Frost Ward','Piercing Ward','Slashing Ward','Storm Ward'],add:1},
 };
 function resolve(k){const kk=k.toLowerCase();
@@ -312,7 +322,8 @@ function resolve(k){const kk=k.toLowerCase();
   return FAMLIST.find(f=>FAMS[f].c&&f.toLowerCase()===kk)||FAMLIST.find(f=>FAMS[f].c&&f.toLowerCase().includes(kk))||FAMLIST.find(f=>f.toLowerCase().includes(kk))||null}
 
 // ---- state
-const S={slots:new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd')),want:[],set:'',setN:4,al:1,rate:{},imp:{armor:{m:'off',t:4},under:{m:'off',t:4}},char:D.chars[0]?D.chars[0].n:'',noreq:false,
+const S={slots:new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd')),want:[],set:'',setN:5,set2:'',setN2:4,onlySets:false,reduce:false,
+  F:{alBody:'',alExt:'',lvMin:'',lvMax:'',re:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:''},obs:null,al:1,rate:{},imp:{armor:{m:'off',t:4},under:{m:'off',t:4}},char:D.chars[0]?D.chars[0].n:'',noreq:false,
   noatt:false,locked:new Set(),excluded:new Set(),results:null,busy:false,msg:'',src:new Set((D.sources||[]).filter(x=>x.on).map(x=>x.k))};
 const SRCNAME={};(D.sources||[]).forEach(x=>SRCNAME[x.k]=x.n);
 function applyTemplate(key){const T=TEMPLATES[key];if(!T||!T.k)return;
@@ -335,6 +346,8 @@ function render(){
       <span class=cnt>${F.n} item${F.n===1?'':'s'}, best ${esc(tierName(w.f,F.max))}</span><button class=x data-wdel="${i}" title="Remove">✕</button></div>`}).join('')||'<p class=muted>No spells picked yet. Choose a template above or add spells below.</p>';
   const famOpts=FAMLIST.filter(f=>!S.want.find(w=>w.f===f)).map(f=>`<option value="${esc(f)}">${esc(f)}${FAMS[f].c?'':' (spell)'} — ${FAMS[f].n}</option>`).join('');
   const sets=Object.keys(SETS).sort().map(s=>`<option${s===S.set?' selected':''} value="${esc(s)}">${esc(s)} (${SETS[s]})</option>`).join('');
+  const sets2=Object.keys(SETS).sort().map(s=>`<option${s===S.set2?' selected':''} value="${esc(s)}">${esc(s)} (${SETS[s]})</option>`).join('');
+  const fi=(k,label,w,ph)=>`<label>${label} <input type=${w||'number'} data-f="${k}" value="${esc(S.F[k])}"${ph?` placeholder="${ph}"`:''}></label>`;
   const rates=D.ratings.filter(r=>RATED[r[0]]).map(r=>`<label><input type=checkbox data-rate="${r[0]}"${S.rate[r[0]]?' checked':''}> ${esc(r[1])}</label>`).join('')||'<span class=muted>None of your items have ratings.</span>';
   const pinned=[...S.locked].map(i=>`<span>🔒 ${esc(ITEMS[i].n)} <button class=x data-unlock="${i}">✕</button></span>`).concat(
     [...S.excluded].map(i=>`<span>🚫 ${esc(ITEMS[i].n)} <button class=x data-unex="${i}">✕</button></span>`)).join('');
@@ -355,7 +368,11 @@ function render(){
     <div class=row><select id=addf><option value="">Add a spell…</option>${famOpts}</select></div></div>
   <div class=sbox><h2>4. Extras</h2>
     <div class=row><label>Armor set <select id=set><option value="">(any)</option>${sets}</select></label>
-      <label>pieces <input type=number id=setn min=2 max=9 value="${S.setN}"></label></div>
+      <label>pieces <input type=number id=setn min=2 max=9 value="${S.setN}"></label>
+      <label>second set <select id=set2><option value="">(none)</option>${sets2}</select></label>
+      <label>pieces <input type=number id=setn2 min=2 max=9 value="${S.setN2}"></label>
+      <label><input type=checkbox id=onlysets${S.onlySets?' checked':''}> body armor only from these sets</label></div>
+    <div class=row><label><input type=checkbox id=reduce${S.reduce?' checked':''}> allow tailoring reductions (a multi-slot piece can be reduced to one slot)</label></div>
     ${['armor','under'].map(k=>{const o=S.imp[k];return `<div class=row><span>Impenetrability cantrip on each ${k==='armor'?'armor piece':'underclothes piece (shirt, pants)'}:</span>
       <select data-impm="${k}"><option value=off${o.m==='off'?' selected':''}>doesn't matter</option><option value=prefer${o.m==='prefer'?' selected':''}>prefer</option><option value=require${o.m==='require'?' selected':''}>require</option></select>
       <select data-impt="${k}">${[1,2,3,4].map(t=>`<option value=${t}${o.t===t?' selected':''}>${TIERN[t]}${t<4?' or better':''}</option>`).join('')}</select></div>`}).join('')}
@@ -365,6 +382,14 @@ function render(){
       <label><input type=checkbox id=noreq${S.noreq?' checked':''}> ignore level requirements</label>
       <label><input type=checkbox id=noatt${S.noatt?' checked':''}> skip attuned items</label></div>
     ${pinned?`<div class="row chips">${pinned}</div>`:''}</div>
+  <details class=sbox${Object.values(S.F).some(v=>v!=='')?' open':''}><summary><b>5. Item filters</b> <span class="sm muted">(optional: items that fail these are never used)</span></summary>
+    <div class=row>${fi('alBody','Min base armor level, body')}${fi('alExt','extremities (head, hands, feet)')}</div>
+    <div class=row>${fi('lvMin','Wield level from')}${fi('lvMax','to')}</div>
+    <div class=row>${fi('minLeg','At least this many Legendary spells per item')}${fi('minEpic','Epic or better')}</div>
+    <div class=row>${fi('minOff','Min offensive rating (damage + crit + crit damage)')}${fi('minDef','defensive (the resists)')}${fi('minTot','total')}</div>
+    <div class=row>${fi('re','Name or a spell matches','text','regular expression, e.g. legendary.*legendary')}</div></details>
+  <div class=row><button id=obsb>Find items in my mule that another of my items beats</button></div>
+  <div id=obsout>${obsolete()}</div>
   <div class=row><button class=go id=go${S.busy?' disabled':''}>${S.busy?'Searching…':'Find suits'}</button><span id=prog class=muted></span></div>
   <div id=results>${results()}</div>${plans}`;
 }
@@ -375,7 +400,7 @@ function results(){
   return S.results.map((r,ri)=>{
     const met=S.want.map(w=>{const got=r.tiers[w.f]||0;const cls=got>=w.t?'ok':got?'part':'no';
       return `<span class=${cls}>${esc(w.f)}${got&&got<w.t?' ('+esc(tierName(w.f,got))+')':''}${got?'':' ✕'}</span>`}).join(' · ');
-    const rows=r.picks.map(([i,occ])=>{const it=ITEMS[i];const where=SLOTS.filter((s,b)=>occ&(1<<b)&&s[0]!=='uabd').map(s=>s[1]).join(', ');
+    const rows=r.picks.map(([i,occ])=>{const it=ITEMS[i];const where=SLOTS.filter((s,b)=>occ&(1<<b)&&s[0]!=='uabd').map(s=>s[1]).join(', ')+(it.pl.includes(occ)?'':' (tailor-reduce to this)');
       const tags=it.sp.map(n=>{const p=parse(n);const hit=S.want.find(w=>w.f===p.f)||(p.f===IMP&&impOn(it));return `<span${hit?' class=hit':''}>${esc(n)}</span>`}).join('');
       const icon=`<span class=micon>${it.ic.map(x=>`<img src="/market/icon/${x}.png" alt="" loading=lazy>`).join('')}</span>`;
       const meta=[it.al?'AL '+it.al:'',it.set,it.lv?'level '+it.lv:'',it.lore?'lore '+it.lore:'',...Object.entries(it.rt).map(([k,v])=>(D.ratings.find(x=>x[0]===k)||[k,k])[1]+' '+v)].filter(Boolean).join(' · ');
@@ -387,11 +412,44 @@ function results(){
     const rt=Object.entries(r.rt).map(([k,v])=>(D.ratings.find(x=>x[0]===k)||[k,k])[1]+' '+v).join(', ');
     const pcs=r.picks.map(([i])=>ITEMS[i]).filter(it=>pieceKind(it));
     const imp=pcs.length&&(S.imp.armor.m!=='off'||S.imp.under.m!=='off')?` · Impenetrability on ${pcs.filter(it=>(it.fams[IMP]||0)>=S.imp[pieceKind(it)].t).length} of ${pcs.length} pieces`:'';
-    return `<div class=res><div class=row><b>Suit ${ri+1}</b><span class=muted>armor level ${r.al}${r.set?' · '+esc(S.set)+' '+r.set+' pieces':''}${rt?' · '+esc(rt):''}${imp}</span></div>
+    const cnt=[4,3,2].map(t=>[t,S.want.filter(w=>FAMS[w.f]&&FAMS[w.f].c&&(r.tiers[w.f]||0)===t).length]).filter(x=>x[1]).map(([t,n])=>n+' '+TIERN[t]).join(', ');
+    return `<div class=res><div class=row><b>Suit ${ri+1}</b><span class=muted>armor level ${r.al}${r.set?' · '+esc(S.set)+' '+r.set+' pieces':''}${r.set2?' · '+esc(S.set2)+' '+r.set2+' pieces':''}${rt?' · '+esc(rt):''}${imp}${cnt?' · '+cnt:''}</span></div>
       <p>${met||'<span class=muted>no spells picked</span>'}</p>${empty.length?`<p class="sm muted">Left empty: ${esc(empty.join(', '))}</p>`:''}
       <table><tbody>${rows}</tbody></table>
-      <div class=row><input type=text id=sn${ri} value="Suit ${ri+1}" maxlength=64 aria-label="Suit name"><button data-save="${ri}">Save for /mule suit</button><span id=sv${ri}></span></div></div>`}).join('');
+      <div class=row><input type=text id=sn${ri} value="Suit ${ri+1}" maxlength=64 aria-label="Suit name"><button data-save="${ri}">Save for /mule suit</button><button data-copy="${ri}">Copy as text</button><span id=sv${ri}></span></div></div>`}).join('');
 }
+
+// ---- item filters (Mag-SuitBuilder's filters)
+const num=v=>v===''||v==null?null:+v;
+const OFF=['GearDamage','GearCrit','GearCritDamage'],DEFR=['GearDamageResist','GearCritResist','GearCritDamageResist'];
+function passesFilters(it){const F=S.F,k=pieceKind(it);
+  if(k==='armor'){const ext=(it.vl&EXTVL)&&!(it.vl&0x7E00);const min=num(ext?F.alExt:F.alBody);if(min!=null&&it.al<min)return false}
+  if(num(F.lvMin)!=null&&it.lv<num(F.lvMin))return false;
+  if(num(F.lvMax)!=null&&it.lv>num(F.lvMax))return false;
+  const tiers=Object.entries(it.fams).filter(([f])=>FAMS[f]&&FAMS[f].c).map(([,t])=>t);
+  if(num(F.minLeg)!=null&&tiers.filter(t=>t>=4).length<num(F.minLeg))return false;
+  if(num(F.minEpic)!=null&&tiers.filter(t=>t>=3).length<num(F.minEpic))return false;
+  const sum=ks=>ks.reduce((a,x)=>a+Math.max(0,it.rt[x]||0),0);
+  if(num(F.minOff)!=null&&sum(OFF)<num(F.minOff))return false;
+  if(num(F.minDef)!=null&&sum(DEFR)<num(F.minDef))return false;
+  if(num(F.minTot)!=null&&Object.values(it.rt).reduce((a,x)=>a+Math.max(0,x),0)<num(F.minTot))return false;
+  if(F.re){let rx;try{rx=new RegExp(F.re,'i')}catch(e){return true}if(!rx.test(it.n)&&!it.sp.some(n=>rx.test(n)))return false}
+  return true}
+
+// ---- items another of your items beats (Mag-SuitBuilder's upgrades view, turned around): same equip slots, every spell
+// at the same level or better, armor level and ratings at least as high, same armor set (or none), no higher level requirement
+function beats(b,a){if(b===a||b.vl!==a.vl)return false;
+  for(const f in a.fams)if((b.fams[f]||0)<a.fams[f])return false;
+  if(b.al<a.al||b.lv>a.lv)return false;if(a.set&&b.set!==a.set)return false;
+  for(const k in a.rt)if((b.rt[k]||0)<a.rt[k])return false;
+  return true}
+function findObsolete(){const mine=ITEMS.filter(it=>it.src==='me'&&pieceKind(it)||it.src==='me'&&(it.vl&JEW));const out=[];
+  for(const a of mine){const b=mine.find(b=>beats(b,a)&&(!beats(a,b)||b.i<a.i));if(b)out.push([a.i,b.i])}
+  return out}
+function obsolete(){if(!S.obs)return'';if(!S.obs.length)return'<p class=muted>Nothing in your mule is beaten by another of your items.</p>';
+  return `<div class=res><p><b>${S.obs.length}</b> item${S.obs.length===1?' is':'s are'} beaten by another item in your mule (same slots, every spell at least as good, armor level and ratings at least as high).</p>
+    <table><tbody>${S.obs.map(([a,b])=>`<tr><td>${esc(ITEMS[a].n)}</td><td class="sm muted">beaten by ${esc(ITEMS[b].n)}</td></tr>`).join('')}</tbody></table>
+    <div class=row><button id=obssave>Save this list for /mule suit and /mule purge</button><span id=obssv></span></div></div>`}
 
 // ---- search (in a worker so the page stays responsive)
 function buildProblem(){
@@ -408,15 +466,19 @@ function buildProblem(){
     // Impenetrability is per piece (it raises that piece's armor level), so it's a rule on each armor/underclothes piece
     const ik=pieceKind(it),io=ik?S.imp[ik]:null,itier=it.fams[IMP]||0;
     if(!isLocked&&io&&io.m==='require'&&itier<io.t)continue;
+    if(!isLocked&&!passesFilters(it))continue;
+    if(!isLocked&&S.onlySets&&(S.set||S.set2)&&(it.vl&0x7E00)&&it.set!==S.set&&it.set!==S.set2)continue;
     const tv=fams.map(f=>it.fams[f]||0);
     const bonus=(it.src==='m'?-0.6:it.src==='me'?0:-0.3)+S.al*it.al/1000+rkeys.reduce((a,k)=>a+(it.rt[k]||0),0)+(io&&io.m==='prefer'&&itier>=io.t?2:0);
-    for(const occ of it.pl){
+    const spots=S.reduce||isLocked?it.pl.concat(it.red):it.pl;
+    for(const occ of spots){
       if(!isLocked&&(occ&~allowed))continue;
-      const c={i:it.i,occ,tv,set:S.set&&it.set===S.set?1:0,bonus};
+      if(isLocked&&(occ&~allowed)&&spots.some(o=>!(o&~allowed)))continue;   // a locked piece goes where the ticked slots allow, when it can
+      const c={i:it.i,occ,tv,set:S.set&&it.set===S.set?1:0,set2:S.set2&&it.set===S.set2?1:0,bonus};
       (isLocked?locked:cands).push(c);
     }
   }
-  return{nb:NB,cands,locked,want:S.want.map(w=>({t:w.t,w:w.p==='need'?10:3})),setN:S.set?S.setN:0,top:5,ms:8000,rkeys};
+  return{nb:NB,cands,locked,want:S.want.map(w=>({t:w.t,w:w.p==='need'?10:3})),setN:S.set?S.setN:0,setN2:S.set2?S.setN2:0,top:5,ms:8000,rkeys};
 }
 
 const WORKER=`
@@ -425,36 +487,37 @@ const low=o=>{for(let b=0;b<NB;b++)if(o&(1<<b))return b;return NB};
 function famVal(f,t){const w=W[f];if(t>=w.t)return w.w;return t?w.w*0.5*t/w.t:0}
 // keep only items that aren't beaten in every way by another item in the same spot
 const groups={};for(const c of P.cands)(groups[c.occ]=groups[c.occ]||[]).push(c);
-const heur=c=>c.tv.reduce((a,t,f)=>a+famVal(f,t),0)+c.set*5+c.bonus;
+const heur=c=>c.tv.reduce((a,t,f)=>a+famVal(f,t),0)+(c.set+c.set2)*5+c.bonus;
 const kept=[];
 for(const k in groups){const g=groups[k].sort((a,b)=>heur(b)-heur(a));const keep=[];
-  for(const c of g){if(keep.some(o=>o.set>=c.set&&o.bonus>=c.bonus&&o.tv.every((t,f)=>t>=c.tv[f])))continue;keep.push(c);if(keep.length>=14)break}
+  for(const c of g){if(keep.some(o=>o.set>=c.set&&o.set2>=c.set2&&o.bonus>=c.bonus&&o.tv.every((t,f)=>t>=c.tv[f])))continue;keep.push(c);if(keep.length>=14)break}
   kept.push(...keep)}
 const byLow=Array.from({length:NB+1},()=>[]);for(const c of kept)byLow[low(c.occ)].push(c);
 for(const l of byLow)l.sort((a,b)=>heur(b)-heur(a));
 // optimistic tables from each position onward
-const remT=Array.from({length:NB+1},()=>new Array(NF).fill(0)),remSet=new Array(NB+1).fill(0),remBonus=new Array(NB+1).fill(0);
-for(let p=NB-1;p>=0;p--){for(let f=0;f<NF;f++)remT[p][f]=remT[p+1][f];remSet[p]=remSet[p+1];remBonus[p]=remBonus[p+1];
-  let mb=0,hs=0;for(const c of byLow[p]){for(let f=0;f<NF;f++)if(c.tv[f]>remT[p][f])remT[p][f]=c.tv[f];if(c.bonus>mb)mb=c.bonus;if(c.set)hs=1}
-  remSet[p]+=hs;remBonus[p]+=mb}
-const setVal=n=>P.setN?Math.min(n,P.setN)*4+(n>=P.setN?6:0):0;
-const tiers=new Array(NF).fill(0);let setCount=0,bonus=0,occ=0;const used=new Set(),picks=[];
-for(const c of P.locked){if(c.occ&occ||used.has(c.i))continue;occ|=c.occ;used.add(c.i);picks.push(c);c.tv.forEach((t,f)=>{if(t>tiers[f])tiers[f]=t});setCount+=c.set;bonus+=c.bonus}
+const remT=Array.from({length:NB+1},()=>new Array(NF).fill(0)),remSet=new Array(NB+1).fill(0),remSet2=new Array(NB+1).fill(0),remBonus=new Array(NB+1).fill(0);
+for(let p=NB-1;p>=0;p--){for(let f=0;f<NF;f++)remT[p][f]=remT[p+1][f];remSet[p]=remSet[p+1];remSet2[p]=remSet2[p+1];remBonus[p]=remBonus[p+1];
+  let mb=0,hs=0,hs2=0;for(const c of byLow[p]){for(let f=0;f<NF;f++)if(c.tv[f]>remT[p][f])remT[p][f]=c.tv[f];if(c.bonus>mb)mb=c.bonus;if(c.set)hs=1;if(c.set2)hs2=1}
+  remSet[p]+=hs;remSet2[p]+=hs2;remBonus[p]+=mb}
+const sv=(n,N)=>N?Math.min(n,N)*4+(n>=N?6:0):0;
+const setVal=(n,n2)=>sv(n,P.setN)+sv(n2,P.setN2);
+const tiers=new Array(NF).fill(0);let setCount=0,setCount2=0,bonus=0,occ=0;const used=new Set(),picks=[];
+for(const c of P.locked){if(c.occ&occ||used.has(c.i))continue;occ|=c.occ;used.add(c.i);picks.push(c);c.tv.forEach((t,f)=>{if(t>tiers[f])tiers[f]=t});setCount+=c.set;setCount2+=c.set2;bonus+=c.bonus}
 const best=[];let worst=-1,nodes=0,stop=false;const t0=Date.now();
 function score(p){let s=0;for(let f=0;f<NF;f++)s+=famVal(f,Math.max(tiers[f],p<NB?remT[p][f]:0));
-  return s+setVal(setCount+(p<NB?remSet[p]:0))+bonus+(p<NB?remBonus[p]:0)}
+  return s+setVal(setCount+(p<NB?remSet[p]:0),setCount2+(p<NB?remSet2[p]:0))+bonus+(p<NB?remBonus[p]:0)}
 function record(){const s=score(NB);if(best.length>=P.top&&s<=worst)return;
   const key=picks.map(c=>c.i).sort((a,b)=>a-b).join(',');if(best.some(b=>b.key===key))return;
-  best.push({s,key,picks:picks.map(c=>[c.i,c.occ]),occ,tiers:tiers.slice(),set:setCount,bonus});best.sort((a,b)=>b.s-a.s);if(best.length>P.top)best.pop();
+  best.push({s,key,picks:picks.map(c=>[c.i,c.occ]),occ,tiers:tiers.slice(),set:setCount,set2:setCount2,bonus});best.sort((a,b)=>b.s-a.s);if(best.length>P.top)best.pop();
   worst=best.length>=P.top?best[best.length-1].s:-1}
 function dfs(p){if(stop)return;if(++nodes%20000===0){if(Date.now()-t0>P.ms){stop=true;return}postMessage({prog:nodes})}
   while(p<NB&&(occ&(1<<p)))p++;
   if(best.length>=P.top&&score(p)<=worst+1e-9)return;
   if(p>=NB){record();return}
   for(const c of byLow[p]){if(c.occ&occ||used.has(c.i))continue;
-    const saved=tiers.slice();occ|=c.occ;used.add(c.i);picks.push(c);for(let f=0;f<NF;f++)if(c.tv[f]>tiers[f])tiers[f]=c.tv[f];setCount+=c.set;bonus+=c.bonus;
+    const saved=tiers.slice();occ|=c.occ;used.add(c.i);picks.push(c);for(let f=0;f<NF;f++)if(c.tv[f]>tiers[f])tiers[f]=c.tv[f];setCount+=c.set;setCount2+=c.set2;bonus+=c.bonus;
     dfs(p+1);
-    for(let f=0;f<NF;f++)tiers[f]=saved[f];occ&=~c.occ;used.delete(c.i);picks.pop();setCount-=c.set;bonus-=c.bonus;if(stop)return}
+    for(let f=0;f<NF;f++)tiers[f]=saved[f];occ&=~c.occ;used.delete(c.i);picks.pop();setCount-=c.set;setCount2-=c.set2;bonus-=c.bonus;if(stop)return}
   const bit=1<<p;occ|=bit;dfs(p+1);occ&=~bit}
 dfs(0);
 postMessage({done:best,nodes,stopped:stop,kept:kept.length});};`;
@@ -472,13 +535,24 @@ function search(){
     S.busy=false;worker.terminate();worker=null;
     S.results=m.done.map(b=>{const t={};S.want.forEach((w,f)=>{if(b.tiers[f])t[w.f]=b.tiers[f]});
       const rt={};let al=0;for(const[i]of b.picks){const it=ITEMS[i];al+=it.al;for(const k in it.rt)if(S.rate[k])rt[k]=(rt[k]||0)+it.rt[k]}
-      return{picks:b.picks.sort((x,y)=>low(x[1])-low(y[1])),occ:b.occ,tiers:t,set:b.set,al,rt}});
+      return{picks:b.picks.sort((x,y)=>low(x[1])-low(y[1])),occ:b.occ,tiers:t,set:b.set,set2:b.set2,al,rt}});
     render();const pr2=document.getElementById('prog');
     if(pr2)pr2.textContent=`${m.nodes.toLocaleString()} combinations of ${m.kept} useful items${m.stopped?' (stopped after 8 seconds: the best found so far)':''}.`};
   worker.postMessage(P);
 }
 const low=o=>{for(let b=0;b<NB;b++)if(o&(1<<b))return b;return NB};
 
+function copySuit(ri){const r=S.results[ri];const out=document.getElementById('sv'+ri);
+  const lines=r.picks.map(([i,occ])=>{const it=ITEMS[i];return `${slotNames(occ).filter(n=>n!=='uabd').map(n=>SLOTS.find(s=>s[0]===n)[1]).join(', ')}: ${it.n}${it.al?' (AL '+it.al+')':''} - ${it.sp.join(', ')}`});
+  const text=`Suit ${ri+1}, armor level ${r.al}\n`+lines.join('\n');
+  (navigator.clipboard?navigator.clipboard.writeText(text):Promise.reject()).then(()=>{out.textContent='Copied.'},()=>{out.innerHTML='<textarea rows=6 cols=60>'+esc(text)+'</textarea>'})}
+async function saveObsolete(){const out=document.getElementById('obssv');
+  const body=new URLSearchParams({csrf:D.csrf,name:'Beaten items',items:[...new Set(S.obs.map(([a])=>ITEMS[a].g))].join(',')});
+  out.textContent='Saving…';
+  try{const res=await fetch('/suit/save',{method:'POST',body,headers:{'Content-Type':'application/x-www-form-urlencoded'}});const j=await res.json();
+    if(!res.ok)throw new Error(j.error||'Could not save');
+    out.innerHTML=`Saved. In game, open your mule: <code class=cmd>/mule suit ${esc(j.code)}</code> shows them, <code class=cmd>/mule purge suit:${esc(j.code)}</code> removes them (with the usual warning and 7-day undo).`}
+  catch(err){out.innerHTML=`<span class=no>${esc(err.message)}</span>`}}
 async function saveSuit(ri){const r=S.results[ri];const out=document.getElementById('sv'+ri);
   const name=(document.getElementById('sn'+ri).value||'').trim()||'Suit';
   const mules=r.picks.map(([i])=>ITEMS[i]).filter(it=>it.src!=='m');const buy=r.picks.length-mules.length;
@@ -507,6 +581,9 @@ app.addEventListener('click',ev=>{const t=ev.target.closest('button');if(!t)retu
   else if(d.unlock!=null){S.locked.delete(+d.unlock)}
   else if(d.unex!=null){S.excluded.delete(+d.unex)}
   else if(d.save!=null){saveSuit(+d.save);return}
+  else if(d.copy!=null){copySuit(+d.copy);return}
+  else if(t.id==='obsb'){S.obs=findObsolete();render();return}
+  else if(t.id==='obssave'){saveObsolete();return}
   else return;
   render()});
 app.addEventListener('change',ev=>{const t=ev.target;const d=t.dataset;
@@ -520,7 +597,12 @@ app.addEventListener('change',ev=>{const t=ev.target;const d=t.dataset;
   if(t.id==='allp'&&t.value){S.want.forEach(w=>w.p=t.value);render();return}
   if(t.id==='addf'&&t.value){const f=t.value;S.want.push({f,t:FAMS[f].c?4:FAMS[f].max,p:'need'});render();return}
   if(t.id==='set'){S.set=t.value;return}
-  if(t.id==='setn'){S.setN=Math.max(2,Math.min(9,+t.value||4));return}
+  if(t.id==='setn'){S.setN=Math.max(2,Math.min(9,+t.value||5));return}
+  if(t.id==='set2'){S.set2=t.value;return}
+  if(t.id==='setn2'){S.setN2=Math.max(2,Math.min(9,+t.value||4));return}
+  if(t.id==='onlysets'){S.onlySets=t.checked;return}
+  if(t.id==='reduce'){S.reduce=t.checked;return}
+  if(d.f){S.F[d.f]=t.value.trim();return}
   if(t.id==='al'){S.al=+t.value;return}
   if(d.impm){S.imp[d.impm].m=t.value;return}
   if(d.impt){S.imp[d.impt].t=+t.value;return}

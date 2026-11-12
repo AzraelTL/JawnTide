@@ -17,3 +17,5 @@
 2026-11-12-suit-take 26-suit-builder.md
 2026-11-12-suit-take-cmd 14-player-commands.md
 2026-11-12-suit-take-mule 10-my-mule.md
+2026-11-12-suit-mag 26-suit-builder.md
+2026-11-12-purge-suit 10-my-mule.md
