@@ -264,6 +264,15 @@ namespace ACE.Server.WorldObjects
             // JawnTide My Mule: only the owner's account can open a mule; reopening it clears an active /mule search
             if (MuleOwnerId.HasValue)
             {
+                // a stray mule (a second one from an old double summon, or its owner logged off): it goes home instead of opening
+                var owner = PlayerManager.GetOnlinePlayer(MuleOwnerId.Value);
+                if (owner == null || owner.ActiveMule != this)
+                {
+                    player.Session.Network.EnqueueSend(new GameEventCommunicationTransientString(player.Session, $"{Name} wanders off home."));
+                    Destroy();   // a mule's Destroy only lets go of the storage items, it never deletes them
+                    return;
+                }
+
                 if (!player.CanUseMule(this))
                 {
                     player.Session.Network.EnqueueSend(new GameEventCommunicationTransientString(player.Session, $"{Name} ignores you."));
