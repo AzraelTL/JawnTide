@@ -16,6 +16,8 @@ Options:
   --ratio R    ... that are also at least R times what the account had before (default 1.0, i.e. it at least doubled)
   --top N      how many lines to print (default 60)
   --skip WCIDS comma-separated weenie ids to leave out (default 273 pyreals)
+  --skip-accounts NAMES  comma-separated account names to leave out too. Staff accounts (accessLevel > 0) are always
+               left out, including from the whole-server totals.
 """
 import argparse
 import gzip
@@ -26,7 +28,8 @@ INSERT_RE = re.compile(r"^INSERT INTO `([^`]+)` VALUES\s?")
 NUM3 = re.compile(r"\((\d+),(\d+),(-?\d+)\)")          # (object_Id,type,value)
 BIOTA = re.compile(r"\((\d+),(\d+),")                  # (id,weenie_Class_Id,...
 STR3 = re.compile(r"\((\d+),(\d+),'((?:[^'\\]|\\.)*)'\)")  # (object_Id,type,'value')
-ACCOUNT = re.compile(r"\((\d+),'((?:[^'\\]|\\.)*)'")   # (accountId,'accountName',...
+ACCOUNT = re.compile(r"\((\d+),'((?:[^'\\]|\\.)*)',(?:'(?:[^'\\]|\\.)*'|NULL),(?:'(?:[^'\\]|\\.)*'|NULL),(\d+)")
+# (accountId,'accountName','passwordHash','passwordSalt',accessLevel,...
 CHAR = re.compile(r"\((\d+),(\d+),'((?:[^'\\]|\\.)*)'")  # (id,account_Id,'name',...
 MULE = re.compile(r"\((\d+),(\d+),(-?\d+)\)")          # (account_Id,container_Id,visual_Variant)
 
@@ -39,12 +42,14 @@ def scan(path):
     next_mule = {}      # mule container -> next container (PropertyInstanceId.MuleNextContainerId = 20003)
     house_owner = {}    # storage chest -> owning character (PropertyInstanceId.HouseOwner = 32)
     names = {}          # weenie class id -> an item name
-    accounts, chars, mules = {}, {}, {}
+    accounts, chars, mules, staff = {}, {}, {}, set()
 
     def handle(table, body):
         if db == "ace_auth" and table == "account":
             for a in ACCOUNT.finditer(body):
                 accounts[int(a.group(1))] = a.group(2)
+                if int(a.group(3)) > 0:
+                    staff.add(int(a.group(1)))
         elif db != "ace_shard":
             return
         elif table == "biota":
@@ -130,7 +135,7 @@ def scan(path):
             continue
         key = (aid, w)
         totals[key] = totals.get(key, 0) + n
-    return totals, names, accounts
+    return totals, names, accounts, staff
 
 
 def main():
@@ -141,15 +146,24 @@ def main():
     ap.add_argument("--ratio", type=float, default=1.0)
     ap.add_argument("--top", type=int, default=60)
     ap.add_argument("--skip", default="273")
+    ap.add_argument("--skip-accounts", default="")
     a = ap.parse_args()
     skip = {int(x) for x in a.skip.split(",") if x.strip()}
 
     print(f"reading {a.older} ...", flush=True)
-    old, names_old, acc_old = scan(a.older)
+    old, names_old, acc_old, staff_old = scan(a.older)
     print(f"reading {a.newer} ...", flush=True)
-    new, names, accounts = scan(a.newer)
+    new, names, accounts, staff = scan(a.newer)
     names = {**names_old, **names}
     accounts = {**acc_old, **accounts}
+    extra = {x.strip().lower() for x in a.skip_accounts.split(",") if x.strip()}
+    staff |= staff_old | {aid for aid, n in accounts.items() if n.lower() in extra}
+    if not accounts:
+        print("warning: no accounts read from ace_auth, so staff accounts can't be left out")
+    else:
+        print(f"leaving out {len(staff)} staff account(s): {', '.join(sorted(accounts.get(i, str(i)) for i in staff)) or 'none'}")
+    old = {k: v for k, v in old.items() if k[0] not in staff}
+    new = {k: v for k, v in new.items() if k[0] not in staff}
 
     rows = []
     for (aid, w), n in new.items():
