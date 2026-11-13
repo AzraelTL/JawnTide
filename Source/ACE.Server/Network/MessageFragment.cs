@@ -83,10 +83,14 @@ namespace ACE.Server.Network
             if (DataRemaining < dataToSend)
                 throw new InvalidOperationException("More data to send then data remaining!");
 
-            // Read data starting at position reading dataToSend bytes
-            Message.Data.Seek(position, SeekOrigin.Begin);
+            // Copy dataToSend bytes starting at position.
+            // JawnTide: copied straight from the message's buffer instead of Seek + Read. A message broadcast to several
+            // players is one shared object, and every session builds its packets on its own thread (NetworkManager runs
+            // TickOutbound in parallel), so two sessions moving the shared stream position at the same time could copy
+            // the wrong bytes (the client gets garbage and can crash) or throw "Offset and length were out of bounds"
+            // (that session's whole outgoing bundle was lost). Reading the buffer doesn't touch any shared state.
             byte[] data = new byte[dataToSend];
-            Message.Data.Read(data, 0, dataToSend);
+            Buffer.BlockCopy(Message.Data.GetBuffer(), position, data, 0, dataToSend);
 
             // Build ServerPacketFragment structure
             ServerPacketFragment fragment = new ServerPacketFragment(data);
