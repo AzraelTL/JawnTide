@@ -317,7 +317,21 @@ SUIT_CSS = """
 #suitapp .tabs button{font-weight:700;padding:.45rem 1rem}#suitapp .tabs button.on{background:var(--portal);color:#111;border-color:var(--portal)}
 #suitapp table.inv{font-size:.88rem;min-width:900px}#suitapp table.inv th{position:sticky;top:0;background:var(--panel)}
 #suitapp table.inv td,#suitapp table.inv th{padding:.25rem .35rem;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-@media (max-width:640px){#suitapp .want .fam{min-width:0;width:100%}}
+#suitapp .doll{display:grid;gap:.35rem;grid-template-columns:repeat(3,minmax(0,1fr));
+ grid-template-areas:"neck head trinket" "uarms chest cloak" "larms abdomen shirt" "hands ulegs pants" "lwrist llegs rwrist" "lring feet rring"}
+#suitapp .dslot{background:var(--deep);border:1px solid var(--line);border-radius:5px;padding:.3rem .4rem;min-width:0;overflow-wrap:anywhere}
+#suitapp .dslot .sl{display:block;font-size:.75rem;color:var(--dim);text-transform:uppercase;letter-spacing:.03em}
+#suitapp label.dslot{display:flex;gap:.35rem;align-items:center;opacity:.55}
+#suitapp label.dslot:has(input:checked){opacity:1;border-color:var(--portal)}
+#suitapp .res .dslot{font-size:.85rem}
+#suitapp .dslot.filled{border-color:var(--portal)}
+#suitapp .dslot.empty .sl+span{color:var(--blood)}
+#suitapp .dslot.off{opacity:.45}
+#suitapp .dslot.cont{border-style:dashed}
+#suitapp .dslot .tags span{font-size:.75rem}
+#suitapp .dslot .micon img{width:24px;height:24px;vertical-align:middle}
+@media (max-width:640px){#suitapp .want .fam{min-width:0;width:100%}#suitapp .res .doll{grid-template-columns:1fr;grid-template-areas:none}
+ #suitapp .res .dslot{grid-area:auto!important}}
 """
 
 SUIT_JS = r"""
@@ -419,6 +433,7 @@ const S={slots:new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd')),want:[],set:'',
   noatt:false,locked:new Set(),excluded:new Set(),results:null,busy:false,msg:'',src:new Set((D.sources||[]).filter(x=>x.on).map(x=>x.k))};
 // which spells to list: only cantrips (Minor/Major/Epic/Legendary), or every spell; remembered in this browser
 try{S.allSpells=localStorage.getItem('suitAllSpells')==='1'}catch(e){S.allSpells=false}
+try{S.view=localStorage.getItem('suitView')==='list'?'list':'doll'}catch(e){S.view='doll'}
 const showSpell=n=>S.allSpells||parse(n).c||/^(Surge|Cast on strike)\b/i.test(n)||/ Cloak$/.test(n);
 const SRCNAME={};(D.sources||[]).forEach(x=>SRCNAME[x.k]=x.n);
 function applyTemplate(key){const T=TEMPLATES[key];if(!T||!T.k)return;
@@ -491,7 +506,7 @@ function srcBox(){return `<div class=sbox><h2>Where to look</h2><div class=row>$
 function render(){
   if(S.tab==='items'){app.innerHTML=srcBox()+itemsView();return}
   const ch=D.chars.map(c=>`<option${c.n===S.char?' selected':''}>${esc(c.n)}</option>`).join('');
-  const slots=SLOTS.filter(s=>s[0]!=='uabd').map(s=>`<label><input type=checkbox data-slot="${s[0]}"${S.slots.has(s[0])?' checked':''}> ${s[1]}</label>`).join('');
+  const slots=SLOTS.filter(s=>s[0]!=='uabd').map(s=>`<label class=dslot style="grid-area:${s[0]}"><input type=checkbox data-slot="${s[0]}"${S.slots.has(s[0])?' checked':''}> ${s[1]}</label>`).join('');
   const wants=S.want.map((w,i)=>{const F=FAMS[w.f]||{c:0,max:0,n:0};
     const tiers=F.c?[1,2,3,4]:Array.from({length:Math.max(1,F.max)},(_,j)=>j+1);
     const opts=tiers.map(t=>`<option value="${t}"${t===w.t?' selected':''}>${esc(tierName(w.f,t))}${t===4&&F.c||(!F.c&&t===F.max)?'':' or better'}</option>`).join('');
@@ -512,7 +527,7 @@ function render(){
     <button id=tplgo>Use template</button><span class=muted>${ITEMS.filter(it=>it.src==='me').length} wearable items in your mule.</span></div>
     ${S.msg?`<p class=part>${esc(S.msg)}</p>`:''}</div>
   <div class=sbox><h2>2. Slots to fill</h2><p class="sm muted">Only items that fit entirely in the ticked slots are used, so untick slots you already have covered.</p>
-    <div class=slots>${slots}</div><div class=row><button id=sall>All</button><button id=snone>None</button>
+    <div class=doll>${slots}</div><div class=row><button id=sall>All</button><button id=snone>None</button>
     <button id=sarmor>Armor only</button><button id=sjew>Jewelry only</button></div></div>
   <div class=sbox><h2>3. Spells you need</h2>${S.want.length>1?`<div class="want setall"><span class=fam>Set all</span>
     <select id=allt><option value="">level…</option><option value=1>Minor or better</option><option value=2>Major or better</option><option value=3>Epic or better</option><option value=4>Legendary</option></select>
@@ -553,7 +568,8 @@ function render(){
 function results(){
   if(!S.results)return'';
   if(!S.results.length)return'<p class=no>No suit found. Tick more slots, or make some spells "Nice to have".</p>';
-  return S.results.map((r,ri)=>{
+  const view=`<div class=row><label class=sm>Show suits as <select id=view><option value=doll${S.view==='doll'?' selected':''}>paperdoll</option><option value=list${S.view==='list'?' selected':''}>list</option></select></label></div>`;
+  return view+S.results.map((r,ri)=>{
     const met=S.want.map(w=>{const got=r.tiers[w.f]||0;const cls=got>=w.t?'ok':got?'part':'no';
       return `<span class=${cls}>${esc(w.f)}${got&&got<w.t?' ('+esc(tierName(w.f,got))+')':''}${got?'':' ✕'}</span>`}).join(' · ');
     const rows=r.picks.map(([i,occ])=>{const it=ITEMS[i];const where=SLOTS.filter((s,b)=>occ&(1<<b)&&s[0]!=='uabd').map(s=>s[1]).join(', ')+(it.pl.includes(occ)?'':' (tailor-reduce to this)');
@@ -565,13 +581,25 @@ function results(){
       return `<tr><td>${esc(where)}</td><td>${icon} <b>${esc(it.n)}</b>${from}<div class="sm muted">${esc(meta)}</div><div class=tags>${tags}</div></td>
         <td class=sm><button class=x data-lock="${i}" title="Always use this item">🔒</button> <button class=x data-ex="${i}" title="Never use this item">🚫</button></td></tr>`}).join('');
     const empty=SLOTS.filter((s,b)=>S.slots.has(s[0])&&!(r.occ&(1<<b))).map(s=>s[1]);
+    const doll=S.view==='doll'?`<div class=doll>${SLOTS.map((s,b)=>{if(s[0]==='uabd')return'';const k=s[0];
+      const pk=r.picks.find(([i,occ])=>occ&(1<<b));
+      if(!pk)return `<div class="dslot ${S.slots.has(k)?'empty':'off'}" style="grid-area:${k}"><span class=sl>${esc(s[1])}</span><span>${S.slots.has(k)?'empty':'not searched'}</span></div>`;
+      const [i,occ]=pk,it=ITEMS[i];const first=SLOTS.findIndex((x,bb)=>x[0]!=='uabd'&&occ&(1<<bb));
+      if(first!==b)return `<div class="dslot filled cont" style="grid-area:${k}"><span class=sl>${esc(s[1])}</span><span class=muted>↳ ${esc(it.n)} (${esc(SLOTS[first][1])})</span></div>`;
+      const tags=it.sp.filter(showSpell).map(n=>{const p=parse(n);const hit=S.want.find(w=>w.f===p.f)||(p.f===IMP&&impOn(it));return `<span${hit?' class=hit':''}>${esc(n)}</span>`}).join('');
+      const meta=[it.al?'AL '+it.al:'',it.set,it.lv?'level '+it.lv:''].filter(Boolean).join(' · ');
+      const from=it.src==='m'?`<div class=part>Market: <a href="/market/item/${it.g}" target=_blank>${esc(it.price)}</a></div>`:it.loc?`<div class=part>${esc(it.loc)}</div>`:it.src!=='me'?`<div class=part>${esc(SRCNAME[it.src]||'guest mule')}</div>`:'';
+      return `<div class="dslot filled" style="grid-area:${k}"><span class=sl>${esc(s[1])}${it.pl.includes(occ)?'':' · tailor-reduce'}</span>
+        <span class=micon>${it.ic.map(x=>`<img src="/market/icon/${x}.png" alt="" loading=lazy>`).join('')}</span> <b>${esc(it.n)}</b>
+        <button class=x data-lock="${i}" title="Always use this item">🔒</button><button class=x data-ex="${i}" title="Never use this item">🚫</button>
+        ${from}${meta?`<div class=muted>${esc(meta)}</div>`:''}<div class=tags>${tags}</div></div>`}).join('')}</div>`:`<table><tbody>${rows}</tbody></table>`;
     const rt=Object.entries(r.rt).map(([k,v])=>(D.ratings.find(x=>x[0]===k)||[k,k])[1]+' '+v).join(', ');
     const pcs=r.picks.map(([i])=>ITEMS[i]).filter(it=>pieceKind(it));
     const imp=pcs.length&&(S.imp.armor.m!=='off'||S.imp.under.m!=='off')?` · Impenetrability on ${pcs.filter(it=>(it.fams[IMP]||0)>=S.imp[pieceKind(it)].t).length} of ${pcs.length} pieces`:'';
     const cnt=[4,3,2].map(t=>[t,S.want.filter(w=>FAMS[w.f]&&FAMS[w.f].c&&(r.tiers[w.f]||0)===t).length]).filter(x=>x[1]).map(([t,n])=>n+' '+TIERN[t]).join(', ');
     return `<div class=res><div class=row><b>Suit ${ri+1}</b><span class=muted>armor level ${r.al}${r.set?' · '+esc(S.set)+' '+r.set+' pieces':''}${r.set2?' · '+esc(S.set2)+' '+r.set2+' pieces':''}${rt?' · '+esc(rt):''}${imp}${cnt?' · '+cnt:''}</span></div>
       <p>${met||'<span class=muted>no spells picked</span>'}</p>${empty.length?`<p class="sm muted">Left empty: ${esc(empty.join(', '))}</p>`:''}
-      <table><tbody>${rows}</tbody></table>
+      ${doll}
       <div class=row><input type=text id=sn${ri} value="Suit ${ri+1}" maxlength=64 aria-label="Suit name"><button data-save="${ri}">Save for /mule suit</button><button data-copy="${ri}">Copy as text</button><span id=sv${ri}></span></div></div>`}).join('');
 }
 
@@ -752,6 +780,7 @@ app.addEventListener('click',ev=>{const th=ev.target.closest('th[data-sort]');
   else return;
   render()});
 app.addEventListener('change',ev=>{const t=ev.target;const d=t.dataset;
+  if(t.id==='view'){S.view=t.value==='list'?'list':'doll';try{localStorage.setItem('suitView',S.view)}catch(e){}render();return}
   if(t.id==='spshow'){S.allSpells=t.value==='all';try{localStorage.setItem('suitAllSpells',S.allSpells?'1':'0')}catch(e){}render();return}
   if(d.icat){t.checked?IS.cats.add(d.icat):IS.cats.delete(d.icat);render();return}
   if(d.if!=null&&t.tagName==='SELECT'){IS[d.if]=t.value;render();return}
