@@ -672,7 +672,7 @@ function buildProblem(){
       (isLocked?locked:cands).push(c);
     }
   }
-  return{nb:NB,cands,locked,want:S.want.map(w=>({t:w.t,w:w.p==='need'?10:3})),setN:S.set?S.setN:0,setN2:S.set2?S.setN2:0,top:5,ms:8000,rkeys};
+  return{nb:NB,cands,locked,want:S.want.map(w=>({t:w.t,w:w.p==='need'?10:3})),setN:S.set?S.setN:0,setN2:S.set2?S.setN2:0,top:5,ms:20000,rkeys};
 }
 
 const WORKER=`
@@ -685,6 +685,10 @@ const heur=c=>c.tv.reduce((a,t,f)=>a+famVal(f,t),0)+(c.set+c.set2)*5+c.bonus;
 const kept=[];
 for(const k in groups){const g=groups[k].sort((a,b)=>heur(b)-heur(a));const keep=[];
   for(const c of g){if(keep.some(o=>o.set>=c.set&&o.set2>=c.set2&&o.bonus>=c.bonus&&o.tv.every((t,f)=>t>=c.tv[f])))continue;keep.push(c);if(keep.length>=14)break}
+  // the 14 best overall can all carry the same popular cantrips, so also keep, for every spell asked for, the item in this
+  // spot with that spell at its highest level: otherwise a suit can end up with the same cantrip 3 times and another missing
+  for(let f=0;f<NF;f++){let b=null;for(const c of g)if(c.tv[f]&&(!b||c.tv[f]>b.tv[f]||c.tv[f]===b.tv[f]&&heur(c)>heur(b)))b=c;
+    if(b&&!keep.includes(b)&&!keep.some(o=>o.tv[f]>=b.tv[f]&&o.set>=b.set&&o.set2>=b.set2&&o.bonus>=b.bonus&&o.tv.every((t,ff)=>t>=b.tv[ff])))keep.push(b)}
   kept.push(...keep)}
 const byLow=Array.from({length:NB+1},()=>[]);for(const c of kept)byLow[low(c.occ)].push(c);
 for(const l of byLow)l.sort((a,b)=>heur(b)-heur(a));
@@ -731,7 +735,7 @@ function search(){
       const rt={};let al=0;for(const[i]of b.picks){const it=ITEMS[i];al+=it.al;for(const k in it.rt)if(S.rate[k])rt[k]=(rt[k]||0)+it.rt[k]}
       return{picks:b.picks.sort((x,y)=>low(x[1])-low(y[1])),occ:b.occ,tiers:t,set:b.set,set2:b.set2,al,rt}});
     render();const pr2=document.getElementById('prog');
-    if(pr2)pr2.textContent=`${m.nodes.toLocaleString()} combinations of ${m.kept} useful items${m.stopped?' (stopped after 8 seconds: the best found so far)':''}.`};
+    if(pr2)pr2.textContent=`${m.nodes.toLocaleString()} combinations of ${m.kept} useful items${m.stopped?' (stopped after 20 seconds: the best found so far; tick fewer slots or untick some places to look, then search again)':''}.`};
   worker.postMessage(P);
 }
 const low=o=>{for(let b=0;b<NB;b++)if(o&(1<<b))return b;return NB};
