@@ -46,11 +46,24 @@ namespace ACE.Server.Network.GameEvent.Events
                 Writer.WriteString16L(string.Empty);
             }
 
-            var numItems = vendor.DefaultItemsForSale.Count + vendor.UniqueItemsForSale.Count;
+            var items = new System.Collections.Generic.List<WorldObject>(vendor.DefaultItemsForSale.Count + vendor.UniqueItemsForSale.Count);
+            vendor.forEachItem(items.Add);
 
-            Writer.Write(numItems);
+            // JawnTide My Mule: a mule can hold thousands of items, and one window listing them all can crash the client,
+            // so it lists one page (mule_window_max_items) at a time; /mule page N picks the page
+            if (vendor.MuleOwnerId.HasValue)
+            {
+                var max = Player.MuleWindowMaxItems;
+                if (items.Count > max)
+                {
+                    var page = Math.Clamp(vendor.MulePage, 0, (items.Count - 1) / max);
+                    items = items.GetRange(page * max, Math.Min(max, items.Count - page * max));
+                }
+            }
 
-            vendor.forEachItem((obj) =>
+            Writer.Write(items.Count);
+
+            foreach (var obj in items)
             {
                 int stackSize = obj.VendorShopCreateListStackSize ?? obj.StackSize ?? 1; // -1 = unlimited supply
 
@@ -85,7 +98,7 @@ namespace ACE.Server.Network.GameEvent.Events
 
                 if (listAs.HasValue)
                     obj.ItemType = originalItemType;
-            });
+            }
 
             Writer.Align();
         }

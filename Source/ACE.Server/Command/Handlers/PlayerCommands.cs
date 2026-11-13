@@ -2129,6 +2129,7 @@ namespace ACE.Server.Command.Handlers
             "storage add <name> | storage remove <name> | storage remove -all | storage list - who else may use your mule while it's summoned\n" +
             "Searches your open mule window for items whose spells match <pattern>, a .NET regular expression matched case-insensitively against the item's spell names. That mule's buy window is filtered down to just the matches. Run with no pattern (\"/mule search\"), or just double-click the mule to reopen it, to clear the filter and go back to the normal listing.\n" +
             "Examples: \"/mule search legendary.*legendary\" (double legendary gear), \"/mule search legendary (frost|flame|acid)\" (any of several cantrips), \"/mule search legendary frost.*legendary acid\" (both cantrips present).\n" +
+            "\"/mule page N\" shows page N when the mule holds more items than one window lists.\n" +
             "With no parameters, grants a My Mule summon gem if you don't already have one.")]
         public static void HandleMule(Session session, params string[] parameters)
         {
@@ -2138,6 +2139,13 @@ namespace ACE.Server.Command.Handlers
             {
                 var pattern = string.Join(" ", parameters.Skip(1));
                 player.SearchMuleInventory(pattern);
+                return;
+            }
+
+            // JawnTide: the mule window lists mule_window_max_items at a time; /mule page N shows another page
+            if (parameters.Length > 0 && parameters[0].Equals("page", StringComparison.OrdinalIgnoreCase))
+            {
+                player.ShowMulePage(parameters.Length > 1 ? parameters[1] : "");
                 return;
             }
 

@@ -33,3 +33,4 @@
 2026-11-12-website-account-market 19-market.md
 2026-11-13-suit-paperdoll 26-suit-builder.md
 2026-11-13-suit-underclothes 26-suit-builder.md
+2026-11-13-mule-page 10-my-mule.md

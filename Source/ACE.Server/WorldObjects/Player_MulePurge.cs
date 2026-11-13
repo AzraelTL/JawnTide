@@ -211,6 +211,7 @@ namespace ACE.Server.WorldObjects
             // show just these in the mule window, so they can be checked before confirming
             vendor.MuleSearchRegex = null;
             vendor.MuleSuitGuids = new HashSet<uint>(pendingMulePurge);
+            vendor.MulePage = 0;
             RefreshMuleVendorDisplay(vendor, VendorType.Undef);
 
             var units = matches.Sum(wo => wo.StackSize ?? 1);
@@ -313,6 +314,7 @@ namespace ACE.Server.WorldObjects
                 c.SaveBiotaToDatabase();
 
             vendor.MuleSuitGuids = null;
+            vendor.MulePage = 0;
             RefreshMuleVendorDisplay(vendor, VendorType.Undef);
 
             if (moved.Count > 0)
