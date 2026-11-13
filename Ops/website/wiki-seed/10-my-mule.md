@@ -67,4 +67,8 @@ Like storage guests on a house chest, you can let characters on other accounts u
 ## Finding items
 `/mule search pattern` filters your open mule window by the spells on the items. For example `/mule search legendary.*legendary` shows double-legendary gear. Type `/mule search` with nothing after it, or reopen the mule, to see everything again.
 
-A big mule lists 1,500 items per window. When it holds more, the game says which items are shown; type `/mule page 2` (3, 4 and so on) to see the next ones, or use `/mule search` to find something.
+### Big mules
+A mule window lists one page of items at a time (a few hundred), because a list of thousands of items can freeze or crash the game. When your mule holds more than one page, opening it tells you which items are shown, for example "showing 1-500 of 4,100 (page 1 of 9)".
+- `/mule page 2` (3, 4 and so on) shows another page; `/mule page 1` goes back to the start.
+- `/mule search` and `/mule suit` look through everything in the mule, not just the page you're on.
+- Reopening the mule goes back to page 1.
