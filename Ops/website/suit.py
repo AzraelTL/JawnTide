@@ -580,7 +580,11 @@ function results(){
         :it.loc?`<div class="sm part">${esc(it.loc)}</div>`:it.src!=='me'?`<div class="sm part">${esc(SRCNAME[it.src]||'guest mule')}</div>`:'';
       return `<tr><td>${esc(where)}</td><td>${icon} <b>${esc(it.n)}</b>${from}<div class="sm muted">${esc(meta)}</div><div class=tags>${tags}</div></td>
         <td class=sm><button class=x data-lock="${i}" title="Always use this item">🔒</button> <button class=x data-ex="${i}" title="Never use this item">🚫</button></td></tr>`}).join('');
-    const empty=SLOTS.filter((s,b)=>S.slots.has(s[0])&&!(r.occ&(1<<b))).map(s=>s[1]);
+    const empty=SLOTS.filter((s,b)=>S.slots.has(s[0])&&!(r.occ&(1<<b))).map(s=>{
+      // pants also cover the abdomen, so a shirt that covers the abdomen too can't be worn with them
+      if(s[0]==='pants'&&(r.occ&BIT.uabd)){const sh=r.picks.find(([i,o])=>o&BIT.uabd);if(sh)return s[1]+' (the '+ITEMS[sh[0]].n+' covers the abdomen, so no pants fit with it)'}
+      const n=ITEMS.filter(it=>S.src.has(it.src)&&it.pl.concat(S.reduce?it.red:[]).some(o=>o&BIT[s[0]])).length;
+      return s[1]+(n?' ('+n+' item'+(n===1?'':'s')+' could go here, but none passed your filters, level or Impenetrability rule)':' (no items for this slot)')});
     const doll=S.view==='doll'?`<div class=doll>${SLOTS.map((s,b)=>{if(s[0]==='uabd')return'';const k=s[0];
       const pk=r.picks.find(([i,occ])=>occ&(1<<b));
       if(!pk)return `<div class="dslot ${S.slots.has(k)?'empty':'off'}" style="grid-area:${k}"><span class=sl>${esc(s[1])}</span><span>${S.slots.has(k)?'empty':'not searched'}</span></div>`;
@@ -598,7 +602,7 @@ function results(){
     const imp=pcs.length&&(S.imp.armor.m!=='off'||S.imp.under.m!=='off')?` · Impenetrability on ${pcs.filter(it=>(it.fams[IMP]||0)>=S.imp[pieceKind(it)].t).length} of ${pcs.length} pieces`:'';
     const cnt=[4,3,2].map(t=>[t,S.want.filter(w=>FAMS[w.f]&&FAMS[w.f].c&&(r.tiers[w.f]||0)===t).length]).filter(x=>x[1]).map(([t,n])=>n+' '+TIERN[t]).join(', ');
     return `<div class=res><div class=row><b>Suit ${ri+1}</b><span class=muted>armor level ${r.al}${r.set?' · '+esc(S.set)+' '+r.set+' pieces':''}${r.set2?' · '+esc(S.set2)+' '+r.set2+' pieces':''}${rt?' · '+esc(rt):''}${imp}${cnt?' · '+cnt:''}</span></div>
-      <p>${met||'<span class=muted>no spells picked</span>'}</p>${empty.length?`<p class="sm muted">Left empty: ${esc(empty.join(', '))}</p>`:''}
+      <p>${met||'<span class=muted>no spells picked</span>'}</p>${empty.length?`<p class="sm muted">Left empty: ${esc(empty.join('; '))}</p>`:''}
       ${doll}
       <div class=row><input type=text id=sn${ri} value="Suit ${ri+1}" maxlength=64 aria-label="Suit name"><button data-save="${ri}">Save for /mule suit</button><button data-copy="${ri}">Copy as text</button><span id=sv${ri}></span></div></div>`}).join('');
 }
@@ -660,7 +664,10 @@ function buildProblem(){
     for(const occ of spots){
       if(!isLocked&&(occ&~allowed))continue;
       if(isLocked&&(occ&~allowed)&&spots.some(o=>!(o&~allowed)))continue;   // a locked piece goes where the ticked slots allow, when it can
-      const c={i:it.i,occ,tv,set:S.set&&it.set===S.set?1:0,set2:S.set2&&it.set===S.set2?1:0,bonus};
+      // a small reward for filling a ticked slot (with your own or a guest mule's item, never a Market buy just to fill),
+      // so a slot isn't left empty only because its item's spells are already covered; Impenetrability adds a little too
+      const fill=it.src==='m'?0:0.15*slotNames(occ).filter(n=>n!=='uabd').length+(ik?0.05*itier:0);
+      const c={i:it.i,occ,tv,set:S.set&&it.set===S.set?1:0,set2:S.set2&&it.set===S.set2?1:0,bonus:bonus+fill};
       (isLocked?locked:cands).push(c);
     }
   }
