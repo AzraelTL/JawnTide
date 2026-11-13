@@ -61,6 +61,9 @@ LUMINANCE = -1
 BANK_CODES = {"pyreals": 273, "pk_trophies": 1000002, "key_darkbeat": 480608, "key_hera": 490364,
               "key_skeleton": 30258, "luminance": LUMINANCE}
 PROP_IID_MONARCH = 26
+# Staff accounts (accessLevel > 0, plus any names in SKIP_ACCOUNTS) are left out of the report pages: Accounts, Top
+# holders, Bank, Levels and Allegiances. Their own account pages still work.
+SKIP_ACCOUNTS = {n.strip().lower() for n in os.environ.get("SKIP_ACCOUNTS", "").split(",") if n.strip()}
 WINDOWS = (1, 6, 24, 72, 168)  # hours offered on the Levels page
 
 state = {"snapshot": None, "error": None, "taken": None, "duration": None}
@@ -211,7 +214,8 @@ def take_snapshot():
             a["holders"][w] = best if best and best["holdings"][w] > 0 else None
 
     held = {w for w in WCIDS if elsewhere[w] or any(a["totals"][w] for a in accounts.values())}
-    snap = dict(taken=datetime.now(), accounts=accounts, characters=chars, elsewhere=elsewhere,
+    staff = {aid for aid, a in accounts.items() if (a["level"] or 0) > 0 or a["name"].lower() in SKIP_ACCOUNTS}
+    snap = dict(taken=datetime.now(), accounts=accounts, characters=chars, elsewhere=elsewhere, staff=staff,
                 ip_accounts={k: sorted(v) for k, v in ip_accounts.items()},
                 currencies=currencies, held=held, wcids=WCIDS, whitelist=whitelist, bank_log=bank_log)
     save_history(snap)
@@ -362,7 +366,8 @@ def overview(sort):
         return page("Accounts", "<p>Waiting for the first snapshot.</p>")
     CURRENCIES = shown(snap)
     WCIDS = [w for w, _ in CURRENCIES]
-    accounts = list(snap["accounts"].values())
+    staff = snap.get("staff", set())
+    accounts = [a for a in snap["accounts"].values() if a["id"] not in staff]
     key = int(sort) if sort and sort.isdigit() and int(sort) in WCIDS else (20630 if 20630 in WCIDS else (WCIDS[0] if WCIDS else None))
     accounts.sort(key=lambda a: (-(a["totals"].get(key, 0) if key else 0), a["name"].lower()))
     shared = {ip for ip, names in snap["ip_accounts"].items() if len(names) > 1}
@@ -388,6 +393,9 @@ def overview(sort):
             f'<th>Most played character</th>{head}</tr>{"".join(rows)}'
             f'<tr><td><b>All accounts</b></td><td></td><td></td><td></td><td></td>{total_cells}</tr>'
             f'<tr><td class="muted">Elsewhere</td><td></td><td></td><td></td><td></td>{else_cells}</tr></table></div>')
+    if staff:
+        links = ", ".join(account_link(snap["accounts"][i]["name"]) for i in sorted(staff, key=lambda i: snap["accounts"][i]["name"].lower()))
+        body += f'<p class="muted">Staff accounts, left out of the reports: {links}</p>'
     return page("Accounts", body)
 
 
@@ -445,7 +453,7 @@ def account_page(name):
     return page(a["name"], f'<h2>Account {e(a["name"])}</h2>{info}{chars}{banklog}{ips}{history}')
 
 
-def xp_window(hours):
+def xp_window(hours, skip=()):
     """XP and played time each character gained in the last `hours`, and XP gained per landblock.
 
     The baseline is the character's last row before the window (or, if the monitor first saw it inside the window,
@@ -462,6 +470,8 @@ def xp_window(hours):
         db.close()
     gains, spots, prev_cid, prev = {}, {}, None, None
     for cid, xp, age, lb in rows:
+        if cid in skip:
+            continue
         if cid != prev_cid:
             prev_cid, prev = cid, before.get(cid)
         if prev is not None:
@@ -545,11 +555,12 @@ def levels_page(sort, hours):
         return page("Levels", "<p>Waiting for the first snapshot.</p>")
     hours = int(hours) if hours and hours.isdigit() and int(hours) in WINDOWS else 24
     sort = sort if sort in ("level", "gain", "rate", "played") else "level"
-    gains, spots = xp_window(hours)
+    staff = snap.get("staff", set())
+    gains, spots = xp_window(hours, {cid for cid, c in snap["characters"].items() if c["account"] in staff})
     wiki = wiki_contributors()
     rows = []
     for c in snap["characters"].values():
-        if c["deleted"]:
+        if c["deleted"] or c["account"] in staff:
             continue
         a = snap["accounts"].get(c["account"])
         gxp, gage = gains.get(c["id"], (0, 0))
@@ -596,7 +607,8 @@ def allegiances_page():
     snap = snapshot_or_wait()
     if not snap:
         return page("Allegiances", "<p>Waiting for the first snapshot.</p>")
-    live = {cid: c for cid, c in snap["characters"].items() if not c["deleted"]}
+    staff = snap.get("staff", set())
+    live = {cid: c for cid, c in snap["characters"].items() if not c["deleted"] and c["account"] not in staff}
     children = {}
     for c in live.values():
         if c.get("patron") in live:
@@ -653,7 +665,7 @@ def top_page():
     parts = ['<p class="muted">Ranked by account: carried on its characters + its My Mule + its bank, so moving things into '
              'storage does not hide anyone. The character shown is the one carrying the most.</p>']
     for w, label in shown(snap):
-        top = sorted((a for a in snap["accounts"].values() if a["totals"][w] > 0), key=lambda a: -a["totals"][w])[:15]
+        top = sorted((a for a in snap["accounts"].values() if a["totals"][w] > 0 and a["id"] not in snap.get("staff", ())), key=lambda a: -a["totals"][w])[:15]
         rows = "".join(f'<tr><td>{account_link(a["name"])}</td><td>{e(a["holders"][w]["name"]) if a["holders"].get(w) else ""}</td>'
                        f'<td class="n">{fmt_n(a["carried"][w])}</td><td class="n">{fmt_n(a["mule"][w])}</td>'
                        f'<td class="n">{fmt_n(a["bank"][w])}</td><td class="n"><b>{fmt_n(a["totals"][w])}</b></td></tr>' for a in top)
@@ -684,7 +696,7 @@ def bank_page():
     if not snap:
         return page("Bank", "<p>Waiting for the first snapshot.</p>")
     codes = list(BANK_NAMES.items())
-    banked = [a for a in snap["accounts"].values() if any(a["bank"][BANK_CODES[c]] for c, _ in codes)]
+    banked = [a for a in snap["accounts"].values() if a["id"] not in snap.get("staff", ()) and any(a["bank"][BANK_CODES[c]] for c, _ in codes)]
     banked.sort(key=lambda a: (-a["bank"][273], a["name"].lower()))
     head = "".join(f'<th class="n">{e(n)}</th>' for _, n in codes)
     rows = "".join(f'<tr><td>{account_link(a["name"])}</td>' + "".join(f'<td class="n">{fmt_n(a["bank"][BANK_CODES[c]])}</td>' for c, _ in codes) + "</tr>"
@@ -692,7 +704,7 @@ def bank_page():
     totals = "".join(f'<td class="n"><b>{fmt_n(sum(a["bank"][BANK_CODES[c]] for a in banked))}</b></td>' for c, _ in codes)
     balances = (f'<h2>Balances ({len(banked)} accounts)</h2><div class="wrap"><table><tr><th>Account</th>{head}</tr>{rows}'
                 f'<tr><td><b>All accounts</b></td>{totals}</tr></table></div>')
-    log = "".join(bank_log_row(snap, r) for r in snap.get("bank_log", []))
+    log = "".join(bank_log_row(snap, r) for r in snap.get("bank_log", []) if r[1] not in snap.get("staff", ()))
     history = (f'<h2>Recent bank activity (last {len(snap.get("bank_log", []))} entries, newest first)</h2>'
                f'<p class="muted">Highlighted: sends, receives, admin changes, and changes of 1,000,000+ pyreals or 100+ of anything else.</p>'
                f'<div class="wrap"><table><tr><th>When (UTC)</th><th>Account</th><th>Character</th><th>Action</th><th>Currency</th>'
