@@ -37,7 +37,7 @@ Next to the tabs, **Show** picks which spells are listed on items and in the spe
 
 On any item in a result, 🔒 always uses that item and 🚫 never uses it; search again after. **Copy as text** copies a suit for Discord or notes.
 
-The search runs in your browser. It stops after 8 seconds and shows the best suits found so far.
+The search runs in your browser. It stops after 20 seconds and shows the best suits found so far; the line under the button says so. With a very big mule, tick fewer slots, lock items you know you want (🔒) or untick places to look so it can check every combination.
 
 ## Taking a suit out of your mule
 Press **Save for /mule suit** on a suit to get a short code. In game, open the mule and:
