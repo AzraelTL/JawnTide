@@ -445,14 +445,14 @@ function applyTemplate(key){const T=TEMPLATES[key];if(!T||!T.k)return;
 }
 
 // ---- Item search: every item in a sortable, filterable table (after Mag-SuitBuilder's inventory grid)
-const CATS=[['armor','Armor'],['clothing','Clothing'],['jewelry','Jewelry'],['melee','Melee'],['missile','Missile'],['caster','Casters'],['salvage','Salvage'],['gem','Gems'],['other','Other']];
+const CATS=[['armor','Armor'],['under','Underclothes'],['clothing','Other clothing'],['jewelry','Jewelry'],['melee','Melee'],['missile','Missile'],['caster','Casters'],['salvage','Salvage'],['gem','Gems'],['other','Other']];
 const RSHORT={GearDamage:'D',GearDamageResist:'DR',GearCrit:'C',GearCritResist:'CR',GearCritDamage:'CD',GearCritDamageResist:'CDR',GearHealingBoost:'Heal',GearMaxHealth:'Vit',GearPKDamageRating:'PvP D',GearPKDamageResistRating:'PvP DR'};
 const BYKEY={};for(const it of ITEMS)BYKEY[it.src+':'+it.g]=it;
 const INV=(D.inv||[]).map(r=>{let leg=0,epic=0;for(const n of r.sp){const p=parse(n);if(p.c&&p.t>=4)leg++;if(p.c&&p.t>=3)epic++}
   const sl=r.vl?SLOTS.filter((s,b)=>{const m=placements({vl:r.vl});return m.some(x=>x&(1<<b))}).filter(s=>s[0]!=='uabd').map(s=>s[1]).join(', '):'';
   const rsum=ks=>ks.reduce((a,k)=>a+Math.max(0,r.rt[k]||0),0);
   return Object.assign(r,{leg,epic,sl,off:rsum(['GearDamage','GearCrit','GearCritDamage']),def:rsum(['GearDamageResist','GearCritResist','GearCritDamageResist']),tot:Object.values(r.rt).reduce((a,x)=>a+Math.max(0,x),0),
-    cat:CATS.some(c=>c[0]===r.cat)?r.cat:'other',where:r.src==='m'?'Market':r.src==='me'?'My mule':r.loc?r.loc:(SRCNAME[r.src]||'guest mule'),it:BYKEY[r.src+':'+r.g]})});
+    cat:r.vl&&!(r.vl&~UNDERVL)?'under':CATS.some(c=>c[0]===r.cat)?r.cat:'other',where:r.src==='m'?'Market':r.src==='me'?'My mule':r.loc?r.loc:(SRCNAME[r.src]||'guest mule'),it:BYKEY[r.src+':'+r.g]})});
 const IMBUES=[...new Set(INV.map(r=>r.imb).filter(Boolean))].sort();
 const IS={q:'',cats:new Set(CATS.map(c=>c[0])),slot:'',set:'',imb:'',cov:'',mat:'',alMin:'',alMax:'',lvMin:'',lvMax:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:'',wkMax:'',sort:'n',dir:1};
 const COLS=[['n','Item'],['cat','Type'],['sl','Slots'],['set','Set'],['al','AL'],['lv','Level'],['lore','Lore'],['wk','Work'],['leg','Leg'],['epic','Epic+'],

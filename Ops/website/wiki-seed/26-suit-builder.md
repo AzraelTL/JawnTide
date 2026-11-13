@@ -48,7 +48,7 @@ Both work on a mule you're a guest of too. Market items aren't part of a saved s
 
 ## Item search
 The **Item search** tab lists every item in the places you ticked, not just armor and jewelry, with its type, slots, set, armor level, wield level, arcane lore, workmanship, Legendary and Epic counts, ratings, damage, imbue, value and where it is.
-- **Filter** by name or spells (a regular expression: `legendary.*legendary` finds items with two Legendaries), type, slot, set, imbue, armor level and wield level ranges, workmanship, Legendary and Epic counts, and ratings. **Clear filters** resets them.
+- **Filter** by name or spells (a regular expression: `legendary.*legendary` finds items with two Legendaries), type (Underclothes is its own type: shirts and pants), slot, set, imbue, armor level and wield level ranges, workmanship, Legendary and Epic counts, and ratings. **Clear filters** resets them.
 - **Sort** by clicking a column heading; click again to reverse.
 - **Download as CSV** saves the filtered list for Excel or Google Sheets.
 - 🔒 and 🚫 on an armor or jewelry row lock or exclude it in the Suit search.
