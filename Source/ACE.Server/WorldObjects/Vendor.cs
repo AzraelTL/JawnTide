@@ -53,6 +53,27 @@ namespace ACE.Server.WorldObjects
         /// <summary>JawnTide My Mule: which page of the buy window is shown when the listing is longer than mule_window_max_items (0 = first).</summary>
         public int MulePage;
 
+        /// <summary>
+        /// JawnTide My Mule: the "Next page" / "Previous page" entries listed in a paged mule window. They're never saved or
+        /// placed in the world; "buying" one turns the page instead (Player.HandleMulePageButton).
+        /// </summary>
+        public WorldObject MuleNextButton, MulePrevButton;
+
+        public WorldObject GetMulePageButton(bool next)
+        {
+            var b = next ? MuleNextButton : MulePrevButton;
+            if (b == null)
+            {
+                b = WorldObjectFactory.CreateNewWorldObject(ACE.Server.Entity.MuleInfo.GemWeenieClassId);
+                if (b == null)
+                    return null;
+                b.Value = 1;   // shown free like everything in a mule; 1 so the client treats it as an ordinary item
+                b.ContainerId = Guid.Full;
+                if (next) MuleNextButton = b; else MulePrevButton = b;
+            }
+            return b;
+        }
+
         private bool inventoryloaded { get; set; }
 
         /// <summary>

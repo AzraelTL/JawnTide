@@ -34,3 +34,4 @@
 2026-11-13-suit-paperdoll 26-suit-builder.md
 2026-11-13-suit-underclothes 26-suit-builder.md
 2026-11-13-mule-page 10-my-mule.md
+2026-11-13-mule-page-buttons 10-my-mule.md

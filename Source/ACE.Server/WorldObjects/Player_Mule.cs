@@ -588,6 +588,31 @@ namespace ACE.Server.WorldObjects
                 ChatMessageType.Broadcast));
         }
 
+        /// <summary>
+        /// "Buying" the Next page / Previous page entry of a paged mule window turns the page (nothing is withdrawn).
+        /// Returns true when the purchase was a page button.
+        /// </summary>
+        public bool HandleMulePageButton(Vendor vendor, List<ItemProfile> items)
+        {
+            var next = vendor.MuleNextButton != null && items.Any(i => i.ObjectGuid == vendor.MuleNextButton.Guid.Full);
+            var prev = vendor.MulePrevButton != null && items.Any(i => i.ObjectGuid == vendor.MulePrevButton.Guid.Full);
+
+            if (!next && !prev)
+                return false;
+
+            if (CanAccessMuleStorage(vendor) && vendor.MuleContainers != null)
+            {
+                var max = MuleWindowMaxItems;
+                var pages = Math.Max(1, (vendor.UniqueItemsForSale.Count + max - 1) / max);
+                vendor.MulePage = Math.Clamp(vendor.MulePage + (next ? 1 : -1), 0, pages - 1);
+                RefreshMuleVendorDisplay(vendor, VendorType.Undef);
+                SendMulePageNote(vendor);
+            }
+
+            SendUseDoneEvent();
+            return true;
+        }
+
         /// <summary>"/mule page N": shows page N of the open mule's listing (the full list, a search or a suit).</summary>
         public void ShowMulePage(string arg)
         {
