@@ -78,8 +78,30 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            LoadMuleContainerChain(SpawnMuleVendor);
+            // JawnTide: one summon at a time. Loading the storage takes a moment the first time, and a second use of the gem
+            // during that moment used to load it again and spawn a second mule (left behind, with its own copy of the storage).
+            var now = DateTime.UtcNow;
+            if (muleSummonStarted.HasValue && now - muleSummonStarted.Value < TimeSpan.FromSeconds(15))
+            {
+                Session.Network.EnqueueSend(new GameMessageSystemChat("Your mule is on its way.", ChatMessageType.Broadcast));
+                return;
+            }
+            muleSummonStarted = now;
+
+            LoadMuleContainerChain(containers =>
+            {
+                muleSummonStarted = null;
+
+                // a mule came out meanwhile: never a second one
+                if (ActiveMule != null && !ActiveMule.IsDestroyed)
+                    return;
+
+                // never two in-memory copies of the same storage: reuse the loaded one if there is one
+                SpawnMuleVendor(ActiveMuleContainers ?? containers);
+            });
         }
+
+        private DateTime? muleSummonStarted;
 
         private bool muleGemLookChecked;
 
