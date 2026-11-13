@@ -366,7 +366,9 @@ function reductions(it){if(!it.pl.length||!it.wk)return[];const v=it.vl;const ha
   return[...out].map(n=>BIT[n])}
 // each item -> one or more placements (a ring can go on either hand)
 function placements(it){
-  const vl=it.vl;let m=0;for(const[b,s]of EQ)if(vl&b)m|=BIT[s];if(m)return[m];
+  // most shirts (and tunics) also list AbdomenWear, like pants do, yet the game lets you wear a shirt and pants together:
+  // underclothes only clash by what they cover, so the abdomen counts as pants, and a shirt's abdomen is ignored
+  const vl=it.vl;let m=0;for(const[b,s]of EQ){if(b===0x4&&(vl&(0x2|0x8|0x10)))continue;if(vl&b)m|=BIT[s==='uabd'?'pants':s]}if(m)return[m];
   const out=[];
   if(vl&0x8000)out.push(BIT.neck);if(vl&0x10000)out.push(BIT.lwrist);if(vl&0x20000)out.push(BIT.rwrist);
   if(vl&0x40000)out.push(BIT.lring);if(vl&0x80000)out.push(BIT.rring);if(vl&0x4000000)out.push(BIT.trinket);if(vl&0x8000000)out.push(BIT.cloak);
@@ -582,7 +584,6 @@ function results(){
         <td class=sm><button class=x data-lock="${i}" title="Always use this item">🔒</button> <button class=x data-ex="${i}" title="Never use this item">🚫</button></td></tr>`}).join('');
     const empty=SLOTS.filter((s,b)=>S.slots.has(s[0])&&!(r.occ&(1<<b))).map(s=>{
       // pants also cover the abdomen, so a shirt that covers the abdomen too can't be worn with them
-      if(s[0]==='pants'&&(r.occ&BIT.uabd)){const sh=r.picks.find(([i,o])=>o&BIT.uabd);if(sh)return s[1]+' (the '+ITEMS[sh[0]].n+' covers the abdomen, so no pants fit with it)'}
       const n=ITEMS.filter(it=>S.src.has(it.src)&&it.pl.concat(S.reduce?it.red:[]).some(o=>o&BIT[s[0]])).length;
       return s[1]+(n?' ('+n+' item'+(n===1?'':'s')+' could go here, but none passed your filters, level or Impenetrability rule)':' (no items for this slot)')});
     const doll=S.view==='doll'?`<div class=doll>${SLOTS.map((s,b)=>{if(s[0]==='uabd')return'';const k=s[0];
