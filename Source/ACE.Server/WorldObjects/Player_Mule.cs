@@ -910,6 +910,10 @@ namespace ACE.Server.WorldObjects
         {
             var lines = new List<string>();
 
+            // JawnTide: the item's name too, so /mule search finds items by name (e.g. "/mule search shield")
+            if (!string.IsNullOrEmpty(wo.Name))
+                lines.Add(wo.Name);
+
             lines.AddRange(GetSearchableSpellIds(wo)
                 .Select(id => new Spell(id, false))
                 .Where(spell => spell._spellBase != null) // NotFound requires the DB-backed _spell, which loadDB:false never populates
