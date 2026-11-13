@@ -562,6 +562,59 @@ namespace ACE.Server.WorldObjects
             Session.Network.EnqueueSend(new GameMessageSystemChat(
                 $"This mule is using {used} of {total} storage slots.",
                 ChatMessageType.Broadcast));
+
+            SendMulePageNote(vendor);
+        }
+
+        /// <summary>JawnTide My Mule: the most items one mule window lists (mule_window_max_items, 100 to 10000).</summary>
+        public static int MuleWindowMaxItems => (int)Math.Clamp(ACE.Server.Managers.PropertyManager.GetLong("mule_window_max_items").Item, 100, 10000);
+
+        /// <summary>When the listing is longer than one window, says which part is shown and how to see the rest.</summary>
+        private void SendMulePageNote(Vendor vendor)
+        {
+            var count = vendor.UniqueItemsForSale.Count;
+            var max = MuleWindowMaxItems;
+            if (count <= max)
+                return;
+
+            var pages = (count + max - 1) / max;
+            var page = Math.Clamp(vendor.MulePage, 0, pages - 1);
+            var first = page * max + 1;
+            var last = Math.Min(count, (page + 1) * max);
+
+            Session.Network.EnqueueSend(new GameMessageSystemChat(
+                $"The mule window lists {max} items at a time: showing {first}-{last} of {count} (page {page + 1} of {pages}). " +
+                $"Type /mule page N for another page, or /mule search to find something.",
+                ChatMessageType.Broadcast));
+        }
+
+        /// <summary>"/mule page N": shows page N of the open mule's listing (the full list, a search or a suit).</summary>
+        public void ShowMulePage(string arg)
+        {
+            var vendor = CurrentLandblock?.GetObject(LastOpenedContainerId) as Vendor;
+
+            if (vendor == null || !vendor.MuleOwnerId.HasValue || vendor.MuleContainers == null || !CanAccessMuleStorage(vendor))
+            {
+                SendTransientError("Open your mule first, then type /mule page N.");
+                return;
+            }
+
+            var max = MuleWindowMaxItems;
+            var pages = Math.Max(1, (vendor.UniqueItemsForSale.Count + max - 1) / max);
+
+            if (!int.TryParse((arg ?? "").Trim(), out var n) || n < 1 || n > pages)
+            {
+                Session.Network.EnqueueSend(new GameMessageSystemChat($"Usage: /mule page N, where N is 1 to {pages}.", ChatMessageType.Broadcast));
+                return;
+            }
+
+            vendor.MulePage = n - 1;
+            RefreshMuleVendorDisplay(vendor, VendorType.Undef);
+
+            if (pages == 1)
+                Session.Network.EnqueueSend(new GameMessageSystemChat("Everything fits in one window.", ChatMessageType.Broadcast));
+            else
+                SendMulePageNote(vendor);
         }
 
         /// <summary>
@@ -578,6 +631,7 @@ namespace ACE.Server.WorldObjects
 
             vendor.MuleSearchRegex = null;
             vendor.MuleSuitGuids = null;
+            vendor.MulePage = 0;
 
             vendor.UniqueItemsForSale.Clear();
 
@@ -607,6 +661,7 @@ namespace ACE.Server.WorldObjects
             }
 
             vendor.MuleSuitGuids = null;
+            vendor.MulePage = 0;
 
             if (string.IsNullOrWhiteSpace(pattern))
             {
@@ -689,6 +744,7 @@ namespace ACE.Server.WorldObjects
 
             vendor.MuleSearchRegex = null;
             vendor.MuleSuitGuids = guids;
+            vendor.MulePage = 0;
 
             RefreshMuleVendorDisplay(vendor, VendorType.Undef);
 

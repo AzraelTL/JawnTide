@@ -50,6 +50,9 @@ namespace ACE.Server.WorldObjects
         /// <summary>JawnTide Suit Builder: the items of a saved suit (/mule suit CODE) this mule's buy window is filtered to, if any.</summary>
         public HashSet<uint> MuleSuitGuids;
 
+        /// <summary>JawnTide My Mule: which page of the buy window is shown when the listing is longer than mule_window_max_items (0 = first).</summary>
+        public int MulePage;
+
         private bool inventoryloaded { get; set; }
 
         /// <summary>
@@ -280,6 +283,7 @@ namespace ACE.Server.WorldObjects
                 }
 
                 player.SetMuleZeroValueMask(true);
+                MulePage = 0;
                 player.ClearMuleSearchFilter(this);
                 player.SendMuleCapacityStatus(this);
             }
