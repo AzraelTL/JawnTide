@@ -616,7 +616,7 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
-        /// "/mule comps": shows only the open mule's spell components (tapers, scarabs, pea...), sorted by name, so a restocking
+        /// "/mule comps on": shows only the open mule's spell components (tapers, scarabs, pea...), sorted by name, so a restocking
         /// meta always finds them in one short list whatever else the mule holds. "/mule comps off" (or reopening the mule) goes
         /// back to everything.
         /// </summary>
@@ -626,7 +626,7 @@ namespace ACE.Server.WorldObjects
 
             if (vendor == null || !vendor.MuleOwnerId.HasValue || vendor.MuleContainers == null || !CanAccessMuleStorage(vendor))
             {
-                SendTransientError("Open your mule first, then type /mule comps.");
+                SendTransientError($"Open your mule first, then type /mule comps {(on ? "on" : "off")}.");
                 return;
             }
 

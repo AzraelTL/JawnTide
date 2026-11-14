@@ -75,4 +75,4 @@ A mule window lists one page of items at a time (a few hundred), because a list 
 - Reopening the mule goes back to page 1.
 
 ### Spell components for metas
-`/mule comps` (with the mule open) shows only spell components: tapers, scarabs, pea and the rest, in one short list sorted by name, however much else the mule holds. It's handy for a meta that restocks components from your mule: open the mule, send `/mule comps`, then buy. `/mule comps off`, or reopening the mule, shows everything again.
+`/mule comps on` (with the mule open) shows only spell components: tapers, scarabs, pea and the rest, in one short list sorted by name, however much else the mule holds. It's handy for a meta that restocks components from your mule: open the mule, send `/mule comps on`, then buy. `/mule comps off`, or reopening the mule, shows everything again.
