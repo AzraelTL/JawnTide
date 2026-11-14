@@ -338,8 +338,12 @@ namespace ACE.Server.WorldObjects
 
             copy.RemoveProperty(PropertyInt.CurrentWieldedLocation);
 
-            // whatever it already wears in those slots comes off first
-            foreach (var old in WornItems().Where(w => ((w.CurrentWieldedLocation ?? EquipMask.None) & loc) != 0))
+            // whatever it already wears in those slots comes off first. Armor and clothing clash by what they cover
+            // (ClothingPriority), like on a player: a shirt and pants both list the abdomen slot but can be worn together,
+            // so going by the slot alone took the shirt off when the pants went on.
+            foreach (var old in WornItems().Where(w => copy is Clothing && w is Clothing
+                    ? ((w.ClothingPriority ?? 0) & (copy.ClothingPriority ?? 0)) != 0
+                    : ((w.CurrentWieldedLocation ?? EquipMask.None) & loc) != 0).ToList())
                 TakeOff(old);
 
             if (loc == EquipMask.None || !TryWieldObject(copy, loc))
