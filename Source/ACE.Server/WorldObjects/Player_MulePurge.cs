@@ -211,6 +211,7 @@ namespace ACE.Server.WorldObjects
             // show just these in the mule window, so they can be checked before confirming
             vendor.MuleSearchRegex = null;
             vendor.MuleSuitGuids = new HashSet<uint>(pendingMulePurge);
+            vendor.MuleCompsOnly = false;
             vendor.MulePage = 0;
             RefreshMuleVendorDisplay(vendor, VendorType.Undef);
 
@@ -314,6 +315,7 @@ namespace ACE.Server.WorldObjects
                 c.SaveBiotaToDatabase();
 
             vendor.MuleSuitGuids = null;
+            vendor.MuleCompsOnly = false;
             vendor.MulePage = 0;
             RefreshMuleVendorDisplay(vendor, VendorType.Undef);
 

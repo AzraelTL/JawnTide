@@ -1113,54 +1113,45 @@ DUMMY_FIELDS = [("armor", "armor", "Armor: body"), ("armor_extremities", "armor_
 DUMMY_BUFF_PRESETS = [("keep", "Keep its current buffs"), ("none", "No buffs"),
                       ("pvp7", "pvp7: armor, protections, invulnerability, impregnability, magic resistance (VII)"),
                       ("pvp8", "pvp8: the same at level VIII"),
-                      ("pvp7,armor7", "pvp7 + armor7 (Impenetrability and banes VII on worn items)"),
-                      ("pvp8,armor8", "pvp8 + armor8 (Impenetrability and banes VIII on worn items)")]
+                      ("pvp7,armor7", "pvp7 + armor7 (Impenetrability and banes VII on the kit, underclothes included)"),
+                      ("pvp8,armor8", "pvp8 + armor8 (Impenetrability and banes VIII on the kit, underclothes included)")]
 
 
 def dummies_section(note):
+    """One setup for every Target Drudge (training_dummy row dummy_Guid 0)."""
     try:
         cols = ", ".join(c for _, c, _ in DUMMY_FIELDS)
-        rows = shard_rows(f"SELECT dummy_Guid, {cols}, description, updated_At FROM training_dummy ORDER BY dummy_Guid")
+        rows = shard_rows(f"SELECT dummy_Guid, {cols}, description, updated_At, worn_Items FROM training_dummy WHERE dummy_Guid = 0")
         reqs = shard_rows("SELECT dummy_Guid, requested_At, requested_By, status, message FROM training_dummy_request ORDER BY id DESC LIMIT 20")
     except Exception as ex:
-        return (f'<h2>Placed Target Drudges</h2><p class="err">Could not read the Target Drudge tables (the game server creates them '
+        return (f'<h2>Target Drudge setup</h2><p class="err">Could not read the Target Drudge tables (the game server creates them '
                 f'on its first start with this version): {e(ex)}</p>')
     presets = "".join(f'<option value="{e(k)}">{e(t)}</option>' for k, t in DUMMY_BUFF_PRESETS)
-    forms = []
-    rows = sorted(rows, key=lambda r: r[0] != 0)   # the defaults row (dummy_Guid 0) first
-    placed = [r[0] for r in rows if r[0] != 0]
-    for r in rows:
-        guid, vals, desc, updated = r[0], r[1:1 + len(DUMMY_FIELDS)], r[-2], r[-1]
-        is_default = guid == 0
-        fields = "".join(f'<label>{e(label)}<br><input name="{f}" value="{v}" size="6" inputmode="numeric"></label>'
-                         for (f, _, label), v in zip(DUMMY_FIELDS, vals))
-        forms.append(
-            (f'<details open><summary><b>Defaults for new Target Drudges</b> <span class="muted">saved {fmt_t(updated)} UTC</span></summary>'
-             f'<p class="muted">A drudge starts with this setup the first time it\'s in the world. Tick the box below to also apply it to every placed drudge now.</p>'
-             if is_default else
-             f'<details open><summary><b>Target Drudge 0x{guid:08X}</b> <span class="muted">saved {fmt_t(updated)} UTC</span></summary>')
-            + f'<p class="wrapd">{e(desc or "(setup not described yet)")}</p>'
-            f'<form method="post" action="/dummy-set"><input type="hidden" name="guid" value="{guid}">'
+    r = rows[0] if rows else (0,) + (0,) * len(DUMMY_FIELDS) + (None, None, None)
+    vals, desc, updated, worn = r[1:1 + len(DUMMY_FIELDS)], r[-3], r[-2], r[-1]
+    kit_n = len([x for x in (worn or "").split(",") if x.strip()])
+    fields = "".join(f'<label>{e(label)}<br><input name="{f}" value="{v}" size="6" inputmode="numeric"></label>'
+                     for (f, _, label), v in zip(DUMMY_FIELDS, vals))
+    form = (f'<p class="muted">Every Target Drudge uses this one setup. Saving it updates every placed drudge right away '
+            f'(and any you place later). Nothing about it can be changed in game.</p>'
+            + (f'<p class="muted">Last saved {fmt_t(updated)} UTC.</p>' if updated else '')
+            + f'<p class="wrapd">{e(desc or "(not set yet)")}</p>'
+            + f'<p class="muted">{"Wearing a kit of " + str(kit_n) + " items: hits use the player armor rules (worn armor and underclothes with their Impenetrability and banes, hollow and imperil as in PvP), and the armor numbers below are not used." if kit_n else "No kit: the armor numbers below are its armor."}</p>'
+            f'<form method="post" action="/dummy-set"><input type="hidden" name="guid" value="0">'
             f'<div class="filters">{fields}</div>'
-            f'<div class="filters"><label>Buffs<br><select name="preset">{presets}</select></label>'
-            f'<label>Extra buffs (spell names or ids, comma-separated)<br><input name="extra" size="48" placeholder="e.g. Incantation of Armor Self, 4407"></label>'
-            + (f'<label><input type="checkbox" name="all" value="1"> Also apply to all {len(placed)} placed drudge{"s" if len(placed) != 1 else ""} now</label></div>'
-               if is_default else
-               f'<label>Worn items<br><select name="worn"><option value="keep">Keep</option><option value="strip_under">Take off underclothes</option>'
-               f'<option value="strip">Take off everything</option></select></label>'
-               f'<label><input type="checkbox" name="clean" value="1"> Remove players\' debuffs</label></div>')
-            + f'<div class="filters"><input type="password" name="password" placeholder="Edit password" aria-label="Edit password" autocomplete="current-password">'
+            f'<div class="filters"><label>Kit: wear copies of what this character wears (blank = keep, none = no kit)<br>'
+            f'<input name="kit" size="28" placeholder="e.g. Silas Renner"></label>'
+            f'<label>Buffs<br><select name="preset">{presets}</select></label>'
+            f'<label>Extra buffs (spell names or ids, comma-separated)<br><input name="extra" size="40" placeholder="e.g. Incantation of Armor Self, 4407"></label></div>'
+            f'<div class="filters"><input type="password" name="password" placeholder="Edit password" aria-label="Edit password" autocomplete="current-password">'
             f'<input name="by" placeholder="Your name" size="12" aria-label="Your name"> <button>Save</button>'
-            f'<span class="muted">Copying worn gear needs <code>/dummy wear</code> in game.</span></div></form></details>')
-    hist = "".join(f'<tr><td>{fmt_t(t)}</td><td>{"defaults" if g == 0 else f"0x{g:08X}"}</td><td>{e(b or "")}</td>'
+            f'<span class="muted">A kit is read as last saved: after changing gear, wait a few minutes or relog before saving.</span></div></form>')
+    hist = "".join(f'<tr><td>{fmt_t(t)}</td><td>{e(b or "")}</td>'
                    f'<td class="{"yes" if st == "applied" else "no" if st == "rejected" else "muted"}">{e(st)}</td><td class="muted wrapd">{e(m or "")}</td></tr>'
-                   for g, t, b, st, m in reqs)
-    none = '<p class="muted">None yet. Place one in game with <code>@createinst 4290001</code>.</p>'
-    if not placed:
-        forms.append(none)
-    return (f"<h2>Placed Target Drudges</h2>{note}" + "".join(forms)
-            + '<h2>Recent dummy changes</h2><div class="wrap"><table><thead><tr><th>When (UTC)</th><th>Dummy</th><th>By</th><th>Status</th><th></th></tr></thead>'
-            + f'<tbody>{hist or "<tr><td colspan=5 class=muted>None yet</td></tr>"}</tbody></table></div>')
+                   for g, t, b, st, m in reqs if g == 0)
+    return (f"<h2>Target Drudge setup</h2>{note}{form}"
+            + '<h2>Recent setup changes</h2><div class="wrap"><table><thead><tr><th>When (UTC)</th><th>By</th><th>Status</th><th></th></tr></thead>'
+            + f'<tbody>{hist or "<tr><td colspan=4 class=muted>None yet</td></tr>"}</tbody></table></div>')
 
 
 def dummy_set(form):
@@ -1192,14 +1183,14 @@ def dummy_set(form):
         req["worn"] = worn
     if form.get("clean", [""])[0] == "1":
         req["clean"] = True
+    kit = form.get("kit", [""])[0].strip()[:64]
+    if kit:
+        req["kit"] = kit
     by = (form.get("by", [""])[0].strip() or "admin page")[:64]
     conn = pymysql.connect(database="ace_shard", autocommit=True, **DB)
     try:
         with conn.cursor() as cur:
-            targets = [int(g)]
-            if int(g) == 0 and form.get("all", [""])[0] == "1":
-                cur.execute("SELECT dummy_Guid FROM training_dummy WHERE dummy_Guid <> 0")
-                targets += [int(x[0]) for x in cur.fetchall()]
+            targets = [0]   # one setup for every drudge
             ids = []
             for t in targets:
                 cur.execute("INSERT INTO training_dummy_request (requested_At, requested_By, dummy_Guid, request) VALUES (UTC_TIMESTAMP(), %s, %s, %s)",

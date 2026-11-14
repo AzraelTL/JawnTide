@@ -51,6 +51,9 @@ namespace ACE.Server.WorldObjects
             // JawnTide My Mule: buying from your mule withdraws from storage
             if (vendor.MuleOwnerId.HasValue)
             {
+                if (HandleMulePageButton(vendor, items))
+                    return;
+
                 HandleMuleWithdraw(vendor, items);
                 return;
             }

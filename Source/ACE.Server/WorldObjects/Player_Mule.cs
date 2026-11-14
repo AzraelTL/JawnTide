@@ -533,7 +533,9 @@ namespace ACE.Server.WorldObjects
         {
             var allItems = vendor.MuleContainers.SelectMany(c => c.Inventory.Values);
 
-            var display = vendor.MuleSuitGuids != null
+            var display = vendor.MuleCompsOnly
+                ? allItems.Where(item => (item.ItemType & ItemType.SpellComponents) != 0).OrderBy(i => i.Name)
+                : vendor.MuleSuitGuids != null
                 ? allItems.Where(item => vendor.MuleSuitGuids.Contains(item.Guid.Full)).OrderBy(i => i.Name)
                 : vendor.MuleSearchRegex != null
                 ? allItems.Where(item => MatchesMuleSearch(item, vendor.MuleSearchRegex)).OrderBy(i => i.Name)
@@ -588,6 +590,58 @@ namespace ACE.Server.WorldObjects
                 ChatMessageType.Broadcast));
         }
 
+        /// <summary>
+        /// "Buying" the Next page / Previous page entry of a paged mule window turns the page (nothing is withdrawn).
+        /// Returns true when the purchase was a page button.
+        /// </summary>
+        public bool HandleMulePageButton(Vendor vendor, List<ItemProfile> items)
+        {
+            var next = vendor.MuleNextButton != null && items.Any(i => i.ObjectGuid == vendor.MuleNextButton.Guid.Full);
+            var prev = vendor.MulePrevButton != null && items.Any(i => i.ObjectGuid == vendor.MulePrevButton.Guid.Full);
+
+            if (!next && !prev)
+                return false;
+
+            if (CanAccessMuleStorage(vendor) && vendor.MuleContainers != null)
+            {
+                var max = MuleWindowMaxItems;
+                var pages = Math.Max(1, (vendor.UniqueItemsForSale.Count + max - 1) / max);
+                vendor.MulePage = Math.Clamp(vendor.MulePage + (next ? 1 : -1), 0, pages - 1);
+                RefreshMuleVendorDisplay(vendor, VendorType.Undef);
+                SendMulePageNote(vendor);
+            }
+
+            SendUseDoneEvent();
+            return true;
+        }
+
+        /// <summary>
+        /// "/mule comps on": shows only the open mule's spell components (tapers, scarabs, pea...), sorted by name, so a restocking
+        /// meta always finds them in one short list whatever else the mule holds. "/mule comps off" (or reopening the mule) goes
+        /// back to everything.
+        /// </summary>
+        public void ShowMuleComps(bool on)
+        {
+            var vendor = CurrentLandblock?.GetObject(LastOpenedContainerId) as Vendor;
+
+            if (vendor == null || !vendor.MuleOwnerId.HasValue || vendor.MuleContainers == null || !CanAccessMuleStorage(vendor))
+            {
+                SendTransientError($"Open your mule first, then type /mule comps {(on ? "on" : "off")}.");
+                return;
+            }
+
+            vendor.MuleSearchRegex = null;
+            vendor.MuleSuitGuids = null;
+            vendor.MuleCompsOnly = on;
+            vendor.MulePage = 0;
+
+            RefreshMuleVendorDisplay(vendor, VendorType.Undef);
+
+            Session.Network.EnqueueSend(new GameMessageSystemChat(on
+                ? $"Showing only spell components: {vendor.UniqueItemsForSale.Count} stack{(vendor.UniqueItemsForSale.Count == 1 ? "" : "s")}. Type /mule comps off, or reopen the mule, to see everything."
+                : "Showing everything in the mule again.", ChatMessageType.Broadcast));
+        }
+
         /// <summary>"/mule page N": shows page N of the open mule's listing (the full list, a search or a suit).</summary>
         public void ShowMulePage(string arg)
         {
@@ -626,11 +680,14 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public void ClearMuleSearchFilter(Vendor vendor)
         {
-            if (vendor.MuleSearchRegex == null && vendor.MuleSuitGuids == null)
+            if (vendor.MuleSearchRegex == null && vendor.MuleSuitGuids == null && !vendor.MuleCompsOnly)
                 return;
+
+            vendor.MuleCompsOnly = false;
 
             vendor.MuleSearchRegex = null;
             vendor.MuleSuitGuids = null;
+            vendor.MuleCompsOnly = false;
             vendor.MulePage = 0;
 
             vendor.UniqueItemsForSale.Clear();
@@ -661,6 +718,7 @@ namespace ACE.Server.WorldObjects
             }
 
             vendor.MuleSuitGuids = null;
+            vendor.MuleCompsOnly = false;
             vendor.MulePage = 0;
 
             if (string.IsNullOrWhiteSpace(pattern))
@@ -744,6 +802,7 @@ namespace ACE.Server.WorldObjects
 
             vendor.MuleSearchRegex = null;
             vendor.MuleSuitGuids = guids;
+            vendor.MuleCompsOnly = false;
             vendor.MulePage = 0;
 
             RefreshMuleVendorDisplay(vendor, VendorType.Undef);
@@ -884,6 +943,10 @@ namespace ACE.Server.WorldObjects
         private static string BuildItemSearchText(WorldObject wo)
         {
             var lines = new List<string>();
+
+            // JawnTide: the item's name too, so /mule search finds items by name (e.g. "/mule search shield")
+            if (!string.IsNullOrEmpty(wo.Name))
+                lines.Add(wo.Name);
 
             lines.AddRange(GetSearchableSpellIds(wo)
                 .Select(id => new Spell(id, false))

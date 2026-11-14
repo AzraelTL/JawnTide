@@ -65,10 +65,14 @@ Like storage guests on a house chest, you can let characters on other accounts u
 - The list belongs to your account, so any of your characters can change it.
 
 ## Finding items
-`/mule search pattern` filters your open mule window by the spells on the items. For example `/mule search legendary.*legendary` shows double-legendary gear. Type `/mule search` with nothing after it, or reopen the mule, to see everything again.
+`/mule search pattern` filters your open mule window by the items' names, spells, armor set and ratings. For example `/mule search shield` shows your shields. For example `/mule search legendary.*legendary` shows double-legendary gear. Type `/mule search` with nothing after it, or reopen the mule, to see everything again.
 
 ### Big mules
 A mule window lists one page of items at a time (a few hundred), because a list of thousands of items can freeze or crash the game. When your mule holds more than one page, opening it tells you which items are shown, for example "showing 1-500 of 4,100 (page 1 of 9)".
+- Buy the **>> Next page** or **<< Previous page** entry in the list to turn the page (nothing comes out of the mule).
 - `/mule page 2` (3, 4 and so on) shows another page; `/mule page 1` goes back to the start.
 - `/mule search` and `/mule suit` look through everything in the mule, not just the page you're on.
 - Reopening the mule goes back to page 1.
+
+### Spell components for metas
+`/mule comps on` (with the mule open) shows only spell components: tapers, scarabs, pea and the rest, in one short list sorted by name, however much else the mule holds. It's handy for a meta that restocks components from your mule: open the mule, send `/mule comps on`, then buy. `/mule comps off`, or reopening the mule, shows everything again.

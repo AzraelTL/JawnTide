@@ -56,8 +56,21 @@ namespace ACE.Server.Network.GameEvent.Events
                 var max = Player.MuleWindowMaxItems;
                 if (items.Count > max)
                 {
-                    var page = Math.Clamp(vendor.MulePage, 0, (items.Count - 1) / max);
+                    var pages = (items.Count + max - 1) / max;
+                    var page = Math.Clamp(vendor.MulePage, 0, pages - 1);
                     items = items.GetRange(page * max, Math.Min(max, items.Count - page * max));
+
+                    // page turning from the window itself: "buy" one of these to go to the next or previous page
+                    if (page > 0 && vendor.GetMulePageButton(false) is WorldObject prev)
+                    {
+                        prev.Name = $"<< Previous page ({page} of {pages})";
+                        items.Insert(0, prev);
+                    }
+                    if (page < pages - 1 && vendor.GetMulePageButton(true) is WorldObject next)
+                    {
+                        next.Name = $">> Next page ({page + 2} of {pages})";
+                        items.Insert(0, next);
+                    }
                 }
             }
 
