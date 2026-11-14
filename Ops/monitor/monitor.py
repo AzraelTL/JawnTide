@@ -1200,9 +1200,19 @@ def dummy_set(form):
             if int(g) == 0 and form.get("all", [""])[0] == "1":
                 cur.execute("SELECT dummy_Guid FROM training_dummy WHERE dummy_Guid <> 0")
                 targets += [int(x[0]) for x in cur.fetchall()]
+            ids = []
             for t in targets:
                 cur.execute("INSERT INTO training_dummy_request (requested_At, requested_By, dummy_Guid, request) VALUES (UTC_TIMESTAMP(), %s, %s, %s)",
                             (by, t, json.dumps(req)))
+                ids.append(cur.lastrowid)
+            # wait (up to 10 seconds) for the game server to apply them, so the page that comes back shows the new values;
+            # otherwise the form still shows the old ones, and saving it again puts them back
+            marks = ",".join(["%s"] * len(ids))
+            for _ in range(20):
+                cur.execute(f"SELECT COUNT(*) FROM training_dummy_request WHERE id IN ({marks}) AND status = 'pending'", ids)
+                if cur.fetchone()[0] == 0:
+                    break
+                time.sleep(0.5)
     finally:
         conn.close()
     print(f"[dummy] {by} queued a change for 0x{int(g):08X}: {json.dumps(req)}", flush=True)
