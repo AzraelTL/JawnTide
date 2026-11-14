@@ -458,7 +458,13 @@ namespace ACE.Server.Entity
                 Armor = CreaturePart.GetArmorLayers(PropertiesBodyPart.Key);
 
                 // get target armor
-                ArmorMod = CreaturePart.GetArmorMod(DamageType, Armor, Attacker, Weapon, ignoreArmorMod);
+                // JawnTide Target Drudge wearing a player's kit: the player armor rules (worn armor and underclothes with
+                // their Impenetrability and banes, Armor Self, hollow and imperil scaling for PvP), so it takes weapon hits
+                // exactly like that player would
+                if (Defender is TrainingDummy kitDummy && kitDummy.WearsKit)
+                    ArmorMod = attacker.GetArmorMod(kitDummy, DamageType, Armor, Weapon, ignoreArmorMod);
+                else
+                    ArmorMod = CreaturePart.GetArmorMod(DamageType, Armor, Attacker, Weapon, ignoreArmorMod);
             }
 
             if (Weapon != null && Weapon.HasImbuedEffect(ImbuedEffectType.IgnoreAllArmor))

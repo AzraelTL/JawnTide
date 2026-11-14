@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text.Json;
 
 using ACE.Database;
+using ACE.Entity.Enum;
 using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Managers
@@ -114,6 +115,13 @@ namespace ACE.Server.Managers
                 var replace = !req.TryGetProperty("buffs_mode", out var bm) || bm.GetString() != "add";
                 var note = missing.Count > 0 ? $"; no spell named: {string.Join(", ", missing)}" : "";
 
+                // JawnTide: one setup for every Target Drudge (dummy_Guid 0); per-drudge setups are no longer used
+                if (guid != 0)
+                {
+                    Done("rejected", "every drudge uses the one setup now: change it under Target Drudge setup");
+                    continue;
+                }
+
                 if (TrainingDummy.Placed.TryGetValue(guid, out var dummy) && dummy.CurrentLandblock != null && !dummy.IsDestroyed)
                 {
                     dummy.EnqueueAction(new ACE.Server.Entity.Actions.ActionEventDelegate(() =>
@@ -163,7 +171,35 @@ namespace ACE.Server.Managers
                 if (worn == "strip")
                     sets.Add("worn_Items = NULL");
 
+                // the kit: every drudge wears copies of what this character wears (as last saved), or "none"
+                if (req.TryGetProperty("kit", out var k) && k.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(k.GetString()))
+                {
+                    var kitName = k.GetString().Trim();
+                    if (kitName.Equals("none", StringComparison.OrdinalIgnoreCase))
+                    {
+                        sets.Add("worn_Items = NULL");
+                        note += "; no kit";
+                    }
+                    else
+                    {
+                        var ch = db.PvpToolsQuery("SELECT id, name FROM `character` WHERE name = @n AND is_Deleted = 0 LIMIT 1;", ("@n", kitName));
+                        if (ch == null || ch.Count == 0)
+                            note += $"; no character named {kitName}, kit not changed";
+                        else
+                        {
+                            var items = db.PvpToolsQuery("SELECT w.object_Id, l.value FROM biota_properties_i_i_d w JOIN biota_properties_int l ON l.object_Id = w.object_Id AND l.type = 10 " +
+                                "WHERE w.type = 3 AND w.value = @c;", ("@c", Convert.ToUInt32(ch[0][0])));
+                            var ids = (items ?? new List<object[]>()).Where(x => ((EquipMask)Convert.ToInt32(x[1]) & TrainingDummy.WearableSlots) != 0
+                                && ((EquipMask)Convert.ToInt32(x[1]) & ~TrainingDummy.WearableSlots) == 0).Select(x => Convert.ToUInt32(x[0]).ToString()).ToList();
+                            sets.Add("worn_Items = @kit");
+                            args.Add(("@kit", string.Join(",", ids)));
+                            note += $"; wearing {ch[0][1]}'s kit ({ids.Count} items, as last saved)";
+                        }
+                    }
+                }
+
                 sets.Add("updated_At = @t");
+                db.PvpToolsExecute("INSERT IGNORE INTO training_dummy (dummy_Guid, updated_At) VALUES (0, @t);", ("@t", DateTime.UtcNow));
                 var n = db.PvpToolsExecute($"UPDATE training_dummy SET {string.Join(", ", sets)} WHERE dummy_Guid = @g;", args.ToArray());
                 if (n > 0)
                 {
@@ -174,14 +210,16 @@ namespace ACE.Server.Managers
                     {
                         var x = row[0];
                         var spellNames = TrainingDummy.ParseIds(x[8]?.ToString()).Select(TrainingDummy.SpellName).ToList();
-                        var text = (guid == 0 ? "Defaults for new Target Drudges: " : "") +
+                        var text =
                             $"armor {x[0]} (head, hands, feet {x[1]}), melee defense {x[2]}, missile defense {x[3]}, magic defense {x[4]}, " +
-                            $"damage resist rating {x[5]}, crit damage resist rating {x[6]}, PK damage resist rating {x[7]}, buffs: {(spellNames.Count == 0 ? "none" : string.Join(", ", spellNames))}";
+                            $"damage resist rating {x[5]}, crit damage resist rating {x[6]}, PK damage resist rating {x[7]}, buffs: {(spellNames.Count == 0 ? "none" : string.Join(", ", spellNames))}" +
+                            (note.Contains("kit") ? note.Substring(note.IndexOf("kit") > 0 ? note.LastIndexOf(';') : 0).Replace(";", ".") : "");
                         db.PvpToolsExecute("UPDATE training_dummy SET description = @d WHERE dummy_Guid = @g;", ("@d", text.Length > 2000 ? text.Substring(0, 2000) : text), ("@g", guid));
                     }
                 }
 
-                var what = guid == 0 ? "saved as the defaults for new drudges" : "saved; it isn't loaded right now, so it takes effect when its area loads";
+                var reloaded = n > 0 ? TrainingDummy.ReloadAllShared() : 0;
+                var what = $"saved; {reloaded} placed drudge{(reloaded == 1 ? "" : "s")} updated now, the rest when their area loads";
                 Done(n > 0 ? "applied" : "rejected", (n > 0 ? what : "no such dummy") + (worn == "strip_under" && guid != 0 ? "; taking off underclothes needs it loaded" : "") + note);
             }
         }

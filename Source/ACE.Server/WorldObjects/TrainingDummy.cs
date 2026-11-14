@@ -149,63 +149,77 @@ namespace ACE.Server.WorldObjects
 
             Placed[Guid.Full] = this;
 
-            var guid = Guid.Full;
-            DatabaseManager.Shard.MarketEnqueue(() =>
-            {
-                // its own saved setup, or (first time in the world) the defaults row, dummy_Guid 0, set on the LAN admin page
-                var rows = DatabaseManager.Shard.BaseDatabase.PvpToolsQuery(
-                    "SELECT armor, armor_Extremities, melee_Defense, missile_Defense, magic_Defense, damage_Resist_Rating, crit_Damage_Resist_Rating, pk_Damage_Resist_Rating, spells, worn_Items, dummy_Guid FROM training_dummy WHERE dummy_Guid IN (@g, 0) ORDER BY dummy_Guid DESC;",
-                    ("@g", guid));
-
-                if (rows == null)
-                    return;
-
-                if (rows.Count == 0)
-                {
-                    // first time in the world and no defaults: save its setup so it shows on the LAN admin page
-                    EnqueueAction(new ActionEventDelegate(SaveSetup));
-                    return;
-                }
-
-                var r = rows[0];
-                var fromDefaults = Convert.ToUInt32(r[10]) == 0;
-                if (fromDefaults)
-                    r[9] = null;   // worn copies aren't part of the defaults
-
-                // the worn items, read from the database here (off the game thread)
-                var wornIds = ParseIds(r[9]?.ToString());
-                var wornBiotas = new List<ACE.Entity.Models.Biota>();
-                foreach (var id in wornIds)
-                {
-                    var b = DatabaseManager.Shard.BaseDatabase.GetBiota(id, true);
-                    if (b != null)
-                        wornBiotas.Add(ACE.Database.Adapter.BiotaConverter.ConvertToEntityBiota(b));
-                }
-
-                EnqueueAction(new ActionEventDelegate(() =>
-                {
-                    Armor = Convert.ToInt32(r[0]);
-                    ArmorExtremities = Convert.ToInt32(r[1]);
-                    MeleeDef = Convert.ToInt32(r[2]);
-                    MissileDef = Convert.ToInt32(r[3]);
-                    MagicDef = Convert.ToInt32(r[4]);
-                    Drr = Convert.ToInt32(r[5]);
-                    Cdr = Convert.ToInt32(r[6]);
-                    Pkdr = Convert.ToInt32(r[7]);
-                    Buffs = ParseIds(r[8]?.ToString());
-                    StripAll();
-                    foreach (var b in wornBiotas)
-                        WearCopy(b, new System.Threading.ReaderWriterLockSlim());
-                    ApplySetup();
-                    if (fromDefaults)
-                        SaveSetup();
-                }));
-            });
+            LoadSharedSetup();
 
             return true;
         }
 
         // ---------------------------------------------------------------- setup
+
+        /// <summary>
+        /// JawnTide: every Target Drudge uses the one setup saved on the LAN admin page (training_dummy row dummy_Guid 0):
+        /// armor, defenses, ratings and buffs. Read off the game thread, applied on the drudge's own.
+        /// </summary>
+        public void LoadSharedSetup()
+        {
+            DatabaseManager.Shard.MarketEnqueue(() =>
+            {
+                var rows = DatabaseManager.Shard.BaseDatabase.PvpToolsQuery(
+                    "SELECT armor, armor_Extremities, melee_Defense, missile_Defense, magic_Defense, damage_Resist_Rating, crit_Damage_Resist_Rating, pk_Damage_Resist_Rating, spells, worn_Items FROM training_dummy WHERE dummy_Guid = 0;");
+                var r = rows != null && rows.Count > 0 ? rows[0] : null;
+
+                // the kit: the items a player wore when it was picked on the admin page, read as last saved
+                var kit = new List<ACE.Entity.Models.Biota>();
+                foreach (var id in ParseIds(r?[9]?.ToString()))
+                {
+                    var b = DatabaseManager.Shard.BaseDatabase.GetBiota(id, true);
+                    if (b != null)
+                        kit.Add(ACE.Database.Adapter.BiotaConverter.ConvertToEntityBiota(b));
+                }
+
+                EnqueueAction(new ActionEventDelegate(() =>
+                {
+                    if (IsDestroyed)
+                        return;
+                    Armor = r == null ? 0 : Convert.ToInt32(r[0]);
+                    ArmorExtremities = r == null ? 0 : Convert.ToInt32(r[1]);
+                    MeleeDef = r == null ? 0 : Convert.ToInt32(r[2]);
+                    MissileDef = r == null ? 0 : Convert.ToInt32(r[3]);
+                    MagicDef = r == null ? 0 : Convert.ToInt32(r[4]);
+                    Drr = r == null ? 0 : Convert.ToInt32(r[5]);
+                    Cdr = r == null ? 0 : Convert.ToInt32(r[6]);
+                    Pkdr = r == null ? 0 : Convert.ToInt32(r[7]);
+                    var buffs = TrainingDummy.ParseIds(r?[8]?.ToString());
+                    foreach (var old in Buffs.Where(id => !buffs.Contains(id)).ToList())
+                    {
+                        var en = EnchantmentManager.GetEnchantment(old);
+                        if (en != null)
+                            EnchantmentManager.Dispel(en);
+                    }
+                    Buffs = buffs;
+                    StripAll();
+                    foreach (var b in kit)
+                        WearCopy(b, new System.Threading.ReaderWriterLockSlim());
+                    ApplySetup();
+                }));
+            });
+        }
+
+        /// <summary>True when it wears armor or clothing copied from a player's kit (then hits use the player armor rules).</summary>
+        public bool WearsKit => EquippedObjects.Values.Any(e => e is Clothing);
+
+        /// <summary>After the admin page saves the setup: every placed drudge reloads it.</summary>
+        public static int ReloadAllShared()
+        {
+            var n = 0;
+            foreach (var d in Placed.Values)
+                if (d.CurrentLandblock != null && !d.IsDestroyed)
+                {
+                    d.LoadSharedSetup();
+                    n++;
+                }
+            return n;
+        }
 
         /// <summary>Applies armor, defenses and ratings (buffs are kept up by the heartbeat).</summary>
         public void ApplySetup()
@@ -274,7 +288,7 @@ namespace ACE.Server.WorldObjects
 
         /// <summary>Slots a copied item may take: armor, underclothes, jewelry, cloak. Not weapons, shields or held items
         /// (a shield only counts in combat mode, and the dummy never enters it).</summary>
-        private const EquipMask WearableSlots = EquipMask.HeadWear | EquipMask.ChestWear | EquipMask.AbdomenWear | EquipMask.UpperArmWear | EquipMask.LowerArmWear |
+        public const EquipMask WearableSlots = EquipMask.HeadWear | EquipMask.ChestWear | EquipMask.AbdomenWear | EquipMask.UpperArmWear | EquipMask.LowerArmWear |
             EquipMask.HandWear | EquipMask.UpperLegWear | EquipMask.LowerLegWear | EquipMask.FootWear | EquipMask.ChestArmor | EquipMask.AbdomenArmor |
             EquipMask.UpperArmArmor | EquipMask.LowerArmArmor | EquipMask.UpperLegArmor | EquipMask.LowerLegArmor | EquipMask.NeckWear | EquipMask.WristWearLeft |
             EquipMask.WristWearRight | EquipMask.FingerWearLeft | EquipMask.FingerWearRight | EquipMask.TrinketOne | EquipMask.Cloak | EquipMask.SigilOne |
