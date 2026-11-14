@@ -39,3 +39,4 @@
 2026-11-13-mule-page-buttons-2 10-my-mule.md
 2026-11-13-suit-search-time 26-suit-builder.md
 2026-11-13-mule-search-names 10-my-mule.md
+2026-11-14-mule-comps 10-my-mule.md

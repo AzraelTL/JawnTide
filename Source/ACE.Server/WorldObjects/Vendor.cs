@@ -53,6 +53,9 @@ namespace ACE.Server.WorldObjects
         /// <summary>JawnTide My Mule: which page of the buy window is shown when the listing is longer than mule_window_max_items (0 = first).</summary>
         public int MulePage;
 
+        /// <summary>JawnTide My Mule: "/mule comps" shows only spell components (tapers, scarabs...), for restocking metas.</summary>
+        public bool MuleCompsOnly;
+
         /// <summary>
         /// JawnTide My Mule: the "Next page" / "Previous page" entries listed in a paged mule window. They're never saved or
         /// placed in the world; "buying" one turns the page instead (Player.HandleMulePageButton).

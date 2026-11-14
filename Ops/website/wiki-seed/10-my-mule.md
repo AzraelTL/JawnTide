@@ -73,3 +73,6 @@ A mule window lists one page of items at a time (a few hundred), because a list 
 - `/mule page 2` (3, 4 and so on) shows another page; `/mule page 1` goes back to the start.
 - `/mule search` and `/mule suit` look through everything in the mule, not just the page you're on.
 - Reopening the mule goes back to page 1.
+
+### Spell components for metas
+`/mule comps` (with the mule open) shows only spell components: tapers, scarabs, pea and the rest, in one short list sorted by name, however much else the mule holds. It's handy for a meta that restocks components from your mule: open the mule, send `/mule comps`, then buy. `/mule comps off`, or reopening the mule, shows everything again.

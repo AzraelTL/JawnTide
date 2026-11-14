@@ -2130,6 +2130,7 @@ namespace ACE.Server.Command.Handlers
             "Searches your open mule window for items whose spells match <pattern>, a .NET regular expression matched case-insensitively against the item's spell names. That mule's buy window is filtered down to just the matches. Run with no pattern (\"/mule search\"), or just double-click the mule to reopen it, to clear the filter and go back to the normal listing.\n" +
             "Examples: \"/mule search legendary.*legendary\" (double legendary gear), \"/mule search legendary (frost|flame|acid)\" (any of several cantrips), \"/mule search legendary frost.*legendary acid\" (both cantrips present).\n" +
             "\"/mule page N\" shows page N when the mule holds more items than one window lists.\n" +
+            "\"/mule comps\" shows only spell components (tapers, scarabs...), for restocking metas; \"/mule comps off\" shows everything again.\n" +
             "With no parameters, grants a My Mule summon gem if you don't already have one.")]
         public static void HandleMule(Session session, params string[] parameters)
         {
@@ -2139,6 +2140,15 @@ namespace ACE.Server.Command.Handlers
             {
                 var pattern = string.Join(" ", parameters.Skip(1));
                 player.SearchMuleInventory(pattern);
+                return;
+            }
+
+            // JawnTide: /mule comps shows only spell components (for metas that restock from the mule); /mule comps off goes back
+            if (parameters.Length > 0 && (parameters[0].Equals("comps", StringComparison.OrdinalIgnoreCase) || parameters[0].Equals("comp", StringComparison.OrdinalIgnoreCase)
+                || (parameters[0].Equals("page", StringComparison.OrdinalIgnoreCase) && parameters.Length > 1 && parameters[1].StartsWith("comp", StringComparison.OrdinalIgnoreCase))))
+            {
+                var off = parameters.Any(p => p.Equals("off", StringComparison.OrdinalIgnoreCase));
+                player.ShowMuleComps(!off);
                 return;
             }
 
