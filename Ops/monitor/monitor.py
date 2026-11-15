@@ -1143,8 +1143,7 @@ def dummies_section(note):
             f'<input name="kit" size="28" placeholder="e.g. Silas Renner"></label>'
             f'<label>Buffs<br><select name="preset">{presets}</select></label>'
             f'<label>Extra buffs (spell names or ids, comma-separated)<br><input name="extra" size="40" placeholder="e.g. Incantation of Armor Self, 4407"></label></div>'
-            f'<div class="filters"><input type="password" name="password" placeholder="Edit password" aria-label="Edit password" autocomplete="current-password">'
-            f'<input name="by" placeholder="Your name" size="12" aria-label="Your name"> <button>Save</button>'
+            f'<div class="filters"><input name="by" placeholder="Your name" size="12" aria-label="Your name"> <button>Save</button>'
             f'<span class="muted">To copy someone fully buffed: have them log in and buff, then save with their name while they are online.</span></div></form>')
     hist = "".join(f'<tr><td>{fmt_t(t)}</td><td>{e(b or "")}</td>'
                    f'<td class="{"yes" if st == "applied" else "no" if st == "rejected" else "muted"}">{e(st)}</td><td class="muted wrapd">{e(m or "")}</td></tr>'
@@ -1155,11 +1154,8 @@ def dummies_section(note):
 
 
 def dummy_set(form):
-    """Queues a change for one dummy as a training_dummy_request row. Returns an error, or "" when sent."""
-    if not EDIT_PASSWORD:
-        return "Editing is off: MONITOR_EDIT_PASSWORD is not set."
-    if not hmac.compare_digest(form.get("password", [""])[0].encode(), EDIT_PASSWORD.encode()):
-        return "Wrong edit password. Nothing was changed."
+    """Queues a change to the Target Drudge setup as a training_dummy_request row. Returns an error, or "" when sent.
+    No password: the drudge setup only affects the test targets (the PvP damage settings still need the edit password)."""
     g = form.get("guid", [""])[0]
     if not g.isdigit():
         return "Bad dummy."
