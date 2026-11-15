@@ -5,7 +5,8 @@ A **Target Drudge** is a training target for testing your damage. Staff place th
 - Your attacks on it count as **PvP damage**: every PvP damage rule and setting applies, the same as hitting another player.
 - It never dies and never fights back. It heals to full after every hit.
 - It gives **no skill training** and no XP.
-- Staff set its armor (one level for the body and another for the head, hands and feet), its defense skills, its damage resistance ratings and its buffs. It can also wear copies of real armor and underclothes.
+- Every Target Drudge uses the same setup, set by staff: armor (one level for the body and another for the head, hands and feet), defense skills, damage resistance ratings and buffs. Staff can also dress it in a copy of a real player's kit (armor, underclothes, jewelry); then it takes hits exactly like a player wearing that kit, with each piece's Impenetrability and banes counting.
+- Its setup stays the same when its area reloads, so results are comparable from one day to the next.
 - Identify it to see its armor level on each body part, like a player's.
 
 ## Your damage report
