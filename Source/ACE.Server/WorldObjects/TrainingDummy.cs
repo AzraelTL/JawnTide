@@ -147,11 +147,28 @@ namespace ACE.Server.WorldObjects
             if (!base.EnterWorld())
                 return false;
 
-            Placed[Guid.Full] = this;
-
-            LoadSharedSetup();
+            EnsureSetupLoaded();
 
             return true;
+        }
+
+        private bool setupLoaded;
+
+        /// <summary>
+        /// Registers the drudge and loads its setup, once per time it's in the world. Called from EnterWorld (a drudge
+        /// placed with @create) and from the first heartbeat: a drudge saved with @createinst is loaded with its landblock,
+        /// which never calls EnterWorld, so before this it came back with no setup (all zeros) every time its area reloaded,
+        /// and the admin page couldn't find it either ("isn't loaded right now").
+        /// </summary>
+        private void EnsureSetupLoaded()
+        {
+            Placed[Guid.Full] = this;
+
+            if (setupLoaded)
+                return;
+            setupLoaded = true;
+
+            LoadSharedSetup();
         }
 
         // ---------------------------------------------------------------- setup
@@ -687,6 +704,8 @@ namespace ACE.Server.WorldObjects
         public override void Heartbeat(double currentUnixTime)
         {
             base.Heartbeat(currentUnixTime);
+
+            EnsureSetupLoaded();
 
             RefreshBuffs();
 
