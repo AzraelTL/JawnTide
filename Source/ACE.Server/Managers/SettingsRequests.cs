@@ -171,7 +171,8 @@ namespace ACE.Server.Managers
                 if (worn == "strip")
                     sets.Add("worn_Items = NULL");
 
-                // the kit: every drudge wears copies of what this character wears (as last saved), or "none"
+                // the kit: every drudge wears copies of what this character wears, or "none"
+                Player snapshotOf = null;
                 if (req.TryGetProperty("kit", out var k) && k.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(k.GetString()))
                 {
                     var kitName = k.GetString().Trim();
@@ -179,6 +180,13 @@ namespace ACE.Server.Managers
                     {
                         sets.Add("worn_Items = NULL");
                         note += "; no kit";
+                    }
+                    else if (PlayerManager.GetOnlinePlayer(kitName) is Player online)
+                    {
+                        // online: copy exactly what they have right now -- worn items, the buffs active on them and on their
+                        // armor, and their defense skills -- once the rest of this request is saved
+                        snapshotOf = online;
+                        note += $"; copying {online.Name}'s worn kit and active buffs";
                     }
                     else
                     {
@@ -216,6 +224,34 @@ namespace ACE.Server.Managers
                             (note.Contains("kit") ? note.Substring(note.IndexOf("kit") > 0 ? note.LastIndexOf(';') : 0).Replace(";", ".") : "");
                         db.PvpToolsExecute("UPDATE training_dummy SET description = @d WHERE dummy_Guid = @g;", ("@d", text.Length > 2000 ? text.Substring(0, 2000) : text), ("@g", guid));
                     }
+                }
+
+                if (n > 0 && snapshotOf != null)
+                {
+                    var who = snapshotOf;
+                    who.EnqueueAction(new ACE.Server.Entity.Actions.ActionEventDelegate(() =>
+                    {
+                        try
+                        {
+                            var shot = TrainingDummy.SnapshotPlayer(who);
+                            who.SavePlayerToDatabase();   // the kit is read from the database: save their items first
+                            DatabaseManager.Shard.MarketEnqueue(() =>
+                            {
+                                DatabaseManager.Shard.BaseDatabase.PvpToolsExecute(
+                                    "UPDATE training_dummy SET worn_Items = @w, spells = @s, melee_Defense = @me, missile_Defense = @mi, magic_Defense = @ma, description = @d, updated_At = @t WHERE dummy_Guid = 0;",
+                                    ("@w", string.Join(",", shot.Items)), ("@s", string.Join(",", shot.Spells)), ("@me", shot.Melee), ("@mi", shot.Missile), ("@ma", shot.Magic),
+                                    ("@d", shot.Description), ("@t", DateTime.UtcNow));
+                                var count = TrainingDummy.ReloadAllShared();
+                                Done("applied", $"copied {who.Name}: {shot.Items.Count} worn items, {shot.Spells.Count} active buffs, defenses {shot.Melee}/{shot.Missile}/{shot.Magic}; {count} placed drudge{(count == 1 ? "" : "s")} updated now");
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            log.Error($"[DUMMY] Copying {who.Name} failed: {ex}");
+                            Done("rejected", "copying failed: " + ex.Message);
+                        }
+                    }));
+                    continue;
                 }
 
                 var reloaded = n > 0 ? TrainingDummy.ReloadAllShared() : 0;

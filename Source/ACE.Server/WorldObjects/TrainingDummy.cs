@@ -225,6 +225,62 @@ namespace ACE.Server.WorldObjects
         /// <summary>True when it wears armor or clothing copied from a player's kit (then hits use the player armor rules).</summary>
         public bool WearsKit => EquippedObjects.Values.Any(e => e is Clothing);
 
+        public class PlayerSnapshot
+        {
+            public List<uint> Items = new List<uint>();
+            public List<uint> Spells = new List<uint>();
+            public int Melee, Missile, Magic;
+            public string Description;
+        }
+
+        /// <summary>
+        /// What a player has on right now (call on the player's thread): the armor, underclothes, jewelry and cloak they
+        /// wear, every beneficial spell active on them and on those items (their buffs, Impenetrability and banes; not the
+        /// items' own cantrips, which the copies bring themselves) and their unbuffed defense skills.
+        /// </summary>
+        public static PlayerSnapshot SnapshotPlayer(Player p)
+        {
+            var shot = new PlayerSnapshot();
+            var worn = p.EquippedObjects.Values.Where(i =>
+            {
+                var loc = i.CurrentWieldedLocation ?? EquipMask.None;
+                return (loc & WearableSlots) != 0 && (loc & ~WearableSlots) == 0;
+            }).ToList();
+            var wornGuids = new HashSet<uint>(worn.Select(i => i.Guid.Full));
+            shot.Items = worn.Select(i => i.Guid.Full).ToList();
+
+            void Take(WorldObject from, Func<ACE.Entity.Models.PropertiesEnchantmentRegistry, bool> keep)
+            {
+                if (from.Biota.PropertiesEnchantmentRegistry == null)
+                    return;
+                foreach (var en in ACE.Entity.Models.PropertiesEnchantmentRegistryExtensions.Clone(from.Biota.PropertiesEnchantmentRegistry, from.BiotaDatabaseLock))
+                {
+                    var id = (uint)en.SpellId;
+                    if (shot.Spells.Contains(id) || !keep(en))
+                        continue;
+                    var spell = new Spell(id);
+                    if (spell.NotFound || !spell.IsBeneficial || id == (uint)SpellId.Vitae)
+                        continue;
+                    shot.Spells.Add(id);
+                }
+            }
+
+            // the player's own buffs (not the cantrips their worn items put on them: the copies cast those)
+            Take(p, en => !wornGuids.Contains(en.CasterObjectId));
+            // buffs on their armor: Impenetrability, banes (not each item's own cantrips)
+            foreach (var item in worn)
+                Take(item, en => en.CasterObjectId != item.Guid.Full);
+
+            shot.Melee = (int)p.GetCreatureSkill(Skill.MeleeDefense).Base;
+            shot.Missile = (int)p.GetCreatureSkill(Skill.MissileDefense).Base;
+            shot.Magic = (int)p.GetCreatureSkill(Skill.MagicDefense).Base;
+
+            var desc = $"Copy of {p.Name} at {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC: wearing {string.Join(", ", worn.Select(i => i.Name))}; " +
+                       $"defenses {shot.Melee}/{shot.Missile}/{shot.Magic} unbuffed; buffs: {string.Join(", ", shot.Spells.Select(SpellName))}";
+            shot.Description = desc.Length > 2000 ? desc.Substring(0, 2000) : desc;
+            return shot;
+        }
+
         /// <summary>After the admin page saves the setup: every placed drudge reloads it.</summary>
         public static int ReloadAllShared()
         {
