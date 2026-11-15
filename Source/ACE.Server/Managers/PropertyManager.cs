@@ -671,6 +671,7 @@ namespace ACE.Server.Managers
                 // Season rolling XP cap
                 ("rolling_level_cap_enabled", new Property<bool>(false, "master on/off for the server-wide rolling season XP cap")),
                 ("rolling_xp_modifier_enabled", new Property<bool>(false, "when true, RollingLevelCapManager drives the xp_modifier config along a season curve (0.25x at start up to rolling_xp_modifier_max)")),
+                ("dummy_progress_reports", new Property<bool>(false, "JawnTide Target Drudge: also send a running damage line every 10 seconds while attacking (the final report 15 seconds after the last hit is always sent)")),
                 ("catchup_xp_enabled", new Property<bool>(false, "when true, characters whose total XP is below catchup_xp_threshold of the season cap earn boosted XP"))
                 );
 

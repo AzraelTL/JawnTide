@@ -10,8 +10,7 @@ A **Target Drudge** is a training target for testing your damage. Staff place th
 - Identify it to see its armor level on each body part, like a player's.
 
 ## Your damage report
-- When you start attacking it, it tells you its setup.
-- Every 10 seconds while you attack: your damage so far, damage per second (DPS), hits, crit rate, and how often it evaded or resisted.
-- 15 seconds after your last hit: a full report with each weapon and spell listed separately (total, average, lowest and highest hit, crits).
+- When you start attacking it, it says it's recording.
+- 15 seconds after your last hit: a full report with your damage, damage per second (DPS), hits, crit rate, how often it evaded or resisted, and each weapon and spell listed separately (total, average, lowest and highest hit, crits).
 
 Melee, missile, war and void spells and damage over time all count. Change weapons, buffs or gear and attack again to compare.
