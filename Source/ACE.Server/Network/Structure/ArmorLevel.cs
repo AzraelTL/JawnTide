@@ -47,10 +47,11 @@ namespace ACE.Server.Network.Structure
             var totalAL = 0;
 
             // JawnTide Target Drudge: its own armor level for this body part (/dummy armor), plus Armor Self style buffs on it
-            // (wearing a player's kit, it uses the player rules: only the worn pieces and Armor Self count, like on that player)
-            if (creature is TrainingDummy dummy && System.Enum.TryParse<ACE.Entity.Enum.CombatBodyPart>(bodyPart.ToString(), out var part)
+            // (wearing a player's kit it shows what that player's own armor panel shows: only the worn pieces with their
+            // Impenetrability and armor cantrips; Armor Self counts in combat but a player's panel doesn't show it either)
+            if (creature is TrainingDummy dummy && !dummy.WearsKit && System.Enum.TryParse<ACE.Entity.Enum.CombatBodyPart>(bodyPart.ToString(), out var part)
                 && dummy.Biota.PropertiesBodyPart.TryGetValue(part, out var bp))
-                totalAL += (dummy.WearsKit ? 0 : bp.BaseArmor) + dummy.EnchantmentManager.GetBodyArmorMod();
+                totalAL += bp.BaseArmor + dummy.EnchantmentManager.GetBodyArmorMod();
 
             foreach (var layer in layers)
             {
