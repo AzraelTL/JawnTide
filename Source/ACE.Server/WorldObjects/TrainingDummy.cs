@@ -600,7 +600,7 @@ namespace ACE.Server.WorldObjects
             {
                 s = new DummySession { CharacterId = p.Guid.Full, Name = p.Name, Level = p.Level ?? 0, Start = now, LastReport = now };
                 sessions[p.Guid.Full] = s;
-                p.Session?.Network.EnqueueSend(new GameMessageSystemChat($"[{Name}] Recording your damage; report 15 seconds after your last hit.", ChatMessageType.Broadcast));
+                p.Session?.Network.EnqueueSend(new GameMessageSystemChat($"[{Name}] Recording your damage. Setup: {DescribeSetup()}. Report 15 seconds after your last hit.", ChatMessageType.Broadcast));
             }
             s.Last = now;
             s.Attacker = AttackerSkills(p);
@@ -781,7 +781,7 @@ namespace ACE.Server.WorldObjects
                         finished.Add(s);
                         sessions.Remove(s.CharacterId);
                     }
-                    else if (PropertyManager.GetBool("dummy_progress_reports").Item && (now - s.LastReport).TotalSeconds >= 10 && s.Hits > s.HitsAtLastReport)
+                    else if ((now - s.LastReport).TotalSeconds >= 10 && s.Hits > s.HitsAtLastReport)
                     {
                         s.LastReport = now;
                         s.HitsAtLastReport = s.Hits;
