@@ -7,10 +7,9 @@ A **Target Drudge** is a training target for testing your damage. Staff place th
 - It gives **no skill training** and no XP.
 - Every Target Drudge uses the same setup, set by staff: armor (one level for the body and another for the head, hands and feet), defense skills, damage resistance ratings and buffs. Staff can also dress it in a copy of a real player's kit (armor, underclothes, jewelry); then it takes hits exactly like a player wearing that kit, with each piece's Impenetrability and banes counting.
 - Its setup stays the same when its area reloads, so results are comparable from one day to the next.
-- Identify it to see its armor level on each body part, like a player's.
 
 ## Your damage report
-- When you start attacking it, it tells you its setup.
+- When you start attacking it, it tells you it's recording.
 - Every 10 seconds while you attack: your damage so far, damage per second (DPS), hits, crit rate, and how often it evaded or resisted.
 - 15 seconds after your last hit: a full report with each weapon and spell listed separately (total, average, lowest and highest hit, crits).
 
