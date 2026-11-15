@@ -41,3 +41,6 @@
 2026-11-13-mule-search-names 10-my-mule.md
 2026-11-14-mule-comps 10-my-mule.md
 2026-11-14-mule-comps-on 10-my-mule.md
+2026-11-15-drudge-one-setup 25-target-drudge.md
+2026-11-15-mule-search-text 10-my-mule.md
+2026-11-15-mule-commands 14-player-commands.md
