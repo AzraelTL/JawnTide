@@ -660,6 +660,7 @@ namespace ACE.Entity.Enum.Properties
         BountyKillStreakCount = 20010,
         BountyContractStateRaw = 20011,
         AllegianceSwearCount = 20012,  // Lifetime count of how many times this character has sworn allegiance (drives PK-trophy swear cost)
+        HookMuleItemCount = 20013,  // JawnTide Allegiance Mule: items stored in this hook item's mule (it can't leave its hook while this is above 0)
     }
 
     public static class PropertyIntExtensions

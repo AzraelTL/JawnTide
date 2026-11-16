@@ -78,5 +78,8 @@ namespace ACE.Entity.Enum.Properties
 
         /* JawnTide My Mule: on a mule storage container, the GUID of the next container in the account's overflow chain */
         MuleNextContainerId              = 20003,
+
+        /* JawnTide Allegiance Mule: on the mansion hook item, the GUID of the first container of its storage chain */
+        HookMuleContainerId              = 20004,
     }
 }

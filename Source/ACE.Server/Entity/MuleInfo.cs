@@ -15,6 +15,15 @@ namespace ACE.Server.Entity
         public const uint StorageContainerWeenieClassId = 8144002;
         public const uint VendorWeenieClassId = 8144003;
 
+        /// <summary>JawnTide Allegiance Mule: the mansion hook item (Content/sql/weenies/My Mule/8144004 Allegiance Mule.sql).</summary>
+        public const uint HookMuleWeenieClassId = 8144004;
+
+        /// <summary>JawnTide Allegiance Mule: how many items (stacks) it holds.</summary>
+        public const int HookMuleMaxSlots = 5000;
+
+        /// <summary>JawnTide Allegiance Mule: its mule shell goes home after this long with nobody opening it (seconds).</summary>
+        public const int HookMuleIdleSeconds = 300;
+
         /// <summary>JawnTide: the gem's icon glow while the mule is out (gold), and normally (blue magic glow, as in its weenie).</summary>
         public const UiEffects GemActiveUiEffects = UiEffects.Lightning;
         public const UiEffects GemIdleUiEffects = UiEffects.Magical;

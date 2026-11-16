@@ -76,3 +76,11 @@ A mule window lists one page of items at a time (a few hundred), because a list 
 
 ### Spell components for metas
 `/mule comps on` (with the mule open) shows only spell components: tapers, scarabs, pea and the rest, in one short list sorted by name, however much else the mule holds. It's handy for a meta that restocks components from your mule: open the mule, send `/mule comps on`, then buy. `/mule comps off`, or reopening the mule, shows everything again.
+
+## Allegiance Mule
+A mule that hangs on a **mansion** hook, for everyone your mansion trusts. The Town Treasurers sell it for **1,500 PK Trophies**.
+- Hang it on any of your mansion's hooks, then use it to bring out the mule. It only works on a mansion (not a cottage, villa or apartment).
+- It holds **5,000 items**, separate from everyone's own My Mule and from the mansion's chests.
+- Whoever may open the mansion's storage chests may use it: the owner and their account, the allegiance if the owner gave it storage access, and anyone on the storage list. Set this up the usual way in the house panel.
+- Store and take items the same way as My Mule. `/mule search`, `/mule page`, `/mule comps on|off` and the page buttons all work. `/mule suit` and `/mule purge` don't.
+- It **can't be taken down while anything is stored in it.** If the mansion is abandoned, the mule stays on its hook with everything in it, and goes to the mansion's next owner.

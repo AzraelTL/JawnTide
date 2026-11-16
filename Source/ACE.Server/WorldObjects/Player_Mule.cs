@@ -130,6 +130,8 @@ namespace ACE.Server.WorldObjects
                 SetMuleGemLook(ActiveMule != null);
             }
 
+            HookMuleTick();
+
             if (ActiveMule == null)
                 return;
 
@@ -478,7 +480,12 @@ namespace ACE.Server.WorldObjects
                 DatabaseManager.Shard.BaseDatabase.SetAccountMuleVisualVariant(Account.AccountId, variantIndex.Value);
             }
 
-            var sourceWcid = MuleInfo.VisualVariantSourceWcids[variantIndex.Value];
+            ApplyMuleVisualFrom(vendor, MuleInfo.VisualVariantSourceWcids[variantIndex.Value]);
+        }
+
+        /// <summary>JawnTide: copies the look (never the stats) of a source weenie onto a mule shell. Before EnterWorld().</summary>
+        private static void ApplyMuleVisualFrom(Vendor vendor, uint sourceWcid)
+        {
             var sourceWeenie = DatabaseManager.World.GetCachedWeenie(sourceWcid);
 
             if (sourceWeenie == null)
@@ -559,7 +566,7 @@ namespace ACE.Server.WorldObjects
         public void SendMuleCapacityStatus(Vendor vendor)
         {
             var used = vendor.MuleContainers.Sum(c => c.Inventory.Count);
-            var total = MuleInfo.MaxContainers * 255;
+            var total = vendor.MuleHookItemId.HasValue ? MuleInfo.HookMuleMaxSlots : MuleInfo.MaxContainers * 255;
 
             Session.Network.EnqueueSend(new GameMessageSystemChat(
                 $"This mule is using {used} of {total} storage slots.",
@@ -769,6 +776,12 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            if (vendor.MuleHookItemId.HasValue)
+            {
+                SendTransientError("Saved suits work with My Mule, not the Allegiance Mule.");
+                return;
+            }
+
             code = (code ?? "").Trim().ToUpperInvariant();
             if (!Regex.IsMatch(code, "^[A-Z0-9]{4,8}$"))
             {
@@ -860,6 +873,10 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         private bool CanAccessMuleStorage(Vendor vendor)
         {
+            // JawnTide Allegiance Mule: whoever may open the mansion's storage chests (owner, allegiance if granted, storage list)
+            if (vendor.MuleHookItemId.HasValue)
+                return HookMules.CanUse(this, vendor, out _);
+
             // JawnTide: characters on the owner's account, plus the account's mule guests (/mule storage add NAME)
             return vendor.MuleOwnerId.HasValue && vendor.MuleOwnerAccountId.HasValue && Account != null
                 && (Account.AccountId == vendor.MuleOwnerAccountId.Value || ACE.Server.Managers.MuleGuests.IsGuest(vendor.MuleOwnerAccountId.Value, Guid.Full));
@@ -1166,9 +1183,12 @@ namespace ACE.Server.WorldObjects
         /// player's own inventory instead -- it was already removed from them earlier in the
         /// deposit flow, so it must go somewhere rather than be silently destroyed.
         /// </summary>
+        /// <summary>JawnTide Allegiance Mule: the most items the mule being deposited into may hold (the Allegiance Mule holds HookMuleMaxSlots).</summary>
+        private int muleDepositSlotCap = int.MaxValue;
+
         private void AddToMuleStorage(List<Container> containers, WorldObject toDeposit, HashSet<WorldObject> touched)
         {
-            var target = GetOrCreateMuleDepositTarget(containers, touched);
+            var target = containers.Sum(c => c.Inventory.Count) >= muleDepositSlotCap ? null : GetOrCreateMuleDepositTarget(containers, touched);
 
             if (target != null && target.TryAddToInventory(toDeposit, burdenCheck: false))
             {
@@ -1178,7 +1198,7 @@ namespace ACE.Server.WorldObjects
             }
 
             Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session,
-                $"Your mule's storage is completely full ({MuleInfo.MaxContainers * 255} items) -- {toDeposit.Name} couldn't be stored."));
+                $"This mule's storage is completely full ({Math.Min(muleDepositSlotCap, MuleInfo.MaxContainers * 255)} items) -- {toDeposit.Name} couldn't be stored."));
 
             if (!TryCreateInInventoryWithNetworking(toDeposit, out _))
             {
@@ -1242,6 +1262,19 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            muleDepositSlotCap = vendor.MuleHookItemId.HasValue ? MuleInfo.HookMuleMaxSlots : int.MaxValue;
+            try
+            {
+                HandleMuleDepositItems(vendor, itemProfiles);
+            }
+            finally
+            {
+                muleDepositSlotCap = int.MaxValue;
+            }
+        }
+
+        private void HandleMuleDepositItems(Vendor vendor, List<ItemProfile> itemProfiles)
+        {
             var allPossessions = GetAllPossessions().ToDictionary(i => i.Guid.Full, i => i);
             var processedGuids = new HashSet<uint>();
             var touched = new HashSet<WorldObject>();
@@ -1357,6 +1390,8 @@ namespace ACE.Server.WorldObjects
             {
                 foreach (var wo in touched)
                     wo.SaveBiotaToDatabase();
+
+                HookMules.UpdateItemCount(vendor);
 
                 // JawnTide Marketplace: icons and details of the new items, for the website's My Market page
                 ACE.Server.Managers.MarketManager.QueueIcons(touched);
@@ -1597,6 +1632,8 @@ namespace ACE.Server.WorldObjects
 
             foreach (var wo in touched)
                 wo.SaveBiotaToDatabase();
+
+            HookMules.UpdateItemCount(vendor);
 
             Session.Network.EnqueueSend(new GameMessageSound(Guid, Sound.PickUpItem));
 

@@ -53,6 +53,12 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            if (vendor.MuleHookItemId.HasValue)
+            {
+                Say("The Allegiance Mule can't be purged. Take out what you don't want instead.");
+                return;
+            }
+
             if (IsMuleGuestOf(vendor))
             {
                 Say("Only characters on the mule's own account can purge it.");

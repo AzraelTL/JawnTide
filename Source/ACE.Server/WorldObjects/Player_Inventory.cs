@@ -925,6 +925,28 @@ namespace ACE.Server.WorldObjects
                 }
             }
 
+            // JawnTide Allegiance Mule: goes on a mansion's hooks only, and stays on its hook while anything is stored in it
+            if (item.WeenieClassId == MuleInfo.HookMuleWeenieClassId)
+            {
+                if (container is Hook toMansionHook && toMansionHook.House?.RootHouse?.HouseType != HouseType.Mansion)
+                {
+                    Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, $"{item.Name} can only be hung on a mansion's hooks."));
+                    Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, itemGuid));
+                    return false;
+                }
+
+                if (itemRootOwner is Hook && container != itemRootOwner)
+                {
+                    var stored = HookMules.StoredCount(item);
+                    if (stored > 0)
+                    {
+                        Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, $"{item.Name} still holds {stored} item{(stored == 1 ? "" : "s")}. Empty it before taking it down."));
+                        Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, itemGuid));
+                        return false;
+                    }
+                }
+            }
+
             if (item is Container)
             {
                 // Blocking all attempts to put containers in things that aren't Players and Storage. This may not be retail, but at this time appears to be best catch all solution to Quest stamp bypass issue.

@@ -29,11 +29,21 @@ namespace ACE.Server.WorldObjects
         private void SetEphemeralValues()
         {
             ActivationResponse |= ActivationResponse.Emote;
+
+            // JawnTide Allegiance Mule: using it opens the mule (Player_HookMule.cs)
+            if (IsHookMule)
+                ActivationResponse |= ActivationResponse.Use;
         }
+
+        /// <summary>JawnTide: the Allegiance Mule, a My Mule for a mansion.</summary>
+        public bool IsHookMule => WeenieClassId == MuleInfo.HookMuleWeenieClassId;
 
         public override void ActOnUse(WorldObject activator)
         {
             // handled in base.OnActivate -> EmoteManager.OnUse()
+
+            if (IsHookMule && activator is Player player && IsHooked(player, out var hook))
+                player.OpenHookMule(this, hook);
         }
 
         public override ActivationResult CheckUseRequirements(WorldObject activator)
@@ -43,6 +53,18 @@ namespace ACE.Server.WorldObjects
 
             if (!IsHooked(player, out var hook))
                 return new ActivationResult(new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.ItemOnlyUsableOnHook, Name));
+
+            // JawnTide Allegiance Mule: a mansion only, and the same people as the mansion's storage chests
+            if (IsHookMule)
+            {
+                if (!HookMules.CanUseHook(player, this, hook, out var why))
+                {
+                    player.Session.Network.EnqueueSend(new GameEventCommunicationTransientString(player.Session, why));
+                    return new ActivationResult(false);
+                }
+
+                return base.CheckUseRequirements(activator);
+            }
 
             if (hook.HouseOwner == null || (!hook.House.OpenStatus && !hook.House.HasPermission(player)))
                 return new ActivationResult(new GameEventWeenieError(player.Session, WeenieError.YouAreNotPermittedToUseThatHook));
