@@ -41,6 +41,9 @@ namespace ACE.Server.WorldObjects
         /// <summary>JawnTide My Mule: the summoning player's account. Only characters on this account may open or use the mule.</summary>
         public uint? MuleOwnerAccountId;
 
+        /// <summary>JawnTide Allegiance Mule: when set, this mule shell belongs to that mansion hook item (MuleOwnerId is the same guid, MuleOwnerAccountId is null).</summary>
+        public uint? MuleHookItemId;
+
         /// <summary>JawnTide My Mule: the live off-world container chain backing this mule's storage.</summary>
         public List<Container> MuleContainers;
 
@@ -292,8 +295,8 @@ namespace ACE.Server.WorldObjects
             if (MuleOwnerId.HasValue)
             {
                 // a stray mule (a second one from an old double summon, or its owner logged off): it goes home instead of opening
-                var owner = PlayerManager.GetOnlinePlayer(MuleOwnerId.Value);
-                if (owner == null || owner.ActiveMule != this)
+                var owner = MuleHookItemId.HasValue ? null : PlayerManager.GetOnlinePlayer(MuleOwnerId.Value);
+                if (MuleHookItemId.HasValue ? !HookMules.IsCurrentShell(this) : (owner == null || owner.ActiveMule != this))
                 {
                     player.Session.Network.EnqueueSend(new GameEventCommunicationTransientString(player.Session, $"{Name} wanders off home."));
                     Destroy();   // a mule's Destroy only lets go of the storage items, it never deletes them
@@ -307,6 +310,8 @@ namespace ACE.Server.WorldObjects
                 }
 
                 player.SetMuleZeroValueMask(true);
+                if (MuleHookItemId.HasValue)
+                    player.HookMuleOpened(this);
                 MulePage = 0;
                 player.ClearMuleSearchFilter(this);
                 player.SendMuleCapacityStatus(this);
