@@ -383,14 +383,27 @@ namespace ACE.Server.WorldObjects
             OnAppraisal(obj, success);
         }
 
+        private readonly Dictionary<uint, (DateTime at, string text)> dummyIdShown = new Dictionary<uint, (DateTime at, string text)>();
+
         public void OnAppraisal(WorldObject obj, bool success)
         {
             if (!success && obj is Player player && !player.SquelchManager.Squelches.Contains(this, ChatMessageType.Appraisal))
                 player.Session.Network.EnqueueSend(new GameMessageSystemChat($"{Name} tried and failed to assess you!", ChatMessageType.Appraisal));
 
-            // JawnTide: the client doesn't draw armor levels on a monster's ID panel, so a Target Drudge's are sent as text
-            if (success && obj is TrainingDummy dummy)
-                Session.Network.EnqueueSend(new GameMessageSystemChat(dummy.DescribeForAppraisal(), ChatMessageType.Broadcast));
+            // JawnTide: the client doesn't draw armor levels on a monster's ID panel, so a Target Drudge's are sent as text.
+            // Plugins ID everything nearby on their own (arriving by portal or recall), so the line is sent at most once every
+            // 5 minutes per drudge, unless its setup changed since it was last shown
+            // Only staff see it: players don't need the drudge's stats and buffs
+            if (success && obj is TrainingDummy dummy && Session != null && Session.AccessLevel > ACE.Entity.Enum.AccessLevel.Player)
+            {
+                var text = dummy.DescribeForAppraisal();
+                var now = DateTime.UtcNow;
+                if (!dummyIdShown.TryGetValue(dummy.Guid.Full, out var last) || last.text != text || (now - last.at).TotalMinutes >= 5)
+                {
+                    dummyIdShown[dummy.Guid.Full] = (now, text);
+                    Session.Network.EnqueueSend(new GameMessageSystemChat(text, ChatMessageType.Broadcast));
+                }
+            }
 
             // pooky logic - handle monsters attacking on appraisal
             if (obj is Creature creature && creature.MonsterState == State.Idle)
