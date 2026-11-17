@@ -1,6 +1,7 @@
 {
  "areas": [
   "World bosses & events",
+  "Arena PvP damage tuning",
   "Arena",
   "Town Control",
   "Bounties",
@@ -232,7 +233,655 @@
    "default": "1.0",
    "jawntide": false,
    "desc": "a damage modifier applied across all melee, missile and war/void projectile damage during arena 1v1 events.",
-   "area": "Arena"
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_damage_cap",
+   "type": "long",
+   "default": "-1",
+   "jawntide": true,
+   "desc": "JawnTide arenas: the cap for PvP damage per strike inside an arena (every arena match). -1 = same as outside (pvp_damage_cap).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_2h",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_2h inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_2h).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_2h_ar",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_2h_ar inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_2h_ar).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_2h_cb",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_2h_cb inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_2h_cb).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_2h_cb_crit",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_2h_cb_crit inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_2h_cb_crit).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_2h_cs",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_2h_cs inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_2h_cs).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_2h_hollow",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_2h_hollow inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_2h_hollow).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_2h_phantom",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_2h_phantom inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_2h_phantom).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_ar",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_ar inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_ar).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_bow",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_bow inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_bow).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_bow_ar",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_bow_ar inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_bow_ar).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_bow_cb",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_bow_cb inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_bow_cb).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_bow_cb_crit",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_bow_cb_crit inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_bow_cb_crit).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_bow_cs",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_bow_cs inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_bow_cs).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_bow_hollow",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_bow_hollow inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_bow_hollow).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_bow_phantom",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_bow_phantom inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_bow_phantom).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_cb",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_cb inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_cb).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_cs",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_cs inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_cs).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_fw",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_fw inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_fw).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_fw_ar",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_fw_ar inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_fw_ar).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_fw_cb",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_fw_cb inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_fw_cb).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_fw_cb_crit",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_fw_cb_crit inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_fw_cb_crit).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_fw_cs",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_fw_cs inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_fw_cs).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_fw_hollow",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_fw_hollow inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_fw_hollow).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_fw_phantom",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_fw_phantom inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_fw_phantom).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_fw_triplestrike",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_fw_triplestrike inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_fw_triplestrike).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_fw_triplestrike_ar",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_fw_triplestrike_ar inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_fw_triplestrike_ar).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_fw_triplestrike_cb",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_fw_triplestrike_cb inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_fw_triplestrike_cb).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_fw_triplestrike_cs",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_fw_triplestrike_cs inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_fw_triplestrike_cs).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_fw_triplestrike_rend",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_fw_triplestrike_rend inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_fw_triplestrike_rend).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_hollow",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_hollow inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_hollow).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_hw",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_hw inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_hw).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_hw_ar",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_hw_ar inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_hw_ar).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_hw_cb",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_hw_cb inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_hw_cb).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_hw_cb_crit",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_hw_cb_crit inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_hw_cb_crit).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_hw_cb_crit_multistrike",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_hw_cb_crit_multistrike inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_hw_cb_crit_multistrike).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_hw_cs",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_hw_cs inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_hw_cs).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_hw_hollow",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_hw_hollow inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_hw_hollow).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_hw_multistrike",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_hw_multistrike inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_hw_multistrike).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_hw_phantom",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_hw_phantom inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_hw_phantom).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_lw",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_lw inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_lw).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_lw_ar",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_lw_ar inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_lw_ar).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_lw_cb",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_lw_cb inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_lw_cb).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_lw_cb_crit",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_lw_cb_crit inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_lw_cb_crit).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_lw_cb_crit_triplestrike",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_lw_cb_crit_triplestrike inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_lw_cb_crit_triplestrike).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_lw_cs",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_lw_cs inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_lw_cs).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_lw_hollow",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_lw_hollow inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_lw_hollow).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_lw_phantom",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_lw_phantom inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_lw_phantom).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_lw_triplestrike",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_lw_triplestrike inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_lw_triplestrike).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_phantom",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_phantom inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_phantom).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_tw",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_tw inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_tw).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_tw_ar",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_tw_ar inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_tw_ar).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_tw_cb",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_tw_cb inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_tw_cb).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_tw_cb_crit",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_tw_cb_crit inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_tw_cb_crit).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_tw_cs",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_tw_cs inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_tw_cs).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_tw_hollow",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_tw_hollow inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_tw_hollow).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_tw_phantom",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_tw_phantom inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_tw_phantom).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_void",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_void inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_void).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_void_cb_crit",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_void_cb_crit inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_void_cb_crit).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_void_crit",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_void_crit inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_void_crit).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_void_dot",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_void_dot inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_void_dot).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_void_dot_rating_reduction",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_void_dot_rating_reduction inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_void_dot_rating_reduction).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_void_streak",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_void_streak inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_void_streak).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_void_variance",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_void_variance inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_void_variance).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_war",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_war inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_war).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_war_blast",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_war_blast inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_war_blast).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_war_cb_crit",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_war_cb_crit inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_war_cb_crit).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_war_cs_crit",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_war_cs_crit inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_war_cs_crit).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_war_cs_dmg",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_war_cs_dmg inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_war_cs_dmg).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_war_streak",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_war_streak inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_war_streak).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_war_variance",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_war_variance inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_war_variance).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_xbow",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_xbow inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_xbow).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_xbow_ar",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_xbow_ar inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_xbow_ar).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_xbow_cb",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_xbow_cb inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_xbow_cb).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_xbow_cb_crit",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_xbow_cb_crit inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_xbow_cb_crit).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_xbow_cs",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_xbow_cs inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_xbow_cs).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_xbow_hollow",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_xbow_hollow inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_xbow_hollow).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_dmg_mod_xbow_phantom",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_dmg_mod_xbow_phantom inside an arena (every arena match). -1 = same as outside (pvp_dmg_mod_xbow_phantom).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_ratings_mod_critdmg",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_ratings_mod_critdmg inside an arena (every arena match). -1 = same as outside (pvp_ratings_mod_critdmg).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_ratings_mod_dmg",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_ratings_mod_dmg inside an arena (every arena match). -1 = same as outside (pvp_ratings_mod_dmg).",
+   "area": "Arena PvP damage tuning"
+  },
+  {
+   "key": "arena_pvp_void_hybrid_mod",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "JawnTide arenas: pvp_void_hybrid_mod inside an arena (every arena match). -1 = same as outside (pvp_void_hybrid_mod).",
+   "area": "Arena PvP damage tuning"
   },
   {
    "key": "arena_1v1_healkit_restoration_bonus_cap",
@@ -1920,6 +2569,30 @@
    "default": "true",
    "jawntide": true,
    "desc": "if FALSE, the game server stops carrying out jawntide.com marketplace requests (they wait until it is turned back on)",
+   "area": "Bank, audit & economy"
+  },
+  {
+   "key": "mule_guests_enabled",
+   "type": "bool",
+   "default": "true",
+   "jawntide": true,
+   "desc": "JawnTide My Mule: characters added with /mule storage add NAME can use that account's mule while it is summoned (off = owner's account only; the lists are kept)",
+   "area": "Bank, audit & economy"
+  },
+  {
+   "key": "mule_purge_hold_days",
+   "type": "long",
+   "default": "7",
+   "jawntide": true,
+   "desc": "JawnTide /mule purge: days purged mule items are held (/mule purge undo brings them back) before they are deleted for good (0 to 365)",
+   "area": "Bank, audit & economy"
+  },
+  {
+   "key": "mule_window_max_items",
+   "type": "long",
+   "default": "1500",
+   "jawntide": true,
+   "desc": "JawnTide My Mule: the most items one mule window lists at a time (a page; /mule page N shows the rest). A very long list can crash the game client. 100 to 10000",
    "area": "Bank, audit & economy"
   },
   {

@@ -490,8 +490,10 @@ namespace ACE.Server.WorldObjects
                 //Arenas - If this is an arena landblock
                 //don't allow any dmg except while the event is in a started status and between non-eliminated players
                 bool isArena1v1 = false;
+                bool isArena = false;   // JawnTide: inside an arena the arena_pvp_ damage settings apply (PvpMods)
                 if (targetPlayer != null && ArenaLocation.IsArenaLocation(targetPlayer.Location))
                 {
+                    isArena = true;
                     var arenaEvent = ArenaManager.GetArenaEventByLocation(targetPlayer.Location);
                     if (arenaEvent == null || arenaEvent.Status != 4)
                     {
@@ -693,14 +695,14 @@ namespace ACE.Server.WorldObjects
                     var spellType = GetProjectileSpellType(Spell.Id);
                     if (isPVP && Spell.School == MagicSchool.WarMagic && (spellType == ProjectileSpellType.Arc || spellType == ProjectileSpellType.Bolt))
                     {
-                        var warVarianceMod = PropertyManager.GetDouble("pvp_dmg_mod_war_variance", 1).Item;
+                        var warVarianceMod = PvpMods.Get("pvp_dmg_mod_war_variance", isArena, 1);
                         var modifiedVariance = Convert.ToInt32(Math.Round(Spell.Variance * warVarianceMod));
                         minDmg = Spell.MaxDamage - modifiedVariance;
                     }
 
                     if (isPVP && Spell.School == MagicSchool.VoidMagic && (spellType == ProjectileSpellType.Arc || spellType == ProjectileSpellType.Bolt))
                     {
-                        var voidVarianceMod = PropertyManager.GetDouble("pvp_dmg_mod_void_variance", 1).Item;
+                        var voidVarianceMod = PvpMods.Get("pvp_dmg_mod_void_variance", isArena, 1);
                         var modifiedVariance = Convert.ToInt32(Math.Round(Spell.Variance * voidVarianceMod));
                         minDmg = Spell.MaxDamage - modifiedVariance;
                     }
@@ -743,26 +745,26 @@ namespace ACE.Server.WorldObjects
                 {
                     if (Spell.School == MagicSchool.WarMagic)
                     {
-                        dmgMod = (float)PropertyManager.GetDouble("pvp_dmg_mod_war").Item;
+                        dmgMod = (float)PvpMods.Get("pvp_dmg_mod_war", isArena);
 
                         if (SpellType == ProjectileSpellType.Streak)
-                            dmgMod = (float)PropertyManager.GetDouble("pvp_dmg_mod_war_streak").Item; // scales war streak damages
+                            dmgMod = (float)PvpMods.Get("pvp_dmg_mod_war_streak", isArena); // scales war streak damages
 
                         if (SpellType == ProjectileSpellType.Blast)
-                            dmgMod = (float)PropertyManager.GetDouble("pvp_dmg_mod_war_blast").Item; // scales war blast damages
+                            dmgMod = (float)PvpMods.Get("pvp_dmg_mod_war_blast", isArena); // scales war blast damages
 
                         if (criticalHit && weapon.HasImbuedEffect(ImbuedEffectType.CripplingBlow))
                         {
-                            dmgMod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_war_cb_crit").Item;
+                            dmgMod *= (float)PvpMods.Get("pvp_dmg_mod_war_cb_crit", isArena);
                         }
 
                         if (weapon.HasImbuedEffect(ImbuedEffectType.CriticalStrike))
                         {
-                            dmgMod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_war_cs_dmg").Item;
+                            dmgMod *= (float)PvpMods.Get("pvp_dmg_mod_war_cs_dmg", isArena);
 
                             if (criticalHit)
                             {
-                                dmgMod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_war_cs_crit").Item;
+                                dmgMod *= (float)PvpMods.Get("pvp_dmg_mod_war_cs_crit", isArena);
                             }
                         }
 
@@ -770,19 +772,19 @@ namespace ACE.Server.WorldObjects
                     }
                     else if (Spell.DamageType == DamageType.Nether)
                     {
-                        dmgMod = (float)PropertyManager.GetDouble("pvp_dmg_mod_void").Item;
+                        dmgMod = (float)PvpMods.Get("pvp_dmg_mod_void", isArena);
 
                         if (SpellType == ProjectileSpellType.Streak)
                         {
-                            dmgMod = (float)PropertyManager.GetDouble("pvp_dmg_mod_void_streak").Item; // scales void streak damages
+                            dmgMod = (float)PvpMods.Get("pvp_dmg_mod_void_streak", isArena); // scales void streak damages
                         }
 
                         if (criticalHit)
                         {
-                            dmgMod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_void_crit").Item;
+                            dmgMod *= (float)PvpMods.Get("pvp_dmg_mod_void_crit", isArena);
                             if (weapon.HasImbuedEffect(ImbuedEffectType.CripplingBlow))
                             {
-                                dmgMod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_void_cb_crit").Item;
+                                dmgMod *= (float)PvpMods.Get("pvp_dmg_mod_void_cb_crit", isArena);
                             }
                         }
 
@@ -1008,7 +1010,7 @@ namespace ACE.Server.WorldObjects
                 var damageRating = sourceCreature?.GetDamageRating() ?? 0;
 
                 //Apply custom PvP Dmg rating scaling
-                var pvpDmgRatingModifierConfig = PropertyManager.GetDouble("pvp_ratings_mod_dmg").Item;
+                var pvpDmgRatingModifierConfig = PvpMods.Get("pvp_ratings_mod_dmg", PvpMods.InArena(target));
                 if (pkBattle)
                 {
                     damageRating = (int)Math.Round(damageRating * pvpDmgRatingModifierConfig);
@@ -1032,7 +1034,7 @@ namespace ACE.Server.WorldObjects
 
                     if(pkBattle)
                     {
-                        var pvpCritRatingModifierConfig = PropertyManager.GetDouble("pvp_ratings_mod_critdmg").Item;
+                        var pvpCritRatingModifierConfig = PvpMods.Get("pvp_ratings_mod_critdmg", PvpMods.InArena(target));
                         int cdRatingBase = Math.Abs(Creature.ModToRating(critDamageRatingMod));
                         critDamageRatingMod = Creature.GetPositiveRatingMod((int)Math.Round(cdRatingBase * pvpCritRatingModifierConfig));
 
@@ -1081,7 +1083,7 @@ namespace ACE.Server.WorldObjects
                 //Apply dmg cap, except on Tugak
                 if(pkBattle && Spell.Id != 3818)
                 {
-                    var damageCap = PropertyManager.GetLong("pvp_damage_cap").Item;
+                    var damageCap = PvpMods.DamageCap(PvpMods.InArena(target));
                     if (damage > damageCap)
                     {
                         damage = damageCap;

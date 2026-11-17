@@ -253,8 +253,10 @@ namespace ACE.Server.Entity
             //don't allow any dmg except while the event is in a started status and between non-eliminated players
             //also disallow any dmg except from Tugak in a Tugak War event
             bool isArena1v1 = false;
+            bool isArena = false;   // JawnTide: inside an arena the arena_pvp_ damage settings apply (PvpMods)
             if (playerDefender != null && ArenaLocation.IsArenaLocation(playerDefender.Location))
             {
+                isArena = true;
                 if (playerAttacker != null && playerAttacker.IsArenaObserver)
                     return 0.0f;
 
@@ -340,7 +342,7 @@ namespace ACE.Server.Entity
             DamageRatingBaseMod = Creature.GetPositiveRatingMod(attacker.GetDamageRating());
 
             //Apply custom PvP Dmg rating scaling
-            var pvpDmgRatingMod = PropertyManager.GetDouble("pvp_ratings_mod_dmg").Item;
+            var pvpDmgRatingMod = PvpMods.Get("pvp_ratings_mod_dmg", isArena);
             if (pkBattle)
             {
                 int dmgRatingBase = Creature.ModToRating(DamageRatingBaseMod);
@@ -399,7 +401,7 @@ namespace ACE.Server.Entity
                     CriticalDamageRatingMod = Creature.GetPositiveRatingMod(attacker.GetCritDamageRating());
 
                     //Apply custom PvP CD rating scaling
-                    var pvpCdRatingMod = PropertyManager.GetDouble("pvp_ratings_mod_critdmg").Item;
+                    var pvpCdRatingMod = PvpMods.Get("pvp_ratings_mod_critdmg", isArena);
                     if (pkBattle)
                     {
                         int cdRatingBase = Creature.ModToRating(CriticalDamageRatingMod);
@@ -498,7 +500,7 @@ namespace ACE.Server.Entity
                 CriticalDamageResistanceRatingMod = Creature.GetNegativeRatingMod(defender.GetCritDamageResistRating());
 
                 //Apply custom PvP CDR rating scaling
-                var pvpCdrRatingMod = PropertyManager.GetDouble("pvp_ratings_mod_critdmg").Item;
+                var pvpCdrRatingMod = PvpMods.Get("pvp_ratings_mod_critdmg", isArena);
                 if (pkBattle)
                 {
                     int cdrRatingBase = Math.Abs(Creature.ModToRating(CriticalDamageResistanceRatingMod));
@@ -547,54 +549,54 @@ namespace ACE.Server.Entity
                         switch (Weapon.WeaponSkill)
                         {
                             case Skill.FinesseWeapons:
-                                config_mod = (float)PropertyManager.GetDouble("pvp_dmg_mod_fw").Item;
+                                config_mod = (float)PvpMods.Get("pvp_dmg_mod_fw", isArena);
                                 // JawnTide: Finesse daggers made Triple-Strike with the Bandit Hilt, balanced per imbue
                                 if (Weapon.W_AttackType == AttackType.TripleStrike)
                                 {
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_fw_triplestrike").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_fw_triplestrike", isArena);
 
                                     if (Weapon.HasImbuedEffect(ImbuedEffectType.CriticalStrike))
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_fw_triplestrike_cs").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_fw_triplestrike_cs", isArena);
                                     else if (Weapon.HasImbuedEffect(ImbuedEffectType.ArmorRending))
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_fw_triplestrike_ar").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_fw_triplestrike_ar", isArena);
                                     else if (Weapon.HasImbuedEffect(ImbuedEffectType.CripplingBlow))
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_fw_triplestrike_cb").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_fw_triplestrike_cb", isArena);
                                     else if (Weapon.HasImbuedEffect(ImbuedEffectType.AcidRending) || Weapon.HasImbuedEffect(ImbuedEffectType.BludgeonRending) ||
                                              Weapon.HasImbuedEffect(ImbuedEffectType.ColdRending) || Weapon.HasImbuedEffect(ImbuedEffectType.ElectricRending) ||
                                              Weapon.HasImbuedEffect(ImbuedEffectType.FireRending) || Weapon.HasImbuedEffect(ImbuedEffectType.PierceRending) ||
                                              Weapon.HasImbuedEffect(ImbuedEffectType.SlashRending))
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_fw_triplestrike_rend").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_fw_triplestrike_rend", isArena);
                                 }
                                 break;
                             case Skill.LightWeapons:
-                                config_mod = (float)PropertyManager.GetDouble("pvp_dmg_mod_lw").Item;
+                                config_mod = (float)PvpMods.Get("pvp_dmg_mod_lw", isArena);
                                 if (Weapon.W_AttackType == AttackType.TripleStrike)
                                 {
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_lw_triplestrike").Item;                                    
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_lw_triplestrike", isArena);                                    
                                 }                                                                
                                 break;
                             case Skill.HeavyWeapons:
-                                config_mod = (float)PropertyManager.GetDouble("pvp_dmg_mod_hw").Item;
+                                config_mod = (float)PvpMods.Get("pvp_dmg_mod_hw", isArena);
                                 if(AttackType.MultiStrike.HasFlag(Weapon.W_AttackType))
                                 {
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_hw_multistrike").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_hw_multistrike", isArena);
                                 }
                                 break;
                             case Skill.TwoHandedCombat:
-                                config_mod = (float)PropertyManager.GetDouble("pvp_dmg_mod_2h").Item;
+                                config_mod = (float)PvpMods.Get("pvp_dmg_mod_2h", isArena);
                                 break;
                             case Skill.MissileWeapons:                                
                                 if(Weapon.DefaultCombatStyle != null && Weapon.DefaultCombatStyle == CombatStyle.Bow)
                                 {
-                                    config_mod = (float)PropertyManager.GetDouble("pvp_dmg_mod_bow").Item;
+                                    config_mod = (float)PvpMods.Get("pvp_dmg_mod_bow", isArena);
                                 }
                                 else if (Weapon.DefaultCombatStyle != null && Weapon.DefaultCombatStyle == CombatStyle.Crossbow)
                                 {
-                                    config_mod = (float)PropertyManager.GetDouble("pvp_dmg_mod_xbow").Item;
+                                    config_mod = (float)PvpMods.Get("pvp_dmg_mod_xbow", isArena);
                                 }
                                 else if (Weapon.IsThrownWeapon || Weapon.IsAtlatl)
                                 {
-                                    config_mod = (float)PropertyManager.GetDouble("pvp_dmg_mod_tw").Item;
+                                    config_mod = (float)PvpMods.Get("pvp_dmg_mod_tw", isArena);
                                 }
                                                              
                                 break;                                                                                           
@@ -603,33 +605,33 @@ namespace ACE.Server.Entity
 
                         if (Weapon.HasImbuedEffect(ImbuedEffectType.ArmorRending))
                         {
-                            config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_ar").Item;
+                            config_mod *= (float)PvpMods.Get("pvp_dmg_mod_ar", isArena);
                             switch (Weapon.WeaponSkill)
                             {
                                 case Skill.FinesseWeapons:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_fw_ar").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_fw_ar", isArena);
                                     break;
                                 case Skill.LightWeapons:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_lw_ar").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_lw_ar", isArena);
                                     break;
                                 case Skill.HeavyWeapons:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_hw_ar").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_hw_ar", isArena);
                                     break;
                                 case Skill.TwoHandedCombat:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_2h_ar").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_2h_ar", isArena);
                                     break;
                                 case Skill.MissileWeapons:
                                     if(Weapon.DefaultCombatStyle != null && Weapon.DefaultCombatStyle == CombatStyle.Bow)
                                     {
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_bow_ar").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_bow_ar", isArena);
                                     }
                                     else if (Weapon.DefaultCombatStyle != null && Weapon.DefaultCombatStyle == CombatStyle.Crossbow)
                                     {
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_xbow_ar").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_xbow_ar", isArena);
                                     }
                                     else if (Weapon.IsThrownWeapon || Weapon.IsAtlatl)
                                     {
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_tw_ar").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_tw_ar", isArena);
                                     }
                                     
                                     break;
@@ -638,47 +640,47 @@ namespace ACE.Server.Entity
                         }
                         else if (Weapon.HasImbuedEffect(ImbuedEffectType.CripplingBlow))
                         {
-                            config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_cb").Item;
+                            config_mod *= (float)PvpMods.Get("pvp_dmg_mod_cb", isArena);
                             switch (Weapon.WeaponSkill)
                             {
                                 case Skill.FinesseWeapons:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_fw_cb").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_fw_cb", isArena);
                                     break;
                                 case Skill.LightWeapons:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_lw_cb").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_lw_cb", isArena);
                                     if(Weapon.W_AttackType == AttackType.TripleStrike)
                                     {
                                         if (IsCritical)
                                         {
-                                            config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_lw_cb_crit_triplestrike").Item; 
+                                            config_mod *= (float)PvpMods.Get("pvp_dmg_mod_lw_cb_crit_triplestrike", isArena); 
                                         }
                                     }
                                     break;
                                 case Skill.HeavyWeapons:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_hw_cb").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_hw_cb", isArena);
                                     if (AttackType.MultiStrike.HasFlag(Weapon.W_AttackType))
                                     {
                                         if (IsCritical)
                                         {
-                                            config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_hw_cb_crit_multistrike").Item;
+                                            config_mod *= (float)PvpMods.Get("pvp_dmg_mod_hw_cb_crit_multistrike", isArena);
                                         }
                                     }
                                     break;
                                 case Skill.TwoHandedCombat:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_2h_cb").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_2h_cb", isArena);
                                     break;
                                 case Skill.MissileWeapons:
                                     if(Weapon.DefaultCombatStyle != null && Weapon.DefaultCombatStyle == CombatStyle.Bow)
                                     {
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_bow_cb").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_bow_cb", isArena);
                                     }
                                     else if (Weapon.DefaultCombatStyle != null && Weapon.DefaultCombatStyle == CombatStyle.Crossbow)
                                     {
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_xbow_cb").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_xbow_cb", isArena);
                                     }
                                     else if (Weapon.IsThrownWeapon || Weapon.IsAtlatl)
                                     {
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_tw_cb").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_tw_cb", isArena);
                                     }
                                     break;
 
@@ -689,29 +691,29 @@ namespace ACE.Server.Entity
                                 switch (Weapon.WeaponSkill)
                                 {
                                     case Skill.FinesseWeapons:
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_fw_cb_crit").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_fw_cb_crit", isArena);
                                         break;
                                     case Skill.LightWeapons:
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_lw_cb_crit").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_lw_cb_crit", isArena);
                                         break;
                                     case Skill.HeavyWeapons:
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_hw_cb_crit").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_hw_cb_crit", isArena);
                                         break;
                                     case Skill.TwoHandedCombat:
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_2h_cb_crit").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_2h_cb_crit", isArena);
                                         break;
                                     case Skill.MissileWeapons:
                                         if (Weapon.DefaultCombatStyle != null && Weapon.DefaultCombatStyle == CombatStyle.Bow)
                                         {
-                                            config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_bow_cb_crit").Item;
+                                            config_mod *= (float)PvpMods.Get("pvp_dmg_mod_bow_cb_crit", isArena);
                                         }
                                         else if (Weapon.DefaultCombatStyle != null && Weapon.DefaultCombatStyle == CombatStyle.Crossbow)
                                         {
-                                            config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_xbow_cb_crit").Item;
+                                            config_mod *= (float)PvpMods.Get("pvp_dmg_mod_xbow_cb_crit", isArena);
                                         }
                                         else if (Weapon.IsThrownWeapon || Weapon.IsAtlatl)
                                         {
-                                            config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_tw_cb_crit").Item;
+                                            config_mod *= (float)PvpMods.Get("pvp_dmg_mod_tw_cb_crit", isArena);
                                         }
                                         break;
 
@@ -720,33 +722,33 @@ namespace ACE.Server.Entity
                         }
                         else if (Weapon.HasImbuedEffect(ImbuedEffectType.CriticalStrike))
                         {
-                            config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_cs").Item;
+                            config_mod *= (float)PvpMods.Get("pvp_dmg_mod_cs", isArena);
                             switch (Weapon.WeaponSkill)
                             {                                
                                 case Skill.FinesseWeapons:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_fw_cs").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_fw_cs", isArena);
                                     break;
                                 case Skill.LightWeapons:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_lw_cs").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_lw_cs", isArena);
                                     break;
                                 case Skill.HeavyWeapons:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_hw_cs").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_hw_cs", isArena);
                                     break;
                                 case Skill.TwoHandedCombat:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_2h_cs").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_2h_cs", isArena);
                                     break;
                                 case Skill.MissileWeapons:
                                     if(Weapon.DefaultCombatStyle != null && Weapon.DefaultCombatStyle == CombatStyle.Bow)
                                     {
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_bow_cs").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_bow_cs", isArena);
                                     }
                                     else if (Weapon.DefaultCombatStyle != null && Weapon.DefaultCombatStyle == CombatStyle.Crossbow)
                                     {
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_xbow_cs").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_xbow_cs", isArena);
                                     }
                                     else if (Weapon.IsThrownWeapon || Weapon.IsAtlatl)
                                     {
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_tw_cs").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_tw_cs", isArena);
                                     }
                                     break;
 
@@ -754,33 +756,33 @@ namespace ACE.Server.Entity
                         }
                         else if (Weapon.IgnoreMagicArmor && Weapon.IgnoreMagicResist)
                         {
-                            config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_hollow").Item;
+                            config_mod *= (float)PvpMods.Get("pvp_dmg_mod_hollow", isArena);
                             switch (Weapon.WeaponSkill)
                             {
                                 case Skill.FinesseWeapons:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_fw_hollow").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_fw_hollow", isArena);
                                     break;
                                 case Skill.LightWeapons:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_lw_hollow").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_lw_hollow", isArena);
                                     break;
                                 case Skill.HeavyWeapons:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_hw_hollow").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_hw_hollow", isArena);
                                     break;
                                 case Skill.TwoHandedCombat:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_2h_hollow").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_2h_hollow", isArena);
                                     break;
                                 case Skill.MissileWeapons:
                                     if(Weapon.DefaultCombatStyle != null && Weapon.DefaultCombatStyle == CombatStyle.Bow)
                                     {
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_bow_hollow").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_bow_hollow", isArena);
                                     }
                                     else if (Weapon.DefaultCombatStyle != null && Weapon.DefaultCombatStyle == CombatStyle.Crossbow)
                                     {
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_xbow_hollow").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_xbow_hollow", isArena);
                                     }
                                     else if (Weapon.IsThrownWeapon || Weapon.IsAtlatl)
                                     {
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_tw_hollow").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_tw_hollow", isArena);
                                     }
                                     break;
 
@@ -788,33 +790,33 @@ namespace ACE.Server.Entity
                         }
                         else if (Weapon.HasImbuedEffect(ImbuedEffectType.IgnoreAllArmor))
                         {
-                            config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_phantom").Item;
+                            config_mod *= (float)PvpMods.Get("pvp_dmg_mod_phantom", isArena);
                             switch (Weapon.WeaponSkill)
                             {
                                 case Skill.FinesseWeapons:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_fw_phantom").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_fw_phantom", isArena);
                                     break;
                                 case Skill.LightWeapons:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_lw_phantom").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_lw_phantom", isArena);
                                     break;
                                 case Skill.HeavyWeapons:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_hw_phantom").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_hw_phantom", isArena);
                                     break;
                                 case Skill.TwoHandedCombat:
-                                    config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_2h_phantom").Item;
+                                    config_mod *= (float)PvpMods.Get("pvp_dmg_mod_2h_phantom", isArena);
                                     break;
                                 case Skill.MissileWeapons:
                                     if(Weapon.DefaultCombatStyle != null && Weapon.DefaultCombatStyle == CombatStyle.Bow)
                                     {
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_bow_phantom").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_bow_phantom", isArena);
                                     }
                                     else if (Weapon.DefaultCombatStyle != null && Weapon.DefaultCombatStyle == CombatStyle.Crossbow)
                                     {
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_xbow_phantom").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_xbow_phantom", isArena);
                                     }
                                     else if (Weapon.IsThrownWeapon || Weapon.IsAtlatl)
                                     {
-                                        config_mod *= (float)PropertyManager.GetDouble("pvp_dmg_mod_tw_phantom").Item;
+                                        config_mod *= (float)PvpMods.Get("pvp_dmg_mod_tw_phantom", isArena);
                                     }
                                     break;
                             }
