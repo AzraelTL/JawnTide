@@ -988,7 +988,7 @@ EDIT_PASSWORD = os.environ.get("MONITOR_EDIT_PASSWORD", "")
 
 
 def damage_settings(cat):
-    return [r for r in cat["settings"] if r["type"] != "string" and (r["area"] == "PvP damage tuning" or DAMAGE_RX.search(r["key"]))]
+    return [r for r in cat["settings"] if r["type"] != "string" and (r["area"] in ("PvP damage tuning", "Arena PvP damage tuning") or DAMAGE_RX.search(r["key"]))]
 
 
 def shard_rows(sql, args=None):
@@ -1043,6 +1043,7 @@ def pvp_page(sent, bad):
     body = f"""<h2>PvP damage settings</h2>
 <p class="muted">Every server setting about damage, with its live value. Change values, enter the edit password and press Save: the game server applies them
 within about 5 seconds, exactly like <code>@modifydouble</code> (also posted on the audit channel). Highlighted rows differ from the default ({changed_count}).
+The <b>Arena PvP damage tuning</b> group holds the same settings for inside arenas: -1 means the same as outside, any other value replaces the outside value in every arena match.
 Measure the effect on a <a href="/dummy">Target Drudge</a>.</p>
 {note}{err}
 <form method="post" action="/pvp-set">

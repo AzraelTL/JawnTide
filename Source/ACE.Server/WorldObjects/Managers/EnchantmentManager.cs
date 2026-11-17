@@ -1196,7 +1196,7 @@ namespace ACE.Server.WorldObjects.Managers
 
                 if(netherDot.IsPvP)
                 {
-                    var pvpDotRatingMod = PropertyManager.GetDouble("pvp_dmg_mod_void_dot_rating_reduction").Item;
+                    var pvpDotRatingMod = PvpMods.Get("pvp_dmg_mod_void_dot_rating_reduction", PvpMods.InArena(WorldObject));
                     baseDmgForThisDot = baseDmgForThisDot * (float)pvpDotRatingMod;
                 }
 
@@ -1436,7 +1436,7 @@ namespace ACE.Server.WorldObjects.Managers
                 var pvpDmgMod = 1.0f;
                 var pvpTarget = targetPlayer != null || creature is TrainingDummy; // JawnTide target dummy: PvP DoT damage
                 if (damageType == DamageType.Nether && sourcePlayer != null && pvpTarget)
-                    pvpDmgMod = (float)PropertyManager.GetDouble("pvp_dmg_mod_void_dot").Item;
+                    pvpDmgMod = (float)PvpMods.Get("pvp_dmg_mod_void_dot", PvpMods.InArena(WorldObject));
 
                 tickAmount *= resistanceMod * damageResistRatingMod * dotResistRatingMod * pvpDmgMod;
 
@@ -1473,7 +1473,7 @@ namespace ACE.Server.WorldObjects.Managers
 
                         if (isHybrid)
                         {
-                            var hybridMod = PropertyManager.GetDouble("pvp_void_hybrid_mod").Item;
+                            var hybridMod = PvpMods.Get("pvp_void_hybrid_mod", PvpMods.InArena(WorldObject));
                             tickAmount = tickAmount * (float)hybridMod;
                         }
                     }

@@ -183,7 +183,19 @@ namespace ACE.Server.WorldObjects
             {
                 var rows = DatabaseManager.Shard.BaseDatabase.PvpToolsQuery(
                     "SELECT armor, armor_Extremities, melee_Defense, missile_Defense, magic_Defense, damage_Resist_Rating, crit_Damage_Resist_Rating, pk_Damage_Resist_Rating, spells, worn_Items FROM training_dummy WHERE dummy_Guid = 0;");
-                var r = rows != null && rows.Count > 0 ? rows[0] : null;
+                // JawnTide: a failed read (database busy or restarting) keeps the setup it has and tries again in a minute,
+                // instead of loading all zeros
+                if (rows == null)
+                {
+                    log4net.LogManager.GetLogger(typeof(TrainingDummy)).Warn($"[DUMMY] {Name} (0x{Guid}) couldn't read the Target Drudge setup; keeping its current one and retrying in 60 seconds.");
+                    var retry = new ActionChain();
+                    retry.AddDelaySeconds(60);
+                    retry.AddAction(this, () => { if (!IsDestroyed) LoadSharedSetup(); });
+                    retry.EnqueueChain();
+                    return;
+                }
+
+                var r = rows.Count > 0 ? rows[0] : null;
 
                 // the kit: the items a player wore when it was picked on the admin page, read as last saved
                 var kit = new List<ACE.Entity.Models.Biota>();

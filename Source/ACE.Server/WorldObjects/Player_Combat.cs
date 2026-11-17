@@ -152,7 +152,7 @@ namespace ACE.Server.WorldObjects
                         //Dinnerware isnt subject to pvp dmg cap
                         bool isDinnerware = LootTables.DinnerwareLootMatrix.Contains((int)((damageSource?.WeenieClassId) ?? 0));
 
-                        var damageCap = PropertyManager.GetLong("pvp_damage_cap").Item;
+                        var damageCap = PvpMods.DamageCap(PvpMods.InArena(target));
                         if (damageEvent.Damage > damageCap && !isDinnerware)
                             damageEvent.Damage = damageCap;
                     }
@@ -168,7 +168,7 @@ namespace ACE.Server.WorldObjects
                     if (target is TrainingDummy)
                     {
                         bool isDinnerware = LootTables.DinnerwareLootMatrix.Contains((int)((damageSource?.WeenieClassId) ?? 0));
-                        var damageCap = PropertyManager.GetLong("pvp_damage_cap").Item;
+                        var damageCap = PvpMods.DamageCap(PvpMods.InArena(target));
                         if (damageEvent.Damage > damageCap && !isDinnerware)
                             damageEvent.Damage = damageCap;
                     }

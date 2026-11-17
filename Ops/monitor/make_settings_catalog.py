@@ -21,6 +21,7 @@ PART = re.compile(r'"((?:[^"\\]|\\.)*)"')
 # first match wins; order matters
 AREAS = [
     ("World bosses & events", r"world_boss|event_boss|world_bosses"),
+    ("Arena PvP damage tuning", r"^arena_pvp_|^arena_1v1_global_dmg_mod$"),
     ("Arena", r"arena"),
     ("Town Control", r"town_control|dungeon"),
     ("Bounties", r"^bounty_|^pk_bounty_timer$|^writ_of_pursuit"),

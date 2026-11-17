@@ -54,7 +54,7 @@ namespace ACE.Server.WorldObjects
                     var targetPk = targetCreature as Player;
                     if (targetPk != null)
                     {
-                        var damageCap = PropertyManager.GetLong("pvp_damage_cap").Item;
+                        var damageCap = PvpMods.DamageCap(PvpMods.InArena(targetCreature));
                         if (damageEvent.Damage > damageCap)
                             damageEvent.Damage = damageCap;
                     }
