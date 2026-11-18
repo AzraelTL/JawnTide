@@ -11,6 +11,7 @@ Commands added on JawnTide on top of the normal ACE ones.
 | `/mule page N` | Show page N of a big mule (the window lists one page at a time; the Next page / Previous page entries in the list do the same). See [[My Mule]] |
 | `/mule comps on` | Show only spell components in your open mule, for restocking metas; `/mule comps off` shows everything again. See [[My Mule]] |
 | `/market 5 mmd` | List the item you last identified in your open My Mule on the [[Market]]: `/market 5 mmd`, `/market 500 pkt`, or both (`/market 5 mmd 500 pkt`). |
+| `/amule storage add NAME` | Mansion owners: who may use your Allegiance Mule (also `remove NAME`, `remove -all`, `allegiance on`/`off`, `list`). See [[My Mule]] |
 | `/mule storage add NAME` | Let another account's character use your mule while it's summoned (`remove NAME`, `remove -all`, `list`). See [[My Mule]] |
 | `/mule suit CODE` | Show only the items of a suit saved on the website's Suit Builder in your open mule; `/mule suit CODE take` moves them all into your pack. See [[Suit Builder]] |
 | `/mule purge FILTER` | Delete many mule items at once, e.g. `/mule purge type:shield al<200`. Shows the matches first; `/mule purge confirm` removes them (held 7 days: `/mule purge undo`). See [[My Mule]] |

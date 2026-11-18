@@ -48,3 +48,5 @@
 2026-11-16-allegiance-mule 10-my-mule.md
 2026-11-16-market-ingame 19-market.md
 2026-11-16-market-command 14-player-commands.md
+2026-11-18-allegiance-mule-access 10-my-mule.md
+2026-11-18-amule-command 14-player-commands.md
