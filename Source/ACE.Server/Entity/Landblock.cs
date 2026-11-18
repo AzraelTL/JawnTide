@@ -643,6 +643,20 @@ namespace ACE.Server.Entity
             {
                 foreach (var fso in factoryShardObjects)
                 {
+                    // JawnTide: a mule shell saved by an older build (server stopped with a mule out) is left over: delete it.
+                    // Only the shell goes; the owner's stored items live in their storage containers, not in it.
+                    if (fso.WeenieClassId == MuleInfo.VendorWeenieClassId)
+                    {
+                        log.Warn($"[MULE] Deleting left-over mule shell {fso.Name} (0x{fso.Guid}) saved on landblock 0x{Id.Landblock:X4}");
+                        if (fso is Vendor leftover)
+                        {
+                            leftover.DefaultItemsForSale.Clear();
+                            leftover.UniqueItemsForSale.Clear();
+                        }
+                        fso.Destroy();
+                        continue;
+                    }
+
                     // JawnTide instancing: a corpse or item saved from inside an instance is still live in that instance
                     // (or was just moved here), don't make a second copy of it
                     if ((ACE.Server.Physics.Managers.ServerObjectManager.ServerObjects.TryGetValue(fso.Guid.Full, out var live) && live != null && live != fso.PhysicsObj)

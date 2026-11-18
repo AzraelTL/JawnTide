@@ -145,6 +145,11 @@ namespace ACE.Server.WorldObjects
             if (!Guid.IsDynamic())
                 return false;
 
+            // JawnTide My Mule / Allegiance Mule: a mule shell only lives while it's out. Saved with its landblock (a server stop
+            // with a mule out), it came back after the restart as a plain, empty vendor that anyone could open and that never left.
+            if (WeenieClassId == ACE.Server.Entity.MuleInfo.VendorWeenieClassId)
+                return false;
+
             if (BiotaOriginatedFromOrHasBeenSavedToDatabase())
                 return true;
 
