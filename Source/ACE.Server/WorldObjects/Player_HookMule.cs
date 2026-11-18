@@ -70,14 +70,45 @@ namespace ACE.Server.WorldObjects
                 return false;
             }
 
-            // exactly the mansion storage chests' rule (Storage.CheckUseRequirements)
-            if (!rootHouse.HasPermission(player, true))
+            // its own permission list, set like house storage (/amule storage ...), separate from the mansion's chests
+            if (!HasAccess(player, rootHouse))
             {
                 why = $"You do not have permission to access {item.Name}.";
                 return false;
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// The mansion's owner and every character on the owner's account; anyone on its /amule storage list; and the owner's
+        /// allegiance when /amule storage allegiance is on. Grants made by a previous owner of the mansion don't count.
+        /// </summary>
+        public static bool HasAccess(Player player, House rootHouse)
+        {
+            if (rootHouse?.HouseOwner == null)
+                return false;
+
+            var ownerId = rootHouse.HouseOwner.Value;
+            if (player.Guid.Full == ownerId)
+                return true;
+
+            var owner = ACE.Server.Managers.PlayerManager.FindByGuid(ownerId);
+            if (owner?.Account != null && player.Account != null && owner.Account.AccountId == player.Account.AccountId)
+                return true;
+
+            var houseId = rootHouse.Guid.Full;
+            if (ACE.Server.Managers.HookMuleAccess.Has(houseId, ownerId, player.Guid.Full))
+                return true;
+
+            if (ACE.Server.Managers.HookMuleAccess.Has(houseId, ownerId, ACE.Server.Managers.HookMuleAccess.AllegianceId))
+            {
+                var monarch = rootHouse.MonarchId ?? owner?.MonarchId;
+                if (monarch.HasValue && player.Allegiance != null && player.Allegiance.MonarchId == monarch.Value)
+                    return true;
+            }
+
+            return false;
         }
 
         /// <summary>The mule permission check for deposits, withdrawals, search, pages and comps on an Allegiance Mule shell.</summary>

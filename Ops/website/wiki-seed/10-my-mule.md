@@ -81,6 +81,16 @@ A mule window lists one page of items at a time (a few hundred), because a list 
 A mule that hangs on a **mansion** hook, for everyone your mansion trusts. The Town Treasurers sell it for **1,500 PK Trophies**.
 - Hang it on any of your mansion's hooks, then use it to bring out the mule. It only works on a mansion (not a cottage, villa or apartment).
 - It holds **5,000 items**, separate from everyone's own My Mule and from the mansion's chests.
-- Whoever may open the mansion's storage chests may use it: the owner and their account, the allegiance if the owner gave it storage access, and anyone on the storage list. Set this up the usual way in the house panel.
+- It has **its own permission list**, separate from the mansion's storage chests. The owner and every character on the owner's account can always use it. The owner sets who else can, with the same kind of commands as house storage:
+
+| Command | What it does |
+|---|---|
+| `/amule storage add NAME` | Let NAME use it. |
+| `/amule storage remove NAME` | Take NAME off the list. |
+| `/amule storage remove -all` | Remove everyone (the allegiance setting stays). |
+| `/amule storage allegiance on` | Let your whole allegiance use it. `off` takes that back. |
+| `/amule storage list` | Show who can use it. |
+
+- A new owner of the mansion starts with an empty list.
 - Store and take items the same way as My Mule. `/mule search`, `/mule page`, `/mule comps on|off` and the page buttons all work. `/mule suit` and `/mule purge` don't.
 - It **can't be taken down while anything is stored in it.** If the mansion is abandoned, the mule stays on its hook with everything in it, and goes to the mansion's next owner.

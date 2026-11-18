@@ -873,7 +873,12 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         private bool CanAccessMuleStorage(Vendor vendor)
         {
-            // JawnTide Allegiance Mule: whoever may open the mansion's storage chests (owner, allegiance if granted, storage list)
+            // JawnTide: only from the mule's own landblock. Landblock.GetObject also finds objects on the next landblock, which can
+            // run on another thread: two players on two threads changing the same storage at once could duplicate or lose items.
+            if (vendor.CurrentLandblock == null || CurrentLandblock != vendor.CurrentLandblock)
+                return false;
+
+            // JawnTide Allegiance Mule: its own permission list (/amule storage ...), see HookMules.HasAccess
             if (vendor.MuleHookItemId.HasValue)
                 return HookMules.CanUse(this, vendor, out _);
 
