@@ -98,5 +98,5 @@ VALUES (520241, 0, 4, 400, 0.5, 700, 1575, 1225, 784, 2450, 2450, 2800, 2450, 0,
 
 INSERT INTO `weenie_properties_spell_book` (`object_Id`, `spell`, `probability`)
 VALUES (520241,  4439,    2.1)  /* Incantation of Flame Bolt */
-     , (520241,  4441,   2.06)  /* Incantation of Flame Volley */
+     , (520241,  4423,   2.06)  /* Incantation of Flame Arc */
      , (520241,  4481,   2.05)  /* Incantation of Fire Vulnerability Other */;

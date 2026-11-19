@@ -57,7 +57,7 @@ When assessed, the bosses show a title under their name (PropertyString Template
 
 ## Goop Scoop (Nov 19, 2026)
 
-A level-cap town boss: a copy of the Olthoi King (490010) with the Olthoi Larvae look (35147) at scale 6.0, Aqua palette, title Brood Glutton.
+A level-cap town boss: a copy of the Olthoi King (490010) with the Olthoi Larvae look (35147) at scale 4.0, Aqua palette, title Brood Glutton.
 Same stats, armor, resists, spells (Corrosive Strike, Acid Spit Arc 2, Acid Vuln VIII), shield shifts (4240-4245), Heavy Acid Ring special, rewards and loot generator as the Olthoi King.
 Token: Goop Scoop's Ichor 520231 (Progenitor's Ichor model, Acid glow), quest GoopScoopsIchor (3 minutes), turn-in timer WorldBossCompleted7, added to both Aidoneus files.
 
@@ -69,7 +69,7 @@ Helpers (21, regenerate on death like the Olthoi King's): each is the stock crea
 | 520233 | Slimed Maniacal Fiun | 29345 | 3 | 15,000 | Flame Bolt, Whirling Blade, Frost Streak, Lightning Streak, Imperil, Blade Vuln (VIII) |
 | 520234 | Slimed Cannibal Fiun | 29507 | 3 | 15,000 | Frost Bolt, Lightning Bolt, Acid Streak, Flame Streak, Imperil, Pierce Vuln (VIII) |
 | 520235-520237 | Slimed K'nath N'da, R'ajed, Y'nda | 38009-38011 | 2 each | 15,000 | stock: Shock Wave Streak, Shock Blast, Imperil, Bludgeon Vuln (VIII) |
-| 520238-520241 | Slimed Shivering, Corroding, Voltaic, Incalescent Wisp | 40127, 40128, 40129, 40131 | 1 each | 10,000 | their element's Bolt (or Acid Stream), Volley and Vuln (VIII) |
+| 520238-520241 | Slimed Shivering, Corroding, Voltaic, Incalescent Wisp | 40127, 40128, 40129, 40131 | 1 each | 10,000 | their element's Bolt (or Acid Stream), Arc and Vuln (VIII); volleys were swapped for arcs Nov 19 (client crashes reported) |
 | 520242 | Slimed Sentient Crystal Shard | 35118 | 1 | 25,000 | stock: heals, debuffs and Vitality Siphon |
 | 520243 | Slimed Fire Crystal | 45747 | 2 | 15,000 | Flame Bolt, Flame Streak (VIII) |
 | 520244 | Slimed Ice Crystal | 45748 | 2 | 15,000 | Frost Bolt, Frost Streak (VIII) |

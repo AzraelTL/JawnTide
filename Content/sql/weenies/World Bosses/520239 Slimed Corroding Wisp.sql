@@ -98,5 +98,5 @@ VALUES (520239, 0, 32, 400, 0.5, 700, 1575, 1225, 784, 2450, 2450, 2800, 2450, 0
 
 INSERT INTO `weenie_properties_spell_book` (`object_Id`, `spell`, `probability`)
 VALUES (520239,  4433,    2.1)  /* Incantation of Acid Stream */
-     , (520239,  4434,   2.06)  /* Incantation of Acid Volley */
+     , (520239,  4421,   2.06)  /* Incantation of Acid Arc */
      , (520239,  4473,   2.05)  /* Incantation of Acid Vulnerability Other */;

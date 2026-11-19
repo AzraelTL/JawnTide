@@ -98,5 +98,5 @@ VALUES (520240, 0, 4, 400, 0.5, 700, 1575, 1225, 784, 2450, 2450, 2800, 2450, 0,
 
 INSERT INTO `weenie_properties_spell_book` (`object_Id`, `spell`, `probability`)
 VALUES (520240,  4451,    2.1)  /* Incantation of Lightning Bolt */
-     , (520240,  4453,   2.06)  /* Incantation of Lightning Volley */
+     , (520240,  4426,   2.06)  /* Incantation of Lightning Arc */
      , (520240,  4483,   2.05)  /* Incantation of Lightning Vulnerability Other */;
