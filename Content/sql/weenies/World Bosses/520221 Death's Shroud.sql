@@ -19,7 +19,7 @@ VALUES (520221,  22, True ) /* Inscribable */
      , (520221,  23, True ) /* DestroyOnSell */;
 
 INSERT INTO `weenie_properties_float` (`object_Id`, `type`, `value`)
-VALUES (520221,  39,       1) /* DefaultScale */;
+VALUES (520221,  39,     0.33) /* DefaultScale */;
 
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
 VALUES (520221,   1, 'Death''s Shroud') /* Name */
@@ -27,7 +27,10 @@ VALUES (520221,   1, 'Death''s Shroud') /* Name */
      , (520221,  33, 'DeathsShroud') /* Quest */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
-VALUES (520221,   1, 0x02000A7F) /* Setup - gift box (A Box 510000) */
+VALUES (520221,   1, 0x02000E74) /* Setup */
      , (520221,   3, 0x20000014) /* SoundTable */
-     , (520221,   8, 0x0600218D) /* Icon - gift box (A Box 510000) */
-     , (520221,  22, 0x3400002B) /* PhysicsEffectTable */;
+     , (520221,   6, 0x04000BEF) /* PaletteBase */
+     , (520221,   7, 0x10000178) /* ClothingBase */
+     , (520221,   8, 0x06001F94) /* Icon */
+     , (520221,  52, 0x06005B0C) /* IconUnderlay */
+     , (520221,  22, 0x34000074) /* PhysicsEffectTable */;

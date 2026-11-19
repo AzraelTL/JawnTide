@@ -74,4 +74,4 @@ Helpers (21, regenerate on death like the Olthoi King's): each is the stock crea
 | 520243 | Slimed Fire Crystal | 45747 | 2 | 15,000 | Flame Bolt, Flame Streak (VIII) |
 | 520244 | Slimed Ice Crystal | 45748 | 2 | 15,000 | Frost Bolt, Frost Streak (VIII) |
 
-All seven town boss tokens look like the gift box (A Box 510000: Setup 0x02000A7F, Icon 0x0600218D, scale 1) since Nov 19; their names and glows are unchanged. Tokens already in players' packs keep their old look.
+All seven town boss tokens use the gift box model the original three always had (Setup 0x02000E74, scale 0.33) since Nov 19; each keeps its own icon, name and glow. Moloch's Fang, Khaz's Knucklebone and Goop Scoop's Ichor used other models before. Tokens already in players' packs keep their old look.
