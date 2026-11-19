@@ -51,3 +51,4 @@
 2026-11-18-allegiance-mule-access 10-my-mule.md
 2026-11-18-amule-command 14-player-commands.md
 2026-11-19-item-search-hover 26-suit-builder.md
+2026-11-19-lore-filter 26-suit-builder.md
