@@ -57,7 +57,7 @@ When assessed, the bosses show a title under their name (PropertyString Template
 
 ## Goop Scoop (Nov 19, 2026)
 
-A level-cap town boss: a copy of the Olthoi King (490010) with the Olthoi Larvae look (35147) at scale 4.0, Aqua palette, title Brood Glutton.
+A level-cap town boss: a copy of the Olthoi King (490010) with the Olthoi Larvae look (35147) at scale 6.0, Aqua palette, title Brood Glutton.
 Same stats, armor, resists, spells (Corrosive Strike, Acid Spit Arc 2, Acid Vuln VIII), shield shifts (4240-4245), Heavy Acid Ring special, rewards and loot generator as the Olthoi King.
 Token: Goop Scoop's Ichor 520231 (Progenitor's Ichor model, Acid glow), quest GoopScoopsIchor (3 minutes), turn-in timer WorldBossCompleted7, added to both Aidoneus files.
 
