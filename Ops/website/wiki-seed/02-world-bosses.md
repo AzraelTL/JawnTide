@@ -7,6 +7,7 @@ World bosses spawn one at a time, every few hours. There are two kinds: **town b
 | Bael'Zharon | Level cap | Blood of the Hopeslayer |
 | Martine | Level cap | Martine's Tattered Cloak |
 | Olthoi King | Level cap | Olthoi King Claw |
+| Goop Scoop (giant Olthoi Larvae) | Level cap | Goop Scoop's Ichor |
 | Moloch (Drudge Warlord) | Levels 100-120 | Moloch's Fang |
 | Khaz' (Lugian Titan) | Levels 100-120 | Khaz's Knucklebone |
 | Death (Umbris Shadow) | Levels 100-120 | Death's Shroud |
@@ -28,6 +29,9 @@ World bosses spawn one at a time, every few hours. There are two kinds: **town b
 - Hand tokens to [[Aidoneus]].
 
 ## Boss notes
+### Goop Scoop
+A huge Olthoi Larvae, as tough as the Olthoi King. Acid melee and spells, a warned Acid Ring, and slime that hardens against weapons, missiles or magic (it goes soft again too). It drags a horde with it: Slimed Fiun, three kinds of Slimed K'nath, four elemental Slimed Wisps (frost, acid, lightning, fire) and Slimed Crystals (a healing Sentient Crystal Shard plus Fire and Ice Crystals). The helpers come back while the boss lives.
+
 ### Moloch
 A giant drudge. Slashing melee and blade spells. Calls the horde (refills its drudge minions), Squall of Swords, and a Blade Ring.
 

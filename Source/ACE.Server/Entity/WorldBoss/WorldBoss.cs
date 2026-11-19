@@ -176,6 +176,14 @@ namespace ACE.Server.Entity.WorldBoss
                     ok.SpawnLocations = townSpawnLocations;                    
                     _worldBossMap.Add(490010, ok);
 
+                    //JawnTide: Goop Scoop, a huge Olthoi Larvae that roams the towns, balanced like the Olthoi King (level cap)
+                    var goop = new WorldBoss();
+                    goop.WeenieID = 520230;
+                    goop.Name = "Goop Scoop";
+                    goop.SpawnMsg = "A wet, sucking roar rolls across Dereth, and a stench of acid and rot follows on the wind. Wells foam, ponds turn green, and every swamp seems to bubble at once. Something enormous has crawled up out of the deep brood tunnels, swollen and starving, dragging a horde of Fiun, K'nath, wisps and living crystals in its slime. Goop Scoop, the great larva, has come to feed.";
+                    goop.SpawnLocations = townSpawnLocations;
+                    _worldBossMap.Add(520230, goop);
+
                     //JawnTide: Moloch, roams the towns like Bael'Zharon, Martine and the Olthoi King, balanced for levels 100-120
                     var moloch = new WorldBoss();
                     moloch.WeenieID = 520200;
@@ -382,7 +390,8 @@ namespace ACE.Server.Entity.WorldBoss
                         490030,
                         520201, // Moloch's Fang
                         520211, // Khaz's Knucklebone
-                        520221  // Death's Shroud
+                        520221, // Death's Shroud
+                        520231  // Goop Scoop's Ichor
                     };
                 }
 
