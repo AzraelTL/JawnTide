@@ -17,13 +17,16 @@ INSERT INTO `weenie_properties_bool` (`object_Id`, `type`, `value`)
 VALUES (520231,  22, True ) /* Inscribable */
      , (520231,  23, True ) /* DestroyOnSell */;
 
+INSERT INTO `weenie_properties_float` (`object_Id`, `type`, `value`)
+VALUES (520231,  39,       1) /* DefaultScale */;
+
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
 VALUES (520231,   1, 'Goop Scoop''s Ichor') /* Name */
      , (520231,  16, 'A vial of the acrid slime that kept the great larva Goop Scoop alive. It is still warm, and it is slowly eating through the glass.') /* LongDesc */
      , (520231,  33, 'GoopScoopsIchor') /* Quest */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
-VALUES (520231,   1, 0x02000181) /* Setup - Progenitor's Ichor (33880) */
+VALUES (520231,   1, 0x02000A7F) /* Setup - gift box (A Box 510000) */
      , (520231,   3, 0x20000014) /* SoundTable */
-     , (520231,   8, 0x060064B4) /* Icon */
-     , (520231,  22, 0x34000074) /* PhysicsEffectTable */;
+     , (520231,   8, 0x0600218D) /* Icon - gift box (A Box 510000) */
+     , (520231,  22, 0x3400002B) /* PhysicsEffectTable */;
