@@ -53,3 +53,4 @@
 2026-11-19-item-search-hover 26-suit-builder.md
 2026-11-19-lore-filter 26-suit-builder.md
 2026-11-19-value-filter 26-suit-builder.md
+2026-11-19-goop-scoop 02-world-bosses.md

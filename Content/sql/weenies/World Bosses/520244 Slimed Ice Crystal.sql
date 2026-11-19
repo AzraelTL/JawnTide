@@ -1,0 +1,106 @@
+/* JawnTide: Goop Scoop's helper, the look of 45748 with stats like the Olthoi King's Royal Olthoi helpers */
+DELETE FROM `weenie` WHERE `class_Id` = 520244;
+
+INSERT INTO `weenie` (`class_Id`, `class_Name`, `type`, `last_Modified`)
+VALUES (520244, 'goopscoopslimedicecrystal', 10, '2026-11-19 00:00:00') /* Creature */;
+
+INSERT INTO `weenie_properties_int` (`object_Id`, `type`, `value`)
+VALUES (520244,   1,         16) /* ItemType - Creature */
+     , (520244,   2,         47) /* CreatureType - Crystal */
+     , (520244,   3,          2) /* PaletteTemplate - Blue */
+     , (520244,   6,         -1) /* ItemsCapacity */
+     , (520244,   7,         -1) /* ContainersCapacity */
+     , (520244,  16,          1) /* ItemUseable - No */
+     , (520244,  25,        265) /* Level */
+     , (520244,  68,         13) /* TargetingTactic - Random, LastDamager, TopDamager */
+     , (520244,  93,       1032) /* PhysicsState - ReportCollisions, Gravity */
+     , (520244, 133,          4) /* ShowableOnRadar - ShowAlways */
+     , (520244, 146,    2500000) /* XpOverride */;
+
+INSERT INTO `weenie_properties_bool` (`object_Id`, `type`, `value`)
+VALUES (520244,   1, True ) /* Stuck */
+     , (520244,  19, True ) /* Attackable */
+     , (520244,  65, True ) /* IgnoreMagicResist */;
+
+INSERT INTO `weenie_properties_float` (`object_Id`, `type`, `value`)
+VALUES (520244,   1,       5) /* HeartbeatInterval */
+     , (520244,   2,       0) /* HeartbeatTimestamp */
+     , (520244,   3,     100) /* HealthRate */
+     , (520244,   4,       4) /* StaminaRate */
+     , (520244,   5,       2) /* ManaRate */
+     , (520244,  13,    2.25) /* ArmorModVsSlash */
+     , (520244,  14,    1.75) /* ArmorModVsPierce */
+     , (520244,  15,    1.12) /* ArmorModVsBludgeon */
+     , (520244,  16,     3.5) /* ArmorModVsCold */
+     , (520244,  17,     3.5) /* ArmorModVsFire */
+     , (520244,  18,       4) /* ArmorModVsAcid */
+     , (520244,  19,     3.5) /* ArmorModVsElectric */
+     , (520244,  31,      50) /* VisualAwarenessRange */
+     , (520244,  34,       1) /* PowerupTime */
+     , (520244,  36,       1) /* ChargeSpeed */
+     , (520244,  39,     1.5) /* DefaultScale */
+     , (520244,  55,     110) /* HomeRadius */
+     , (520244,  64,       1) /* ResistSlash */
+     , (520244,  65,    0.95) /* ResistPierce */
+     , (520244,  66,       1) /* ResistBludgeon */
+     , (520244,  67,    0.75) /* ResistFire */
+     , (520244,  68,     0.5) /* ResistCold */
+     , (520244,  69,     0.5) /* ResistAcid */
+     , (520244,  70,    0.75) /* ResistElectric */
+     , (520244,  77,       1) /* PhysicsScriptIntensity */
+     , (520244, 104,      40) /* ObviousRadarRange */
+     , (520244, 125,       1) /* ResistHealthDrain */
+     , (520244, 151,       1) /* IgnoreShield */;
+
+INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
+VALUES (520244,   1, 'Slimed Ice Crystal') /* Name */;
+
+INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
+VALUES (520244,   1, 0x02000700) /* Setup */
+     , (520244,   2, 0x09000097) /* MotionTable */
+     , (520244,   3, 0x20000059) /* SoundTable */
+     , (520244,   4, 0x30000027) /* CombatTable */
+     , (520244,   6, 0x04000BEF) /* PaletteBase */
+     , (520244,   7, 0x10000193) /* ClothingBase */
+     , (520244,   8, 0x06001B4B) /* Icon */
+     , (520244,  22, 0x34000073) /* PhysicsEffectTable */
+     , (520244,  35,       2111) /* DeathTreasureType (the Royal Olthoi helpers' loot) */;
+
+INSERT INTO `weenie_properties_attribute` (`object_Id`, `type`, `init_Level`, `level_From_C_P`, `c_P_Spent`)
+VALUES (520244,   1, 400, 0, 0) /* Strength */
+     , (520244,   2, 500, 0, 0) /* Endurance */
+     , (520244,   3, 500, 0, 0) /* Quickness */
+     , (520244,   4, 350, 0, 0) /* Coordination */
+     , (520244,   5, 490, 0, 0) /* Focus */
+     , (520244,   6, 490, 0, 0) /* Self */;
+
+INSERT INTO `weenie_properties_attribute_2nd` (`object_Id`, `type`, `init_Level`, `level_From_C_P`, `c_P_Spent`, `current_Level`)
+VALUES (520244,   1, 14750, 0, 0, 15000) /* MaxHealth */
+     , (520244,   3,  5000, 0, 0, 5500) /* MaxStamina */
+     , (520244,   5,  5000, 0, 0, 5490) /* MaxMana */;
+
+INSERT INTO `weenie_properties_skill` (`object_Id`, `type`, `level_From_P_P`, `s_a_c`, `p_p`, `init_Level`, `resistance_At_Last_Check`, `last_Used_Time`)
+VALUES (520244,  6, 0, 2, 0, 460, 0, 0) /* MeleeDefense        Trained */
+     , (520244,  7, 0, 2, 0, 420, 0, 0) /* MissileDefense      Trained */
+     , (520244, 15, 0, 2, 0, 400, 0, 0) /* MagicDefense        Trained */
+     , (520244, 31, 0, 2, 0, 430, 0, 0) /* CreatureEnchantment Trained */
+     , (520244, 33, 0, 2, 0, 430, 0, 0) /* LifeMagic           Trained */
+     , (520244, 34, 0, 2, 0, 430, 0, 0) /* WarMagic            Trained */
+     , (520244, 41, 0, 2, 0, 519, 0, 0) /* TwoHandedCombat     Trained */
+     , (520244, 43, 0, 2, 0, 430, 0, 0) /* VoidMagic           Trained */
+     , (520244, 44, 0, 2, 0, 919, 0, 0) /* HeavyWeapons        Trained */
+     , (520244, 45, 0, 2, 0, 519, 0, 0) /* LightWeapons        Trained */
+     , (520244, 46, 0, 2, 0, 519, 0, 0) /* FinesseWeapons      Trained */;
+
+INSERT INTO `weenie_properties_body_part` (`object_Id`, `key`, `d_Type`, `d_Val`, `d_Var`, `base_Armor`, `armor_Vs_Slash`, `armor_Vs_Pierce`, `armor_Vs_Bludgeon`, `armor_Vs_Cold`, `armor_Vs_Fire`, `armor_Vs_Acid`, `armor_Vs_Electric`, `armor_Vs_Nether`, `b_h`, `h_l_f`, `m_l_f`, `l_l_f`, `h_r_f`, `m_r_f`, `l_r_f`, `h_l_b`, `m_l_b`, `l_l_b`, `h_r_b`, `m_r_b`, `l_r_b`)
+VALUES (520244, 0, 4, 400, 0.75, 700, 1575, 1225, 784, 2450, 2450, 2800, 2450, 0, 1, 0.5, 0.2, 0, 0.5, 0.2, 0, 0, 0, 0, 0, 0, 0) /* Head */
+     , (520244, 10, 4, 0, 0, 700, 1575, 1225, 784, 2450, 2450, 2800, 2450, 0, 2, 0.2, 0.4, 0.5, 0.2, 0.4, 0.5, 0, 0, 0, 0, 0, 0) /* FrontLeg */
+     , (520244, 12, 4, 400, 0.75, 700, 1575, 1225, 784, 2450, 2450, 2800, 2450, 0, 3, 0, 0, 0.25, 0, 0, 0.25, 0, 0, 0, 0, 0, 0) /* FrontFoot */
+     , (520244, 13, 4, 0, 0, 700, 1575, 1225, 784, 2450, 2450, 2800, 2450, 0, 2, 0, 0, 0, 0, 0, 0, 0.3, 0.4, 0.5, 0.3, 0.4, 0.5) /* RearLeg */
+     , (520244, 15, 4, 400, 0.75, 700, 1575, 1225, 784, 2450, 2450, 2800, 2450, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0.25, 0, 0, 0.25) /* RearFoot */
+     , (520244, 16, 4, 0, 0, 700, 1575, 1225, 784, 2450, 2450, 2800, 2450, 0, 2, 0.3, 0.4, 0.25, 0.3, 0.4, 0.25, 0.6, 0.5, 0.25, 0.6, 0.5, 0.25) /* Torso */
+     , (520244, 17, 4, 400, 0.75, 700, 1575, 1225, 784, 2450, 2450, 2800, 2450, 0, 2, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0, 0.1, 0.1, 0) /* Tail */;
+
+INSERT INTO `weenie_properties_spell_book` (`object_Id`, `spell`, `probability`)
+VALUES (520244,  4447,   2.08)  /* Incantation of Frost Bolt */
+     , (520244,  4448,   2.05)  /* Incantation of Frost Streak */;

@@ -2,7 +2,7 @@
 
 The world bosses are in two groups, each with its own switch (a live setting, no restart):
 
-* `disable_world_bosses` (default true) covers Bael'Zharon, Martine, the Olthoi King, Aerbax and the Tusker Queen. Turn them on with `@modifybool disable_world_bosses false`.
+* `disable_world_bosses` (default true) covers Bael'Zharon, Martine, the Olthoi King, Goop Scoop, Aerbax and the Tusker Queen. Turn them on with `@modifybool disable_world_bosses false`.
 * `disable_low_level_world_bosses` (default true) covers Moloch, Khaz' and Death. Turn them on with `@modifybool disable_low_level_world_bosses false`.
 
 While either group is on, the manager spawns one boss at a time, every 3 to 11 hours, picked only from the groups that are on. 60% of picks are an indoor boss with a statue and 40% a roaming town boss; when the groups that are on have only one kind (for example only the low-level group, which is all town bosses), it always picks that kind.
@@ -13,6 +13,7 @@ While either group is on, the manager spawns one boss at a time, every 3 to 11 h
 | Bael'Zharon | 490011 | Town | Level cap | Blood of the Hopeslayer 490029 | 490073 | WorldBossCompleted |
 | Martine | 490039 | Town | Level cap | Martine's Tattered Cloak 490028 | 490072 | WorldBossCompleted2 |
 | Olthoi King | 490010 | Town | Level cap | Olthoi King Claw 490030 | 490074 | WorldBossCompleted3 |
+| Goop Scoop (giant Olthoi Larvae) | 520230 | Town | Level cap | Goop Scoop's Ichor 520231 | 520232 | WorldBossCompleted7 |
 | Moloch (Drudge Warlord) | 520200 | Town | Levels 100-120 | Moloch's Fang 520201 | 520202 | WorldBossCompleted4 |
 | Khaz' (Lugian Titan) | 520210 | Town | Levels 100-120 | Khaz's Knucklebone 520211 | 520212 | WorldBossCompleted5 |
 | Death (Umbris Shadow) | 520220 | Town | Levels 100-120 | Death's Shroud 520221 | 520222 | WorldBossCompleted6 |
@@ -53,3 +54,22 @@ World bosses never dispel players (Death's Unravel special was removed Oct 27). 
 Like the other town bosses, they ignore players' magic armor and magic resistance buffs (IgnoreMagicArmor and IgnoreMagicResist) and have Overpower 10.
 Token looks: Moloch's Fang uses the Ivory Gromnie Tooth (3675) model and icon, Khaz's Knucklebone the Undead Thighbone (7041), and Death's Shroud the Martine's Cloak icon. Each also has its own colored glow (UiEffects): Fang Fire (red), Knucklebone Frost (blue), Shroud Nether (purple). The older tokens have no glow.
 When assessed, the bosses show a title under their name (PropertyString Template): Moloch Drudge Lord, Khaz' Lugian Patriarch, Death Shadow Emperor.
+
+## Goop Scoop (Nov 19, 2026)
+
+A level-cap town boss: a copy of the Olthoi King (490010) with the Olthoi Larvae look (35147) at scale 4.0, Aqua palette, title Brood Glutton.
+Same stats, armor, resists, spells (Corrosive Strike, Acid Spit Arc 2, Acid Vuln VIII), shield shifts (4240-4245), Heavy Acid Ring special, rewards and loot generator as the Olthoi King.
+Token: Goop Scoop's Ichor 520231 (Progenitor's Ichor model, Acid glow), quest GoopScoopsIchor (3 minutes), turn-in timer WorldBossCompleted7, added to both Aidoneus files.
+
+Helpers (21, regenerate on death like the Olthoi King's): each is the stock creature's look with the Royal Olthoi helpers' stats
+(level 265, 15,000 health, the Royal Olthoi Ranger's armor, resists, attributes and skills, plus 430 in every magic school, loot 2111).
+
+| WCID | Helper | Look from | Count | Health | Spells |
+|---|---|---|---|---|---|
+| 520233 | Slimed Maniacal Fiun | 29345 | 3 | 15,000 | Flame Bolt, Whirling Blade, Frost Streak, Lightning Streak, Imperil, Blade Vuln (VIII) |
+| 520234 | Slimed Cannibal Fiun | 29507 | 3 | 15,000 | Frost Bolt, Lightning Bolt, Acid Streak, Flame Streak, Imperil, Pierce Vuln (VIII) |
+| 520235-520237 | Slimed K'nath N'da, R'ajed, Y'nda | 38009-38011 | 2 each | 15,000 | stock: Shock Wave Streak, Shock Blast, Imperil, Bludgeon Vuln (VIII) |
+| 520238-520241 | Slimed Shivering, Corroding, Voltaic, Incalescent Wisp | 40127, 40128, 40129, 40131 | 1 each | 10,000 | their element's Bolt (or Acid Stream), Volley and Vuln (VIII) |
+| 520242 | Slimed Sentient Crystal Shard | 35118 | 1 | 25,000 | stock: heals, debuffs and Vitality Siphon |
+| 520243 | Slimed Fire Crystal | 45747 | 2 | 15,000 | Flame Bolt, Flame Streak (VIII) |
+| 520244 | Slimed Ice Crystal | 45748 | 2 | 15,000 | Frost Bolt, Frost Streak (VIII) |
