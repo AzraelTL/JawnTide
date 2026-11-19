@@ -57,7 +57,7 @@ When assessed, the bosses show a title under their name (PropertyString Template
 
 ## Goop Scoop (Nov 19, 2026)
 
-A level-cap town boss: a copy of the Olthoi King (490010) with the Olthoi Larvae look (35147) at scale 4.0, Aqua palette, title Brood Glutton.
+A level-cap town boss: a copy of the Olthoi King (490010) with the Olthoi Larvae look (35147) at scale 6.0, Aqua palette, title Brood Glutton.
 Same stats, armor, resists, spells (Corrosive Strike, Acid Spit Arc 2, Acid Vuln VIII), shield shifts (4240-4245), Heavy Acid Ring special, rewards and loot generator as the Olthoi King.
 Token: Goop Scoop's Ichor 520231 (Progenitor's Ichor model, Acid glow), quest GoopScoopsIchor (3 minutes), turn-in timer WorldBossCompleted7, added to both Aidoneus files.
 
@@ -73,3 +73,5 @@ Helpers (21, regenerate on death like the Olthoi King's): each is the stock crea
 | 520242 | Slimed Sentient Crystal Shard | 35118 | 1 | 25,000 | stock: heals, debuffs and Vitality Siphon |
 | 520243 | Slimed Fire Crystal | 45747 | 2 | 15,000 | Flame Bolt, Flame Streak (VIII) |
 | 520244 | Slimed Ice Crystal | 45748 | 2 | 15,000 | Frost Bolt, Frost Streak (VIII) |
+
+All seven town boss tokens look like the gift box (A Box 510000: Setup 0x02000A7F, Icon 0x0600218D, scale 1) since Nov 19; their names and glows are unchanged. Tokens already in players' packs keep their old look.

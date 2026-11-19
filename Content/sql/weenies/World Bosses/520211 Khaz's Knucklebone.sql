@@ -18,7 +18,7 @@ VALUES (520211,  22, True ) /* Inscribable */
      , (520211,  23, True ) /* DestroyOnSell */;
 
 INSERT INTO `weenie_properties_float` (`object_Id`, `type`, `value`)
-VALUES (520211,  39,     0.33) /* DefaultScale */;
+VALUES (520211,  39,       1) /* DefaultScale */;
 
 INSERT INTO `weenie_properties_string` (`object_Id`, `type`, `value`)
 VALUES (520211,   1, 'Khaz''s Knucklebone') /* Name */
@@ -26,7 +26,7 @@ VALUES (520211,   1, 'Khaz''s Knucklebone') /* Name */
      , (520211,  33, 'KhazsKnucklebone') /* Quest */;
 
 INSERT INTO `weenie_properties_d_i_d` (`object_Id`, `type`, `value`)
-VALUES (520211,   1, 0x02000871) /* Setup (Undead Thighbone 7041) */
+VALUES (520211,   1, 0x02000A7F) /* Setup - gift box (A Box 510000) */
      , (520211,   3, 0x20000014) /* SoundTable */
-     , (520211,   8, 0x06001CD9) /* Icon (Undead Thighbone) */
+     , (520211,   8, 0x0600218D) /* Icon - gift box (A Box 510000) */
      , (520211,  22, 0x3400002B) /* PhysicsEffectTable */;

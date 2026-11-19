@@ -49,7 +49,7 @@ VALUES (520230,   1,       5) /* HeartbeatInterval */
      , (520230,  19,    1.25) /* ArmorModVsElectric */
      , (520230,  31,      35) /* VisualAwarenessRange */
      , (520230,  34,       1) /* PowerupTime */
-	 , (520230,  39,       4.0) /* DefaultScale (a huge Olthoi Larvae) */
+	 , (520230,  39,       6.0) /* DefaultScale (a huge Olthoi Larvae) */
      , (520230,  36,       1) /* ChargeSpeed */
 	 , (520230,  55,      110) /* HomeRadius */
      , (520230,  64,    0.15) /* ResistSlash */
