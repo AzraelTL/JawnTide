@@ -97,5 +97,5 @@ VALUES (520238, 0, 4, 400, 0.5, 700, 1575, 1225, 784, 2450, 2450, 2800, 2450, 0,
 
 INSERT INTO `weenie_properties_spell_book` (`object_Id`, `spell`, `probability`)
 VALUES (520238,  4447,    2.1)  /* Incantation of Frost Bolt */
-     , (520238,  4449,   2.06)  /* Incantation of Frost Volley */
+     , (520238,  4425,   2.06)  /* Incantation of Frost Arc */
      , (520238,  4479,   2.05)  /* Incantation of Cold Vulnerability Other */;

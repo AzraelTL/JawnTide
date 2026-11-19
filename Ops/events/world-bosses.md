@@ -23,7 +23,7 @@ While either group is on, the manager spawns one boss at a time, every 3 to 11 h
 The town bosses all work the same way:
 
 * Only red (PK) players and their own attacks can hurt them.
-* There's no corpse. The loot generator scatters 9 tokens, 9 Darkbeat's Lost Storage Keys and 10 gift boxes (A Box 510000, the same boxes Aerbax and the Tusker Queen drop; until Nov 19 it was 10 piles of treasure, profile 10025).
+* There's no corpse. The loot generator scatters 9 tokens, 9 Darkbeat's Lost Storage Keys and 10 piles of treasure (profile 10025).
 * Every player in the landblock gets 5 PK Trophies. XpOverride is 400,000,000.
 * Only PKs can pick up tokens, and each pickup has a 3-minute timer per character. On top of that, one IP address can pick up at most `world_boss_tokens_per_ip` tokens (default 2, 0 = no limit) per world boss kill; the count resets when the next world boss dies. Admins are exempt, and re-picking a token already counted does not count again.
 * Right after the spawn message of a town boss (not Aerbax or the Tusker Queen), a second line (in game and in the world boss Discord) hints at the kind of town it spawned at, grouped by Town Network wing: north = Aluvian (Holtburg, Arwic, Cragstone, Glenden Wood, Eastham, Rithwic, Lytelthorpe, Dryreach, Stonehold, Fort Tethena), east = Sho (Shoushi, Yanshi, Sawato, Tou-Tou, Hebian-to, Baishi, Nanto, Lin, Mayoi, Kara, Kryst), west = Gharu'ndim (Zaikhal, Al-Jalima, Samsur, Yaraq, Uziz, Al-Arqas, Xarabydun, Khayyaban, Qalabar); everything else (the south wing, plus Bobo, Bandit Castle, Ayan, Candeth, Fiun) gets "the beast's trail leads to a town accessible from the southern doors of the Town Network". The list is `TownRegions` in `Source/ACE.Server/Entity/WorldBoss/WorldBoss.cs`.
@@ -57,7 +57,7 @@ When assessed, the bosses show a title under their name (PropertyString Template
 
 ## Goop Scoop (Nov 19, 2026)
 
-A level-cap town boss: a copy of the Olthoi King (490010) with the Olthoi Larvae look (35147) at scale 6.0, Aqua palette, title Brood Glutton.
+A level-cap town boss: a copy of the Olthoi King (490010) with the Olthoi Larvae look (35147) at scale 4.0, Aqua palette, title Brood Glutton.
 Same stats, armor, resists, spells (Corrosive Strike, Acid Spit Arc 2, Acid Vuln VIII), shield shifts (4240-4245), Heavy Acid Ring special, rewards and loot generator as the Olthoi King.
 Token: Goop Scoop's Ichor 520231 (Progenitor's Ichor model, Acid glow), quest GoopScoopsIchor (3 minutes), turn-in timer WorldBossCompleted7, added to both Aidoneus files.
 
@@ -69,9 +69,9 @@ Helpers (21, regenerate on death like the Olthoi King's): each is the stock crea
 | 520233 | Slimed Maniacal Fiun | 29345 | 3 | 15,000 | Flame Bolt, Whirling Blade, Frost Streak, Lightning Streak, Imperil, Blade Vuln (VIII) |
 | 520234 | Slimed Cannibal Fiun | 29507 | 3 | 15,000 | Frost Bolt, Lightning Bolt, Acid Streak, Flame Streak, Imperil, Pierce Vuln (VIII) |
 | 520235-520237 | Slimed K'nath N'da, R'ajed, Y'nda | 38009-38011 | 2 each | 15,000 | stock: Shock Wave Streak, Shock Blast, Imperil, Bludgeon Vuln (VIII) |
-| 520238-520241 | Slimed Shivering, Corroding, Voltaic, Incalescent Wisp | 40127, 40128, 40129, 40131 | 1 each | 10,000 | their element's Bolt (or Acid Stream), Volley and Vuln (VIII) |
+| 520238-520241 | Slimed Shivering, Corroding, Voltaic, Incalescent Wisp | 40127, 40128, 40129, 40131 | 1 each | 10,000 | their element's Bolt (or Acid Stream), Arc and Vuln (VIII); volleys were swapped for arcs Nov 19 (client crashes reported) |
 | 520242 | Slimed Sentient Crystal Shard | 35118 | 1 | 25,000 | stock: heals, debuffs and Vitality Siphon |
 | 520243 | Slimed Fire Crystal | 45747 | 2 | 15,000 | Flame Bolt, Flame Streak (VIII) |
 | 520244 | Slimed Ice Crystal | 45748 | 2 | 15,000 | Frost Bolt, Frost Streak (VIII) |
 
-All seven town boss tokens look like the gift box (A Box 510000: Setup 0x02000A7F, Icon 0x0600218D, scale 1) since Nov 19; their names and glows are unchanged. Tokens already in players' packs keep their old look.
+All seven town boss tokens use the gift box model the original three always had (Setup 0x02000E74, scale 0.33) since Nov 19; each keeps its own icon, name and glow. Moloch's Fang, Khaz's Knucklebone and Goop Scoop's Ichor used other models before. Tokens already in players' packs keep their old look.
