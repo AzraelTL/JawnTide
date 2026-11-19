@@ -24,7 +24,7 @@ World bosses spawn one at a time, every few hours. There are two kinds: **town b
 
 ### Rewards
 - Everyone in the area gets 5 PK Trophies.
-- No corpse: the boss scatters 9 tokens, 9 Darkbeat's Lost Storage Keys and 10 gift boxes on the ground (the same boxes Aerbax and the Tusker Queen drop). Use a box to open it.
+- No corpse: the boss scatters 9 tokens (they look like gift boxes), 9 Darkbeat's Lost Storage Keys and piles of treasure on the ground.
 - Only PKs can pick up tokens. Each character has a 3-minute timer between token pickups, and one IP address can pick up at most 2 tokens per kill.
 - Hand tokens to [[Aidoneus]].
 

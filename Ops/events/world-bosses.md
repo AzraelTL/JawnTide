@@ -23,7 +23,7 @@ While either group is on, the manager spawns one boss at a time, every 3 to 11 h
 The town bosses all work the same way:
 
 * Only red (PK) players and their own attacks can hurt them.
-* There's no corpse. The loot generator scatters 9 tokens, 9 Darkbeat's Lost Storage Keys and 10 gift boxes (A Box 510000, the same boxes Aerbax and the Tusker Queen drop; until Nov 19 it was 10 piles of treasure, profile 10025).
+* There's no corpse. The loot generator scatters 9 tokens, 9 Darkbeat's Lost Storage Keys and 10 piles of treasure (profile 10025).
 * Every player in the landblock gets 5 PK Trophies. XpOverride is 400,000,000.
 * Only PKs can pick up tokens, and each pickup has a 3-minute timer per character. On top of that, one IP address can pick up at most `world_boss_tokens_per_ip` tokens (default 2, 0 = no limit) per world boss kill; the count resets when the next world boss dies. Admins are exempt, and re-picking a token already counted does not count again.
 * Right after the spawn message of a town boss (not Aerbax or the Tusker Queen), a second line (in game and in the world boss Discord) hints at the kind of town it spawned at, grouped by Town Network wing: north = Aluvian (Holtburg, Arwic, Cragstone, Glenden Wood, Eastham, Rithwic, Lytelthorpe, Dryreach, Stonehold, Fort Tethena), east = Sho (Shoushi, Yanshi, Sawato, Tou-Tou, Hebian-to, Baishi, Nanto, Lin, Mayoi, Kara, Kryst), west = Gharu'ndim (Zaikhal, Al-Jalima, Samsur, Yaraq, Uziz, Al-Arqas, Xarabydun, Khayyaban, Qalabar); everything else (the south wing, plus Bobo, Bandit Castle, Ayan, Candeth, Fiun) gets "the beast's trail leads to a town accessible from the southern doors of the Town Network". The list is `TownRegions` in `Source/ACE.Server/Entity/WorldBoss/WorldBoss.cs`.
