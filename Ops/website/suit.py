@@ -11,7 +11,7 @@ import json
 import re
 import secrets
 import traceback
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 import market
 import wiki
@@ -266,14 +266,46 @@ def save(h, user):
     return out(200, {"code": code, "name": name})
 
 
+def card(h, user, query):
+    """/suit/card?src=me&g=GUID: the in-game style ID panel for one Item search row, loaded when it's hovered.
+    Only for items this account may see: its mule, characters and house chests, mules it's a guest of, and the Market."""
+    src = (query.get("src") or [""])[0]
+    g = (query.get("g") or [""])[0]
+    account = market._account(user) if user else None
+    if account is None or not g.isdigit():
+        return wiki._send(h, 403, "", "text/plain")
+    g = int(g)
+    if src == "m":
+        r = next((x for x in market.active_listings() if int(x["id"]) == g), None)
+        return wiki._send(h, 200, market.id_panel(r) if r else "")
+    owner = None
+    if src == "me":
+        owner, view = account, "market_mule_item"
+    elif src in ("c", "h"):
+        owner, view = account, "suit_char_item"
+    elif src.startswith("g:") and src[2:].isdigit() and any(o == int(src[2:]) for o, _ in _guest_mules(account)):
+        owner, view = int(src[2:]), "market_mule_item"
+    if owner is None:
+        return wiki._send(h, 403, "", "text/plain")
+    row = market._q(f"SELECT name, material, stack_Size, details FROM {market.VIEW_DB}.{view} WHERE account_Id = %s AND item_Guid = %s LIMIT 1", (owner, g), one=True)
+    if not row:
+        return wiki._send(h, 200, "")
+    name, material, stack, details = row
+    full = f"{material} {name}" if material and not str(name).startswith(str(material)) else name
+    wiki._send(h, 200, market.id_panel_for(full, stack, market._details(details)))
+
+
 def handle(h, method):
-    """Serves /suit and /suit/save. Returns True when it handled the request."""
-    path = urlparse(h.path).path.rstrip("/") or "/"
-    if path not in ("/suit", "/suit/save"):
+    """Serves /suit, /suit/save and /suit/card. Returns True when it handled the request."""
+    url = urlparse(h.path)
+    path = url.path.rstrip("/") or "/"
+    if path not in ("/suit", "/suit/save", "/suit/card"):
         return False
     try:
         user = wiki._current_user(h)
-        if path == "/suit/save" and method == "POST":
+        if path == "/suit/card" and method == "GET":
+            card(h, user, parse_qs(url.query))
+        elif path == "/suit/save" and method == "POST":
             save(h, user)
         elif path == "/suit" and method == "GET":
             page(h, user, None)
@@ -484,7 +516,7 @@ function itemsView(){
     const rts=Object.entries(r.rt).map(([k,v])=>(RSHORT[k]||k)+' '+v).join(' ');
     const where=r.src==='m'?`<a href="/market/item/${r.g}" target=_blank>${esc(r.price)}</a>`:esc(r.where);
     const acts=r.it?`<button class=x data-lock="${r.it.i}" title="Always use in Suit search">🔒</button><button class=x data-ex="${r.it.i}" title="Never use in Suit search">🚫</button>`:'';
-    return `<tr><td>${icon} <b>${esc(r.n)}</b>${r.st>1?' ×'+r.st:''}<div class="sm muted">${esc(r.sp.filter(showSpell).join(', '))}</div></td><td>${esc(r.cat)}</td><td class=sm>${esc(r.sl)}</td><td class=sm>${esc(r.set)}</td>
+    return `<tr><td>${icon} <span class=hasid data-card="${esc(r.src)}|${r.g}"><b>${esc(r.n)}</b></span>${r.st>1?' ×'+r.st:''}<div class="sm muted">${esc(r.sp.filter(showSpell).join(', '))}</div></td><td>${esc(r.cat)}</td><td class=sm>${esc(r.sl)}</td><td class=sm>${esc(r.set)}</td>
       <td>${r.al||''}</td><td>${r.lv||''}</td><td>${r.lore||''}</td><td>${r.wk||''}</td><td>${r.leg||''}</td><td>${r.epic||''}</td><td class=sm>${esc(rts)}</td>
       <td>${r.dmg?r.dmg+(r.dv?' ('+Math.round(r.dv*100)+'%)':''):''}${r.ws?'<div class="sm muted">'+esc(r.ws)+'</div>':''}</td><td class=sm>${esc(r.imb)}</td><td>${r.val?r.val.toLocaleString():''}</td><td class=sm>${where} ${acts}</td></tr>`}).join('');
   return `<div class=sbox><h2>Item search</h2>
@@ -766,6 +798,23 @@ async function saveSuit(ri){const r=S.results[ri];const out=document.getElementB
       (buy?` <span class=part>${buy} Market item${buy===1?' isn\'t':'s aren\'t'} in the saved suit: buy ${buy===1?'it':'them'} first.</span>`:'')+
       (carried?` <span class=part>${carried} item${carried===1?' is':'s are'} on your characters or in your house chests, so ${carried===1?'it isn\'t':'they aren\'t'} in the saved suit (see where above).</span>`:'')}
   catch(err){out.innerHTML=`<span class=no>${esc(err.message)}</span>`}}
+
+// ---- hover: the item's in-game style ID panel (Item search), loaded the first time it's hovered
+const CARDS={};
+function placeCard(c){const p=c.querySelector('.idp');if(!p)return;c.classList.add('on');
+  const r=c.getBoundingClientRect(),w=p.offsetWidth,h=p.offsetHeight;let x=Math.max(8,Math.min(r.left,innerWidth-w-8)),y=r.bottom+6;
+  if(y+h>innerHeight-8){if(r.top-h-6>=8)y=r.top-h-6;else{y=Math.max(8,Math.min(r.top,innerHeight-h-8));x=r.right+8+w<=innerWidth-8?r.right+8:Math.max(8,r.left-w-8)}}
+  p.style.left=x+'px';p.style.top=y+'px'}
+function showCard(c){const key=c.dataset.card;
+  if(!c.querySelector('.idp')&&CARDS[key])c.insertAdjacentHTML('beforeend',CARDS[key]);
+  if(c.querySelector('.idp')){placeCard(c);return}
+  if(CARDS[key]!==undefined)return;CARDS[key]='';
+  const [src,g]=key.split('|');
+  fetch('/suit/card?src='+encodeURIComponent(src)+'&g='+encodeURIComponent(g),{credentials:'same-origin'}).then(r=>r.ok?r.text():'').then(t=>{CARDS[key]=t;
+    if(t&&c.isConnected&&c.matches(':hover')){c.insertAdjacentHTML('beforeend',t);placeCard(c)}}).catch(()=>{delete CARDS[key]})}
+app.addEventListener('mouseover',ev=>{const c=ev.target.closest('.hasid[data-card]');if(c&&!c.contains(ev.relatedTarget))showCard(c)});
+app.addEventListener('mouseout',ev=>{const c=ev.target.closest('.hasid[data-card]');if(c&&!c.contains(ev.relatedTarget))c.classList.remove('on')});
+addEventListener('scroll',()=>document.querySelectorAll('.hasid.on').forEach(placeCard),{passive:true});
 
 // ---- events
 app.addEventListener('click',ev=>{const th=ev.target.closest('th[data-sort]');
