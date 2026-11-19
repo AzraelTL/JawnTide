@@ -22,7 +22,7 @@ Next to the tabs, **Show** picks which spells are listed on items and in the spe
 2. **Slots to fill**: laid out like a paperdoll (jewelry and arms on the left, the body down the middle, cloak, underclothes and the right-hand jewelry on the right). Untick the slots you already have covered. Only items that fit entirely in the ticked slots are used, so a hauberk needs chest, upper arms and lower arms ticked, unless it's used as a reduced chest piece (tailoring reductions, below).
 3. **Spells you need**: for each spell, the lowest level you'll accept (Minor, Major, Epic or Legendary) and whether it's **Must have** or **Nice to have**. The **Set all** row changes every spell at once. Add any other spell your items have from the list at the bottom.
 4. **Extras**: armor sets, tailoring reductions, Impenetrability, how much armor level matters, ratings and the character (see *Extras* below).
-5. **Item filters** (optional, items that fail them are never used): minimum base armor level for body pieces and for extremities, a wield level range, the most arcane lore an item may need, how many Legendary (or Epic or better) spells each item must have, minimum offensive, defensive or total ratings, and a name or spell pattern.
+5. **Item filters** (optional, items that fail them are never used): minimum base armor level for body pieces and for extremities, a wield level range, the most arcane lore an item may need, the highest value an item may have, how many Legendary (or Epic or better) spells each item must have, minimum offensive, defensive or total ratings, and a name or spell pattern.
 6. Press **Find suits**. You get up to five suits, best first, each shown on a paperdoll with the item in every slot (**Show suits as** switches to a plain list; your browser remembers the choice). A piece that covers several slots shows in its first slot, and the others point back to it. Every spell you asked for is marked as met, short (a lower level than you wanted) or missing. Each suit shows its armor level, set pieces, ratings, Impenetrability coverage and how many of your spells are Legendary, Epic or Major.
 
 ### Extras
@@ -49,7 +49,7 @@ Both work on a mule you're a guest of too. Market items aren't part of a saved s
 ## Item search
 The **Item search** tab lists every item in the places you ticked, not just armor and jewelry, with its type, slots, set, armor level, wield level, arcane lore, workmanship, Legendary and Epic counts, ratings, damage, imbue, value and where it is.
 - **Hover over an item's name** to see its full stats, laid out like the in-game ID panel.
-- **Filter** by name or spells (a regular expression: `legendary.*legendary` finds items with two Legendaries), type (Underclothes is its own type: shirts and pants), slot, set, imbue, armor level and wield level ranges, arcane lore at most, workmanship, Legendary and Epic counts, and ratings. **Clear filters** resets them.
+- **Filter** by name or spells (a regular expression: `legendary.*legendary` finds items with two Legendaries), type (Underclothes is its own type: shirts and pants), slot, set, imbue, armor level and wield level ranges, arcane lore and value at most, workmanship, Legendary and Epic counts, and ratings. **Clear filters** resets them.
 - **Sort** by clicking a column heading; click again to reverse.
 - **Download as CSV** saves the filtered list for Excel or Google Sheets.
 - 🔒 and 🚫 on an armor or jewelry row lock or exclude it in the Suit search.
