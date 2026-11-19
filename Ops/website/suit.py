@@ -463,7 +463,7 @@ function resolve(k){const kk=k.toLowerCase();
 
 // ---- state
 const S={slots:new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd')),want:[],set:'',setN:5,set2:'',setN2:4,onlySets:false,reduce:true,cov:'out',mats:new Set(['metal','leather','cloth','other']),
-  F:{alBody:'',alExt:'',lvMin:'',lvMax:'',re:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:''},obs:null,al:1,rate:{},imp:{armor:{m:'off',t:4},under:{m:'off',t:4}},char:D.chars[0]?D.chars[0].n:'',noreq:false,
+  F:{alBody:'',alExt:'',lvMin:'',lvMax:'',loreMax:'',re:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:''},obs:null,al:1,rate:{},imp:{armor:{m:'off',t:4},under:{m:'off',t:4}},char:D.chars[0]?D.chars[0].n:'',noreq:false,
   noatt:false,locked:new Set(),excluded:new Set(),results:null,busy:false,msg:'',src:new Set((D.sources||[]).filter(x=>x.on).map(x=>x.k))};
 // which spells to list: only cantrips (Minor/Major/Epic/Legendary), or every spell; remembered in this browser
 try{S.allSpells=localStorage.getItem('suitAllSpells')==='1'}catch(e){S.allSpells=false}
@@ -488,7 +488,7 @@ const INV=(D.inv||[]).map(r=>{let leg=0,epic=0;for(const n of r.sp){const p=pars
   return Object.assign(r,{leg,epic,sl,off:rsum(['GearDamage','GearCrit','GearCritDamage']),def:rsum(['GearDamageResist','GearCritResist','GearCritDamageResist']),tot:Object.values(r.rt).reduce((a,x)=>a+Math.max(0,x),0),
     cat:r.vl&&!(r.vl&~UNDERVL)?'under':CATS.some(c=>c[0]===r.cat)?r.cat:'other',where:r.src==='m'?'Market':r.src==='me'?'My mule':r.loc?r.loc:(SRCNAME[r.src]||'guest mule'),it:BYKEY[r.src+':'+r.g]})});
 const IMBUES=[...new Set(INV.map(r=>r.imb).filter(Boolean))].sort();
-const IS={q:'',cats:new Set(CATS.map(c=>c[0])),slot:'',set:'',imb:'',cov:'',mat:'',alMin:'',alMax:'',lvMin:'',lvMax:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:'',wkMax:'',sort:'n',dir:1};
+const IS={q:'',cats:new Set(CATS.map(c=>c[0])),slot:'',set:'',imb:'',cov:'',mat:'',alMin:'',alMax:'',lvMin:'',lvMax:'',loreMax:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:'',wkMax:'',sort:'n',dir:1};
 const COLS=[['n','Item'],['cat','Type'],['sl','Slots'],['set','Set'],['al','AL'],['lv','Level'],['lore','Lore'],['wk','Work'],['leg','Leg'],['epic','Epic+'],
   ['tot','Ratings'],['dmg','Damage'],['imb','Imbue'],['val','Value'],['where','Where']];
 function invRows(){let rx=null;if(IS.q){try{rx=new RegExp(IS.q,'i')}catch(e){rx=null}}
@@ -502,7 +502,7 @@ function invRows(){let rx=null;if(IS.q){try{rx=new RegExp(IS.q,'i')}catch(e){rx=
     if(IS.cov==='out'&&isCov(r))return false;
     if(IS.cov==='only'&&!isCov(r))return false;
     const chk=(v,min,max)=>!((n(min)!=null&&v<n(min))||(n(max)!=null&&v>n(max)));
-    return chk(r.al,IS.alMin,IS.alMax)&&chk(r.lv,IS.lvMin,IS.lvMax)&&chk(r.leg,IS.minLeg,'')&&chk(r.epic,IS.minEpic,'')&&chk(r.off,IS.minOff,'')
+    return chk(r.al,IS.alMin,IS.alMax)&&chk(r.lv,IS.lvMin,IS.lvMax)&&chk(r.lore,'',IS.loreMax)&&chk(r.leg,IS.minLeg,'')&&chk(r.epic,IS.minEpic,'')&&chk(r.off,IS.minOff,'')
       &&chk(r.def,IS.minDef,'')&&chk(r.tot,IS.minTot,'')&&(IS.wkMax===''||!r.wk||r.wk<=+IS.wkMax)});
   const k=IS.sort,d=IS.dir;
   out.sort((a,b)=>{const x=a[k],y=b[k];return(typeof x==='number'&&typeof y==='number'?x-y:String(x).localeCompare(String(y)))*d||a.n.localeCompare(b.n)});
@@ -523,7 +523,7 @@ function itemsView(){
     <div class=row><input type=text data-if="q" value="${esc(IS.q)}" placeholder="Name or spell (regular expression, e.g. legendary.*legendary)" style="min-width:min(100%,24rem)"><button id=ifclear>Clear filters</button></div>
     <div class=row>${CATS.map(([k,l])=>`<label><input type=checkbox data-icat="${k}"${IS.cats.has(k)?' checked':''}> ${l}</label>`).join('')}</div>
     <div class=row>${sel('slot','Slot',SLOTS.filter(s=>s[0]!=='uabd').map(s=>s[1]))}${sel('set','Set',Object.keys(SETS).sort())}${sel('imb','Imbue',IMBUES)}<label>Material <select data-if="mat"><option value="">(any)</option>${MATS.map(([k,l])=>`<option value=${k}${IS.mat===k?' selected':''}>${l}</option>`).join('')}</select></label><label>Covenant armor <select data-if="cov"><option value=""${IS.cov===''?' selected':''}>show</option><option value=out${IS.cov==='out'?' selected':''}>hide</option><option value=only${IS.cov==='only'?' selected':''}>only</option></select></label></div>
-    <div class=row>${fi('alMin','AL from')}${fi('alMax','to')}${fi('lvMin','Level from')}${fi('lvMax','to')}${fi('wkMax','Workmanship at most')}</div>
+    <div class=row>${fi('alMin','AL from')}${fi('alMax','to')}${fi('lvMin','Level from')}${fi('lvMax','to')}${fi('loreMax','Arcane lore at most')}${fi('wkMax','Workmanship at most')}</div>
     <div class=row>${fi('minLeg','At least N Legendary')}${fi('minEpic','Epic or better')}${fi('minOff','Offensive ratings')}${fi('minDef','Defensive')}${fi('minTot','Total ratings')}</div>
     <div class=row><span class=muted>${rows.length.toLocaleString()} item${rows.length===1?'':'s'}${rows.length>500?', showing the first 500: narrow the filters':''}. Click a column to sort.</span><button id=ifcsv>Download as CSV (spreadsheet)</button></div></div>
   <div class="res" style="overflow-x:auto"><table class=inv><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`}
@@ -589,7 +589,7 @@ function render(){
     ${pinned?`<div class="row chips">${pinned}</div>`:''}</div>
   <details class=sbox${Object.values(S.F).some(v=>v!=='')?' open':''}><summary><b>5. Item filters</b> <span class="sm muted">(optional: items that fail these are never used)</span></summary>
     <div class=row>${fi('alBody','Min base armor level, body')}${fi('alExt','extremities (head, hands, feet)')}</div>
-    <div class=row>${fi('lvMin','Wield level from')}${fi('lvMax','to')}</div>
+    <div class=row>${fi('lvMin','Wield level from')}${fi('lvMax','to')}${fi('loreMax','Arcane lore at most')}</div>
     <div class=row>${fi('minLeg','At least this many Legendary spells per item')}${fi('minEpic','Epic or better')}</div>
     <div class=row>${fi('minOff','Min offensive rating (damage + crit + crit damage)')}${fi('minDef','defensive (the resists)')}${fi('minTot','total')}</div>
     <div class=row>${fi('re','Name or a spell matches','text','regular expression, e.g. legendary.*legendary')}</div></details>
@@ -647,6 +647,7 @@ function passesFilters(it){const F=S.F,k=pieceKind(it);
   if(k==='armor'){const ext=(it.vl&EXTVL)&&!(it.vl&0x7E00);const min=num(ext?F.alExt:F.alBody);if(min!=null&&it.al<min)return false}
   if(num(F.lvMin)!=null&&it.lv<num(F.lvMin))return false;
   if(num(F.lvMax)!=null&&it.lv>num(F.lvMax))return false;
+  if(num(F.loreMax)!=null&&it.lore>num(F.loreMax))return false;
   const tiers=Object.entries(it.fams).filter(([f])=>FAMS[f]&&FAMS[f].c).map(([,t])=>t);
   if(num(F.minLeg)!=null&&tiers.filter(t=>t>=4).length<num(F.minLeg))return false;
   if(num(F.minEpic)!=null&&tiers.filter(t=>t>=3).length<num(F.minEpic))return false;
@@ -821,7 +822,7 @@ app.addEventListener('click',ev=>{const th=ev.target.closest('th[data-sort]');
   if(th){const k=th.dataset.sort;if(IS.sort===k)IS.dir=-IS.dir;else{IS.sort=k;IS.dir=['n','cat','sl','set','imb','where'].includes(k)?1:-1}render();return}
   const t=ev.target.closest('button');if(!t)return;const d=t.dataset;
   if(d.tab){S.tab=d.tab;render();return}
-  if(t.id==='ifclear'){Object.assign(IS,{q:'',cats:new Set(CATS.map(c=>c[0])),slot:'',set:'',imb:'',cov:'',mat:'',alMin:'',alMax:'',lvMin:'',lvMax:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:'',wkMax:''});render();return}
+  if(t.id==='ifclear'){Object.assign(IS,{q:'',cats:new Set(CATS.map(c=>c[0])),slot:'',set:'',imb:'',cov:'',mat:'',alMin:'',alMax:'',lvMin:'',lvMax:'',loreMax:'',minLeg:'',minEpic:'',minOff:'',minDef:'',minTot:'',wkMax:''});render();return}
   if(t.id==='ifcsv'){invCsv();return}
   if(t.id==='tplgo'){applyTemplate(document.getElementById('tpl').value);render();return}
   if(t.id==='sall'){S.slots=new Set(SLOTS.map(s=>s[0]).filter(s=>s!=='uabd'))}
