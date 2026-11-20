@@ -8,7 +8,10 @@ matches, `/towns` Town Control (who holds each town, live battles with attacker 
 governor respite timers, recent battles), `/levels` the top characters (level, total XP split into earned and pass-up from vassals, time played, allegiance) and everyone by level, `/allegiances` monarch trees with kills this week.
 
 `/fatefall` is the page for Fatefall: Forge of Kingdoms, a separate game: `fatefall.html`, one self-contained file with
-its own look, served as it is (the nav's Fatefall tab). To change it, replace that file and rebuild the site.
+its own look (the nav's Fatefall tab), served by `fatefall.py`. Staff change its words in place: sign in (the wiki's
+sign-in) with a staff game account, click Admin at the foot of the page, type into the outlined text and Save. The
+words are kept in `ace_wiki.site_text` and laid over the page for everyone; the file's own words show until then.
+`wiki-setup.sh` creates that table and grants it (run it again once after this was added).
 
 ## How it works
 

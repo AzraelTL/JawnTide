@@ -76,3 +76,12 @@ CREATE TABLE IF NOT EXISTS seed_update (
   tag VARCHAR(80) PRIMARY KEY,
   applied_at DATETIME NOT NULL DEFAULT UTC_TIMESTAMP()
 ) ENGINE=InnoDB;
+
+-- words staff have changed on a page of the site that is edited in place (k = which page; v = its text as JSON).
+-- So far: the Fatefall page (fatefall.py).
+CREATE TABLE IF NOT EXISTS site_text (
+  k VARCHAR(40) NOT NULL PRIMARY KEY,
+  v MEDIUMTEXT NOT NULL,
+  updated_at DATETIME NOT NULL,
+  updated_by VARCHAR(64) NULL
+) ENGINE=InnoDB;

@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
+import fatefall
 import market
 import suit
 import wiki
@@ -33,8 +34,6 @@ PORT = int(os.environ.get("PORT", "8080"))
 HOME_FILE = os.environ.get("HOME_FILE", os.path.join(os.path.dirname(os.path.abspath(__file__)), "home.html"))
 TANKS_URL = os.environ.get("TANKS_URL", "http://play.jawntide.com:8088/")  # the JawnTanks browser game
 EMBLEM_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "emblem.webp")
-# /fatefall: the page for Fatefall: Forge of Kingdoms, a separate game. One self-contained file with its own look.
-FATEFALL_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fatefall.html")
 # browser tab and home screen icons (the emblem from the home page), made from emblem.webp
 ICON_FILES = {"/favicon.ico": ("favicon.ico", "image/x-icon"), "/favicon-32.png": ("favicon-32.png", "image/png"),
               "/favicon-192.png": ("favicon-192.png", "image/png"), "/apple-touch-icon.png": ("apple-touch-icon.png", "image/png")}
@@ -732,6 +731,8 @@ def render(path, query, snap):
 class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
+            if fatefall.handle(self, "POST"):
+                return
             if suit.handle(self, "POST"):
                 return
             if market.handle(self, "POST"):
@@ -746,6 +747,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         url = urlparse(self.path)
         try:
+            if fatefall.handle(self, "GET"):
+                return
             if suit.handle(self, "GET"):
                 return
             if market.handle(self, "GET"):
@@ -772,19 +775,6 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header("Content-Length", str(len(data)))
                 self.send_header("Cache-Control", "public, max-age=86400")
                 self.send_header("X-Content-Type-Options", "nosniff")
-                self.end_headers()
-                self.wfile.write(data)
-                return
-            if url.path in ("/fatefall", "/fatefall/"):
-                with open(FATEFALL_FILE, "rb") as f:
-                    data = f.read()
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.send_header("Content-Length", str(len(data)))
-                self.send_header("Cache-Control", "public, max-age=300")
-                self.send_header("X-Content-Type-Options", "nosniff")
-                self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
-                self.send_header("X-Frame-Options", "DENY")
                 self.end_headers()
                 self.wfile.write(data)
                 return

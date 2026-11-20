@@ -292,7 +292,137 @@
 </main>
 
 <footer>
-  <div class="wrap"><span id="footline">Fatefall: Forge of Kingdoms is an independent game in development. Everything shown here can change. © 2026</span></div>
+  <div class="wrap"><span id="footline">Fatefall: Forge of Kingdoms is an independent game in development. Everything shown here can change. © 2026</span><button type="button" class="adminlink" id="adminlink">Admin</button></div>
 </footer>
+
+<div class="editbar" id="editbar" role="region" aria-label="Site editing">
+  <span id="editmsg"></span>
+  <button type="button" id="editsave">Save changes</button>
+  <button type="button" class="quiet" id="editcancel">Cancel</button>
+</div>
+
+<!--FATEFALL_STATE-->
+<script>
+/* Text editing for staff (fatefall.py). Every piece of text gets a key from where it sits (section and order). The
+   server puts what staff last saved in FATEFALL_TEXT, and it is laid over the page; the words in this file show until
+   something is saved. FATEFALL_EDIT says who is signed in; only staff get a form token, and only they can save. */
+(function () {
+  "use strict";
+  var TEXT = ".status, h1, .sub, .lead, .btn, .kicker, h2, h3, p, .vital span, #footline";
+  var LISTS = ".ledger ul, .patch ul";
+  var msg = document.getElementById("editmsg"), bar = document.getElementById("editbar");
+  var saveButton = document.getElementById("editsave"), cancelButton = document.getElementById("editcancel");
+  var who = window.FATEFALL_EDIT || null, saved = window.FATEFALL_TEXT || null, editing = false;
+
+  // keys: <section>-<kind>-<n>, counted in page order within each section
+  function scopeOf(el) { var s = el.closest("section, .hero, footer"); return s ? (s.id || s.className.split(" ")[0] || s.tagName.toLowerCase()) : "page"; }
+  function tagAll(selector, attr, kind) {
+    var seen = {};
+    document.querySelectorAll(selector).forEach(function (el) {
+      if (attr === "data-edit" && el.closest(LISTS)) return;
+      var k = scopeOf(el) + "-" + (kind || el.tagName.toLowerCase());
+      seen[k] = (seen[k] || 0) + 1;
+      el.setAttribute(attr, k + "-" + seen[k]);
+    });
+  }
+  tagAll(TEXT, "data-edit");
+  tagAll(LISTS, "data-edit-list", "list");
+
+  function read() {
+    var out = {};
+    document.querySelectorAll("[data-edit]").forEach(function (el) { out[el.getAttribute("data-edit")] = el.innerText.replace(/\u00a0/g, " ").trim(); });
+    document.querySelectorAll("[data-edit-list]").forEach(function (ul) {
+      var lines = [];
+      ul.querySelectorAll("li").forEach(function (li) { var t = li.innerText.replace(/\u00a0/g, " ").trim(); if (t) lines.push(t); });
+      out[ul.getAttribute("data-edit-list")] = lines;
+    });
+    return out;
+  }
+  function show(data) {
+    if (!data) return;
+    document.querySelectorAll("[data-edit]").forEach(function (el) {
+      var v = data[el.getAttribute("data-edit")];
+      if (typeof v === "string" && v !== el.textContent) el.textContent = v;
+    });
+    document.querySelectorAll("[data-edit-list]").forEach(function (ul) {
+      var v = data[ul.getAttribute("data-edit-list")];
+      if (!Array.isArray(v)) return;
+      ul.textContent = "";
+      v.forEach(function (line) { var li = document.createElement("li"); li.textContent = String(line); ul.appendChild(li); });
+    });
+  }
+  var shipped = read(); // the words in this file
+  show(saved);
+
+  function editable(on) {
+    document.querySelectorAll("[data-edit], [data-edit-list] > li").forEach(function (el) {
+      if (on) { el.setAttribute("contenteditable", "true"); el.setAttribute("spellcheck", "true"); }
+      else { el.removeAttribute("contenteditable"); el.removeAttribute("spellcheck"); }
+    });
+  }
+  function start() {
+    editing = true;
+    document.body.classList.add("editing");
+    bar.classList.add("on");
+    saveButton.style.display = ""; cancelButton.textContent = "Cancel";
+    editable(true);
+    msg.textContent = "Editing as " + who.name + ". Click any outlined text to change it. Empty a list line to remove it.";
+  }
+  function stop() {
+    editing = false;
+    document.body.classList.remove("editing");
+    bar.classList.remove("on");
+    editable(false);
+  }
+  function tell(words) {
+    bar.classList.add("on");
+    saveButton.style.display = "none"; cancelButton.textContent = "Close";
+    msg.textContent = words;
+  }
+
+  // a button under each list adds a line to it
+  document.querySelectorAll("[data-edit-list]").forEach(function (ul) {
+    var add = document.createElement("button");
+    add.type = "button"; add.className = "addline"; add.textContent = "+ Add a line";
+    add.addEventListener("click", function () {
+      var li = document.createElement("li");
+      li.setAttribute("contenteditable", "true");
+      ul.insertBefore(li, ul.firstChild && ul.closest(".patch") ? ul.firstChild : null); // patch notes: newest first
+      li.focus();
+    });
+    ul.parentNode.insertBefore(add, ul.nextSibling);
+  });
+  // pasted text comes in plain; links and buttons do not act while their words are being edited
+  document.addEventListener("paste", function (e) {
+    if (!editing || !e.target.closest || !e.target.closest("[contenteditable]")) return;
+    e.preventDefault();
+    document.execCommand("insertText", false, (e.clipboardData || window.clipboardData).getData("text"));
+  });
+  document.addEventListener("click", function (e) {
+    if (editing && e.target.closest && e.target.closest("a[data-edit]")) e.preventDefault();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (editing && e.key === "Enter" && e.target.closest && e.target.closest("[data-edit]")) e.preventDefault(); // one line each
+  });
+
+  cancelButton.addEventListener("click", function () { if (editing) { show(shipped); show(saved); } stop(); });
+  saveButton.addEventListener("click", function () {
+    var now = read();
+    msg.textContent = "Saving...";
+    fetch("/fatefall/save", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", "X-CSRF": who.csrf }, body: JSON.stringify(now) })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok && j.ok, error: j.error }; }, function () { return { ok: false }; }); })
+      .then(function (res) {
+        if (res.ok) { saved = now; show(now); stop(); }
+        else msg.textContent = (res.error || "Could not save.") + " Your changes are still on the page.";
+      }, function () { msg.textContent = "Could not reach the site. Your changes are still on the page: try Save again."; });
+  });
+  document.getElementById("adminlink").addEventListener("click", function () {
+    if (editing) return;
+    if (who && who.staff && who.csrf) start();
+    else if (who) tell("Signed in as " + who.name + ", but only staff can change this page.");
+    else location.href = "/wiki/login?next=/fatefall";
+  });
+})();
+</script>
 </body>
 </html>
