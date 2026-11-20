@@ -36,7 +36,10 @@ TANKS_URL = os.environ.get("TANKS_URL", "http://play.jawntide.com:8088/")  # the
 EMBLEM_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "emblem.webp")
 # browser tab and home screen icons (the emblem from the home page), made from emblem.webp
 ICON_FILES = {"/favicon.ico": ("favicon.ico", "image/x-icon"), "/favicon-32.png": ("favicon-32.png", "image/png"),
-              "/favicon-192.png": ("favicon-192.png", "image/png"), "/apple-touch-icon.png": ("apple-touch-icon.png", "image/png")}
+              "/favicon-192.png": ("favicon-192.png", "image/png"), "/apple-touch-icon.png": ("apple-touch-icon.png", "image/png"),
+              # the Fatefall page's own icons (fatefall.html links them)
+              "/fatefall-favicon.ico": ("fatefall-favicon.ico", "image/x-icon"), "/fatefall-icon-32.png": ("fatefall-icon-32.png", "image/png"),
+              "/fatefall-icon-192.png": ("fatefall-icon-192.png", "image/png")}
 # ?v= changes whenever the icons change, so browsers and Cloudflare (which keep icons for a week) fetch the new ones
 ICON_VERSION = "3"
 ICON_LINKS = (f'<link rel="icon" href="/favicon.ico?v={ICON_VERSION}" sizes="48x48"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v={ICON_VERSION}">'
