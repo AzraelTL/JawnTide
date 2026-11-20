@@ -33,6 +33,8 @@ PORT = int(os.environ.get("PORT", "8080"))
 HOME_FILE = os.environ.get("HOME_FILE", os.path.join(os.path.dirname(os.path.abspath(__file__)), "home.html"))
 TANKS_URL = os.environ.get("TANKS_URL", "http://play.jawntide.com:8088/")  # the JawnTanks browser game
 EMBLEM_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "emblem.webp")
+# /fatefall: the page for Fatefall: Forge of Kingdoms, a separate game. One self-contained file with its own look.
+FATEFALL_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fatefall.html")
 # browser tab and home screen icons (the emblem from the home page), made from emblem.webp
 ICON_FILES = {"/favicon.ico": ("favicon.ico", "image/x-icon"), "/favicon-32.png": ("favicon-32.png", "image/png"),
               "/favicon-192.png": ("favicon-192.png", "image/png"), "/apple-touch-icon.png": ("apple-touch-icon.png", "image/png")}
@@ -420,6 +422,7 @@ def layout(path, title, body, snap):
     nav += f'<a href="/market"{" aria-current=page" if path == "/market" else ""}>Market</a>'
     nav += f'<a href="/suit"{" aria-current=page" if path == "/suit" else ""}>Suit Builder</a>'
     nav += f'<a href="/wiki"{" aria-current=page" if path == "/wiki" else ""}>Wiki</a>'
+    nav += '<a href="/fatefall">Fatefall</a>'
     nav += f'<a class="play" href="{e(TANKS_URL)}">JawnTanks</a>'
     stamp = f'<p class="stamp">Updated {e(snap["taken"].strftime("%b %d, %I:%M %p"))} server time. Refreshes every {INTERVAL // 60} minutes.</p>' if snap else ""
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8">'
@@ -769,6 +772,19 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header("Content-Length", str(len(data)))
                 self.send_header("Cache-Control", "public, max-age=86400")
                 self.send_header("X-Content-Type-Options", "nosniff")
+                self.end_headers()
+                self.wfile.write(data)
+                return
+            if url.path in ("/fatefall", "/fatefall/"):
+                with open(FATEFALL_FILE, "rb") as f:
+                    data = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "public, max-age=300")
+                self.send_header("X-Content-Type-Options", "nosniff")
+                self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+                self.send_header("X-Frame-Options", "DENY")
                 self.end_headers()
                 self.wfile.write(data)
                 return

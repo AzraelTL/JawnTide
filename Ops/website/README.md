@@ -7,6 +7,9 @@ all time; top killers, allegiances, latest kills), `/arena` standings per arena 
 matches, `/towns` Town Control (who holds each town, live battles with attacker and defender, battle and
 governor respite timers, recent battles), `/levels` the top characters (level, total XP split into earned and pass-up from vassals, time played, allegiance) and everyone by level, `/allegiances` monarch trees with kills this week.
 
+`/fatefall` is the page for Fatefall: Forge of Kingdoms, a separate game: `fatefall.html`, one self-contained file with
+its own look, served as it is (the nav's Fatefall tab). To change it, replace that file and rebuild the site.
+
 ## How it works
 
 `ace-web` is its own container (`compose.yml`). Every 5 minutes (`INTERVAL_SECONDS`) it reads the databases as the
