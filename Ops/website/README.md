@@ -17,7 +17,8 @@ The page's Download section gives out the newest `.zip` in `~/fatefall-downloads
 the container) to anyone who enters `FATEFALL_DOWNLOAD_PASSWORD`, which is set in `~/jawntide-server/.env` and never
 kept in this repository. To change the password, change that line and start the site again; to change the file, copy a
 new zip into the folder (nothing to restart). Eight tries per address in ten minutes; a right password gives a link
-that works for six hours and can resume a broken download.
+that works for six hours and can resume a broken download. `/fatefall/version` answers with the version packed in
+that zip (its `version.txt`); the game's launcher asks it before joining and updates itself from the same download.
 
 ## How it works
 

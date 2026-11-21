@@ -19,6 +19,7 @@ import re
 import secrets
 import threading
 import time
+import zipfile
 import traceback
 from urllib.parse import parse_qs, urlparse
 
@@ -100,12 +101,39 @@ def _download_file():
     return newest.path, newest.name, st.st_size, st.st_mtime
 
 
+_version_cache = {}
+
+
+def _download_version():
+    """The version of the game in the download: the version.txt packed in the zip (a date and time, 20261120-183601),
+    which the game's launcher compares with its own to know when to update. '' when there is none."""
+    found = _download_file()
+    if not found:
+        return ""
+    key = (found[0], found[2], found[3])
+    if key not in _version_cache:
+        version = ""
+        try:
+            with zipfile.ZipFile(found[0]) as z:
+                inside = [n for n in z.namelist() if n.split("/")[-1] == "version.txt" and n.count("/") <= 1]
+                if inside:
+                    version = z.read(inside[0]).decode("ascii", "replace").strip()
+        except Exception:
+            version = ""
+        if not re.fullmatch(r"20\d{6}-\d{6}", version):
+            version = ""
+        _version_cache.clear()
+        _version_cache[key] = version
+    return _version_cache[key]
+
+
 def _download_info():
     """What the page may say about the download (never where it is kept), or None when there is nothing to give."""
     found = _download_file() if DOWNLOAD_PASSWORD else None
     if not found:
         return None
-    return {"name": found[1], "megabytes": round(found[2] / 1048576), "date": time.strftime("%B %d, %Y", time.gmtime(found[3]))}
+    return {"name": found[1], "megabytes": round(found[2] / 1048576), "date": time.strftime("%B %d, %Y", time.gmtime(found[3])),
+            "version": _download_version()}
 
 
 def _ticket(expires):
@@ -257,6 +285,9 @@ def handle(h, method):
         _download_ask(h)
     elif path == "/fatefall/file" and method == "GET":
         _download_send(h)
+    elif path == "/fatefall/version" and method == "GET":
+        # for the game's launcher: one line, nothing secret
+        _send(h, 200, (_download_version() if DOWNLOAD_PASSWORD else "") + "\n", "text/plain; charset=utf-8", "no-store")
     else:
         return False
     return True

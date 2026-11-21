@@ -310,7 +310,7 @@
         </form>
         <div class="getnote" id="getnote" role="status"></div>
         <div class="note" id="getfile"></div>
-        <p class="note" style="margin-top:14px">Unzip the whole folder, then run Play DuelProto.bat inside it.</p>
+        <p class="note" style="margin-top:14px">Unzip the whole folder, then run Play DuelProto.bat inside it. After that the game updates itself when a new version is out.</p>
       </div>
     </div>
   </section>
@@ -461,7 +461,7 @@
     var file = window.FATEFALL_DOWNLOAD || null, form = document.getElementById("getform");
     var note = document.getElementById("getnote"), about = document.getElementById("getfile");
     if (!form) return;
-    if (file) about.textContent = file.name + ", " + file.megabytes + " MB, added " + file.date + ".";
+    if (file) about.textContent = file.name + ", " + file.megabytes + " MB" + (file.version ? ", version " + file.version : "") + ", added " + file.date + ".";
     else { form.style.display = "none"; note.textContent = "No download is available right now."; }
     var why = (/[?&]download=([a-z]+)/.exec(location.search) || [])[1];
     var words = { wrong: "That password is not right.", wait: "Too many tries. Wait ten minutes and try again.",
