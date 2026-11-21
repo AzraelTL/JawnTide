@@ -16,6 +16,11 @@ services:
       DB_PASSWORD: ${WEB_DB_PASSWORD}
       INTERVAL_SECONDS: "300"
       TZ: America/New_York
+      # the Fatefall page's download: the password handed out to testers (a secret, set in ~/jawntide-server/.env)
+      FATEFALL_DOWNLOAD_PASSWORD: ${FATEFALL_DOWNLOAD_PASSWORD:-}
+    volumes:
+      # the newest .zip in this folder of the server is what /fatefall/download gives out (read-only to the site)
+      - ${HOME}/fatefall-downloads:/downloads:ro
     read_only: true
     security_opt:
       - no-new-privileges:true

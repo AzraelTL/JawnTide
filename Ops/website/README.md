@@ -13,6 +13,12 @@ sign-in) with a staff game account, click Admin at the foot of the page, type in
 words are kept in `ace_wiki.site_text` and laid over the page for everyone; the file's own words show until then.
 `wiki-setup.sh` creates that table and grants it (run it again once after this was added).
 
+The page's Download section gives out the newest `.zip` in `~/fatefall-downloads` on the server (mounted read-only into
+the container) to anyone who enters `FATEFALL_DOWNLOAD_PASSWORD`, which is set in `~/jawntide-server/.env` and never
+kept in this repository. To change the password, change that line and start the site again; to change the file, copy a
+new zip into the folder (nothing to restart). Eight tries per address in ten minutes; a right password gives a link
+that works for six hours and can resume a broken download.
+
 ## How it works
 
 `ace-web` is its own container (`compose.yml`). Every 5 minutes (`INTERVAL_SECONDS`) it reads the databases as the

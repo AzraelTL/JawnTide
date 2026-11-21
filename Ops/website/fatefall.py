@@ -5,16 +5,22 @@ to the site (the wiki's sign-in) whose game account is staff gets an Admin butto
 and Save keeps the result in ace_wiki.site_text. The saved words are laid over the page for every visitor; the words
 in the file are what shows until something is saved, and whenever the database cannot be reached.
 
+The game's files are downloaded from it with a password the owner hands out (/fatefall/download): the newest .zip in
+DOWNLOAD_DIR (a folder of the server mounted read-only, see compose.yml), for anyone who gives FATEFALL_DOWNLOAD_PASSWORD
+(kept in the server's .env, never in the repository). A right password is answered with a link that works for a few
+hours, so the password itself is never in an address.
+
 Tables: ace_wiki.site_text (wiki-schema.sql; wiki-setup.sh grants it to the web user).
 """
 import hmac
 import json
 import os
 import re
+import secrets
 import threading
 import time
 import traceback
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 import wiki
 
@@ -22,6 +28,10 @@ PAGE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fatefall.h
 STATE_MARK = "<!--FATEFALL_STATE-->"
 MAX_SAVE = 200_000          # bytes of JSON in one save
 KEY = re.compile(r"[a-z0-9-]{1,60}")
+DOWNLOAD_DIR = os.environ.get("FATEFALL_DOWNLOAD_DIR", "/downloads")
+DOWNLOAD_PASSWORD = os.environ.get("FATEFALL_DOWNLOAD_PASSWORD", "")
+DOWNLOAD_HOURS = 6          # how long the link given for a right password works
+_download_key = secrets.token_bytes(32)   # signs those links; new each time the site starts
 _cache = {"at": 0.0, "text": None}
 _lock = threading.Lock()
 
@@ -77,6 +87,105 @@ def _send(h, status, body, ctype, cache):
     h.wfile.write(data)
 
 
+def _download_file():
+    """(path, name, size, modified) of the newest .zip in the download folder, or None."""
+    try:
+        zips = [e for e in os.scandir(DOWNLOAD_DIR) if e.is_file() and e.name.lower().endswith(".zip") and not e.name.startswith(".")]
+    except OSError:
+        return None
+    if not zips:
+        return None
+    newest = max(zips, key=lambda e: e.stat().st_mtime)
+    st = newest.stat()
+    return newest.path, newest.name, st.st_size, st.st_mtime
+
+
+def _download_info():
+    """What the page may say about the download (never where it is kept), or None when there is nothing to give."""
+    found = _download_file() if DOWNLOAD_PASSWORD else None
+    if not found:
+        return None
+    return {"name": found[1], "megabytes": round(found[2] / 1048576), "date": time.strftime("%B %d, %Y", time.gmtime(found[3]))}
+
+
+def _ticket(expires):
+    return hmac.new(_download_key, str(expires).encode(), "sha256").hexdigest()
+
+
+def _redirect(h, where):
+    h.send_response(303)
+    h.send_header("Location", where)
+    h.send_header("Cache-Control", "no-store")
+    h.send_header("Content-Length", "0")
+    h.end_headers()
+
+
+def _download_ask(h):
+    """The password form's answer: a link to the file that works for a few hours, or back to the page with a reason."""
+    origin = h.headers.get("Origin")
+    if origin and urlparse(origin).netloc != h.headers.get("Host", ""):
+        return _send(h, 403, "That request came from another site.", "text/plain", "no-store")
+    length = min(int(h.headers.get("Content-Length") or 0), 4000)
+    form = parse_qs(h.rfile.read(length).decode("utf-8", "replace"), keep_blank_values=True)
+    given = (form.get("password") or [""])[0]
+    if not DOWNLOAD_PASSWORD or not _download_file():
+        return _redirect(h, "/fatefall?download=none#download")
+    if wiki._limited("fatefall-download:" + wiki._client_ip(h), 8, 600):
+        return _redirect(h, "/fatefall?download=wait#download")
+    if not hmac.compare_digest(given.encode("utf-8"), DOWNLOAD_PASSWORD.encode("utf-8")):
+        return _redirect(h, "/fatefall?download=wrong#download")
+    expires = int(time.time()) + DOWNLOAD_HOURS * 3600
+    _redirect(h, f"/fatefall/file?e={expires}&t={_ticket(expires)}")
+
+
+def _download_send(h):
+    """Sends the file to someone holding a link that is still good. Answers Range requests, so a download can resume."""
+    query = parse_qs(urlparse(h.path).query)
+    expires, ticket = (query.get("e") or [""])[0], (query.get("t") or [""])[0]
+    found = _download_file()
+    if not expires.isdigit() or int(expires) < time.time() or not hmac.compare_digest(ticket, _ticket(expires)) or not found:
+        return _redirect(h, "/fatefall?download=expired#download")
+    path, name, size, _ = found
+    first, last, status = 0, size - 1, 200
+    m = re.fullmatch(r"bytes=(\d*)-(\d*)", h.headers.get("Range", "").strip())
+    if m and (m.group(1) or m.group(2)):
+        if m.group(1):
+            first = int(m.group(1))
+            last = min(int(m.group(2)), size - 1) if m.group(2) else size - 1
+        else:
+            first = max(size - int(m.group(2)), 0)
+        if first > last or first >= size:
+            h.send_response(416)
+            h.send_header("Content-Range", f"bytes */{size}")
+            h.send_header("Content-Length", "0")
+            h.end_headers()
+            return
+        status = 206
+    safe = re.sub(r"[^A-Za-z0-9._-]", "_", name)
+    h.send_response(status)
+    h.send_header("Content-Type", "application/zip")
+    h.send_header("Content-Disposition", f'attachment; filename="{safe}"')
+    h.send_header("Content-Length", str(last - first + 1))
+    h.send_header("Accept-Ranges", "bytes")
+    if status == 206:
+        h.send_header("Content-Range", f"bytes {first}-{last}/{size}")
+    h.send_header("Cache-Control", "private, no-store")
+    h.send_header("X-Content-Type-Options", "nosniff")
+    h.end_headers()
+    left = last - first + 1
+    try:
+        with open(path, "rb") as f:
+            f.seek(first)
+            while left > 0:
+                chunk = f.read(min(262144, left))
+                if not chunk:
+                    break
+                h.wfile.write(chunk)
+                left -= len(chunk)
+    except (BrokenPipeError, ConnectionResetError):
+        pass    # they stopped the download
+
+
 def _user(h):
     """The signed-in visitor, or None (also None when the database cannot be asked)."""
     if "jtw=" not in h.headers.get("Cookie", ""):
@@ -97,7 +206,8 @@ def _page(h):
         edit = {"staff": staff, "name": user["name"]}
         if staff:
             edit["csrf"] = user["csrf"]
-    state = f"<script>window.FATEFALL_TEXT = {_script_json(_saved())}; window.FATEFALL_EDIT = {_script_json(edit)};</script>"
+    state = (f"<script>window.FATEFALL_TEXT = {_script_json(_saved())}; window.FATEFALL_EDIT = {_script_json(edit)}; "
+             f"window.FATEFALL_DOWNLOAD = {_script_json(_download_info())};</script>")
     # someone signed in gets their own copy (it carries their form token); everyone else's can be kept briefly
     _send(h, 200, page.replace(STATE_MARK, state, 1), "text/html; charset=utf-8", "no-store" if user else "public, max-age=60")
 
@@ -137,12 +247,16 @@ def _save(h):
 
 
 def handle(h, method):
-    """Serves /fatefall and /fatefall/save. Returns True when it handled the request."""
+    """Serves /fatefall and what is under it. Returns True when it handled the request."""
     path = urlparse(h.path).path.rstrip("/") or "/"
     if path == "/fatefall" and method == "GET":
         _page(h)
     elif path == "/fatefall/save" and method == "POST":
         _save(h)
+    elif path == "/fatefall/download" and method == "POST":
+        _download_ask(h)
+    elif path == "/fatefall/file" and method == "GET":
+        _download_send(h)
     else:
         return False
     return True

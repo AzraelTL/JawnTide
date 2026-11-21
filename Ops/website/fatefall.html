@@ -140,6 +140,15 @@
   body.editing .addline { display: inline-block; }
   body.editing { padding-bottom: 90px; }
 
+  .getform { margin-top: 24px; max-width: 460px; }
+  .getform label { display: block; font-size: 15px; color: var(--ash); margin-bottom: 6px; }
+  .getrow { display: flex; gap: 10px; flex-wrap: wrap; }
+  .getrow input { flex: 1 1 200px; min-width: 0; font: inherit; padding: 11px 12px; background: var(--night); color: var(--bone); border: 1px solid var(--line); }
+  .getrow input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .go { font: inherit; font-weight: 700; padding: 11px 22px; border: 1px solid var(--gold); background: var(--gold); color: var(--night); cursor: pointer; }
+  .go:hover { filter: brightness(1.1); }
+  .getnote { margin-top: 12px; color: var(--gold); font-size: 16px; min-height: 1.4em; }
+
   .playtest { background: linear-gradient(180deg, var(--slate), var(--night)); }
   footer { border-top: 1px solid var(--line); padding: 30px 0 50px; color: var(--ash); font-size: 15px; }
 </style>
@@ -153,6 +162,7 @@
     <a href="#kingdoms">Kingdoms</a>
     <a href="#progress">Progress</a>
     <a href="#playtest">Playtest</a>
+    <a href="#download">Download</a>
     <a href="https://discord.gg/E9ahXneed9" rel="noopener">Discord</a>
     <a href="/">JawnTide</a>
   </nav>
@@ -279,6 +289,28 @@
         <ul>
           <li>No patch notes yet.</li>
         </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="download">
+    <div class="wrap split">
+      <div>
+        <div class="kicker">Download</div>
+        <h2>Get the game</h2>
+      </div>
+      <div>
+        <p class="intro" style="margin-top:0">The playtest client is for invited testers. Enter the password you were given to download it.</p>
+        <form class="getform" id="getform" method="post" action="/fatefall/download">
+          <label for="getpass">Download password</label>
+          <div class="getrow">
+            <input id="getpass" name="password" type="password" maxlength="200" required autocomplete="off">
+            <button type="submit" class="go">Download</button>
+          </div>
+        </form>
+        <div class="getnote" id="getnote" role="status"></div>
+        <div class="note" id="getfile"></div>
+        <p class="note" style="margin-top:14px">Unzip the whole folder, then run Play DuelProto.bat inside it.</p>
       </div>
     </div>
   </section>
@@ -424,6 +456,19 @@
         else msg.textContent = (res.error || "Could not save.") + " Your changes are still on the page.";
       }, function () { msg.textContent = "Could not reach the site. Your changes are still on the page: try Save again."; });
   });
+  // the download: what there is to get, and why the last try did not work (the server sends people back with a reason)
+  (function () {
+    var file = window.FATEFALL_DOWNLOAD || null, form = document.getElementById("getform");
+    var note = document.getElementById("getnote"), about = document.getElementById("getfile");
+    if (!form) return;
+    if (file) about.textContent = file.name + ", " + file.megabytes + " MB, added " + file.date + ".";
+    else { form.style.display = "none"; note.textContent = "No download is available right now."; }
+    var why = (/[?&]download=([a-z]+)/.exec(location.search) || [])[1];
+    var words = { wrong: "That password is not right.", wait: "Too many tries. Wait ten minutes and try again.",
+      expired: "That download link has run out. Enter the password again.", none: "No download is available right now." };
+    if (why && words[why]) note.textContent = words[why];
+  })();
+
   document.getElementById("adminlink").addEventListener("click", function () {
     if (editing) return;
     if (who && who.staff && who.csrf) start();
