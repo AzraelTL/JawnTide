@@ -7,7 +7,7 @@ login history), and keeps the result in memory. Pages are rendered from that cop
 the game databases. Admin characters (accessLevel > 0) are left off every page.
 
 Pages: /  home (server info, how to connect, rules), /pk  open-world PK kills, /arena  arena standings and
-matches, /levels  player levels, /allegiances  monarch trees, /market  the marketplace (market.py), /health.
+matches, /arena/matches  the full arena match history, /levels  player levels, /allegiances  monarch trees, /market  the marketplace (market.py), /health.
 
 Preview without a database:  python site.py --sample out.html  writes every page into one file.
 """
@@ -19,7 +19,7 @@ import time
 import traceback
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import fatefall
 import market
@@ -51,7 +51,9 @@ PROP_INT64_ALLEG_XP_RECEIVED = 9002   # pass-up XP a patron has received from va
 PROP_INT64_TOTAL_XP = 1
 PROP_IID_PATRON = 25
 PROP_IID_MONARCH = 26
-ARENA_DONE = 6
+ARENA_WON, ARENA_DRAW = 5, 6   # arena_event.status of a finished match: won by a team, or ended in a draw at the time limit
+ARENA_HISTORY_MAX = 5000       # how many finished matches the match history keeps (newest first)
+ARENA_PER_PAGE = 50
 ONE_TEN = 0x039D   # One Ten arena landblock: its 1v1s are the "110" queue and rank
 ARENA_TYPE_NAMES = {"110": "One Ten (110)"}
 ARENA_TYPE_ORDER = ["1v1", "110", "2v2"]
@@ -139,21 +141,28 @@ def take_snapshot():
                                     losses=losses or 0, draws=draws or 0, dq=dq or 0, deaths=deaths or 0,
                                     kills=ks or 0, dealt=dealt or 0, received=recv or 0, points=points or 0))
 
+        # every finished match (won or drawn), newest first, for the Arena page and the match history
         events = {}
-        for eid, etype, ended, winner, location in q("""
-                SELECT id, event_type, end_datetime, winning_team_guid, location FROM ace_log.arena_event
-                WHERE status = %s AND end_datetime IS NOT NULL ORDER BY end_datetime DESC LIMIT 25""", (ARENA_DONE,)):
+        for eid, etype, started, ended, winner, location, status, overtime in q("""
+                SELECT id, event_type, start_datetime, end_datetime, winning_team_guid, location, status, is_overtime
+                FROM ace_log.arena_event WHERE status IN (%s, %s) AND end_datetime IS NOT NULL
+                ORDER BY end_datetime DESC, id DESC LIMIT %s""", (ARENA_WON, ARENA_DRAW, ARENA_HISTORY_MAX)):
             # One Ten (0x039D) 1v1s are their own queue and rank: "110"
             if etype == "1v1" and location == ONE_TEN:
                 etype = "110"
-            events[eid] = dict(id=eid, type=etype, ended=ended, winner=winner, players=[])
-        if events:
-            marks = ",".join(["%s"] * len(events))
-            for eid, cid, name, team, ks, deaths in q(f"""
-                    SELECT event_id, character_id, character_name, team_guid, total_kills, total_deaths
-                    FROM ace_log.arena_player WHERE event_id IN ({marks})""", tuple(events)):
+            events[eid] = dict(id=eid, type=etype, started=started, ended=ended, overtime=bit(overtime),
+                               winner=winner if status == ARENA_WON else None, players=[])
+        ids = list(events)
+        for i in range(0, len(ids), 1000):
+            part = ids[i:i + 1000]
+            marks = ",".join(["%s"] * len(part))
+            for eid, cid, name, level, monarch, team, place, ks, deaths, dealt, recv in q(f"""
+                    SELECT event_id, character_id, character_name, character_level, monarch_name, team_guid, finish_place,
+                           total_kills, total_deaths, total_dmg_dealt, total_dmg_received
+                    FROM ace_log.arena_player WHERE event_id IN ({marks}) ORDER BY id""", tuple(part)):
                 if cid not in admins:
-                    events[eid]["players"].append(dict(id=cid, name=name, team=team, kills=ks or 0, deaths=deaths or 0))
+                    events[eid]["players"].append(dict(id=cid, name=name, level=level, monarch=monarch, team=team, place=place,
+                                                       kills=ks or 0, deaths=deaths or 0, dealt=dealt or 0, received=recv or 0))
 
         # Town Control: towns and recent battles (times there are UTC)
         utc = q("SELECT UTC_TIMESTAMP()")[0][0]
@@ -342,6 +351,13 @@ th a.sorter{color:inherit;text-decoration:none;border-bottom:1px dotted var(--li
 .resp{display:block;color:var(--dim);font-size:.95rem}
 td.wrapcell{white-space:normal;min-width:12rem}
 .feed{list-style:none;padding:0;margin:0;max-width:40rem}
+.match{border-bottom:1px solid var(--line);max-width:60rem}
+.match summary{display:flex;justify-content:space-between;gap:1rem;padding:.5rem 0;cursor:pointer}
+.match[open] summary{border-bottom:0}.match p{margin:.2rem 0 .6rem}.match .wrap{margin:0 0 1rem}
+.res{font-weight:700;color:var(--dim)}.res.k{color:var(--gold)}
+.find{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin:0 0 1rem}
+.find label{color:var(--dim)}
+.find input[type=text],.find input:not([type]){font:inherit;color:var(--bone);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:.4rem .6rem;width:16rem;max-width:100%}
 .feed li{display:flex;justify-content:space-between;gap:1rem;padding:.45rem 0;border-bottom:1px solid var(--line)}
 .feed b{font-weight:700}
 .feed li>span:last-child{white-space:nowrap}
@@ -597,7 +613,7 @@ def arena_page(snap, etype, query):
     stats = sorted((s for s in snap["arena_stats"] if s["type"] == etype and s["matches"] > 0),
                    key=lambda s: (-s["points"], -s["wins"], s["name"] or ""))[:limit]
     rows = "".join(
-        f'<tr>{rank_cell(i)}<td>{e(s["name"])}</td><td class="n k">{n(s["points"])}</td><td class="n">{n(s["matches"])}</td>'
+        f'<tr>{rank_cell(i)}<td><a href="{matches_url(player=s["name"])}">{e(s["name"])}</a></td><td class="n k">{n(s["points"])}</td><td class="n">{n(s["matches"])}</td>'
         f'<td class="n">{n(s["wins"])}</td><td class="n">{n(s["losses"])}</td><td class="n">{n(s["draws"])}</td>'
         f'<td class="n">{n(s["kills"])}</td><td class="n">{n(s["deaths"])}</td><td class="n">{n(s["dealt"])}</td></tr>'
         for i, s in enumerate(stats, 1))
@@ -606,18 +622,124 @@ def arena_page(snap, etype, query):
              f'<th class="n">Deaths</th><th class="n">Damage dealt</th></tr>{rows}</table></div>' if rows
              else '<p class="empty">No matches of this type yet.</p>') + show_links("/arena", {"type": etype}, show_key)
 
-    all_matches = sum(s["matches"] for s in snap["arena_stats"])
     matches = []
     for ev in snap["arena_events"][:15]:
-        winners = [p for p in ev["players"] if ev["winner"] and p["team"] == ev["winner"]]
-        others = [p for p in ev["players"] if p not in winners]
-        names = lambda ps: ", ".join(e(p["name"]) for p in ps) or "nobody"
-        result = (f'<b>{names(winners)}</b> beat {names(others)}' if winners else f'Draw between {names(ev["players"])}')
-        matches.append(f'<li><span><span class="muted">{e(ARENA_TYPE_NAMES.get(ev["type"], ev["type"]))}</span>&ensp;{result}</span>'
+        matches.append(f'<li><span><span class="muted">{e(ARENA_TYPE_NAMES.get(ev["type"], ev["type"]))}</span>&ensp;{match_result(ev)}</span>'
                        f'<span class="muted">{ago(ev["ended"], now)}</span></li>')
-    return (f'<h1>Arena</h1><p class="lede">Standings by rank points. Join the queue in game with /arena join.</p>'
+    return (f'<h1>Arena</h1><p class="lede">Standings by rank points. Join the queue in game with /arena join. '
+            f'Click a name to see that character\'s matches.</p>'
             f'<div class="tabs">{tabs}</div>{table}'
-            f'<h2>Recent matches</h2><ul class="feed">{"".join(matches) or "<li class=muted>No finished matches yet.</li>"}</ul>')
+            f'<h2>Recent matches</h2><ul class="feed">{"".join(matches) or "<li class=muted>No finished matches yet.</li>"}</ul>'
+            f'<p><a href="/arena/matches">Full match history</a></p>')
+
+
+def matches_url(**keep):
+    """Link to the match history with the given choices (type, player, page); empty ones are left out"""
+    query = urlencode({k: v for k, v in keep.items() if v not in (None, "", 1)})
+    return e("/arena/matches" + ("?" + query if query else ""))
+
+
+def match_result(ev):
+    """One line for a finished match: who beat whom, or who drew"""
+    winners = [p for p in ev["players"] if ev["winner"] and p["team"] == ev["winner"]]
+    others = [p for p in ev["players"] if p not in winners]
+    names = lambda ps: ", ".join(e(p["name"]) for p in ps) or "nobody"
+    return f'<b>{names(winners)}</b> beat {names(others)}' if winners else f'Draw between {names(ev["players"])}'
+
+
+def match_outcome(ev, p):
+    """How a match went for one of its players: Won, Lost, Draw or Disqualified"""
+    if p.get("place") == -1:
+        return "Disqualified"
+    if not ev["winner"]:
+        return "Draw"
+    return "Won" if p["team"] == ev["winner"] else "Lost"
+
+
+def arena_matches_page(snap, query):
+    """/arena/matches: every finished arena match, newest first, by match type and by character"""
+    events, now = snap["arena_events"], snap["taken"]
+    etype = query.get("type", [""])[0]
+    player = " ".join(query.get("player", [""])[0].split())[:40]
+    found = {ev["type"] for ev in events if ev["type"]}
+    types = sorted(found, key=lambda t: (ARENA_TYPE_ORDER.index(t) if t in ARENA_TYPE_ORDER else len(ARENA_TYPE_ORDER), t))
+    etype = etype if etype in types else ""
+
+    # the character filter: an exact name if there is one, otherwise any name containing the text
+    who = None
+    if player:
+        low = player.lower()
+        names = {p["name"] for ev in events for p in ev["players"] if p["name"]}
+        who = {nm for nm in names if nm.lower() == low} or {nm for nm in names if low in nm.lower()}
+    mine = lambda ev: [p for p in ev["players"] if p["name"] in who]
+    shown = [ev for ev in events if (not etype or ev["type"] == etype) and (who is None or mine(ev))]
+
+    tabs = "".join(f'<a href="{matches_url(type=t, player=player)}"{" aria-current=page" if t == etype else ""}>{e(label)}</a>'
+                   for t, label in [("", "All")] + [(t, ARENA_TYPE_NAMES.get(t, t)) for t in types])
+    form = (f'<form class="find" method="get" action="/arena/matches">'
+            + (f'<input type="hidden" name="type" value="{e(etype)}">' if etype else "")
+            + f'<label for="player">Character</label><input id="player" name="player" value="{e(player)}" maxlength="40" placeholder="Any character">'
+            f'<button class="btn" type="submit">Search</button>'
+            + (f'<a href="{matches_url(type=etype)}">Clear</a>' if player else "") + '</form>')
+
+    record = ""
+    if who:
+        tally = {}
+        for ev in shown:
+            for p in mine(ev):
+                tally[match_outcome(ev, p)] = tally.get(match_outcome(ev, p), 0) + 1
+        parts = [f'{n(tally[k])} {k.lower()}' for k in ("Won", "Lost", "Draw", "Disqualified") if tally.get(k)] if len(who) == 1 else []
+        label = e(next(iter(who))) if len(who) == 1 else f'{len(who)} characters matching "{e(player)}"'
+        record = f'<p class="lede">{label}: {n(len(shown))} match{"" if len(shown) == 1 else "es"}{" (" + ", ".join(parts) + ")" if parts else ""}.</p>'
+    elif player:
+        record = f'<p class="empty">No character named "{e(player)}" has played an arena match.</p>'
+
+    pages = max(1, -(-len(shown) // ARENA_PER_PAGE))
+    try:
+        page = min(pages, max(1, int(query.get("page", ["1"])[0])))
+    except ValueError:
+        page = 1
+    items = []
+    for ev in shown[(page - 1) * ARENA_PER_PAGE:page * ARENA_PER_PAGE]:
+        placed = ev["type"] in ("ffa", "tugak")
+        order = sorted(ev["players"], key=lambda p: ((p.get("place") or 99) if (p.get("place") or 0) > 0 else 100) if placed
+                       else (0 if ev["winner"] and p["team"] == ev["winner"] else 1))
+        rows = ""
+        for p in order:
+            place = p.get("place") or 0
+            result = match_outcome(ev, p)
+            if placed and result != "Disqualified" and place > 0:
+                result = f"Place {place}"
+            cls = ' class="k"' if (ev["winner"] and p["team"] == ev["winner"]) else ""
+            rows += (f'<tr><td><a href="{matches_url(player=p["name"])}">{e(p["name"])}</a></td><td class="n">{e(p.get("level") or "")}</td>'
+                     f'<td class="muted">{e(p.get("monarch") or "")}</td><td{cls}>{result}</td><td class="n">{n(p["kills"])}</td>'
+                     f'<td class="n">{n(p["deaths"])}</td><td class="n">{n(p.get("dealt", 0))}</td><td class="n">{n(p.get("received", 0))}</td></tr>')
+        took = ""
+        if ev.get("started") and ev["ended"] >= ev["started"]:
+            secs = int((ev["ended"] - ev["started"]).total_seconds())
+            took = f'{secs // 60}m {secs % 60:02d}s'
+        facts = " · ".join(x for x in (ev["ended"].strftime("%b %d, %Y %I:%M %p").replace(" 0", " "), took and f"lasted {took}",
+                                       "went to overtime" if ev.get("overtime") else "") if x)
+        tag = ""
+        if who:
+            outs = {match_outcome(ev, p) for p in mine(ev)}
+            tag = f'<span class="res {"k" if outs == {"Won"} else ""}">{e("/".join(sorted(outs)))}</span>&ensp;'
+        items.append(f'<details class="match"><summary><span>{tag}<span class="muted">{e(ARENA_TYPE_NAMES.get(ev["type"], ev["type"]))}</span>&ensp;'
+                     f'{match_result(ev)}</span><span class="muted">{ago(ev["ended"], now)}</span></summary>'
+                     f'<p class="muted">{e(facts)} (server time)</p>'
+                     f'<div class="wrap"><table style="min-width:34rem"><tr><th>Character</th><th class="n">Level</th><th>Allegiance</th><th>Result</th>'
+                     f'<th class="n">Kills</th><th class="n">Deaths</th><th class="n">Damage dealt</th><th class="n">Damage taken</th></tr>{rows}</table></div></details>')
+
+    pager = ""
+    if pages > 1:
+        link = lambda pg, text: f'<a href="{matches_url(type=etype, player=player, page=pg)}">{text}</a>'
+        pager = (f'<div class="show">{link(page - 1, "Newer") if page > 1 else ""}<span class="muted">Page {page} of {pages}</span>'
+                 f'{link(page + 1, "Older") if page < pages else ""}</div>')
+    capped = f" The newest {n(ARENA_HISTORY_MAX)} matches are kept here." if len(events) >= ARENA_HISTORY_MAX else ""
+    listing = "".join(items) or ('' if player and not who else '<p class="empty">No finished matches yet.</p>')
+    return (f'<h1>Arena match history</h1><p class="lede">Every finished arena match, newest first. Open a match for each '
+            f'character\'s kills, deaths and damage. Standings are on the <a href="/arena">Arena page</a>.{capped}</p>'
+            f'<div class="tabs">{tabs}</div>{form}{record}{listing}{pager}')
 
 
 LEVEL_SORTS = [("total", "By level, first to reach it first"), ("earned", "By earned XP (no pass-up)")]
@@ -724,6 +846,8 @@ def render(path, query, snap):
         return layout(path, "Town Control", towns_page(snap), snap)
     if path == "/arena":
         return layout(path, "Arena", arena_page(snap, query.get("type", [""])[0], query), snap)
+    if path == "/arena/matches":
+        return layout("/arena", "Arena match history", arena_matches_page(snap, query), snap)
     if path == "/levels":
         return layout(path, "Levels", levels_page(snap, query), snap)
     if path == "/allegiances":
@@ -847,10 +971,17 @@ def sample_snapshot():
                   dealt=1320, received=2400, points=990),
              dict(id=1008, name="Mirelock", type="2v2", matches=0, wins=0, losses=0, draws=0, dq=0, deaths=0, kills=0,
                   dealt=0, received=0, points=1000)]
-    events = [dict(id=2, type="1v1", ended=now - timedelta(hours=5), winner="a",
-                   players=[dict(id=1000, name="Grimvale", team="a", kills=1, deaths=0), dict(id=1002, name="Ashkaro", team="b", kills=0, deaths=1)]),
-              dict(id=1, type="1v1", ended=now - timedelta(days=1, hours=2), winner="c",
-                   players=[dict(id=1000, name="Grimvale", team="c", kills=1, deaths=0), dict(id=1004, name="Sythe", team="d", kills=0, deaths=1)])]
+    pl = lambda cid, team, place, ks, ds, dealt, recv: dict(id=cid, name=chars[cid]["name"], level=chars[cid]["level"], monarch="Grimvale" if cid < 1008 else "Mirelock",
+                                                            team=team, place=place, kills=ks, deaths=ds, dealt=dealt, received=recv)
+    ev = lambda eid, etype, hours, mins, winner, players, overtime=False: dict(
+        id=eid, type=etype, started=now - timedelta(hours=hours, minutes=mins), ended=now - timedelta(hours=hours), overtime=overtime,
+        winner=winner, players=players)
+    events = [ev(4, "ffa", 2, 9, "a", [pl(1000, "a", 1, 3, 0, 9120, 3300), pl(1002, "b", 2, 1, 1, 5200, 4100), pl(1004, "c", 3, 0, 1, 2100, 4800),
+                                       pl(1008, "d", 4, 0, 1, 900, 5100), pl(1009, "e", -1, 0, 0, 0, 700)]),
+              ev(3, "2v2", 3, 15, None, [pl(1000, "a", 2, 0, 0, 3100, 2900), pl(1002, "a", 2, 0, 0, 2800, 3300),
+                                         pl(1008, "b", 2, 0, 0, 3000, 3100), pl(1009, "b", 2, 0, 0, 3200, 2800)], True),
+              ev(2, "1v1", 5, 4, "a", [pl(1000, "a", 1, 1, 0, 2410, 900), pl(1002, "b", 2, 0, 1, 900, 2410)]),
+              ev(1, "1v1", 26, 6, "c", [pl(1000, "c", 1, 1, 0, 2400, 1320), pl(1004, "d", 2, 0, 1, 1320, 2400)])]
     towns = [dict(id=1, name="Arwic", owner=1000, conflict=True, length=3600, respite=86400),
              dict(id=2, name="Holtburg", owner=1008, conflict=False, length=3600, respite=86400),
              dict(id=3, name="Shoushi", owner=1000, conflict=False, length=3600, respite=86400),

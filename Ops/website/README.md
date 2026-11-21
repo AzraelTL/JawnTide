@@ -27,6 +27,10 @@ MariaDB user `web` and keeps the result in memory; pages are built from that cop
 databases. Admin characters (accounts with accessLevel above 0) are left off every page. Arena kills come only from
 the arena tables; the PK page counts open-world kills (`pk_kills_log` rows with no arena player).
 
+`/arena/matches` is the arena match history: every finished match (`arena_event.status` 5 = won, 6 = draw at the time
+limit), newest first, with a tab per match type, a character search and each player's kills, deaths and damage. The
+site keeps the newest 5,000 matches (`ARENA_HISTORY_MAX` in `site.py`).
+
 The `web` user can read only what the site shows:
 
 - `ace_auth.account`: the columns `accountId` and `accessLevel` (to hide admin characters), nothing else
