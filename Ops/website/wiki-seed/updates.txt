@@ -56,3 +56,4 @@
 2026-11-19-goop-scoop 02-world-bosses.md
 2026-11-19-wb-gift-boxes 02-world-bosses.md
 2026-11-19-workmanship-filter 26-suit-builder.md
+2026-11-20-arena-rewards 06-arena.md
