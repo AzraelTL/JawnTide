@@ -6,7 +6,8 @@ post a new set of notes, and Edit / Delete on each one. The Discord text can be 
 only **bold** becomes a heading, "- " lines become a list.
 
 Stored in ace_wiki.site_text (the table the Fatefall page's words use, already granted to the web user), one row per
-set of notes: k = "patch:" + the UTC time it was posted (YYYYMMDDHHMMSS), v = JSON {"title", "body"}.
+set of notes: k = "patch:" + the time it was posted (YYYYMMDDHHMMSS, by the poster's own clock, so the date shown
+is the date where staff are), v = JSON {"title", "body"}.
 
 Starter notes: patch-notes-seed/*.md (file name = the time posted, first line "# Title") are added once, the first
 time the page is opened, if that set isn't there yet. A set staff later delete is not added again.
@@ -17,7 +18,7 @@ import os
 import re
 import threading
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 import wiki
@@ -95,8 +96,26 @@ def _page(h, title, body, user, status=200):
     wiki._send(h, status, wiki._layout("/patch-notes", title, body + who, None))
 
 
+# the poster's own date and time, so notes posted late in the evening aren't dated tomorrow (the server clock is UTC)
+LOCAL_TIME = ('<input type="hidden" name="when"><script>(function(){var f=document.currentScript.parentNode,d=new Date(),'
+              'p=function(n){return(n<10?"0":"")+n};f.elements.when.value=""+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())'
+              '+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds())})()</script>')
+
+
+def _stamp(form):
+    """When a new set of notes was posted: the poster's clock if it is within a day of the server's, else the server's"""
+    now = datetime.utcnow()
+    try:
+        local = datetime.strptime(form.get("when", ""), "%Y%m%d%H%M%S")
+        if abs(local - now) <= timedelta(hours=26):
+            return local.strftime("%Y%m%d%H%M%S")
+    except ValueError:
+        pass
+    return now.strftime("%Y%m%d%H%M%S")
+
+
 def _form(action, user, title="", body="", button="Post patch notes", error=""):
-    return (f'<form class="wedit" method="post" action="{action}">{wiki._hidden(user)}'
+    return (f'<form class="wedit" method="post" action="{action}">{wiki._hidden(user)}{LOCAL_TIME if action.endswith("/post") else ""}'
             + (f'<p class="err">{e(error)}</p>' if error else "")
             + f'<label>Title (optional, for example "Stage 2")<input name="title" maxlength="{MAX_TITLE}" value="{e(title)}"></label>'
             f'<label>Notes: paste the Discord text as it is<textarea name="body" required maxlength="{MAX_BODY}" style="min-height:14rem">{e(body)}</textarea></label>'
@@ -173,8 +192,8 @@ def handle(h, method):
                 if error:
                     _list(h, user, error, dict(title=title, body=body))
                 else:
-                    wiki._x("INSERT INTO site_text (k, v, updated_at, updated_by) VALUES (%s, %s, UTC_TIMESTAMP(), %s)",
-                            ("patch:" + datetime.utcnow().strftime("%Y%m%d%H%M%S"), json.dumps(dict(title=title, body=body), ensure_ascii=False),
+                    wiki._x("INSERT IGNORE INTO site_text (k, v, updated_at, updated_by) VALUES (%s, %s, UTC_TIMESTAMP(), %s)",
+                            ("patch:" + _stamp(form), json.dumps(dict(title=title, body=body), ensure_ascii=False),
                              str(user["name"])[:64]))
                     wiki._redirect(h, "/patch-notes")
         elif len(parts) == 2 and re.fullmatch(r"\d{14}", parts[0]) and parts[1] in ("edit", "delete"):
