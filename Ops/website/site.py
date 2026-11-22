@@ -270,7 +270,7 @@ def show_links(path, keep, current):
 
 
 def tc_badge(snap, monarch_id):
-    return ' <span class="badge">Town Control</span>' if monarch_id in snap.get("whitelist", set()) else ""
+    return ' <span class="badge">White Listed</span>' if monarch_id in snap.get("whitelist", set()) else ""
 
 
 def span_text(seconds):
@@ -842,13 +842,13 @@ def allegiances_page(snap, query):
     blocks = []
     for r in sorted(roots, key=lambda r: (-size(r), r["name"]))[:limit]:
         m = members(r)
-        badge = '<span class="badge">Town Control</span>' if r["id"] in snap.get("whitelist", set()) else ""
+        badge = '<span class="badge">White Listed</span>' if r["id"] in snap.get("whitelist", set()) else ""
         blocks.append(f'<details><summary><b>{e(r["name"])}</b>{badge}<span class="muted">{len(m)} members, highest level '
                       f'{max(x["level"] for x in m)}, {n(kills.get(r["id"], 0))} kills this week</span></summary>'
                       f'<ul class="tree">{"".join(tree(k) for k in sorted(children[r["id"]], key=lambda k: (-size(k), -k["level"], k["name"])))}</ul></details>')
     return (f'<h1>Allegiances</h1><p class="lede">Every allegiance with at least one vassal, largest first. '
             f'Open one to see its tree. Numbers next to names are levels. '
-            f'<span class="badge">Town Control</span> marks allegiances whitelisted for Town Control.</p>'
+            f'<span class="badge">White Listed</span> marks allegiances whitelisted for Town Control.</p>'
             f'{"".join(blocks) or "<p class=empty>No allegiances yet.</p>"}{show_links("/allegiances", {}, show_key) if roots else ""}')
 
 
