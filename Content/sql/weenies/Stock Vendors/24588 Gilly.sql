@@ -254,6 +254,7 @@ VALUES (24588, 2,  8399,  0, 87, 1, False) /* Create Kireth Gown with Band (8399
      , (24588, 4,   689, -1, 0, 0, False) /* Create Iron Scarab (689) for Shop */
      , (24588, 4,   686, -1, 0, 0, False) /* Create Copper Scarab (686) for Shop */
      , (24588, 4,   688, -1, 0, 0, False) /* Create Silver Scarab (688) for Shop */
+     , (24588, 4, 37155, -1, 0, 0, False) /* Create Mana Scarab (37155) for Shop */
      , (24588, 4, 20631, -1, 0, 0, False) /* Create Prismatic Taper (20631) for Shop */
      , (24588, 4,   765, -1, 0, 0, False) /* Create Amaranth (765) for Shop */
      , (24588, 4,   766, -1, 0, 0, False) /* Create Bistort (766) for Shop */

@@ -183,6 +183,7 @@ VALUES (80424, 2,  5914,  0, 93, 0, False) /* Create Suikan Item Master Robe (59
      , (80424, 4,   687, -1, 0, 0, False) /* Create Gold Scarab (687) for Shop */
      , (80424, 4,   690, -1, 0, 0, False) /* Create Pyreal Scarab (690) for Shop */
      , (80424, 4,  8897, -1, 0, 0, False) /* Create Platinum Scarab (8897) for Shop */
+     , (80424, 4, 37155, -1, 0, 0, False) /* Create Mana Scarab (37155) for Shop */
      , (80424, 4, 20631, -1, 0, 0, False) /* Create Prismatic Taper (20631) for Shop */
      , (80424, 4,   774, -1, 0, 0, False) /* Create Hyssop (774) for Shop */
      , (80424, 4,   775, -1, 0, 0, False) /* Create Mandrake (775) for Shop */
