@@ -229,6 +229,17 @@ def name_of(snap, cid):
     return c["name"] if c else "Unknown"
 
 
+def same_char(snap, cid):
+    """The id to count a character under. A deleted character whose name is in use again (deleted and remade, as
+    with a monarch that was re-rolled) counts as the character that has the name now, so one name is one row."""
+    canon = snap.get("canon")
+    if canon is None:
+        live = {c["name"].lower(): c["id"] for c in snap["chars"].values() if not c["deleted"] and c["name"]}
+        canon = snap["canon"] = {c["id"]: live[c["name"].lower()] for c in snap["chars"].values()
+                                 if c["deleted"] and c["name"] and c["name"].lower() in live}
+    return canon.get(cid, cid)
+
+
 def allegiance_name(snap, cid):
     """Monarch's name for a character's allegiance; a monarch with vassals counts as their own allegiance"""
     c = snap["chars"].get(cid)
@@ -490,8 +501,8 @@ def pk_page(snap, window, query):
 
     tally = {}
     for k in kills:
-        tally.setdefault(k["killer"], [0, 0])[0] += 1
-        tally.setdefault(k["victim"], [0, 0])[1] += 1
+        tally.setdefault(same_char(snap, k["killer"]), [0, 0])[0] += 1
+        tally.setdefault(same_char(snap, k["victim"]), [0, 0])[1] += 1
     order = {
         "kills": lambda r: (-r[1][0], -(r[1][0] / max(r[1][1], 1)), name_of(snap, r[0]).lower()),
         "kd": lambda r: (-(r[1][0] / max(r[1][1], 1)), -r[1][0], name_of(snap, r[0]).lower()),
@@ -519,9 +530,9 @@ def pk_page(snap, window, query):
     alleg = {}
     for k in kills:
         if k["km"]:
-            alleg.setdefault(k["km"], [0, 0])[0] += 1
+            alleg.setdefault(same_char(snap, k["km"]), [0, 0])[0] += 1
         if k["vm"]:
-            alleg.setdefault(k["vm"], [0, 0])[1] += 1
+            alleg.setdefault(same_char(snap, k["vm"]), [0, 0])[1] += 1
     arows = []
     for i, (mid, (k, d)) in enumerate(sorted(((m, v) for m, v in alleg.items() if v[0] > 0), key=lambda r: -r[1][0])[:15], 1):
         arows.append(f'<tr>{rank_cell(i)}<td>{e(name_of(snap, mid))}{tc_badge(snap, mid)}</td><td class="n k">{n(k)}</td><td class="n">{n(d)}</td></tr>')
@@ -801,7 +812,7 @@ def allegiances_page(snap, query):
     kills = {}
     for k in snap["kills"]:
         if k["when"] >= week and k["km"]:
-            kills[k["km"]] = kills.get(k["km"], 0) + 1
+            kills[same_char(snap, k["km"])] = kills.get(same_char(snap, k["km"]), 0) + 1
 
     sizes = {}
 
