@@ -24,12 +24,50 @@ namespace ACE.Server.Command.Handlers
     /// then given 9 damage tinkers, an imbue (Armor Rending, Critical Strike or Crippling Blow) and Epic cantrips.
     /// So it is the best weapon that loot could possibly produce in the current stage, never better.
     ///
+    /// Melee weapons get the mix of Iron (+1 damage) and Granite (variance x 0.8) that gives the highest average
+    /// damage per hit for that weapon and imbue; see BestIron.
+    ///
     /// The weapons are attuned, bonded and worth nothing, so they can't be traded or sold.
     /// </summary>
     public static class MaxWeaponCommands
     {
         private const int RollsPerTier = 4000;
         private const int TinkerCount = 9;
+
+        /// <summary>
+        /// Flat damage a buffed tester has on top of the weapon (Blood Drinker VIII +24, Epic Blood Thirst +7).
+        /// It matters to the Iron / Granite choice: the more flat damage, the less each Iron adds.
+        /// </summary>
+        private const int BuffDamage = 31;
+
+        /// <summary>
+        /// How many of the 9 tinkers should be Iron (the rest Granite) for the highest average damage per hit.
+        /// Average hit = (damage + buffs + iron) x [normal share x (1 - variance x 0.8^granite / 2) + crit share x crit multiplier]:
+        /// a normal hit is spread evenly from the minimum to the maximum, and a crit always uses the maximum.
+        /// Imbues at full strength: Critical Strike 50% crits, Crippling Blow 7x crits; otherwise 10% crits at 2x.
+        /// </summary>
+        private static int BestIron(int damage, double variance, ImbuedEffectType imbue)
+        {
+            var critChance = imbue == ImbuedEffectType.CriticalStrike ? 0.5 : 0.1;
+            var critMultiplier = imbue == ImbuedEffectType.CripplingBlow ? 7.0 : 2.0;
+
+            var bestIron = TinkerCount;
+            var bestAverage = 0.0;
+
+            for (var iron = TinkerCount; iron >= 0; iron--)
+            {
+                var tinkered = variance * Math.Pow(0.8, TinkerCount - iron);
+                var average = (damage + BuffDamage + iron) * ((1 - critChance) * (1 - tinkered / 2) + critChance * critMultiplier);
+
+                // ties go to more Iron (the loop starts there)
+                if (average > bestAverage + 1e-9)
+                {
+                    bestAverage = average;
+                    bestIron = iron;
+                }
+            }
+            return bestIron;
+        }
 
         private class Best
         {
@@ -63,7 +101,7 @@ namespace ACE.Server.Command.Handlers
         };
 
         [CommandHandler("maxweapons", AccessLevel.Admin, CommandHandlerFlag.RequiresWorld, 1,
-            "Makes perfect test weapons (best stats loot can roll in the current stage, 9 damage tinkers, AR / CS / CB, Epic cantrips) for damage testing.",
+            "Makes perfect test weapons (best stats loot can roll in the current stage, the best 9 damage tinkers, AR / CS / CB, Epic cantrips) for damage testing.",
             "<heavy|light|finesse|twohanded|missile|caster> [wield requirement] [kind]\n" +
             "With only a category: lists every weapon kind and wield requirement with the best stats, and makes nothing.\n" +
             "With a wield requirement: puts three weapons (AR, CS, CB) of every kind at that wield requirement in your pack.\n" +
@@ -161,7 +199,8 @@ namespace ACE.Server.Command.Handlers
                 }
             }
 
-            CommandHandlerHelper.WriteOutputInfo(session, $"Made {made} test weapons: {category}, wield {wieldWanted}, {wanted.Count} kind(s), each with AR, CS and CB.");
+            CommandHandlerHelper.WriteOutputInfo(session, $"Made {made} test weapons: {category}, wield {wieldWanted}, {wanted.Count} kind(s), each with AR, CS and CB."
+                + (category == "missile" || category == "caster" ? "" : " Each name shows its tinkers, for example 2I/7G is 2 Iron and 7 Granite."));
             PlayerManager.BroadcastToAuditChannel(player, $"{player.Name} made {made} max test weapons with /maxweapons ({category}, wield {wieldWanted}).");
         }
 
@@ -307,6 +346,7 @@ namespace ACE.Server.Command.Handlers
         private static void Perfect(WorldObject wo, string category, Best b, ImbuedEffectType imbue, MaterialType imbueMaterial, string tag)
         {
             MaterialType tinker;
+            var iron = TinkerCount;       // for melee: how many of the tinkers are Iron, the rest are Granite
 
             if (category == "missile")
             {
@@ -326,13 +366,16 @@ namespace ACE.Server.Command.Handlers
             }
             else
             {
-                // Iron: +1 damage each
-                wo.Damage = b.Damage + TinkerCount;
-                if (b.Variance != double.MaxValue)
-                    wo.DamageVariance = b.Variance;
+                // Iron: +1 damage each. Granite: variance x 0.8 each. The mix is the best one for this weapon and imbue.
+                var variance = b.Variance != double.MaxValue ? b.Variance : wo.DamageVariance ?? 0;
+                iron = BestIron(b.Damage, variance, imbue);
+
+                wo.Damage = b.Damage + iron;
+                wo.DamageVariance = variance * Math.Pow(0.8, TinkerCount - iron);
                 if (b.Offense > 1)
                     wo.WeaponOffense = b.Offense;
                 tinker = MaterialType.Iron;
+                tag += $" {iron}I/{TinkerCount - iron}G";
             }
 
             if (b.Defense > 1)
@@ -348,7 +391,8 @@ namespace ACE.Server.Command.Handlers
             if (RecipeManager.IconUnderlay.TryGetValue(imbue, out var underlay))
                 wo.IconUnderlayId = underlay;
             wo.NumTimesTinkered = TinkerCount + 1;
-            wo.TinkerLog = string.Join(",", Enumerable.Repeat((int)tinker, TinkerCount).Append((int)imbueMaterial));
+            wo.TinkerLog = string.Join(",", Enumerable.Repeat((int)tinker, iron)
+                .Concat(Enumerable.Repeat((int)MaterialType.Granite, TinkerCount - iron)).Append((int)imbueMaterial));
 
             // Epic cantrips, the best Tier 7 loot gives. Only on a weapon that already holds spells, so its mana is set up.
             if (wo.ItemMaxMana != null)
