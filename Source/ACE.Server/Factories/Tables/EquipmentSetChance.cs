@@ -59,7 +59,7 @@ namespace ACE.Server.Factories.Tables
                 return null;
 
             // loot quality mod?
-            if (!armorSetChance.Roll(profile.LootQualityMod))
+            if (!armorSetChance.Roll(LootStageRates.TopQuality(profile)))
                 return null;
 
             // each armor set has an even chance of being selected

@@ -649,7 +649,7 @@ namespace ACE.Server.Factories
             }
 
             // JawnTide loot stages: only this share of rolled sets is kept
-            if (wo.EquipmentSetId != null && !PassesLootRate("loot_set_rate"))
+            if (wo.EquipmentSetId != null && !LootStageRates.Passes("loot_set_rate", profile))
             {
                 wo.EquipmentSetId = null;
                 return false;
@@ -1019,7 +1019,7 @@ namespace ACE.Server.Factories
                 return false;
 
             // JawnTide loot stages: only this share of rolled ratings is kept
-            if (!PassesLootRate("loot_rating_rate"))
+            if (!LootStageRates.Passes("loot_rating_rate", profile))
                 return false;
 
             //Console.WriteLine($"TryMutateGearRating({wo.Name}, {profile.TreasureType}, {roll.ItemType}): rolled gear rating {gearRating}");

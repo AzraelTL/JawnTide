@@ -2492,6 +2492,14 @@
    "area": "Loot & salvage"
   },
   {
+   "key": "loot_quality_edge",
+   "type": "double",
+   "default": "-1.0",
+   "jawntide": true,
+   "desc": "below 0 (default) loot quality works as stock: a high quality profile (top chests, bosses) always rolls Epics, sets and ratings. At 0 or more that is switched off, so every profile rolls them at the same table chance, and the share kept by loot_epic_rate, loot_set_rate and loot_rating_rate is multiplied by (1 + this x the profile quality). 0.5 makes the best chests about 1.5 times as good as a quality 0 monster, and a little better than the best monsters",
+   "area": "Loot & salvage"
+  },
+  {
    "key": "loot_quality_mod",
    "type": "bool",
    "default": "true",

@@ -11,7 +11,7 @@ These folders are **not** imported by the server. `Content/sql` always holds the
 | Stage | loot_max_tier | loot_disable_ratings | Random loot |
 |---|---|---|---|
 | 1 (launch) | 6 | false | Tier 6, Majors at most |
-| 2 (live 2026-11-22) | 7 | false | Epics, armor sets, ratings on armor only (`loot_ratings_min_tier 7`, `loot_ratings_armor_only true`), all turned down with `loot_epic_rate`, `loot_set_rate`, `loot_rating_rate`. Level cap off (275) |
+| 2 (live 2026-11-22) | 7 | false | Epics, armor sets, ratings on armor only (`loot_ratings_min_tier 7`, `loot_ratings_armor_only true`), all turned down with `loot_epic_rate`, `loot_set_rate`, `loot_rating_rate`, and `loot_quality_edge 0.5` so chests are only a little better than monsters. Level cap off (275) |
 | 3 | 8 | true | Legendaries, no ratings |
 | 4 | 8 | false | Legendaries with ratings |
 | later | 0 | false | no cap (custom Tier 9) |
@@ -22,6 +22,12 @@ These folders are **not** imported by the server. `Content/sql` always holds the
 Epics, Legendaries, sets and ratings that is kept (1 = all, 0.2 = one in five). They apply to every profile, including
 high quality chests whose quality modifier otherwise makes the result certain. `loot_ratings_min_tier` is the lowest
 tier that rolls ratings (retail 8). All of them take effect as soon as they are changed, with no restart.
+
+`loot_quality_edge` decides how much a profile's quality modifier helps with those top results. Below 0 (default) is
+stock: a quality above about 0.75 (top chests, rare bosses) makes Epics, sets and ratings certain before the rates
+apply. At 0 or more every profile rolls them at the same table chance, and the kept share is multiplied by
+(1 + edge x quality), so 0.5 makes the best chests about 1.5 times a quality 0 monster and slightly better than the
+best monsters. It also stops quality forcing several cantrips per item from Tier 7.
 
 ## Advancing to the next stage
 

@@ -92,7 +92,8 @@ namespace ACE.Server.Factories.Tables
 
         public static int RollNumCantrips(TreasureDeath profile)
         {
-            return numCantrips[profile.Tier - 1].Roll(profile.LootQualityMod);
+            // JawnTide: from tier 7, loot_quality_edge stops high quality profiles always rolling several cantrips
+            return numCantrips[profile.Tier - 1].Roll(profile.Tier >= 7 ? LootStageRates.TopQuality(profile) : profile.LootQualityMod);
         }
 
 
@@ -162,7 +163,7 @@ namespace ACE.Server.Factories.Tables
 
         public static int RollCantripLevel(TreasureDeath profile)
         {
-            return cantripLevels[profile.Tier - 1].Roll(profile.LootQualityMod);
+            return cantripLevels[profile.Tier - 1].Roll(LootStageRates.TopQuality(profile));
         }
 
 

@@ -70,7 +70,7 @@ namespace ACE.Server.Factories.Tables
             };
 
             // initial roll for rating chance
-            if (!RatingChance.Roll(profile.LootQualityMod))
+            if (!RatingChance.Roll(LootStageRates.TopQuality(profile)))
                 return 0;
 
             // roll for the actual rating
@@ -104,7 +104,7 @@ namespace ACE.Server.Factories.Tables
                 return 0;
             }
 
-            return rating.Roll(profile.LootQualityMod);
+            return rating.Roll(LootStageRates.TopQuality(profile));
         }
     }
 }
