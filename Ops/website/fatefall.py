@@ -274,6 +274,48 @@ def _save(h):
     answer(200, ok=True)
 
 
+CLIPS = re.compile(r"/fatefall/clip/(fatefall-clip-[0-9]+\.(?:mp4|jpg))")
+
+
+def _clip_send(h, name):
+    """A short clip of the game for the page (or its still picture). Answers Range requests: Safari will not play a
+    video that cannot be asked for in parts."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), name)
+    if not os.path.isfile(path):
+        return _send(h, 404, "Not found.\n", "text/plain; charset=utf-8", "no-store")
+    size = os.path.getsize(path)
+    first, last, status = 0, size - 1, 200
+    m = re.fullmatch(r"bytes=(\d*)-(\d*)", h.headers.get("Range", "").strip())
+    if m and (m.group(1) or m.group(2)):
+        if m.group(1):
+            first = int(m.group(1))
+            last = min(int(m.group(2)), size - 1) if m.group(2) else size - 1
+        else:
+            first = max(size - int(m.group(2)), 0)
+        if first > last or first >= size:
+            h.send_response(416)
+            h.send_header("Content-Range", f"bytes */{size}")
+            h.send_header("Content-Length", "0")
+            h.end_headers()
+            return
+        status = 206
+    h.send_response(status)
+    h.send_header("Content-Type", "video/mp4" if name.endswith(".mp4") else "image/jpeg")
+    h.send_header("Content-Length", str(last - first + 1))
+    h.send_header("Accept-Ranges", "bytes")
+    if status == 206:
+        h.send_header("Content-Range", f"bytes {first}-{last}/{size}")
+    h.send_header("Cache-Control", "public, max-age=86400")
+    h.send_header("X-Content-Type-Options", "nosniff")
+    h.end_headers()
+    try:
+        with open(path, "rb") as f:
+            f.seek(first)
+            h.wfile.write(f.read(last - first + 1))
+    except (BrokenPipeError, ConnectionResetError):
+        pass
+
+
 def handle(h, method):
     """Serves /fatefall and what is under it. Returns True when it handled the request."""
     path = urlparse(h.path).path.rstrip("/") or "/"
@@ -285,6 +327,8 @@ def handle(h, method):
         _download_ask(h)
     elif path == "/fatefall/file" and method == "GET":
         _download_send(h)
+    elif method == "GET" and CLIPS.fullmatch(path):
+        _clip_send(h, CLIPS.fullmatch(path).group(1))
     elif path == "/fatefall/version" and method == "GET":
         # for the game's launcher: one line, nothing secret
         _send(h, 200, (_download_version() if DOWNLOAD_PASSWORD else "") + "\n", "text/plain; charset=utf-8", "no-store")
