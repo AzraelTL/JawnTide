@@ -36,6 +36,29 @@ namespace ACE.Server.Factories
         }
 
         /// <summary>
+        /// JawnTide loot stages: the final say on a top result that has already been rolled (an Epic or Legendary
+        /// cantrip, an equipment set, a gear rating). The named setting is the share that is kept: 1 keeps them all,
+        /// 0.2 keeps one in five, 0 keeps none. It applies to every loot profile, including high quality chests
+        /// whose quality modifier would otherwise make the result certain.
+        /// </summary>
+        private static bool PassesLootRate(string setting)
+        {
+            var rate = PropertyManager.GetDouble(setting).Item;
+
+            if (rate >= 1.0)
+                return true;
+            if (rate <= 0.0)
+                return false;
+
+            return ThreadSafeRandom.Next(0.0f, 1.0f) < rate;
+        }
+
+        /// <summary>
+        /// JawnTide loot stages: the lowest loot tier that rolls gear ratings (loot_ratings_min_tier, retail is 8)
+        /// </summary>
+        private static int RatingsMinTier => (int)Math.Clamp(PropertyManager.GetLong("loot_ratings_min_tier").Item, 1, 9);
+
+        /// <summary>
         /// JawnTide loot stages: caps random loot at the tier set by the loot_max_tier server property (0 = no cap),
         /// and removes gear ratings when loot_disable_ratings is TRUE.
         /// Returns an adjusted copy, so the cached treasure profile itself is never changed.

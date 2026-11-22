@@ -75,12 +75,12 @@ namespace ACE.Server.Factories
                 wo.ManaRate = null;
             }
 
-            // gear rating (t8)
-            if (roll != null && profile.Tier >= 8)
-            {
+            // gear rating (t8, or from loot_ratings_min_tier)
+            if (roll != null && profile.Tier >= RatingsMinTier)
                 TryMutateGearRating(wo, profile, roll);
+
+            if (roll != null && profile.Tier >= 8)
                 TryRollEquipmentSet(wo, profile, roll);
-            }
 
             // item value
             //  if (wo.HasMutateFilter(MutateFilter.Value))     // fixme: data

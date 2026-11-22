@@ -2468,6 +2468,22 @@
    "area": "Loot & salvage"
   },
   {
+   "key": "loot_epic_rate",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": true,
+   "desc": "share of rolled Epic cantrips that is kept; the rest become Majors. 1 = all, 0.2 = one in five, 0 = none. Applies to every loot profile, including high quality chests",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "loot_legendary_rate",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": true,
+   "desc": "share of rolled Legendary cantrips that is kept; the rest become Epics (and then face loot_epic_rate). 1 = all, 0 = none. Applies to every loot profile",
+   "area": "Loot & salvage"
+  },
+  {
    "key": "loot_max_tier",
    "type": "long",
    "default": "0",
@@ -2481,6 +2497,38 @@
    "default": "true",
    "jawntide": false,
    "desc": "if FALSE then the loot quality modifier of a Death Treasure profile does not affect loot generation",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "loot_rating_rate",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": true,
+   "desc": "share of rolled gear ratings that is kept; the rest drop without a rating. 1 = all, 0.2 = one in five, 0 = none. Applies on top of rating_drop_rate, to every loot profile",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "loot_ratings_armor_only",
+   "type": "bool",
+   "default": "false",
+   "jawntide": true,
+   "desc": "if TRUE, random loot only rolls gear ratings on armor (pieces with an armor level), never on clothing, cloaks or jewelry",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "loot_ratings_min_tier",
+   "type": "long",
+   "default": "8",
+   "jawntide": true,
+   "desc": "lowest loot tier whose random loot can roll gear ratings (retail is 8). 7 lets Tier 7 loot roll ratings; rated Tier 7 pieces need level 150 to wield",
+   "area": "Loot & salvage"
+  },
+  {
+   "key": "loot_set_rate",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": true,
+   "desc": "share of rolled equipment sets that is kept; the rest drop without a set. 1 = all, 0.2 = one in five, 0 = none. Applies to every loot profile, including high quality chests",
    "area": "Loot & salvage"
   },
   {

@@ -299,6 +299,12 @@ namespace ACE.Server.Factories
                     cantripLevel = 2;
                 }
 
+                // JawnTide loot stages: only this share of Legendaries and Epics is kept, the rest drop one level
+                if (cantripLevel == 4 && !PassesLootRate("loot_legendary_rate"))
+                    cantripLevel = 3;
+                if (cantripLevel == 3 && !PassesLootRate("loot_epic_rate"))
+                    cantripLevel = 2;
+
                 var cantripLevels = SpellLevelProgression.GetSpellLevels(cantrip);
 
                 if (cantripLevels.Count != 4)

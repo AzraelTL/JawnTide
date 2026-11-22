@@ -153,7 +153,7 @@ namespace ACE.Server.Factories
             if (profile.Tier > 6 && armorType != LootTables.ArmorType.SocietyArmor)
                 TryRollEquipmentSet(wo, profile, roll);
 
-            if (roll != null && profile.Tier >= 8)
+            if (roll != null && profile.Tier >= RatingsMinTier)
                 TryMutateGearRating(wo, profile, roll);
 
             // item value
@@ -648,6 +648,13 @@ namespace ACE.Server.Factories
                 wo.EquipmentSetId = EquipmentSetChance.Roll(wo, profile, roll);
             }
 
+            // JawnTide loot stages: only this share of rolled sets is kept
+            if (wo.EquipmentSetId != null && !PassesLootRate("loot_set_rate"))
+            {
+                wo.EquipmentSetId = null;
+                return false;
+            }
+
             if (wo.EquipmentSetId != null && PropertyManager.GetBool("equipmentsetid_name_decoration").Item)
             {
                 var equipSetId = wo.EquipmentSetId;
@@ -846,7 +853,7 @@ namespace ACE.Server.Factories
             // workmanship
             wo.Workmanship = WorkmanshipChance.Roll(profile.Tier);
 
-            if (roll != null && profile.Tier >= 8)
+            if (roll != null && profile.Tier >= RatingsMinTier)
                 TryMutateGearRating(wo, profile, roll);
 
             // item value
@@ -992,8 +999,12 @@ namespace ACE.Server.Factories
             if (profile.DisableRatings)
                 return false;
 
-            if (profile.Tier < 8)
-                return false;            
+            if (profile.Tier < RatingsMinTier)
+                return false;
+
+            // JawnTide loot stages: ratings on armor only (pieces with an armor level), not clothing, cloaks or jewelry
+            if (PropertyManager.GetBool("loot_ratings_armor_only").Item && !roll.HasArmorLevel(wo))
+                return false;
 
             if(wo.IsShield && profile.Tier >= 9)
             {
@@ -1005,6 +1016,10 @@ namespace ACE.Server.Factories
             var gearRating = GearRatingChance.Roll(wo, profile, roll);
 
             if (gearRating == 0)
+                return false;
+
+            // JawnTide loot stages: only this share of rolled ratings is kept
+            if (!PassesLootRate("loot_rating_rate"))
                 return false;
 
             //Console.WriteLine($"TryMutateGearRating({wo.Name}, {profile.TreasureType}, {roll.ItemType}): rolled gear rating {gearRating}");
@@ -1105,9 +1120,9 @@ namespace ACE.Server.Factories
                 return false;
             }
 
-            // ensure wield requirement is level 180?
+            // ensure wield requirement is level 180? (150 when ratings are opened below tier 8)
             if (roll.ArmorType != TreasureArmorType.Society)
-                SetWieldLevelReq(wo, 180);
+                SetWieldLevelReq(wo, profile.Tier >= 8 ? 180 : 150);
 
             return true;
         }
