@@ -49,7 +49,7 @@ VALUES (490052,   1, 0x02000103) /* Setup */
      , (490052,  52, 0x06005B0C) /* IconUnderlay */;
 
 INSERT INTO `weenie_properties_spell_book` (`object_Id`, `spell`, `probability`)
-VALUES (490052,  6102,      2)  /* Epic Strength */
-     , (490052,  6079,      2)  /* Epic Endurance */
+VALUES (490052,  4911,      2)  /* Epic Armor (Stage 2; was Legendary Armor 6102) */
+     , (490052,  4679,      2)  /* Epic Storm Ward (Stage 2; was Legendary Storm Ward 6079) */
 	 , (490052,  4090,      2)  /* Incantation of Endurance Self */
      , (490052,  4470,      2)  /* Incantation of Endurance Self */;

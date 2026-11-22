@@ -48,8 +48,8 @@ VALUES (490003,   1, 0x02000103) /* Setup */
      , (490003,  52, 0x06005B0C) /* IconUnderlay */;
 
 INSERT INTO `weenie_properties_spell_book` (`object_Id`, `spell`, `probability`)
-VALUES (490003,  2576,      2)  /* Major Strength (Stage 1; Legendary 6107 in stage2) */
-     , (490003,  2573,      2)  /* Major Endurance (Stage 1; Legendary 6104 in stage2) */
+VALUES (490003,  3965,      2)  /* Epic Strength (Stage 2; Major 2576 in Stage 1, Legendary 6107 in the stage2 folder) */
+     , (490003,  4226,      2)  /* Epic Endurance (Stage 2; Major 2573 in Stage 1, Legendary 6104 in the stage2 folder) */
 	 , (490003,  2980,      2)  /* Incantation of Endurance Self */
      , (490003,  4299,      2)  /* Incantation of Endurance Self */
      , (490003,  4325,      2)  /* Incantation of Strength Self */;
