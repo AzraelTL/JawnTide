@@ -60,6 +60,9 @@ It cannot see account names, passwords, IP addresses or login history. The conta
   away. Staff accounts can always edit. The column flags a contributor
   whose account shares an IP with another contributor's (likely the same person on two accounts).
 
+- **Edit counts**: /wiki/contributors lists everyone who has edited, with their edits, articles edited and articles
+  started; /wiki/contributors/ID lists one person's edits. Both are counted from `ace_wiki.revision` (every saved
+  version has its `user_id`), so nothing extra is stored and every past edit is already counted.
 - **Linking**: /wiki/link makes an 8-character code (10 minutes, only usable in the browser that made it). The player
   types `/wiki CODE` in game with the character they want on the wiki (`Source/ACE.Server/Command/Handlers/WikiCommands.cs`), which fills in the account and
   character on that code; the site then asks for a wiki password (scrypt-hashed). Later sign-ins are character name +

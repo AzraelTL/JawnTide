@@ -252,7 +252,7 @@ def _redirect(h, where, cookie=None, extra_cookie=None):
 
 def _page(h, title, body, user, status=200):
     bar = (f'<div class="wikibar"><a href="/wiki">Wiki home</a><a href="/wiki/recent">Recent changes</a>'
-           f'<a href="/wiki/new">New article</a>'
+           f'<a href="/wiki/contributors">Contributors</a><a href="/wiki/new">New article</a>'
            f'<form class="wsearch" action="/wiki" method="get"><input name="q" placeholder="Search the wiki" aria-label="Search the wiki"></form>'
            + (f'<span class="who">Signed in as <b>{e(user["name"])}</b>{" (staff)" if user["admin"] else "" if user["editor"] else " (waiting for contributor approval)"}'
               f'<form method="post" action="/wiki/logout"><input type="hidden" name="csrf" value="{user["csrf"]}"><button class="link">Sign out</button></form></span>'
@@ -402,18 +402,58 @@ def _history(h, user, slug):
         if user and user["admin"] and uid and uid != user["id"]:
             block = (f'<form class="inline" method="post" action="/wiki/user/{uid}/block">{_hidden(user)}'
                      f'<button class="link">{"Unblock" if blocked else "Block"} {e(name)}</button></form>')
-        trs.append(f'<tr><td><a href="/wiki/{e(slug)}/rev/{rid}">{e(at.strftime("%b %d, %Y %H:%M"))}</a>{cur}</td><td>{e(name)}</td>'
+        trs.append(f'<tr><td><a href="/wiki/{e(slug)}/rev/{rid}">{e(at.strftime("%b %d, %Y %H:%M"))}</a>{cur}</td><td>{_who(uid, name)}</td>'
                    f'<td class="wrapcell">{e(summ) or "<span class=muted>no summary</span>"}</td><td class="n">{size:,}</td><td>{block}</td></tr>')
     _page(h, f"History of {page[0]}", f'<h1>History: <a href="/wiki/{e(slug)}">{e(page[0])}</a></h1>'
           f'<div class="wrap"><table><thead><tr><th>Saved (UTC)</th><th>By</th><th>Change</th><th class="n">Characters</th><th></th></tr></thead>'
           f'<tbody>{"".join(trs)}</tbody></table></div>', user)
 
 
+def _who(uid, name):
+    """A contributor's name, linked to the list of their edits (the site's own edits have no user)"""
+    return f'<a href="/wiki/contributors/{int(uid)}">{e(name)}</a>' if uid else e(name)
+
+
+def _contributors(h, user):
+    """/wiki/contributors: everyone who has edited the wiki, most edits first. Counted from the saved versions
+    (revision.user_id), so it covers every edit ever made; the site's own starter articles are not counted."""
+    rows = _q("SELECT u.id, u.name, u.is_admin, COUNT(*), COUNT(DISTINCT r.slug), "
+              "SUM(r.id IN (SELECT MIN(id) FROM revision GROUP BY slug)), MAX(r.created_at) "
+              "FROM revision r JOIN wiki_user u ON u.id = r.user_id GROUP BY u.id, u.name, u.is_admin "
+              "ORDER BY COUNT(*) DESC, MAX(r.created_at) DESC")
+    trs = "".join(f'<tr><td class="rank{" top" if i <= 3 else ""}">{i}</td><td>{_who(uid, name)}{" <span class=muted>(staff)</span>" if admin else ""}</td>'
+                  f'<td class="n k">{int(edits):,}</td><td class="n">{int(pages):,}</td><td class="n">{int(made or 0):,}</td>'
+                  f'<td class="muted">{_ago(last)}</td></tr>' for i, (uid, name, admin, edits, pages, made, last) in enumerate(rows, 1))
+    total = sum(int(r[3]) for r in rows)
+    body = (f'<div class="wrap"><table style="min-width:30rem"><thead><tr><th></th><th>Contributor</th><th class="n">Edits</th><th class="n">Articles edited</th>'
+            f'<th class="n">Articles started</th><th>Last edit</th></tr></thead><tbody>{trs}</tbody></table></div>' if rows
+            else '<p class="empty">Nobody has edited the wiki yet.</p>')
+    _page(h, "Wiki contributors", f'<h1>Contributors</h1><p class="lede">Everyone who has edited the wiki, most edits first: '
+          f'{total:,} edit{"" if total == 1 else "s"} by {len(rows):,} contributor{"" if len(rows) == 1 else "s"}. '
+          f'Every saved change counts as one edit. Click a name to see that person\'s edits.</p>{body}', user)
+
+
+def _contributor(h, user, uid):
+    """/wiki/contributors/ID: one person's edits, newest first"""
+    who = _q("SELECT name, is_admin FROM wiki_user WHERE id = %s", (uid,), one=True)
+    if not who:
+        return _page(h, "Not found", "<h1>Not found</h1>", user, 404)
+    count = _q("SELECT COUNT(*), COUNT(DISTINCT slug) FROM revision WHERE user_id = %s", (uid,), one=True)
+    rows = _q("SELECT slug, title, created_at, summary, id FROM revision WHERE user_id = %s ORDER BY id DESC LIMIT 500", (uid,))
+    items = "".join(f'<li><a href="/wiki/{e(s)}">{e(t)}</a> <span class="muted">· {_ago(c)}</span>'
+                    f'{" · " + e(m) if m else ""} · <a href="/wiki/{e(s)}/rev/{rid}">this version</a></li>' for s, t, c, m, rid in rows)
+    edits, pages = int(count[0]), int(count[1])
+    more = f" The newest {len(rows):,} are listed." if edits > len(rows) else ""
+    _page(h, f"Edits by {who[0]}", f'<h1>Edits by {e(who[0])}</h1><p class="lede">{edits:,} edit{"" if edits == 1 else "s"} to '
+          f'{pages:,} article{"" if pages == 1 else "s"}.{more} <a href="/wiki/contributors">All contributors</a></p>'
+          f'<ul class="wlist">{items or "<li class=muted>No edits yet.</li>"}</ul>', user)
+
+
 def _recent(h, user):
-    rows = _q("SELECT r.slug, r.title, r.created_at, COALESCE(u.name, 'JawnTide'), r.summary, r.id FROM revision r "
+    rows = _q("SELECT r.slug, r.title, r.created_at, COALESCE(u.name, 'JawnTide'), r.summary, r.id, u.id FROM revision r "
               "LEFT JOIN wiki_user u ON u.id = r.user_id ORDER BY r.id DESC LIMIT 100")
-    items = "".join(f'<li><a href="/wiki/{e(s)}">{e(t)}</a> <span class="muted">· {e(n)} · {_ago(c)}</span>'
-                    f'{" · " + e(m) if m else ""} · <a href="/wiki/{e(s)}/rev/{rid}">this version</a></li>' for s, t, c, n, m, rid in rows)
+    items = "".join(f'<li><a href="/wiki/{e(s)}">{e(t)}</a> <span class="muted">· {_who(uid, n)} · {_ago(c)}</span>'
+                    f'{" · " + e(m) if m else ""} · <a href="/wiki/{e(s)}/rev/{rid}">this version</a></li>' for s, t, c, n, m, rid, uid in rows)
     _page(h, "Recent changes", f'<h1>Recent changes</h1><ul class="wlist">{items or "<li class=muted>Nothing yet.</li>"}</ul>', user)
 
 
@@ -585,6 +625,10 @@ def handle(h, method):
             _index(h, user, query) if method == "GET" else _send(h, 405, "Method not allowed", "text/plain")
         elif parts == ["recent"]:
             _recent(h, user)
+        elif parts == ["contributors"] and method == "GET":
+            _contributors(h, user)
+        elif len(parts) == 2 and parts[0] == "contributors" and parts[1].isdigit() and method == "GET":
+            _contributor(h, user, int(parts[1]))
         elif parts == ["new"]:
             _new(h, user, query)
         elif parts == ["login"]:
