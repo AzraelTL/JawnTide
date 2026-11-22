@@ -39,19 +39,38 @@ namespace ACE.Server.WorldObjects
         public const uint TinkeringTrinketWcid = 8142017u;
 
         /// <summary>
-        /// Major cantrips added to the Tinkering Trinket: all six attributes and the four
+        /// Epic cantrips added to the Tinkering Trinket: all six attributes and the four
         /// tinkering skills. These stack on top of the trinket's built-in level-7 aptitude buffs.
+        /// (Majors until loot Stage 2, 2026-11-22; see TinkerTrinketOldCantrips.)
         /// </summary>
         public static readonly List<SpellId> TinkerTrinketCantrips = new List<SpellId>
         {
-            // Major attribute cantrips
+            // Epic attribute cantrips
+            SpellId.CANTRIPSTRENGTH3,
+            SpellId.CANTRIPENDURANCE3,
+            SpellId.CANTRIPCOORDINATION3,
+            SpellId.CANTRIPQUICKNESS3,
+            SpellId.CANTRIPFOCUS3,
+            SpellId.CANTRIPWILLPOWER3,
+            // Epic tinkering-skill cantrips (Expertise line)
+            SpellId.CANTRIPITEMEXPERTISE3,
+            SpellId.CANTRIPMAGICITEMEXPERTISE3,
+            SpellId.CANTRIPARMOREXPERTISE3,
+            SpellId.CANTRIPWEAPONEXPERTISE3,
+        };
+
+        /// <summary>
+        /// The Major versions trinkets carried before Stage 2. A refresh (/flagtinker again) takes these off a
+        /// trinket when it adds the Epic versions.
+        /// </summary>
+        public static readonly List<SpellId> TinkerTrinketOldCantrips = new List<SpellId>
+        {
             SpellId.CANTRIPSTRENGTH2,
             SpellId.CANTRIPENDURANCE2,
             SpellId.CANTRIPCOORDINATION2,
             SpellId.CANTRIPQUICKNESS2,
             SpellId.CANTRIPFOCUS2,
             SpellId.CANTRIPWILLPOWER2,
-            // Major tinkering-skill cantrips (Expertise line)
             SpellId.CANTRIPITEMEXPERTISE2,
             SpellId.CANTRIPMAGICITEMEXPERTISE2,
             SpellId.CANTRIPARMOREXPERTISE2,
@@ -194,7 +213,7 @@ namespace ACE.Server.WorldObjects
                 new GameMessagePrivateUpdateVital(this, Mana));
 
             // --- Tinkering Trinket ---
-            // Ensure the character has a Tinkering Trinket carrying the Major cantrips and Brilliance.
+            // Ensure the character has a Tinkering Trinket carrying the Epic cantrips and Brilliance.
             // Upgrade any trinkets they already hold (inventory or equipped) in place; only grant a
             // fresh one if none exist. This lets a pre-existing Tinker repair a trinket that predates
             // spells later added to the weenie's spell book (cantrips, Brilliance, etc.) - those items
@@ -231,7 +250,7 @@ namespace ACE.Server.WorldObjects
             if (wasAlreadyTinker)
             {
                 Session.Network.EnqueueSend(new GameMessageSystemChat(
-                    "Your Tinker designation has been refreshed. Arcane Lore is now specialized and maxed, and your Tinkering Trinket has been upgraded with Major cantrips, Brilliance, Concentration and Malediction. " +
+                    "Your Tinker designation has been refreshed. Arcane Lore is now specialized and maxed, and your Tinkering Trinket has been upgraded with Epic cantrips, Brilliance, Concentration and Malediction. " +
                     "If the trinket is equipped, re-equip it (or log out and back in) to apply the new buffs.",
                     ChatMessageType.Broadcast));
             }
@@ -245,13 +264,16 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
-        /// Adds the Major attribute and tinkering-skill cantrips, plus the Focusing Stone's spells
+        /// Adds the Epic attribute and tinkering-skill cantrips (taking off the Major versions older trinkets have), plus the Focusing Stone's spells
         /// (Brilliance, Concentration and Malediction), to a Tinkering
         /// Trinket instance. Idempotent: GetOrAddKnownSpell will not create duplicate entries, so this
         /// is safe to call on a trinket that already has some or all of these.
         /// </summary>
         private void BackfillTrinketSpells(WorldObject trinket)
         {
+            foreach (var cantrip in TinkerTrinketOldCantrips)
+                trinket.Biota.TryRemoveKnownSpell((int)cantrip, trinket.BiotaDatabaseLock);
+
             foreach (var cantrip in TinkerTrinketCantrips)
                 trinket.Biota.GetOrAddKnownSpell((int)cantrip, trinket.BiotaDatabaseLock, out _);
 
