@@ -23,6 +23,7 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 import fatefall
 import market
+import patchnotes
 import suit
 import wiki
 
@@ -433,6 +434,10 @@ button.link{font:inherit;color:var(--portal);background:none;border:0;padding:0;
 .wiki a.missing{color:var(--blood)}
 .note{border-left:4px solid var(--gold);background:var(--panel);padding:.6rem 1rem;margin:1rem 0;max-width:42rem}
 .codebox{background:var(--deep);border:1px solid var(--line);border-radius:4px;padding:.7rem 1rem;overflow-x:auto}
+.pnote{max-width:46rem;border-top:1px solid var(--line);margin-top:1.6rem;padding-top:.4rem}
+.pnote h2{margin:.9rem 0 .2rem}.pnote h3{margin:1.2rem 0 .3rem}.pnote ul{margin:.2rem 0;padding-left:1.3rem}.pnote li{margin:.2rem 0}
+.pnew{max-width:46rem;margin:1rem 0;border:1px solid var(--line);border-radius:6px;padding:.6rem 1rem}
+.pnew summary{cursor:pointer;font-weight:700}.pnew form{margin-top:.9rem}
 .wedit{max-width:46rem;display:grid;gap:.9rem}
 .wedit label{display:grid;gap:.3rem;color:var(--dim)}
 .wedit input,.wedit textarea{font:inherit;color:var(--bone);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:.45rem .6rem;width:100%}
@@ -451,6 +456,7 @@ def layout(path, title, body, snap):
     nav += f'<a href="/market"{" aria-current=page" if path == "/market" else ""}>Market</a>'
     nav += f'<a href="/suit"{" aria-current=page" if path == "/suit" else ""}>Suit Builder</a>'
     nav += f'<a href="/wiki"{" aria-current=page" if path == "/wiki" else ""}>Wiki</a>'
+    nav += f'<a href="/patch-notes"{" aria-current=page" if path == "/patch-notes" else ""}>Patch notes</a>'
     nav += '<a href="/fatefall">Fatefall</a>'
     nav += f'<a class="play" href="{e(TANKS_URL)}">JawnTanks</a>'
     stamp = f'<p class="stamp">Updated {e(snap["taken"].strftime("%b %d, %I:%M %p"))} server time. Refreshes every {INTERVAL // 60} minutes.</p>' if snap else ""
@@ -875,6 +881,8 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if market.handle(self, "POST"):
                 return
+            if patchnotes.handle(self, "POST"):
+                return
             if wiki.handle(self, "POST"):
                 return
             self.send_error(405)
@@ -890,6 +898,8 @@ class Handler(BaseHTTPRequestHandler):
             if suit.handle(self, "GET"):
                 return
             if market.handle(self, "GET"):
+                return
+            if patchnotes.handle(self, "GET"):
                 return
             if wiki.handle(self, "GET"):
                 return

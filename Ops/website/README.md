@@ -50,6 +50,14 @@ The `web` user can read only what the site shows:
 
 It cannot see account names, passwords, IP addresses or login history. The container runs read-only as `nobody`.
 
+## Patch notes (/patch-notes)
+
+`patchnotes.py` serves the patch notes, for players who can't read them on Discord. Anyone can read. Staff sign in
+with their wiki login ("Staff sign in" at the bottom of the page) and get a "Post new patch notes" box, plus Edit and
+Delete on each set. The Discord text is pasted as it is: a line that is only `**bold**` becomes a heading and `- `
+lines a list. Notes are rows in `ace_wiki.site_text` (`k` = `patch:` + the UTC time posted), so nothing new has to be
+granted. `patch-notes-seed/*.md` are starter notes added once the first time the page is opened.
+
 ## Wiki (/wiki)
 
 `wiki.py` serves the wiki: articles about JawnTide's custom content. Anyone can read; contributors edit.
