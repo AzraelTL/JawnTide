@@ -11,7 +11,7 @@ JawnTide is a red Asheron's Call server running on ACEmulator, forked from DocTi
 | Topic | How it works |
 |---|---|
 | PvP | Everyone is red. Die to another player and you turn white for a few minutes (the PK respite timer), then you're red again. |
-| Accounts | Up to 2 accounts logged in at a time per person. |
+| Accounts | Up to 3 accounts logged in at a time per person. |
 | Connections | No VPNs or proxies. |
 | Loot | Loot comes in stages. See [[Loot stages]]. |
 
