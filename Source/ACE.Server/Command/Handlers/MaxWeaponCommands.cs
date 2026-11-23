@@ -29,6 +29,9 @@ namespace ACE.Server.Command.Handlers
     /// then given 9 damage tinkers, an imbue (Armor Rending, Critical Strike or Crippling Blow) and Epic cantrips.
     /// So it is the best weapon that loot could possibly produce in the current stage, never better.
     ///
+    /// Every weapon of one kind and wield requirement is the same model with the same element (for melee a plain
+    /// physical one), so running the command twice gives two identical sets, for example for dual wield.
+    ///
     /// Melee weapons get the mix of Iron (+1 damage) and Granite (variance x 0.8) that gives the highest average
     /// damage per hit for that weapon and imbue; see BestIron.
     ///
@@ -84,6 +87,9 @@ namespace ACE.Server.Command.Handlers
         private class Best
         {
             public int Tier;                 // a loot tier this kind and wield requirement was seen at
+            public uint Model;               // the exact weapon (wcid) every test weapon of this kind and wield uses
+            public int ModelTier;            // a loot tier that model was seen at
+            public bool ModelPreferred;      // the model is a preferred one (see Preferred)
             public int Seen;
             public int Damage;
             public double Variance = double.MaxValue;
@@ -273,6 +279,20 @@ namespace ACE.Server.Command.Handlers
         }
 
         /// <summary>
+        /// Whether a roll is the sort of weapon the test set should be made of: for melee a plain physical one
+        /// (slashing, piercing, bludgeoning, no element), for missile one with an elemental bonus.
+        /// </summary>
+        private static bool Preferred(string category, WorldObject wo)
+        {
+            if (category == "caster")
+                return true;
+            if (category == "missile")
+                return (wo.ElementalDamageBonus ?? 0) > 0;
+
+            return (wo.W_DamageType & DamageType.Physical) != 0 && (wo.W_DamageType & ~DamageType.Physical) == 0;
+        }
+
+        /// <summary>
         /// The kind a rolled weapon is filed under, or null to leave it out
         /// </summary>
         private static string KindOf(string category, WorldObject wo)
@@ -342,6 +362,16 @@ namespace ACE.Server.Command.Handlers
                             wields[wield] = b = new Best();
 
                         b.Tier = tier;
+
+                        // the model: a preferred one if any was seen, and of those the lowest wcid, so that every
+                        // run picks the same weapon and two sets come out identical
+                        var preferred = Preferred(category, wo);
+                        if (b.Model == 0 || (preferred && !b.ModelPreferred) || (preferred == b.ModelPreferred && wo.WeenieClassId < b.Model))
+                        {
+                            b.Model = wo.WeenieClassId;
+                            b.ModelTier = tier;
+                            b.ModelPreferred = preferred;
+                        }
                         b.Seen++;
                         b.Damage = Math.Max(b.Damage, wo.Damage ?? 0);
                         if (wo.DamageVariance != null)
@@ -369,23 +399,26 @@ namespace ACE.Server.Command.Handlers
         }
 
         /// <summary>
-        /// Rolls until a weapon of this kind and wield requirement comes up. Prefers one that has spells (so it can hold
-        /// cantrips) and, for missile weapons, one that has an elemental bonus when the best roll had one.
+        /// Rolls until the chosen model of this kind comes up at this wield requirement, so every test weapon of a kind
+        /// and wield is the same weapon with the same element. Prefers a roll that has spells (so it can hold cantrips).
+        /// If the model never comes up again it settles for any weapon of the kind.
         /// </summary>
         private static WorldObject RollOne(string category, string kind, int wield, Best best)
         {
-            var profile = new TreasureDeath { Tier = best.Tier, LootQualityMod = 0 };
+            var profile = new TreasureDeath { Tier = best.ModelTier > 0 ? best.ModelTier : best.Tier, LootQualityMod = 0 };
 
-            for (var attempt = 0; attempt < 40000; attempt++)
+            for (var attempt = 0; attempt < 80000; attempt++)
             {
                 var wo = Roll(category, profile);
                 if (wo == null)
                     continue;
 
-                var fussy = attempt < 8000;
+                var exact = attempt < 60000;
+                var withSpells = attempt < 20000;
+
                 if (KindOf(category, wo) == kind && (wo.WieldDifficulty ?? 0) == wield
-                    && (!fussy || wo.ItemMaxMana != null)
-                    && (!fussy || category != "missile" || best.ElementalBonus == 0 || (wo.ElementalDamageBonus ?? 0) > 0))
+                    && (!exact || wo.WeenieClassId == best.Model)
+                    && (!withSpells || wo.ItemMaxMana != null))
                     return wo;
 
                 wo.Destroy();
