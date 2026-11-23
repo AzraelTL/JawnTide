@@ -461,12 +461,12 @@ namespace ACE.Server.WorldObjects
         /// JawnTide: with no copied kit, the two armor numbers from the admin page are worn as plain armor, one piece per
         /// body part (head, hands and feet take the extremities number), so hits use the player armor rules: Impenetrability
         /// and banes land on the pieces, Armor Self adds on top, and hollow, imperil and armor rending scale as in PvP.
-        /// Every resistance on the pieces is 1.0. Not saved; nothing is worn when both numbers are 0.
+        /// Every resistance on the pieces is 1.0. Underclothes are always part of it (armor level 0 unless the setting says otherwise). Not saved; nothing is worn when both numbers are 0.
         /// </summary>
         public void WearPlainArmor()
         {
             var under = (int)PropertyManager.GetLong("target_drudge_underclothes_armor").Item;
-            if (Armor <= 0 && ArmorExtremities <= 0 && under <= 0)
+            if (Armor <= 0 && ArmorExtremities <= 0)
                 return;
 
             var pieces = new (string Name, uint Wcid, EquipMask Slot, CoverageMask Covers, int Level)[]
@@ -487,7 +487,8 @@ namespace ACE.Server.WorldObjects
 
             foreach (var piece in pieces)
             {
-                if (piece.Level <= 0)
+                // underclothes are always worn, even at armor level 0: Impenetrability and banes on them still count
+                if (piece.Level <= 0 && piece.Name != "Underclothes")
                     continue;
                 var wo = Factories.WorldObjectFactory.CreateNewWorldObject(piece.Wcid);
                 if (!(wo is Clothing))

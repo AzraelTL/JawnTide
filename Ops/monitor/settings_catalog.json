@@ -3656,7 +3656,7 @@
    "type": "long",
    "default": "0",
    "jawntide": true,
-   "desc": "armor level of the underclothes a Target Drudge wears under its body armor when no character is copied (0 = none). They take Impenetrability and banes as their own layer, like a player's shirt and pants. Save the Target Drudge setup again after changing it.",
+   "desc": "armor level of the underclothes a Target Drudge wears under its body armor when no character is copied. It always wears them, at 0 by default: they take Impenetrability and banes as their own layer, like a player's shirt and pants. Save the Target Drudge setup again after changing it.",
    "area": "Combat & magic"
   },
   {
