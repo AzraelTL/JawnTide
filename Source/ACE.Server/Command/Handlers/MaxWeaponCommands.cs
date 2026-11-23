@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Entity.Models;
+using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables.Wcids;
@@ -28,6 +31,9 @@ namespace ACE.Server.Command.Handlers
     /// damage per hit for that weapon and imbue; see BestIron.
     ///
     /// The weapons are attuned, bonded and worth nothing, so they can't be traded or sold.
+    ///
+    /// All the rolling happens on a background thread, so the game doesn't pause; only handing the finished weapons
+    /// to the admin runs on the game thread. One request runs at a time.
     /// </summary>
     public static class MaxWeaponCommands
     {
@@ -91,6 +97,11 @@ namespace ACE.Server.Command.Handlers
         /// </summary>
         private static readonly Dictionary<string, SortedDictionary<string, SortedDictionary<int, Best>>> cache = new Dictionary<string, SortedDictionary<string, SortedDictionary<int, Best>>>();
 
+        /// <summary>
+        /// 1 while a request is being worked on in the background
+        /// </summary>
+        private static int busy;
+
         private static readonly string[] Categories = { "heavy", "light", "finesse", "twohanded", "missile", "caster" };
 
         private static readonly (string code, ImbuedEffectType effect, MaterialType material, string label)[] Imbues =
@@ -105,20 +116,36 @@ namespace ACE.Server.Command.Handlers
             "<heavy|light|finesse|twohanded|missile|caster> [wield requirement] [kind]\n" +
             "With only a category: lists every weapon kind and wield requirement with the best stats, and makes nothing.\n" +
             "With a wield requirement: puts three weapons (AR, CS, CB) of every kind at that wield requirement in your pack.\n" +
-            "Add a kind (for example sword) to make only that kind. The first use of a category takes a few seconds.")]
+            "Add a kind (for example sword) to make only that kind. The first use of a category takes a few seconds; the game keeps running meanwhile.")]
         public static void HandleMaxWeapons(Session session, params string[] parameters)
         {
-            try
+            if (Interlocked.CompareExchange(ref busy, 1, 0) != 0)
             {
-                Run(session, parameters);
+                CommandHandlerHelper.WriteOutputInfo(session, "maxweapons is still working on the last request. Try again in a few seconds.");
+                return;
             }
-            catch (Exception ex)
+
+            // free pack slots are read here, on the game thread; the rolling then runs in the background
+            var freeSlots = session.Player.GetFreeInventorySlots();
+
+            Task.Run(() =>
             {
-                CommandHandlerHelper.WriteOutputInfo(session, $"maxweapons failed: {ex.GetType().Name}: {ex.Message}");
-            }
+                try
+                {
+                    Run(session, parameters, freeSlots);
+                }
+                catch (Exception ex)
+                {
+                    CommandHandlerHelper.WriteOutputInfo(session, $"maxweapons failed: {ex.GetType().Name}: {ex.Message}");
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref busy, 0);
+                }
+            });
         }
 
-        private static void Run(Session session, string[] parameters)
+        private static void Run(Session session, string[] parameters, int freeSlots)
         {
             var category = parameters[0].ToLowerInvariant().Replace("-", "").Replace("_", "");
             if (category == "2h" || category == "twohand")
@@ -168,13 +195,13 @@ namespace ACE.Server.Command.Handlers
 
             var player = session.Player;
             var needed = wanted.Count * Imbues.Length;
-            if (player.GetFreeInventorySlots() < needed)
+            if (freeSlots < needed)
             {
-                CommandHandlerHelper.WriteOutputInfo(session, $"That is {needed} weapons and you have {player.GetFreeInventorySlots()} free pack slots. Free some space, or add a kind to make fewer.");
+                CommandHandlerHelper.WriteOutputInfo(session, $"That is {needed} weapons and you have {freeSlots} free pack slots. Free some space, or add a kind to make fewer.");
                 return;
             }
 
-            var made = 0;
+            var weapons = new List<WorldObject>();
             foreach (var kind in wanted)
             {
                 var best = kind.Value[wieldWanted];
@@ -188,20 +215,30 @@ namespace ACE.Server.Command.Handlers
                     }
 
                     Perfect(wo, category, best, imbue.effect, imbue.material, imbue.code.ToUpperInvariant());
-
-                    if (!player.TryCreateInInventoryWithNetworking(wo))
-                    {
-                        wo.Destroy();
-                        CommandHandlerHelper.WriteOutputInfo(session, "Your pack is full; stopped.");
-                        return;
-                    }
-                    made++;
+                    weapons.Add(wo);
                 }
             }
 
-            CommandHandlerHelper.WriteOutputInfo(session, $"Made {made} test weapons: {category}, wield {wieldWanted}, {wanted.Count} kind(s), each with AR, CS and CB."
-                + (category == "missile" || category == "caster" ? "" : " Each name shows its tinkers, for example 2I/7G is 2 Iron and 7 Granite."));
-            PlayerManager.BroadcastToAuditChannel(player, $"{player.Name} made {made} max test weapons with /maxweapons ({category}, wield {wieldWanted}).");
+            // hand them over on the game thread
+            var kindCount = wanted.Count;
+            var actionChain = new ActionChain();
+            actionChain.AddAction(player, () =>
+            {
+                var made = 0;
+                foreach (var wo in weapons)
+                {
+                    if (player.TryCreateInInventoryWithNetworking(wo))
+                        made++;
+                    else
+                        wo.Destroy();
+                }
+
+                CommandHandlerHelper.WriteOutputInfo(session, $"Made {made} test weapons: {category}, wield {wieldWanted}, {kindCount} kind(s), each with AR, CS and CB."
+                    + (made < weapons.Count ? $" {weapons.Count - made} didn't fit in your pack." : "")
+                    + (category == "missile" || category == "caster" ? "" : " Each name shows its tinkers, for example 2I/7G is 2 Iron and 7 Granite."));
+                PlayerManager.BroadcastToAuditChannel(player, $"{player.Name} made {made} max test weapons with /maxweapons ({category}, wield {wieldWanted}).");
+            });
+            actionChain.EnqueueChain();
         }
 
         private static string Describe(string category, Best b)
@@ -266,9 +303,14 @@ namespace ACE.Server.Command.Handlers
         private static SortedDictionary<string, SortedDictionary<int, Best>> GetBest(Session session, string category, int maxTier)
         {
             var key = $"{category}:{maxTier}";
-            if (cache.TryGetValue(key, out var kinds))
-                return kinds;
+            SortedDictionary<string, SortedDictionary<int, Best>> kinds;
+            lock (cache)
+            {
+                if (cache.TryGetValue(key, out kinds))
+                    return kinds;
+            }
 
+            CommandHandlerHelper.WriteOutputInfo(session, $"Working out the best {category} weapons up to Tier {maxTier}. This runs in the background and takes a few seconds the first time.");
             var timer = Stopwatch.StartNew();
             kinds = new SortedDictionary<string, SortedDictionary<int, Best>>();
 
@@ -313,7 +355,8 @@ namespace ACE.Server.Command.Handlers
                 }
             }
 
-            cache[key] = kinds;
+            lock (cache)
+                cache[key] = kinds;
             CommandHandlerHelper.WriteOutputInfo(session, $"Rolled {RollsPerTier * maxTier:N0} {category} weapons across Tiers 1-{maxTier} in {timer.Elapsed.TotalSeconds:0.0} seconds.");
             return kinds;
         }
