@@ -229,6 +229,8 @@ namespace ACE.Server.WorldObjects
                     StripAll();
                     foreach (var b in kit)
                         WearCopy(b, new System.Threading.ReaderWriterLockSlim());
+                    if (kit.Count == 0)
+                        WearPlainArmor();
                     ApplySetup();
                 }));
             });
@@ -455,6 +457,62 @@ namespace ACE.Server.WorldObjects
             return true;
         }
 
+        /// <summary>
+        /// JawnTide: with no copied kit, the two armor numbers from the admin page are worn as plain armor, one piece per
+        /// body part (head, hands and feet take the extremities number), so hits use the player armor rules: Impenetrability
+        /// and banes land on the pieces, Armor Self adds on top, and hollow, imperil and armor rending scale as in PvP.
+        /// Every resistance on the pieces is 1.0. Not saved; nothing is worn when both numbers are 0.
+        /// </summary>
+        public void WearPlainArmor()
+        {
+            var under = (int)PropertyManager.GetLong("target_drudge_underclothes_armor").Item;
+            if (Armor <= 0 && ArmorExtremities <= 0 && under <= 0)
+                return;
+
+            var pieces = new (string Name, uint Wcid, EquipMask Slot, CoverageMask Covers, int Level)[]
+            {
+                // underclothes (target_drudge_underclothes_armor): one more layer under the body armor, with its own Impenetrability
+                ("Underclothes", 39, EquipMask.ChestWear | EquipMask.AbdomenWear | EquipMask.UpperArmWear | EquipMask.LowerArmWear | EquipMask.UpperLegWear | EquipMask.LowerLegWear,
+                    CoverageMask.UnderwearChest | CoverageMask.UnderwearAbdomen | CoverageMask.UnderwearUpperArms | CoverageMask.UnderwearLowerArms | CoverageMask.UnderwearUpperLegs | CoverageMask.UnderwearLowerLegs, under),
+                ("Head", 45, EquipMask.HeadWear, CoverageMask.Head, ArmorExtremities),
+                ("Hands", 56, EquipMask.HandWear, CoverageMask.Hands, ArmorExtremities),
+                ("Feet", 115, EquipMask.FootWear, CoverageMask.Feet, ArmorExtremities),
+                ("Chest", 39, EquipMask.ChestArmor, CoverageMask.OuterwearChest, Armor),
+                ("Abdomen", 39, EquipMask.AbdomenArmor, CoverageMask.OuterwearAbdomen, Armor),
+                ("Upper Arms", 39, EquipMask.UpperArmArmor, CoverageMask.OuterwearUpperArms, Armor),
+                ("Lower Arms", 39, EquipMask.LowerArmArmor, CoverageMask.OuterwearLowerArms, Armor),
+                ("Upper Legs", 39, EquipMask.UpperLegArmor, CoverageMask.OuterwearUpperLegs, Armor),
+                ("Lower Legs", 39, EquipMask.LowerLegArmor, CoverageMask.OuterwearLowerLegs, Armor),
+            };
+
+            foreach (var piece in pieces)
+            {
+                if (piece.Level <= 0)
+                    continue;
+                var wo = Factories.WorldObjectFactory.CreateNewWorldObject(piece.Wcid);
+                if (!(wo is Clothing))
+                {
+                    wo?.Destroy();
+                    log4net.LogManager.GetLogger(typeof(TrainingDummy)).Warn($"[DUMMY] {Name} couldn't make its plain {piece.Name} armor (weenie {piece.Wcid}).");
+                    continue;
+                }
+
+                wo.Name = $"Target Drudge Armor ({piece.Name})";
+                wo.SetProperty(PropertyInt.ArmorLevel, Math.Max(0, piece.Level));
+                wo.SetProperty(PropertyInt.ClothingPriority, (int)piece.Covers);
+                wo.SetProperty(PropertyInt.ValidLocations, (int)piece.Slot);
+                foreach (var resist in new[] { PropertyFloat.ArmorModVsSlash, PropertyFloat.ArmorModVsPierce, PropertyFloat.ArmorModVsBludgeon, PropertyFloat.ArmorModVsCold,
+                    PropertyFloat.ArmorModVsFire, PropertyFloat.ArmorModVsAcid, PropertyFloat.ArmorModVsElectric, PropertyFloat.ArmorModVsNether })
+                    wo.SetProperty(resist, 1.0);
+
+                if (!TryWieldObject(wo, piece.Slot))
+                {
+                    wo.Destroy();
+                    log4net.LogManager.GetLogger(typeof(TrainingDummy)).Warn($"[DUMMY] {Name} couldn't put on its plain {piece.Name} armor.");
+                }
+            }
+        }
+
         private void TakeOff(WorldObject item)
         {
             wornFrom.Remove(item.Guid);
@@ -568,11 +626,28 @@ namespace ACE.Server.WorldObjects
         /// <summary>What a player sees in chat when they ID it: buffed armor level per body part, defenses and active buffs.</summary>
         public string DescribeForAppraisal()
         {
-            var al = new ACE.Server.Network.Structure.ArmorLevel(this);
-            static string A(uint v) => v >= 9999 ? $"{v - 9999}*" : v.ToString();
+            // per body part: the worn pieces' own armor levels (what hollow weapons go against), and that plus every magical
+            // source: Impenetrability on each piece and the Armor Self style buffs and armor cantrips on the drudge itself
+            var body = EnchantmentManager.GetBodyArmorMod();
+            var kitted = WearsKit;
+            (int Plain, int Buffed) Part(CombatBodyPart part)
+            {
+                var plain = !kitted && Biota.PropertiesBodyPart.TryGetValue(part, out var bp) ? bp.BaseArmor : 0;
+                var magic = body;
+                var covers = BodyParts.GetCoverageMask(part);
+                foreach (var layer in EquippedObjects.Values.Where(e => e is Clothing && ((e.ClothingPriority ?? 0) & covers) != 0))
+                {
+                    plain += layer.GetProperty(PropertyInt.ArmorLevel) ?? 0;
+                    magic += layer.EnchantmentManager.GetArmorMod();
+                }
+                return (plain, Math.Max(0, plain + magic));
+            }
+            var parts = new[] { ("head", CombatBodyPart.Head), ("chest", CombatBodyPart.Chest), ("abdomen", CombatBodyPart.Abdomen), ("upper arm", CombatBodyPart.UpperArm),
+                ("lower arm", CombatBodyPart.LowerArm), ("hands", CombatBodyPart.Hand), ("upper leg", CombatBodyPart.UpperLeg), ("lower leg", CombatBodyPart.LowerLeg),
+                ("feet", CombatBodyPart.Foot) }.Select(x => (x.Item1, Part(x.Item2))).ToList();
             var active = Buffs.Where(id => EnchantmentManager.GetEnchantment(id) != null).Select(SpellName).ToList();
-            return $"{Name} armor (buffed): head {A(al.Head)}, chest {A(al.Chest)}, abdomen {A(al.Abdomen)}, upper arm {A(al.UpperArm)}, lower arm {A(al.LowerArm)}, " +
-                   $"hands {A(al.Hand)}, upper leg {A(al.UpperLeg)}, lower leg {A(al.LowerLeg)}, feet {A(al.Foot)}. " +
+            return $"{Name} armor, unbuffed (what hollow hits): {string.Join(", ", parts.Select(x => $"{x.Item1} {x.Item2.Plain}"))}. " +
+                   $"Armor, fully buffed (worn pieces, Impenetrability on each, Armor Self and armor cantrips {body:+0;-0;0}): {string.Join(", ", parts.Select(x => $"{x.Item1} {x.Item2.Buffed}"))}. " +
                    $"Defense (buffed): melee {DefenseCurrent(Skill.MeleeDefense)}, missile {DefenseCurrent(Skill.MissileDefense)}, magic {DefenseCurrent(Skill.MagicDefense)}. " +
                    $"Ratings: damage resist {Drr}, crit damage resist {Cdr}, PK damage resist {Pkdr}. " +
                    $"Buffs on it: {(active.Count == 0 ? "none" : string.Join(", ", active))}.";
