@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using ACE.DatLoader;
 using ACE.Entity.Enum;
@@ -71,13 +72,40 @@ namespace ACE.Server.Command.Handlers
         };
 
         /// <summary>
+        /// Armor sets whose five-piece bonus the charm carries. A real suit can hold one five-piece set (plus four of
+        /// another), so all six at once is more than any player has: it is there to test each set's effect.
+        /// </summary>
+        private static readonly EquipmentSet[] CharmSets =
+        {
+            EquipmentSet.Adepts, EquipmentSet.Wise, EquipmentSet.Soldiers,
+            EquipmentSet.Dexterous, EquipmentSet.Defenders, EquipmentSet.Hearty,
+        };
+
+        private const uint CharmSetPieces = 5;
+
+        /// <summary>
+        /// The bonus spells a set gives for this many pieces, read from the game data (the same table the server uses
+        /// when set pieces are worn)
+        /// </summary>
+        private static List<uint> SetSpells(EquipmentSet set, uint pieces)
+        {
+            if (!DatManager.PortalDat.SpellTable.SpellSet.TryGetValue((uint)set, out var spellSet))
+                return new List<uint>();
+
+            if (spellSet.SpellSetTiersNoGaps.TryGetValue(pieces, out var tier) || spellSet.SpellSetTiers.TryGetValue(pieces, out tier))
+                return tier.Spells;
+
+            return new List<uint>();
+        }
+
+        /// <summary>
         /// Crit damage rating a full suit could add in Stage 2: nine armor pieces, each with the best rating (2).
         /// Tier 7 armor rolls either Crit Damage or Crit Damage Resist; for damage testing all nine are Crit Damage.
         /// </summary>
         private const int CharmCritDamageRating = 18;
 
         [CommandHandler("testcharm", AccessLevel.Admin, CommandHandlerFlag.RequiresWorld, 0,
-            "Puts a TEST charm in your pack: a trinket that casts every level 8 item spell and every Epic armor and jewelry cantrip on you, and carries the crit damage rating of a full rated suit.",
+            "Puts a TEST charm in your pack: a trinket that casts every level 8 item spell and every Epic armor and jewelry cantrip on you, gives the five-piece bonus of the Adept's, Wise, Soldier's, Dexterous, Defender's and Hearty sets, and carries the crit damage rating of a full rated suit.",
             "No parameters. Wear it in the trinket slot. It is attuned, weightless and can't be traded.")]
         public static void HandleTestCharm(Session session, params string[] parameters)
         {
@@ -99,8 +127,17 @@ namespace ACE.Server.Command.Handlers
                 foreach (var cantrip in CharmCantrips)
                     wo.Biota.GetOrAddKnownSpell((int)cantrip, wo.BiotaDatabaseLock, out _);
 
+                var setNotes = new List<string>();
+                foreach (var set in CharmSets)
+                {
+                    var setSpells = SetSpells(set, CharmSetPieces);
+                    foreach (var spell in setSpells)
+                        wo.Biota.GetOrAddKnownSpell((int)spell, wo.BiotaDatabaseLock, out _);
+                    setNotes.Add($"{set} {setSpells.Count}");
+                }
+
                 wo.Name = "TEST Charm of Everything";
-                wo.LongDesc = "A test item made with /testcharm: every level 8 item spell, every Epic armor and jewelry cantrip, and the crit damage rating of a full rated suit. Not for play.";
+                wo.LongDesc = "A test item made with /testcharm: every level 8 item spell, every Epic armor and jewelry cantrip, the five-piece bonus of six armor sets, and the crit damage rating of a full rated suit. Not for play.";
                 wo.GearCritDamage = CharmCritDamageRating;
                 wo.ItemDifficulty = null;
                 wo.ItemMaxMana = 1000000;
@@ -119,6 +156,7 @@ namespace ACE.Server.Command.Handlers
                 }
 
                 CommandHandlerHelper.WriteOutputInfo(session, $"TEST Charm of Everything is in your pack: {CharmSpells.Length} level 8 spells, {CharmCantrips.Length} Epic cantrips, +{CharmCritDamageRating} crit damage rating. Wear it in the trinket slot.");
+                CommandHandlerHelper.WriteOutputInfo(session, $"Five-piece set bonuses on it (set and number of bonus spells): {string.Join(", ", setNotes)}. A set showing 0 has no five-piece bonus in the game data.");
                 log.Info($"[TESTCHARM] {player.Name} used /testcharm.");
             }
             catch (Exception ex)
