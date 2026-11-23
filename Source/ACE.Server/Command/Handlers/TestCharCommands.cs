@@ -12,9 +12,9 @@ namespace ACE.Server.Command.Handlers
 {
     /// <summary>
     /// JawnTide: /testchar turns the admin's own character into a fully built level 275 for damage testing:
-    /// every skill specialized and fully raised, all six attributes and the three vitals fully raised.
-    /// Attributes keep the innate points the character was created with, so the numbers are a real player's,
-    /// unlike /god (which goes far past what a player can reach).
+    /// every skill specialized and fully raised, all six attributes at 100 innate and fully raised (290 base), and the
+    /// three vitals fully raised. That is the ceiling a player's numbers can reach in any one build, all at once,
+    /// unlike /god (which goes far past it).
     /// </summary>
     public static class TestCharCommands
     {
@@ -26,8 +26,8 @@ namespace ACE.Server.Command.Handlers
         private const long MaxLevelXp = 191226310247;
 
         [CommandHandler("testchar", AccessLevel.Admin, CommandHandlerFlag.RequiresWorld, 0,
-            "Makes your own character a fully built level 275 for damage testing: every skill specialized and maxed, all attributes and vitals maxed.",
-            "No parameters. It changes the character you are on, for good. Attributes keep their innate (creation) points.")]
+            "Makes your own character a fully built level 275 for damage testing: every skill specialized and maxed, all six attributes 100 innate and maxed (290 base), vitals maxed.",
+            "No parameters. It changes the character you are on, for good.")]
         public static void HandleTestChar(Session session, params string[] parameters)
         {
             var player = session.Player;
@@ -62,6 +62,10 @@ namespace ACE.Server.Command.Handlers
 
                 foreach (var attr in player.Attributes.Values)
                 {
+                    // 100 innate in all six (creation allows at most three); never lowered
+                    if (attr.StartingValue < 100)
+                        attr.StartingValue = 100;
+
                     attr.ExperienceSpent = maxAttrXp;
                     attr.Ranks = (ushort)Player.CalcAttributeRank(maxAttrXp);
 
@@ -83,7 +87,7 @@ namespace ACE.Server.Command.Handlers
 
                 player.SaveBiotaToDatabase();
 
-                CommandHandlerHelper.WriteOutputInfo(session, $"{player.Name} is now a fully built level {player.Level}: {skills} skills specialized and maxed, all attributes and vitals maxed. Log out and back in if the skill panel looks out of date.");
+                CommandHandlerHelper.WriteOutputInfo(session, $"{player.Name} is now a fully built level {player.Level}: {skills} skills specialized and maxed, all six attributes 100 innate and maxed, vitals maxed. Log out and back in if the skill panel looks out of date.");
                 log.Info($"[TESTCHAR] {player.Name} used /testchar.");
             }
             catch (Exception ex)
