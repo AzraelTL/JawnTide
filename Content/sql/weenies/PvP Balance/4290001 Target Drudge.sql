@@ -6,7 +6,7 @@ VALUES (4290001, 'ace4290001-targetdrudge', 10, '2026-11-10 00:00:00') /* Creatu
 
 INSERT INTO `weenie_properties_int` (`object_Id`, `type`, `value`)
 VALUES (4290001,   1,         16) /* ItemType - Creature */
-     , (4290001,   2,          3) /* CreatureType - Drudge */
+     , (4290001,   2,         31) /* CreatureType - Human */
      , (4290001,   3,         80) /* PaletteTemplate - Iron */
      , (4290001,   6,         -1) /* ItemsCapacity */
      , (4290001,   7,         -1) /* ContainersCapacity */
