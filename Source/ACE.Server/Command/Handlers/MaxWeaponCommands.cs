@@ -32,7 +32,7 @@ namespace ACE.Server.Command.Handlers
     /// Melee weapons get the mix of Iron (+1 damage) and Granite (variance x 0.8) that gives the highest average
     /// damage per hit for that weapon and imbue; see BestIron.
     ///
-    /// The weapons are attuned, bonded and worth nothing, so they can't be traded or sold.
+    /// The weapons are attuned, bonded, weightless and worth nothing, so they can't be traded or sold.
     ///
     /// All the rolling happens on a background thread, so the game doesn't pause; only handing the finished weapons
     /// to the admin runs on the game thread. One request runs at a time.
@@ -464,6 +464,7 @@ namespace ACE.Server.Command.Handlers
             wo.Attuned = AttunedStatus.Attuned;
             wo.Bonded = BondedStatus.Bonded;
             wo.Value = 0;
+            wo.EncumbranceVal = 0;       // weightless, so a full set can be carried
             wo.Name = $"TEST {wo.Name} (Max {tag})";
             wo.LongDesc = "A test weapon made with /maxweapons: the best stats loot can roll in the current stage, fully tinkered. Not for play.";
         }

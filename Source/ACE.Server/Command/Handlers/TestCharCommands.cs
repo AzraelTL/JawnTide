@@ -2,6 +2,8 @@ using System;
 
 using ACE.DatLoader;
 using ACE.Entity.Enum;
+using ACE.Entity.Models;
+using ACE.Server.Factories;
 using ACE.Server.Network;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
@@ -24,6 +26,106 @@ namespace ACE.Server.Command.Handlers
         /// Total XP of a level 275 character
         /// </summary>
         private const long MaxLevelXp = 191226310247;
+
+        /// <summary>
+        /// Every level 8 spell random loot can put on armor, jewelry and weapons (not banes, which only protect the item they are on). The weapon ones are auras, so they work from a charm.
+        /// </summary>
+        private static readonly SpellId[] CharmSpells =
+        {
+            SpellId.StrengthSelf8, SpellId.EnduranceSelf8, SpellId.CoordinationSelf8, SpellId.QuicknessSelf8,
+            SpellId.FocusSelf8, SpellId.WillpowerSelf8, SpellId.HeavyWeaponsMasterySelf8, SpellId.LightWeaponsMasterySelf8,
+            SpellId.FinesseWeaponsMasterySelf8, SpellId.MissileWeaponsMasterySelf8, SpellId.TwoHandedMasterySelf8, SpellId.InvulnerabilitySelf8,
+            SpellId.ImpregnabilitySelf8, SpellId.MagicResistanceSelf8, SpellId.CreatureEnchantmentMasterySelf8, SpellId.ItemEnchantmentMasterySelf8,
+            SpellId.LifeMagicMasterySelf8, SpellId.WarMagicMasterySelf8, SpellId.VoidMagicMasterySelf8, SpellId.SummoningMasterySelf8,
+            SpellId.ArcaneEnlightenmentSelf8, SpellId.DeceptionMasterySelf8, SpellId.HealingMasterySelf8, SpellId.JumpingMasterySelf8,
+            SpellId.LockpickMasterySelf8, SpellId.ManaMasterySelf8, SpellId.SprintSelf8, SpellId.DirtyFightingMasterySelf8,
+            SpellId.RecklessnessMasterySelf8, SpellId.SneakAttackMasterySelf8, SpellId.DualWieldMasterySelf8, SpellId.ShieldMasterySelf8,
+            SpellId.AlchemyMasterySelf8, SpellId.CookingMasterySelf8, SpellId.FletchingMasterySelf8, SpellId.LeadershipMasterySelf8,
+            SpellId.FealtySelf8, SpellId.ArcanumSalvagingSelf8, SpellId.ArmorExpertiseSelf8, SpellId.ItemExpertiseSelf8,
+            SpellId.MagicItemExpertiseSelf8, SpellId.WeaponExpertiseSelf8, SpellId.MonsterAttunementSelf8, SpellId.PersonAttunementSelf8,
+            SpellId.ArmorSelf8, SpellId.BladeProtectionSelf8, SpellId.PiercingProtectionSelf8, SpellId.BludgeonProtectionSelf8,
+            SpellId.FireProtectionSelf8, SpellId.ColdProtectionSelf8, SpellId.AcidProtectionSelf8, SpellId.LightningProtectionSelf8,
+            SpellId.RegenerationSelf8, SpellId.RejuvenationSelf8, SpellId.ManaRenewalSelf8, SpellId.BloodDrinkerSelf8,
+            SpellId.DefenderSelf8, SpellId.HeartSeekerSelf8, SpellId.SwiftKillerSelf8, SpellId.HermeticLinkSelf8,
+            SpellId.SpiritDrinkerSelf8,
+        };
+
+        /// <summary>
+        /// The Epic version of every cantrip random loot can put on armor and jewelry (not banes). Weapon cantrips are on the weapon.
+        /// </summary>
+        private static readonly SpellId[] CharmCantrips =
+        {
+            SpellId.CANTRIPSTRENGTH3, SpellId.CANTRIPENDURANCE3, SpellId.CANTRIPCOORDINATION3, SpellId.CANTRIPQUICKNESS3,
+            SpellId.CANTRIPFOCUS3, SpellId.CANTRIPWILLPOWER3, SpellId.CANTRIPHEAVYWEAPONSAPTITUDE3, SpellId.CANTRIPLIGHTWEAPONSAPTITUDE3,
+            SpellId.CANTRIPFINESSEWEAPONSAPTITUDE3, SpellId.CANTRIPMISSILEWEAPONSAPTITUDE3, SpellId.CANTRIPTWOHANDEDAPTITUDE3, SpellId.CANTRIPINVULNERABILITY3,
+            SpellId.CANTRIPIMPREGNABILITY3, SpellId.CANTRIPMAGICRESISTANCE3, SpellId.CANTRIPCREATUREENCHANTMENTAPTITUDE3, SpellId.CANTRIPITEMENCHANTMENTAPTITUDE3,
+            SpellId.CANTRIPLIFEMAGICAPTITUDE3, SpellId.CANTRIPWARMAGICAPTITUDE3, SpellId.CantripVoidMagicAptitude3, SpellId.CantripSummoningProwess3,
+            SpellId.CANTRIPARCANEPROWESS3, SpellId.CANTRIPDECEPTIONPROWESS3, SpellId.CANTRIPHEALINGPROWESS3, SpellId.CANTRIPJUMPINGPROWESS3,
+            SpellId.CANTRIPMANACONVERSIONPROWESS3, SpellId.CANTRIPLOCKPICKPROWESS3, SpellId.CANTRIPSPRINT3, SpellId.CantripDirtyFightingProwess3,
+            SpellId.CantripDualWieldAptitude3, SpellId.CantripRecklessnessProwess3, SpellId.CantripSneakAttackProwess3, SpellId.CantripShieldAptitude3,
+            SpellId.CANTRIPALCHEMICALPROWESS3, SpellId.CANTRIPCOOKINGPROWESS3, SpellId.CANTRIPFLETCHINGPROWESS3, SpellId.CANTRIPLEADERSHIP3,
+            SpellId.CANTRIPFEALTY3, SpellId.CANTRIPSALVAGING3, SpellId.CANTRIPARMOREXPERTISE3, SpellId.CANTRIPITEMEXPERTISE3,
+            SpellId.CANTRIPMAGICITEMEXPERTISE3, SpellId.CANTRIPWEAPONEXPERTISE3, SpellId.CANTRIPMONSTERATTUNEMENT3, SpellId.CANTRIPPERSONATTUNEMENT3,
+            SpellId.CANTRIPARMOR3, SpellId.CANTRIPACIDWARD3, SpellId.CANTRIPBLUDGEONINGWARD3, SpellId.CANTRIPFROSTWARD3,
+            SpellId.CANTRIPSTORMWARD3, SpellId.CANTRIPFLAMEWARD3, SpellId.CANTRIPSLASHINGWARD3, SpellId.CANTRIPPIERCINGWARD3,
+        };
+
+        /// <summary>
+        /// Crit damage rating a full suit could add in Stage 2: nine armor pieces, each with the best rating (2).
+        /// Tier 7 armor rolls either Crit Damage or Crit Damage Resist; for damage testing all nine are Crit Damage.
+        /// </summary>
+        private const int CharmCritDamageRating = 18;
+
+        [CommandHandler("testcharm", AccessLevel.Admin, CommandHandlerFlag.RequiresWorld, 0,
+            "Puts a TEST charm in your pack: a trinket that casts every level 8 item spell and every Epic armor and jewelry cantrip on you, and carries the crit damage rating of a full rated suit.",
+            "No parameters. Wear it in the trinket slot. It is attuned, weightless and can't be traded.")]
+        public static void HandleTestCharm(Session session, params string[] parameters)
+        {
+            var player = session.Player;
+
+            try
+            {
+                // built on the Trinket of Tinkering: a trinket-slot item that already holds spells and mana
+                var wo = WorldObjectFactory.CreateNewWorldObject(Player.TinkeringTrinketWcid);
+                if (wo == null)
+                {
+                    CommandHandlerHelper.WriteOutputInfo(session, "Couldn't create the charm: the Trinket of Tinkering (8142017) isn't in the world database.");
+                    return;
+                }
+
+                wo.Biota.ClearSpells(wo.BiotaDatabaseLock);
+                foreach (var spell in CharmSpells)
+                    wo.Biota.GetOrAddKnownSpell((int)spell, wo.BiotaDatabaseLock, out _);
+                foreach (var cantrip in CharmCantrips)
+                    wo.Biota.GetOrAddKnownSpell((int)cantrip, wo.BiotaDatabaseLock, out _);
+
+                wo.Name = "TEST Charm of Everything";
+                wo.LongDesc = "A test item made with /testcharm: every level 8 item spell, every Epic armor and jewelry cantrip, and the crit damage rating of a full rated suit. Not for play.";
+                wo.GearCritDamage = CharmCritDamageRating;
+                wo.ItemDifficulty = null;
+                wo.ItemMaxMana = 1000000;
+                wo.ItemCurMana = 1000000;
+                wo.ManaRate = -0.001;
+                wo.EncumbranceVal = 0;
+                wo.Value = 0;
+                wo.Attuned = AttunedStatus.Attuned;
+                wo.Bonded = BondedStatus.Bonded;
+
+                if (!player.TryCreateInInventoryWithNetworking(wo))
+                {
+                    wo.Destroy();
+                    CommandHandlerHelper.WriteOutputInfo(session, "Your pack is full.");
+                    return;
+                }
+
+                CommandHandlerHelper.WriteOutputInfo(session, $"TEST Charm of Everything is in your pack: {CharmSpells.Length} level 8 spells, {CharmCantrips.Length} Epic cantrips, +{CharmCritDamageRating} crit damage rating. Wear it in the trinket slot.");
+                log.Info($"[TESTCHARM] {player.Name} used /testcharm.");
+            }
+            catch (Exception ex)
+            {
+                CommandHandlerHelper.WriteOutputInfo(session, $"testcharm failed: {ex.GetType().Name}: {ex.Message}");
+            }
+        }
 
         [CommandHandler("testchar", AccessLevel.Admin, CommandHandlerFlag.RequiresWorld, 0,
             "Makes your own character a fully built level 275 for damage testing: every skill specialized and maxed, all six attributes 100 innate and maxed (290 base), vitals maxed.",
