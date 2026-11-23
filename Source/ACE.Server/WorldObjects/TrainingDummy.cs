@@ -646,9 +646,25 @@ namespace ACE.Server.WorldObjects
             var parts = new[] { ("head", CombatBodyPart.Head), ("chest", CombatBodyPart.Chest), ("abdomen", CombatBodyPart.Abdomen), ("upper arm", CombatBodyPart.UpperArm),
                 ("lower arm", CombatBodyPart.LowerArm), ("hands", CombatBodyPart.Hand), ("upper leg", CombatBodyPart.UpperLeg), ("lower leg", CombatBodyPart.LowerLeg),
                 ("feet", CombatBodyPart.Foot) }.Select(x => (x.Item1, Part(x.Item2))).ToList();
+            // what a hit goes against: each piece's (armor + Impenetrability) times its resistance with banes (2.0 at most),
+            // added up over the layers; the Armor Self style buffs then add on top, not multiplied
+            string InHit(CombatBodyPart part)
+            {
+                if (!kitted)
+                    return "-";
+                var covers = BodyParts.GetCoverageMask(part);
+                var layers = EquippedObjects.Values.Where(e => e is Clothing && ((e.ClothingPriority ?? 0) & covers) != 0).ToList();
+                var totals = new[] { DamageType.Slash, DamageType.Pierce, DamageType.Bludgeon, DamageType.Cold, DamageType.Fire, DamageType.Acid, DamageType.Electric }
+                    .Select(t => (int)Math.Round(layers.Sum(l => GetArmorMod(l, t, false)))).ToList();
+                return totals.Min() == totals.Max() ? totals[0].ToString() : $"{totals.Min()} to {totals.Max()}";
+            }
+            var inHit = string.Join(", ", new[] { ("head", CombatBodyPart.Head), ("chest", CombatBodyPart.Chest), ("abdomen", CombatBodyPart.Abdomen), ("upper arm", CombatBodyPart.UpperArm),
+                ("lower arm", CombatBodyPart.LowerArm), ("hands", CombatBodyPart.Hand), ("upper leg", CombatBodyPart.UpperLeg), ("lower leg", CombatBodyPart.LowerLeg),
+                ("feet", CombatBodyPart.Foot) }.Select(x => $"{x.Item1} {InHit(x.Item2)}"));
             var active = Buffs.Where(id => EnchantmentManager.GetEnchantment(id) != null).Select(SpellName).ToList();
             return $"{Name} armor, unbuffed (what hollow hits): {string.Join(", ", parts.Select(x => $"{x.Item1} {x.Item2.Plain}"))}. " +
                    $"Armor, fully buffed (worn pieces, Impenetrability on each, Armor Self and armor cantrips {body:+0;-0;0}): {string.Join(", ", parts.Select(x => $"{x.Item1} {x.Item2.Buffed}"))}. " +
+                   $"Physical armor in a hit (each layer's armor + Impenetrability, times its resistance with banes; Armor Self {body:+0;-0;0} adds on top): {inHit}. " +
                    $"Defense (buffed): melee {DefenseCurrent(Skill.MeleeDefense)}, missile {DefenseCurrent(Skill.MissileDefense)}, magic {DefenseCurrent(Skill.MagicDefense)}. " +
                    $"Ratings: damage resist {Drr}, crit damage resist {Cdr}, PK damage resist {Pkdr}. " +
                    $"Buffs on it: {(active.Count == 0 ? "none" : string.Join(", ", active))}.";
