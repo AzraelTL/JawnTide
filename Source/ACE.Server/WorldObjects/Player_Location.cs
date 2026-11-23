@@ -1148,7 +1148,7 @@ namespace ACE.Server.WorldObjects
             0x0026,     //Drudge Dungeon
             0x003F,     //Dragon Cave
             0x6543,     //Aerbax - Lesser Battle Dungeon
-            0x6147      //T9 Mountain Citadel
+            0x6147      //T9 Mountain Citadel (the T9 copy only, see below)
         };
 
         /// <summary>
@@ -1166,6 +1166,10 @@ namespace ACE.Server.WorldObjects
             var landblock = (ushort)(location.ObjCellId >> 16);
 
             if (!NoLog_Landblocks.Contains(landblock))
+                return;
+
+            // JawnTide instancing: only the T9 copy of the Mountain Citadel is no-log, the normal world copy is the stock dungeon
+            if (landblock == ACE.Server.Entity.T9.T9Dungeons.MountainCitadel && !(biota.PropertiesBool != null && biota.PropertiesBool.TryGetValue(PropertyBool.InInstance, out var inInstance) && inInstance))
                 return;
 
             if (!biota.PropertiesPosition.TryGetValue(PositionType.Sanctuary, out var lifestone))

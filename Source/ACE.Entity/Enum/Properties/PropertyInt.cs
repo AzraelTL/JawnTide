@@ -661,6 +661,7 @@ namespace ACE.Entity.Enum.Properties
         BountyContractStateRaw = 20011,
         AllegianceSwearCount = 20012,  // Lifetime count of how many times this character has sworn allegiance (drives PK-trophy swear cost)
         HookMuleItemCount = 20013,  // JawnTide Allegiance Mule: items stored in this hook item's mule (it can't leave its hook while this is above 0)
+        TeleportVariation = 20014,  // JawnTide instancing: a portal (or an NPC's teleport emote) with this sends you into that instance copy of its destination (5 = T9 dungeons)
     }
 
     public static class PropertyIntExtensions

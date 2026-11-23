@@ -1361,6 +1361,11 @@ namespace ACE.Server.WorldObjects.Managers
                                 if (bossRoute.HasValue)
                                     destination.WithVariation(bossRoute);
 
+                                // JawnTide instancing: an NPC that sends you into an instanced copy (the T9 Mountain Citadel)
+                                var teleportVariation = WorldObject.GetProperty(PropertyInt.TeleportVariation);
+                                if (teleportVariation.HasValue && !bossRoute.HasValue)
+                                    destination.WithVariation(teleportVariation);
+
                                 WorldObject.AdjustDungeon(destination);
                                 WorldManager.ThreadSafeTeleport(player, destination);
                             }

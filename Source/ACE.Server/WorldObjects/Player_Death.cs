@@ -301,7 +301,9 @@ namespace ACE.Server.WorldObjects
                         case 0x02F5:  //T9 Metos
                         case 0x0105:  //T9 BSD
                         case 0x6147:  //T9 Mountain Citadel
-                            pkPlayer.CompletePkQuestTasks(PKQuests.PKQuests_KillT9);
+                            // JawnTide instancing: only the T9 copy counts, the normal world copy is the stock lower level dungeon
+                            if (ACE.Server.Entity.T9.T9Dungeons.IsInT9(Location))
+                                pkPlayer.CompletePkQuestTasks(PKQuests.PKQuests_KillT9);
                             break;
                         default:
                             
