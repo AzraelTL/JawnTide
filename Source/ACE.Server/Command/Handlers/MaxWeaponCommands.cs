@@ -16,6 +16,8 @@ using ACE.Server.Managers;
 using ACE.Server.Network;
 using ACE.Server.WorldObjects;
 
+using log4net;
+
 namespace ACE.Server.Command.Handlers
 {
     /// <summary>
@@ -34,9 +36,13 @@ namespace ACE.Server.Command.Handlers
     ///
     /// All the rolling happens on a background thread, so the game doesn't pause; only handing the finished weapons
     /// to the admin runs on the game thread. One request runs at a time.
+    ///
+    /// Each use is written to the server log ([MAXWEAPONS]), not to the Audit channel.
     /// </summary>
     public static class MaxWeaponCommands
     {
+        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         private const int RollsPerTier = 4000;
         private const int TinkerCount = 9;
 
@@ -236,7 +242,8 @@ namespace ACE.Server.Command.Handlers
                 CommandHandlerHelper.WriteOutputInfo(session, $"Made {made} test weapons: {category}, wield {wieldWanted}, {kindCount} kind(s), each with AR, CS and CB."
                     + (made < weapons.Count ? $" {weapons.Count - made} didn't fit in your pack." : "")
                     + (category == "missile" || category == "caster" ? "" : " Each name shows its tinkers, for example 2I/7G is 2 Iron and 7 Granite."));
-                PlayerManager.BroadcastToAuditChannel(player, $"{player.Name} made {made} max test weapons with /maxweapons ({category}, wield {wieldWanted}).");
+                // recorded in the server log only: not the in-game Audit channel or its Discord webhook
+                log.Info($"[MAXWEAPONS] {player.Name} made {made} max test weapons ({category}, wield {wieldWanted}).");
             });
             actionChain.EnqueueChain();
         }
