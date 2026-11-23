@@ -6,6 +6,7 @@ using System.Text;
 
 using log4net;
 
+using ACE.Common;
 using ACE.Database;
 using ACE.Database.Models.Auth;
 using ACE.Entity.Enum;
@@ -362,6 +363,62 @@ namespace ACE.Server.Command.Handlers
 
             var adminName = session?.Player?.Name ?? "CONSOLE";
             log.Info($"[IPBinding] Admin '{adminName}' set ip_binding_ip_allowance to '{serialized}' (change: {ip} -> {count}).");
+
+            CommandHandlerHelper.WriteOutputInfo(session, resultMsg, ChatMessageType.Broadcast);
+        }
+
+        // setipsessions ip count
+        [CommandHandler("setipsessions", AccessLevel.Admin, CommandHandlerFlag.None, 2,
+            "JawnTide: sets how many clients may be logged in at once from one IP address (edits the ip_session_allowance property).",
+            "ip count\n" +
+            "count of 0 removes the override (that IP goes back to the server's normal per-IP limit).\n" +
+            "Example: /setipsessions 203.0.113.42 6")]
+        public static void HandleSetIpSessions(Session session, params string[] parameters)
+        {
+            var ip = parameters[0].Trim();
+
+            if (!IPAddress.TryParse(ip, out _))
+            {
+                CommandHandlerHelper.WriteOutputInfo(session, $"'{ip}' is not a valid IP address.", ChatMessageType.Broadcast);
+                return;
+            }
+
+            if (!int.TryParse(parameters[1].Trim(), out var count) || count < 0)
+            {
+                CommandHandlerHelper.WriteOutputInfo(session, $"'{parameters[1]}' is not a valid number.", ChatMessageType.Broadcast);
+                return;
+            }
+
+            var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var raw = PropertyManager.GetString("ip_session_allowance").Item;
+            if (!string.IsNullOrWhiteSpace(raw))
+            {
+                foreach (var entry in raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    var sep = entry.LastIndexOf(':');
+                    if (sep <= 0 || sep == entry.Length - 1)
+                        continue;
+                    if (int.TryParse(entry.Substring(sep + 1).Trim(), out var c) && c >= 1)
+                        map[entry.Substring(0, sep).Trim()] = c;
+                }
+            }
+
+            var normal = ConfigManager.Config.Server.Network.MaximumAllowedSessionsPerIPAddress;
+            var normalText = normal == -1 ? "unlimited" : normal.ToString();
+
+            string resultMsg;
+            if (count == 0)
+                resultMsg = map.Remove(ip) ? $"Removed the session override for {ip}. It now uses the normal limit ({normalText})." : $"{ip} had no session override; it already uses the normal limit ({normalText}).";
+            else
+            {
+                map[ip] = count;
+                resultMsg = $"{ip} may now have up to {count} clients logged in at once (normal limit: {normalText}).";
+            }
+
+            var serialized = string.Join(", ", map.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
+            PropertyManager.ModifyString("ip_session_allowance", serialized);
+
+            log.Info($"[IPSessions] Admin '{session?.Player?.Name ?? "CONSOLE"}' set ip_session_allowance to '{serialized}' (change: {ip} -> {count}).");
 
             CommandHandlerHelper.WriteOutputInfo(session, resultMsg, ChatMessageType.Broadcast);
         }

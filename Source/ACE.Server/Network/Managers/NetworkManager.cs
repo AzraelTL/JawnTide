@@ -116,7 +116,8 @@ namespace ACE.Server.Network.Managers
                         log.DebugFormat("Login Request from {0}", endPoint);
 
                         var ipAllowsUnlimited = ConfigManager.Config.Server.Network.AllowUnlimitedSessionsFromIPAddresses.Contains(endPoint.Address.ToString());
-                        if (ipAllowsUnlimited || ConfigManager.Config.Server.Network.MaximumAllowedSessionsPerIPAddress == -1 || GetSessionEndpointTotalByAddressCount(endPoint.Address) < ConfigManager.Config.Server.Network.MaximumAllowedSessionsPerIPAddress)
+                        var sessionLimit = GetSessionLimitForAddress(endPoint.Address);
+                        if (ipAllowsUnlimited || sessionLimit == -1 || GetSessionEndpointTotalByAddressCount(endPoint.Address) < sessionLimit)
                         {
                             var session = FindOrCreateSession(connectionListener, endPoint);
                             if (session != null)
@@ -237,6 +238,33 @@ namespace ACE.Server.Network.Managers
             {
                 sessionLock.ExitReadLock();
             }
+        }
+
+        /// <summary>
+        /// JawnTide: how many sessions an IP may have at once. The ip_session_allowance property ("ip:count, ip:count")
+        /// overrides MaximumAllowedSessionsPerIPAddress from Config.js for the IPs it lists (e.g. a household with several players).
+        /// </summary>
+        public static int GetSessionLimitForAddress(IPAddress address)
+        {
+            var limit = ConfigManager.Config.Server.Network.MaximumAllowedSessionsPerIPAddress;
+
+            var raw = PropertyManager.GetString("ip_session_allowance").Item;
+            if (string.IsNullOrWhiteSpace(raw))
+                return limit;
+
+            var ipStr = address.ToString();
+            foreach (var entry in raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                // "ip:count", split on the last ':' so IPv6 addresses parse
+                var sep = entry.LastIndexOf(':');
+                if (sep <= 0 || sep == entry.Length - 1)
+                    continue;
+
+                if (string.Equals(entry.Substring(0, sep).Trim(), ipStr, StringComparison.OrdinalIgnoreCase) && int.TryParse(entry.Substring(sep + 1).Trim(), out var count) && count >= 1)
+                    return count;
+            }
+
+            return limit;
         }
 
         public static int GetSessionEndpointTotalByAddressCount(IPAddress address)

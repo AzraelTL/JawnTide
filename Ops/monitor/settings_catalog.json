@@ -3364,6 +3364,14 @@
    "area": "Accounts, logins & security"
   },
   {
+   "key": "ip_session_allowance",
+   "type": "string",
+   "default": "",
+   "jawntide": true,
+   "desc": "Comma-separated per-IP overrides for how many game sessions (clients logged in at once) an IP may have, formatted 'ip:count'. Example: '203.0.113.42:6'. IPs not listed use MaximumAllowedSessionsPerIPAddress from Config.js. Set with /setipsessions",
+   "area": "Accounts, logins & security"
+  },
+  {
    "key": "legendary_cantrip_drop_rate",
    "type": "double",
    "default": "1.0",
