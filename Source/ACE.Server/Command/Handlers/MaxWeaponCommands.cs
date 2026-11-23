@@ -464,7 +464,7 @@ namespace ACE.Server.Command.Handlers
             wo.Attuned = AttunedStatus.Attuned;
             wo.Bonded = BondedStatus.Bonded;
             wo.Value = 0;
-            wo.Name = $"{wo.Name} (Max {tag})";
+            wo.Name = $"TEST {wo.Name} (Max {tag})";
             wo.LongDesc = "A test weapon made with /maxweapons: the best stats loot can roll in the current stage, fully tinkered. Not for play.";
         }
     }
