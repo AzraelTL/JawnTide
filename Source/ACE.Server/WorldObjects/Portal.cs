@@ -320,6 +320,11 @@ namespace ACE.Server.WorldObjects
             var portalDest = new Position(Destination);
             AdjustDungeon(portalDest);
 
+            // JawnTide instancing: a portal into an instanced copy (the T9 dungeons) sends you into that copy
+            var teleportVariation = GetProperty(PropertyInt.TeleportVariation);
+            if (teleportVariation.HasValue)
+                portalDest.WithVariation(teleportVariation);
+
             WorldManager.ThreadSafeTeleport(player, portalDest, new ActionEventDelegate(() =>
             {
                 // If the portal just used is able to be recalled to,

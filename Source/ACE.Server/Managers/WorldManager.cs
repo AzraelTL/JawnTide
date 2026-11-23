@@ -264,7 +264,12 @@ namespace ACE.Server.Managers
             // JawnTide instancing: instances don't survive a logout, so anyone who logged out inside one
             // (an arena match, for example) goes to their lifestone. The normal world copy of the arena
             // dungeons is ordinary content now, so logging out there is fine.
-            if (session.Player.InInstance)
+            if (session.Player.InInstance && ACE.Server.Entity.T9.T9Dungeons.IsT9Landblock(session.Player.Location.Landblock))
+            {
+                // except the T9 dungeons: their copy is shared and always there, so you log back into it
+                session.Player.Location = new Position(session.Player.Location).WithVariation(ACE.Server.Entity.T9.T9Dungeons.Variation);
+            }
+            else if (session.Player.InInstance)
             {
                 session.Player.InInstance = false;
                 session.Player.Location = new Position(session.Player.Sanctuary ?? session.Player.FallbackPosition);

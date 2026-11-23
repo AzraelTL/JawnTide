@@ -10,7 +10,8 @@ VALUES (600054,   1,         16) /* ItemType - Creature */
      , (600054,  16,         32) /* ItemUseable - Remote */
      , (600054,  93,    6294556) /* PhysicsState - Ethereal, ReportCollisions, IgnoreCollisions, Gravity, LightingOn, ReportCollisionsAsEnvironment, EdgeSlide */
      , (600054,  95,          4) /* RadarBlipColor - Purple */
-     , (600054, 133,          4) /* ShowableOnRadar - ShowAlways */;
+     , (600054, 133,          4) /* ShowableOnRadar - ShowAlways */
+     , (600054, 20014,          5) /* TeleportVariation - sends you into the T9 copy */;
 
 INSERT INTO `weenie_properties_bool` (`object_Id`, `type`, `value`)
 VALUES (600054,   1, True ) /* Stuck */
