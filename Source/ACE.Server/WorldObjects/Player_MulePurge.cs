@@ -32,6 +32,9 @@ namespace ACE.Server.WorldObjects
     partial class Player
     {
         private HashSet<uint> pendingMulePurge;
+
+        /// <summary>JawnTide: when this character's /mule purge undo started; cleared once its items are marked restored.</summary>
+        private DateTime? muleUndoStarted;
         private DateTime pendingMulePurgeAt;
         private uint pendingMulePurgeVendor;
         private string pendingMulePurgeFilter;
@@ -380,6 +383,14 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            // JawnTide: one undo at a time (the held items are only marked as restored after they are back in the mule)
+            if (muleUndoStarted.HasValue && DateTime.UtcNow - muleUndoStarted.Value < TimeSpan.FromSeconds(60))
+            {
+                Say("Your last /mule purge undo is still being carried out. Try again in a moment.");
+                return;
+            }
+            muleUndoStarted = DateTime.UtcNow;
+
             var accountId = Account.AccountId;
             var db = DatabaseManager.Shard.BaseDatabase;
 
@@ -388,7 +399,11 @@ namespace ACE.Server.WorldObjects
                 var batches = db.PvpToolsQuery("SELECT batch_Id FROM mule_purge WHERE account_Id = @a AND status = 'held' GROUP BY batch_Id ORDER BY batch_Id DESC LIMIT 10;", ("@a", accountId));
                 if (batches == null || batches.Count < n)
                 {
-                    EnqueueAction(new ActionEventDelegate(() => Say("There's no held purge to undo. /mule purge list shows them.")));
+                    EnqueueAction(new ActionEventDelegate(() =>
+                    {
+                        muleUndoStarted = null;
+                        Say("There's no held purge to undo. /mule purge list shows them.");
+                    }));
                     return;
                 }
                 var batch = Convert.ToInt64(batches[n - 1][0]);
@@ -407,6 +422,7 @@ namespace ACE.Server.WorldObjects
                 {
                     if (vendor == null || vendor.IsDestroyed || vendor.MuleContainers == null)
                     {
+                        muleUndoStarted = null;
                         Say("Your mule left. Open it again and retry /mule purge undo.");
                         return;
                     }
@@ -420,6 +436,15 @@ namespace ACE.Server.WorldObjects
                     var restored = new List<long>();
                     foreach (var (id, biota) in items.Take(free))
                     {
+                        // already back (in the mule or on this character): never make a second copy of the same item
+                        var heldGuid = new ACE.Entity.ObjectGuid(biota.Id);
+                        if (ResolveMuleItemContainer(vendor.MuleContainers, heldGuid) != null || GetInventoryItem(heldGuid) != null || GetEquippedItem(heldGuid) != null)
+                        {
+                            log.Warn($"[MULE] {Name} (0x{Guid}) purge undo: item 0x{biota.Id:X8} was already back; skipped.");
+                            restored.Add(id);
+                            continue;
+                        }
+
                         var wo = WorldObjectFactory.CreateWorldObject(biota);
                         if (wo == null)
                             continue;
@@ -436,8 +461,16 @@ namespace ACE.Server.WorldObjects
 
                     DatabaseManager.Shard.MarketEnqueue(() =>
                     {
-                        foreach (var id in restored)
-                            db.PvpToolsExecute("UPDATE mule_purge SET status = 'restored', done_At = @t WHERE id = @id;", ("@t", DateTime.UtcNow), ("@id", id));
+                        try
+                        {
+                            foreach (var id in restored)
+                                db.PvpToolsExecute("UPDATE mule_purge SET status = 'restored', done_At = @t WHERE id = @id;", ("@t", DateTime.UtcNow), ("@id", id));
+                        }
+                        finally
+                        {
+                            // the next undo may start once these are marked
+                            EnqueueAction(new ActionEventDelegate(() => muleUndoStarted = null));
+                        }
                     });
 
                     log.Info($"[MULE] {Name} (0x{Guid}, account {accountId}) undid a purge: {restored.Count} items back in the mule");

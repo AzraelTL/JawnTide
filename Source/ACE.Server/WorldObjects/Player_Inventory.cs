@@ -1362,6 +1362,7 @@ namespace ACE.Server.WorldObjects
                 {
                     Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "TryRemoveFromInventory failed!")); // Custom error message
                     Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
+                    return false;
                 }
 
                 if (itemRootOwner == this && containerRootOwner != this)
@@ -2429,7 +2430,7 @@ namespace ACE.Server.WorldObjects
                     }
 
                     // We make sure the stack is still valid. It could have changed during our movement
-                    if (stackOriginalContainer != stack.ContainerId || stack.StackSize < amount)
+                    if (stackOriginalContainer != stack.ContainerId || stack.StackSize <= amount)
                     {
                         log.DebugFormat("Player 0x{0:X8}:{1} tried to split an item that's no longer valid 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
                         Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Split failed!")); // Custom error message
@@ -2445,7 +2446,7 @@ namespace ACE.Server.WorldObjects
                     pickupChain.AddAction(this, () =>
                     {
                         // We make sure the stack is still valid. It could have changed during our pickup animation
-                        if (stackOriginalContainer != stack.ContainerId || stack.StackSize < amount)
+                        if (stackOriginalContainer != stack.ContainerId || stack.StackSize <= amount)
                         {
                             log.DebugFormat("Player 0x{0:X8}:{1} tried to split an item that's no longer valid 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
                             Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Split failed!")); // Custom error message
@@ -2529,7 +2530,26 @@ namespace ACE.Server.WorldObjects
             Session.Network.EnqueueSend(new GameEventItemServerSaysContainId(Session, newStack, container));
 
             if (!AdjustStack(stack, -amount, stackFoundInContainer, stackRootOwner))
+            {
+                // JawnTide: the source stack changed and can't give up this amount any more. The new stack is already in the
+                // container, so it is taken back out and destroyed: it must never exist next to an untouched source stack.
+                log.Warn($"[SPLIT] {Name} (0x{Guid}) split of {amount} {stack.Name} (0x{stack.Guid}, stack {stack.StackSize}) failed after the new stack was placed; the new stack was removed.");
+
+                if (container.TryRemoveFromInventory(newStack.Guid))
+                {
+                    if (container != containerRootOwner && containerRootOwner != null)
+                    {
+                        containerRootOwner.EncumbranceVal -= (stack.StackUnitEncumbrance * amount);
+                        containerRootOwner.Value -= (stack.StackUnitValue * amount);
+                    }
+                }
+
+                Session.Network.EnqueueSend(new GameMessageInventoryRemoveObject(newStack));
+                newStack.Destroy();
+
+                Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stack.Guid.Full, WeenieError.ActionCancelled));
                 return false;
+            }
 
             if (stackRootOwner == null)
                 EnqueueBroadcast(new GameMessageSetStackSize(stack));
@@ -2787,7 +2807,7 @@ namespace ACE.Server.WorldObjects
                     }
 
                     // We make sure the stack is still valid. It could have changed during our movement
-                    if (stackOriginalContainer != stack.ContainerId || stack.StackSize < amount)
+                    if (stackOriginalContainer != stack.ContainerId || stack.StackSize <= amount)
                     {
                         log.DebugFormat("Player 0x{0:X8}:{1} tried to split an item that's no longer valid 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
                         Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Split failed!")); // Custom error message
@@ -2803,7 +2823,7 @@ namespace ACE.Server.WorldObjects
                     pickupChain.AddAction(this, () =>
                     {
                         // We make sure the stack is still valid. It could have changed during our pickup animation
-                        if (stackOriginalContainer != stack.ContainerId || stack.StackSize < amount)
+                        if (stackOriginalContainer != stack.ContainerId || stack.StackSize <= amount)
                         {
                             log.DebugFormat("Player 0x{0:X8}:{1} tried to split an item that's no longer valid 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
                             Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Split failed!")); // Custom error message

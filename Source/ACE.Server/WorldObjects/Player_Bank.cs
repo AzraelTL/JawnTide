@@ -152,6 +152,12 @@ namespace ACE.Server.WorldObjects
             if (!BankCheckOpen())
                 return;
 
+            if (IsBusy)
+            {
+                BankMessage("You're in the middle of something. Deposit again when it's done.");
+                return;
+            }
+
             var any = false;
 
             foreach (var currency in BankInfo.Currencies.Where(c => c.Kind != BankCurrencyKind.Luminance))
@@ -184,6 +190,16 @@ namespace ACE.Server.WorldObjects
         /// Pyreals: coins only, unless notesOnly (then trade notes only).</summary>
         private bool BankDepositInternal(BankCurrency currency, long? amount, bool quietIfNone, bool notesOnly = false)
         {
+            // JawnTide: a deposit takes items out of the pack at once. While another action on the pack is still playing out
+            // (an item being put in a chest, dropped, given, split or crafted), that could take away the very stack the
+            // action is about to move, so deposits wait until the character is free.
+            if (IsBusy)
+            {
+                if (!quietIfNone)
+                    BankMessage("You're in the middle of something. Deposit again when it's done.");
+                return false;
+            }
+
             // JawnTide: keys can't go in the bank any more (they're meant to be at risk while you carry them); old balances can still be withdrawn
             if (currency.WithdrawOnly)
             {
@@ -343,6 +359,9 @@ namespace ACE.Server.WorldObjects
 
         // ---------------------------------------------------------------- withdraw
 
+        /// <summary>JawnTide: the most item stacks one withdrawal may come out as (a character has at most 270 pack slots).</summary>
+        private const int BankMaxWithdrawStacks = 300;
+
         /// <summary>Builds (but doesn't place) the items for a withdrawal.</summary>
         private List<WorldObject> BankBuildItems(BankCurrency currency, long amount, bool coinsOnly, uint noteWcid = 0, long noteValue = 0)
         {
@@ -364,6 +383,16 @@ namespace ACE.Server.WorldObjects
                     }
 
                     var max = Math.Max(1, (int)(wo.MaxStackSize ?? 1));
+
+                    // JawnTide: the items are built before the balance is checked, so the number of stacks is bounded here
+                    if (items.Count + (count + max - 1) / max > BankMaxWithdrawStacks)
+                    {
+                        wo.Destroy();
+                        foreach (var made in items)
+                            made.Destroy();
+                        items = null;
+                        return;
+                    }
                     var size = (int)Math.Min(count, max);
 
                     if (max > 1)
@@ -491,7 +520,7 @@ namespace ACE.Server.WorldObjects
 
                 if (items == null || items.Count == 0)
                 {
-                    BankMessage("That withdrawal couldn't be made.");
+                    BankMessage("That withdrawal couldn't be made. If it's a very large amount, take it out in smaller parts.");
                     return;
                 }
 

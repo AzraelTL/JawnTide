@@ -1059,8 +1059,20 @@ namespace ACE.Server.Managers
             public bool Cancelled;
         }
 
-        private static Player FindOnline(uint accountId) =>
-            PlayerManager.GetAllOnline().FirstOrDefault(p => p.Account != null && p.Account.AccountId == accountId);
+        /// <summary>
+        /// The account's character in the world. For a few seconds there can be two (one logging out while the next one enters):
+        /// the one holding the loaded mule comes first, then the one that isn't logging out.
+        /// </summary>
+        private static Player FindOnline(uint accountId)
+        {
+            var online = PlayerManager.GetAllOnline().Where(p => p.Account != null && p.Account.AccountId == accountId).ToList();
+
+            return online.FirstOrDefault(p => p.ActiveMuleContainers != null)
+                ?? online.FirstOrDefault(p => !p.IsLoggingOut)
+                ?? online.FirstOrDefault();
+        }
+
+        private const string MuleLoadingMessage = "Your mule is being summoned right now. Please try again in a moment.";
 
         /// <summary>
         /// Runs work on the player's own thread. A player's queued work is dropped if they log out or are between landblocks,
@@ -1109,6 +1121,14 @@ namespace ACE.Server.Managers
                 {
                     if (player.ActiveMuleContainers == null)
                     {
+                        // the character is reading its mule from the database this moment: a change made there now would
+                        // be missing from the copy it ends up with (the item would be in the mule and on the market at once)
+                        if (player.MuleLoading)
+                        {
+                            done(null, MuleLoadingMessage);
+                            return;
+                        }
+
                         TakeFromMuleInDatabase(accountId, itemGuid, done);
                         return;
                     }
@@ -1119,7 +1139,7 @@ namespace ACE.Server.Managers
                 () =>
                 {
                     var again = FindOnline(accountId);
-                    if (again != null && again.ActiveMuleContainers != null)
+                    if (again != null && (again.ActiveMuleContainers != null || again.MuleLoading))
                         done(null, "Your character is busy (zoning?). Please try again.");
                     else
                         TakeFromMuleInDatabase(accountId, itemGuid, done);
@@ -1195,6 +1215,12 @@ namespace ACE.Server.Managers
                 {
                     if (player.ActiveMuleContainers == null)
                     {
+                        if (player.MuleLoading)
+                        {
+                            done(false, MuleLoadingMessage);
+                            return;
+                        }
+
                         GiveToMuleInDatabase(accountId, itemGuid, done);
                         return;
                     }
@@ -1205,7 +1231,7 @@ namespace ACE.Server.Managers
                 () =>
                 {
                     var again = FindOnline(accountId);
-                    if (again != null && again.ActiveMuleContainers != null)
+                    if (again != null && (again.ActiveMuleContainers != null || again.MuleLoading))
                         done(false, "Your character is busy (zoning?). Please try again.");
                     else
                         GiveToMuleInDatabase(accountId, itemGuid, done);

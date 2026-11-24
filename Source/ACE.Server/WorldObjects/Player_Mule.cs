@@ -103,6 +103,10 @@ namespace ACE.Server.WorldObjects
 
         private DateTime? muleSummonStarted;
 
+        /// <summary>JawnTide: true while this character is loading its mule storage from the database (the gem was used and the
+        /// mule isn't out yet). The marketplace must not move items in or out of the mule in the database during that time.</summary>
+        public bool MuleLoading => ActiveMuleContainers == null && muleSummonStarted.HasValue && DateTime.UtcNow - muleSummonStarted.Value < TimeSpan.FromSeconds(120);
+
         private bool muleGemLookChecked;
 
         /// <summary>JawnTide: the gem's glow while the mule is out (it keeps its name). Normal look is MuleInfo.GemIdleUiEffects.</summary>
@@ -244,6 +248,20 @@ namespace ACE.Server.WorldObjects
             if (ACE.Server.Managers.MarketManager.IsAccountBusy(Account.AccountId))
             {
                 SendTransientError("Your mule is busy with a market order. Try again in a few seconds.");
+                muleSummonStarted = null;
+                return;
+            }
+
+            // JawnTide: never two copies of one account's storage in memory. Another character on this account can still
+            // be in the world for a few seconds (it is logging out, or its connection was replaced by this one) with the
+            // storage loaded; this character waits until it has gone.
+            var accountId = Account.AccountId;
+            var holder = ACE.Server.Managers.PlayerManager.GetAllOnline().FirstOrDefault(p => p != this && p.Account != null && p.Account.AccountId == accountId && p.ActiveMuleContainers != null);
+            if (holder != null)
+            {
+                Session.Network.EnqueueSend(new GameMessageSystemChat($"Your mule is still with {holder.Name}, who hasn't left the world yet. Try again in a few seconds. " +
+                    $"(If {holder.Name} is stuck in the world: /ForceLogoffStuckCharacter {holder.Name})", ChatMessageType.Broadcast));
+                muleSummonStarted = null;
                 return;
             }
 
@@ -256,6 +274,7 @@ namespace ACE.Server.WorldObjects
                 if (container == null)
                 {
                     SendTransientError("Your mule could not be created.");
+                    muleSummonStarted = null;
                     return;
                 }
 
@@ -285,6 +304,7 @@ namespace ACE.Server.WorldObjects
                 // stored pointer untouched, so a retry can still find the real data.
                 log.Error($"[MULE] {Name} (0x{Guid}) mule storage container 0x{containerGuid:X8} (chain position {chain.Count}) couldn't be loaded. Not replacing it -- if this isn't transient, this needs manual investigation before anything new is created for this account.");
                 SendTransientError("Your mule's storage couldn't be loaded right now. Please try again in a moment.");
+                muleSummonStarted = null;
                 return;
             }
 
@@ -342,6 +362,7 @@ namespace ACE.Server.WorldObjects
             {
                 log.Error($"[MULE] Timed out waiting for mule storage container 0x{container.Guid} to finish loading for {Name} (0x{Guid})");
                 SendTransientError("Your mule's storage is taking too long to load. Please try again in a moment.");
+                muleSummonStarted = null;
                 return;
             }
 
@@ -1323,6 +1344,14 @@ namespace ACE.Server.WorldObjects
                 if (wo.ItemType == ItemType.Money || wo.WeenieType == WeenieType.Container)
                 {
                     Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "You cannot store currency or containers in your mule."));
+                    continue;
+                }
+
+                // JawnTide: like every other way of moving an item, not while it's offered in a trade (storing part of an
+                // offered stack would leave the other player looking at more than they are about to get)
+                if (IsTrading && wo.IsBeingTradedOrContainsItemBeingTraded(ItemsInTradeWindow))
+                {
+                    Skip("it's in your trade window", wo.Guid.Full, wo, itemProfile.Amount);
                     continue;
                 }
 

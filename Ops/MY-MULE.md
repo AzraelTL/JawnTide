@@ -21,3 +21,6 @@ no owner or location by design.
 
 Look up an account's storage: `SELECT * FROM ace_shard.account_mule WHERE account_Id = N;` then the items are the biotas
 whose Container (PropertyInstanceId 2) is that container GUID (and the next ones in the chain).
+
+One copy in memory: a character can't summon the mule while another character on the same account is still in the world with
+the storage loaded (logging out, or stuck: `/ForceLogoffStuckCharacter NAME`). The marketplace waits while a mule is being loaded.

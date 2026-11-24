@@ -673,15 +673,21 @@ namespace ACE.Server.WorldObjects
             }
 
             // calculate price
-            uint totalPrice = 0;
+            // JawnTide: the total is added up in 64 bits, and a purchase whose total doesn't fit a 32-bit price is refused
+            ulong totalPrice64 = 0;
 
             foreach (var item in purchaseItems)
-            {
-                var cost = GetSellCost(item);
+                totalPrice64 += GetSellCost(item);
 
-                // detect rollover?
-                totalPrice += cost;
+            if (totalPrice64 > int.MaxValue)
+            {
+                log.Warn($"[VENDOR] {player.Name} (0x{player.Guid}) tried to buy {purchaseItems.Count} item(s) from {Name} for {totalPrice64:N0}, more than one purchase can cost. Refused.");
+                player.SendTransientError("That's too much for one purchase. Buy fewer at a time.");
+                CleanupCreatedItems(defaultItems);
+                return false;
             }
+
+            uint totalPrice = (uint)totalPrice64;
 
             // verify player has enough currency
             long packHas = AlternateCurrency == null ? (player.CoinValue ?? 0) : player.GetNumInventoryItemsOfWCID(AlternateCurrency.Value);

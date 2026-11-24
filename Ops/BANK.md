@@ -13,6 +13,8 @@ Player guide: `Ops/website/wiki-seed/11-bank.md`. Code: `Player_Bank.cs`, `BankI
 - Withdrawals: the balance is debited first; items that don't fit go straight back (logged as `refund`).
 - A failed credit or refund is logged as an ERROR with `[BANK]` and the amount, to restore by hand.
 - Closed while PK tagged, in arenas, trading, dead, teleporting or logging out.
+- Deposits also wait while the character is busy with another action (picking up, dropping, giving, crafting).
+- One withdrawal comes out as at most 300 item stacks, whatever amount is typed.
 
 ## Vendor purchases
 A pyreal or PK Trophy vendor purchase that the pack can't cover pops up a Yes/No asking to pay the shortfall from the bank.
