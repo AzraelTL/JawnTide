@@ -2084,6 +2084,14 @@
    "area": "PvP & player killers"
   },
   {
+   "key": "pk_logout_delay",
+   "type": "long",
+   "default": "20",
+   "jawntide": true,
+   "desc": "Seconds a PK who was in a PK fight in the last 2 minutes stays frozen in the world after clicking logout (separate from pk_timer)",
+   "area": "PvP & player killers"
+  },
+  {
    "key": "pk_timer",
    "type": "long",
    "default": "20",

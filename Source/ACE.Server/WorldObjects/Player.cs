@@ -613,9 +613,11 @@ namespace ACE.Server.WorldObjects
             EnqueueBroadcastPhysicsState();
 
             //Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouHaveBeenInPKBattleTooRecently));
-            Session.Network.EnqueueSend(new GameMessageSystemChat("Logging out in 20s...", ChatMessageType.Magic));
+            // JawnTide: the PK logout delay is its own setting (pk_logout_delay), separate from the PK tag timer (pk_timer)
+            var delay = Math.Max(0, PropertyManager.GetLong("pk_logout_delay").Item);
+            Session.Network.EnqueueSend(new GameMessageSystemChat($"Logging out in {delay}s...", ChatMessageType.Magic));
 
-            LogoffTimestamp = Time.GetFutureUnixTime(PropertyManager.GetLong("pk_timer").Item);
+            LogoffTimestamp = Time.GetFutureUnixTime(delay);
             PlayerManager.AddPlayerToLogoffQueue(this);
         }
 

@@ -729,6 +729,7 @@ namespace ACE.Server.Managers
                 ("allegiance_swear_base_cost", new Property<long>(100, "PK-trophy cost of the first paid allegiance swear (the one after allegiance_free_swears)")),
                 ("allegiance_swear_max_cost", new Property<long>(10000, "maximum PK-trophy cost of an allegiance swear; the cost ramps from the base to this cap over 12 paid swears (with 3 free, the cap is reached at the 15th swear)")),
                 ("max_chars_per_account", new Property<long>(11, "retail defaults to 11, client supports up to 20")),
+                ("pk_logout_delay", new Property<long>(20, "JawnTide: seconds a PK who was in a PK fight in the last 2 minutes stays frozen in the world after clicking logout (separate from pk_timer)")),
                 ("pk_timer", new Property<long>(20, "the number of seconds where a player cannot perform certain actions (ie. teleporting) after becoming involved in a PK battle")),
                 ("player_save_interval", new Property<long>(300, "the number of seconds between automatic player saves")),
                 ("rares_max_days_between", new Property<long>(45, "for rares_real_time_v2: the maximum number of days a player can go before a rare is generated on rare eligible creature kills")),
