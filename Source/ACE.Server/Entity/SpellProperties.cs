@@ -447,7 +447,20 @@ namespace ACE.Server.Entity
         /// <summary>
         /// A destination location for a spell
         /// </summary>
-        public Position Position { get => new Position(_spell.PositionObjCellId ?? 0, new Vector3(_spell.PositionOriginX ?? 0.0f, _spell.PositionOriginY ?? 0.0f, _spell.PositionOriginZ ?? 0.0f), new Quaternion(_spell.PositionAnglesX ?? 0.0f, _spell.PositionAnglesY ?? 0.0f, _spell.PositionAnglesZ ?? 0.0f, _spell.PositionAnglesW ?? 0.0f)); }
+        public Position Position
+        {
+            get
+            {
+                var rotation = new Quaternion(_spell.PositionAnglesX ?? 0.0f, _spell.PositionAnglesY ?? 0.0f, _spell.PositionAnglesZ ?? 0.0f, _spell.PositionAnglesW ?? 0.0f);
+
+                // JawnTide: a slightly off rotation in the spell data (e.g. Travel to the Ruins of Degar'Alesh, the Freebooter Isle statue) fails
+                // the teleport's position check and sends the player to a safe location instead. Normalize it here.
+                if (!rotation.IsRotationValid() && rotation.LengthSquared() > 0)
+                    rotation = Quaternion.Normalize(rotation);
+
+                return new Position(_spell.PositionObjCellId ?? 0, new Vector3(_spell.PositionOriginX ?? 0.0f, _spell.PositionOriginY ?? 0.0f, _spell.PositionOriginZ ?? 0.0f), rotation);
+            }
+        }
 
         /// <summary>
         /// The minimum spell power to dispel (unused?)
