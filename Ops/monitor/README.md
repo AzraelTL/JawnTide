@@ -8,7 +8,7 @@ A small web page for the LAN that shows, per account:
   level, total XP and played time
 - how much of each tracked currency the account owns: carried on its characters (main pack and side packs), in its
   **My Mule** storage and in its **bank** (`account_bank`; hover a number for the split), and which character carries
-  the most; anything else is shown as "Elsewhere" (house storage, ground, vendors). Banked luminance has its own column.
+  the most; house storage counts toward the house owner's account; anything else is shown as "Elsewhere" (ground, vendors, unowned houses). Banked luminance has its own column.
   Tracked: pyreals, MMDs (Trade Note 250k), PK Trophies, Phials, Darkbeat, Hera and Shimmering Skeleton keys, Amber Shards,
   Luminance Exchange Tokens, A Boxes, plus **every alternate currency any vendor uses** (read from the world
   database on each snapshot, so new ones appear by themselves). Currencies nobody holds are hidden.

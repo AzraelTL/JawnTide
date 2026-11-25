@@ -5,8 +5,8 @@ Every INTERVAL_SECONDS it reads the game databases with a SELECT-only user and k
   - every account: last login, last IP, every IP it logged in from (from ace_log.character_login_log)
   - every character: level, total XP, played time (Age), where it was last saved, and how much of each
     tracked currency it holds
-    (main pack and side packs), plus each account's My Mule storage and bank (account_bank); anything else
-    (house storage, ground, vendors) counts as "elsewhere"
+    (main pack and side packs), plus each account's My Mule storage, house storage (chests in a house one of its
+    characters owns) and bank (account_bank); anything else (ground, vendors, unowned houses) counts as "elsewhere"
 It stores per-account currency totals and per-character XP/played-time/location changes in a small SQLite file
 for history (XP gain rates and leveling spots come from that), and serves web pages on PORT.
 It never writes to the game databases. Its one write is the wiki contributor list (ace_wiki.contributor), set with
@@ -54,6 +54,9 @@ PROP_INT64_TOTAL_XP = 1
 POSITION_LOCATION = 1
 PROP_IID_CONTAINER = 2
 PROP_IID_PATRON = 25
+PROP_IID_HOUSE_OWNER = 32
+WEENIE_TYPE_HOUSE = 53
+WEENIE_TYPE_STORAGE = 57
 PROP_IID_MULE_NEXT = 20003  # JawnTide My Mule: next container in an account's storage chain
 
 # JawnTide Bank: account_bank currency codes -> the tracked WCID they count toward (pyreals are a pyreal value).
@@ -106,7 +109,8 @@ def take_snapshot():
             accounts[aid] = dict(id=aid, name=name, level=level, last_login=last_time, last_ip=last_ip or "",
                                  created=created, created_ip=created_ip or "", logins=logins, banned=banned,
                                  characters=[], ips={}, totals={w: 0 for w in WCIDS},
-                                 carried={w: 0 for w in WCIDS}, mule={w: 0 for w in WCIDS}, bank={w: 0 for w in WCIDS})
+                                 carried={w: 0 for w in WCIDS}, mule={w: 0 for w in WCIDS}, house={w: 0 for w in WCIDS},
+                                 bank={w: 0 for w in WCIDS})
 
         chars = {}
         for (cid, aid, name, deleted, age, level, xp, cell) in query(cur, """
@@ -153,6 +157,20 @@ def take_snapshot():
         except pymysql.err.ProgrammingError:
             pass  # no account_mule table yet
 
+        # House storage: every storage chest is linked to its house in the world data; the house's owner is a character
+        house_of_chest = {int(c): int(p) for p, c in query(cur, """
+                SELECT l.parent_GUID, l.child_GUID
+                FROM ace_world.landblock_instance_link l
+                JOIN ace_world.landblock_instance hp ON hp.guid = l.parent_GUID
+                JOIN ace_world.weenie hw ON hw.class_Id = hp.weenie_Class_Id AND hw.type = %s
+                JOIN ace_world.landblock_instance sc ON sc.guid = l.child_GUID
+                JOIN ace_world.weenie sw ON sw.class_Id = sc.weenie_Class_Id AND sw.type = %s""", (WEENIE_TYPE_HOUSE, WEENIE_TYPE_STORAGE))}
+        house_owner = {int(o): int(v) for o, v in query(cur, "SELECT object_Id, value FROM ace_shard.biota_properties_i_i_d WHERE type = %s", (PROP_IID_HOUSE_OWNER,))}
+
+        def house_account(container):
+            owner = chars.get(house_owner.get(house_of_chest.get(container)))
+            return owner["account"] if owner else None
+
         # JawnTide Bank
         try:
             for aid, code, amount in query(cur, "SELECT account_Id, currency, amount FROM ace_shard.account_bank WHERE amount <> 0"):
@@ -178,10 +196,13 @@ def take_snapshot():
                 owner = chars.get(c1) or chars.get(c2)
                 amount = int(stack or 1)
                 mule_account = mule_of.get(c1) or mule_of.get(c2)
+                house_acct = house_account(c1) or house_account(c2)
                 if owner:
                     owner["holdings"][wcid] += amount
                 elif mule_account in accounts:
                     accounts[mule_account]["mule"][wcid] += amount
+                elif house_acct in accounts:
+                    accounts[house_acct]["house"][wcid] += amount
                 else:
                     elsewhere[wcid] += amount
 
@@ -206,7 +227,7 @@ def take_snapshot():
             for w in WCIDS:
                 a["carried"][w] += ch["holdings"][w]
         for w in WCIDS:
-            a["totals"][w] = a["carried"][w] + a["mule"][w] + a["bank"][w]
+            a["totals"][w] = a["carried"][w] + a["mule"][w] + a["house"][w] + a["bank"][w]
         live = [c for c in a["characters"] if not c["deleted"]] or a["characters"]
         a["top_character"] = max(live, key=lambda c: c["age"], default=None)
         a["holders"] = {}
@@ -355,9 +376,9 @@ def shown(snap):
 
 
 def split_title(a, w):
-    """Hover text showing where an account's total is: carried / mule / bank (only when not all carried)."""
-    if a["mule"][w] or a["bank"][w]:
-        return f' title="carried {a["carried"][w]:,}, mule {a["mule"][w]:,}, bank {a["bank"][w]:,}"'
+    """Hover text showing where an account's total is: carried / mule / house / bank (only when not all carried)."""
+    if a["mule"][w] or a["house"][w] or a["bank"][w]:
+        return f' title="carried {a["carried"][w]:,}, mule {a["mule"][w]:,}, house {a["house"][w]:,}, bank {a["bank"][w]:,}"'
     return ""
 
 
@@ -386,8 +407,8 @@ def overview(sort):
     else_cells = "".join(f'<td class="n">{fmt_n(snap["elsewhere"][w])}</td>' for w in WCIDS)
     hidden = len(snap["currencies"]) - len(CURRENCIES)
     body = (f'<p class="muted">{len(accounts)} accounts. Highlighted rows share an IP with another account. '
-            f'Click a currency to sort by it. Totals are everything the account owns: carried on its characters, in its My Mule '
-            f'and in its bank (hover a number for the split). "Elsewhere" is everything else (house storage, ground, vendors). '
+            f'Click a currency to sort by it. Totals are everything the account owns: carried on its characters, in its My Mule, '
+            f'in storage in its houses and in its bank (hover a number for the split). "Elsewhere" is everything else (ground, vendors, unowned houses). '
             f'Tracking {len(snap["currencies"])} currencies (every vendor alternate currency plus pyreals, MMDs and keys); '
             f'{hidden} nobody holds yet are hidden.</p>'
             f'<div class="wrap"><table><tr><th>Account</th><th>Last login</th><th>Last IP</th><th class="n">IPs</th>'
@@ -419,11 +440,13 @@ def account_page(name):
                     f'<td class="n">{fmt_age(c["age"])}</td>{cells}</tr>')
     total = "".join(f'<td class="n"><b>{fmt_n(a["totals"][w])}</b></td>' for w in WCIDS)
     mule = "".join(f'<td class="n">{fmt_n(a["mule"][w])}</td>' for w in WCIDS)
+    house = "".join(f'<td class="n">{fmt_n(a["house"][w])}</td>' for w in WCIDS)
     bank = "".join(f'<td class="n">{fmt_n(a["bank"][w])}</td>' for w in WCIDS)
     chars = (f'<h2>Characters (by played time)</h2><div class="wrap"><table><tr><th>Character</th><th class="n">Level</th>'
              f'<th class="n">Total XP</th><th class="n">Played</th>{head}</tr>'
              f'{"".join(crow)}'
              f'<tr><td class="muted">My Mule</td><td></td><td></td><td></td>{mule}</tr>'
+             f'<tr><td class="muted">House storage</td><td></td><td></td><td></td>{house}</tr>'
              f'<tr><td class="muted">Bank</td><td></td><td></td><td></td>{bank}</tr>'
              f'<tr><td><b>Total</b></td><td></td><td></td><td></td>{total}</tr></table></div>')
     aid = a["id"]
@@ -663,16 +686,16 @@ def top_page():
     snap = snapshot_or_wait()
     if not snap:
         return page("Top holders", "<p>Waiting for the first snapshot.</p>")
-    parts = ['<p class="muted">Ranked by account: carried on its characters + its My Mule + its bank, so moving things into '
+    parts = ['<p class="muted">Ranked by account: carried on its characters + its My Mule + its house storage + its bank, so moving things into '
              'storage does not hide anyone. The character shown is the one carrying the most.</p>']
     for w, label in shown(snap):
         top = sorted((a for a in snap["accounts"].values() if a["totals"][w] > 0 and a["id"] not in snap.get("staff", ())), key=lambda a: -a["totals"][w])[:15]
         rows = "".join(f'<tr><td>{account_link(a["name"])}</td><td>{e(a["holders"][w]["name"]) if a["holders"].get(w) else ""}</td>'
                        f'<td class="n">{fmt_n(a["carried"][w])}</td><td class="n">{fmt_n(a["mule"][w])}</td>'
-                       f'<td class="n">{fmt_n(a["bank"][w])}</td><td class="n"><b>{fmt_n(a["totals"][w])}</b></td></tr>' for a in top)
+                       f'<td class="n">{fmt_n(a["house"][w])}</td><td class="n">{fmt_n(a["bank"][w])}</td><td class="n"><b>{fmt_n(a["totals"][w])}</b></td></tr>' for a in top)
         parts.append(f'<h2>{e(label)}</h2><div class="wrap"><table><tr><th>Account</th><th>Carried most by</th><th class="n">Carried</th>'
-                     f'<th class="n">My Mule</th><th class="n">Bank</th><th class="n">Total</th></tr>'
-                     f'{rows or "<tr><td colspan=6 class=muted>Nobody holds any</td></tr>"}</table></div>')
+                     f'<th class="n">My Mule</th><th class="n">House</th><th class="n">Bank</th><th class="n">Total</th></tr>'
+                     f'{rows or "<tr><td colspan=7 class=muted>Nobody holds any</td></tr>"}</table></div>')
     return page("Top holders", "".join(parts))
 
 
