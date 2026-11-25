@@ -1008,6 +1008,7 @@ namespace ACE.Server.Managers
                 ("recent_teleport_threshold", new Property<double>(3.0, "the number of seconds after materializing that a player can teleport again")),
 
                 // Open-world PK economy
+                ("pvp_xp_modifier", new Property<double>(1.0, "JawnTide: scales all PvP XP: arena rewards, PK quest XP rewards and open-world PK kill XP (0.5 = half). Applied on top of xp_modifier and quest_xp_modifier")),
                 ("pk_xp_level_diff_decay", new Property<double>(0.85, "per-level exponential decay applied to open-world PK-kill XP when the victim is below the killer's level (0.85 => ~20% reward at 10 levels below)")),
                 ("pk_xp_kill_reward_min_pct", new Property<double>(0.05, "minimum open-world PK-kill XP reward as a fraction of the killer's XP-to-next-level")),
                 ("pk_xp_kill_reward_max_pct", new Property<double>(0.10, "maximum open-world PK-kill XP reward as a fraction of the killer's XP-to-next-level")),

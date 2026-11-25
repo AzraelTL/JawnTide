@@ -208,7 +208,7 @@ namespace ACE.Server.WorldObjects
                         var randPct = maxPct > minPct ? ThreadSafeRandom.Next(minPct, maxPct) : minPct;
 
                         var baseXp = (long)pkPlayer.GetXPBetweenLevels(killerLevel, killerLevel + 1);
-                        var pvpXp  = (long)Math.Round(baseXp * randPct * modifier);
+                        var pvpXp  = (long)Math.Round(baseXp * randPct * modifier * PropertyManager.GetDouble("pvp_xp_modifier").Item);
 
                         if (pvpXp > 0)
                             pkPlayer.GrantXP(pvpXp, XpType.PvP, ShareType.None);
