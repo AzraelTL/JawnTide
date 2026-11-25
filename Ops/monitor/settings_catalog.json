@@ -2124,6 +2124,14 @@
    "area": "PvP & player killers"
   },
   {
+   "key": "pvp_xp_modifier",
+   "type": "double",
+   "default": "1.0",
+   "jawntide": true,
+   "desc": "Scales all PvP XP: arena rewards, PK quest XP rewards and open-world PK kill XP (0.5 = half). Applied on top of xp_modifier and quest_xp_modifier",
+   "area": "PvP & player killers"
+  },
+  {
    "key": "pk_xp_level_diff_decay",
    "type": "double",
    "default": "0.85",

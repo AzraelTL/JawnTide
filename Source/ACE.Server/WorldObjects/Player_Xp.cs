@@ -793,6 +793,10 @@ namespace ACE.Server.WorldObjects
         {
             var nextLevelXP = GetXPBetweenLevels(Level.Value, Level.Value + 1);
 
+            // JawnTide: arena and PK quest rewards (isArena) are PvP XP, scaled by pvp_xp_modifier
+            if (isArena)
+                percent *= PropertyManager.GetDouble("pvp_xp_modifier").Item;
+
             var scaledXP = (long)Math.Round(nextLevelXP * percent);
 
             if (max > 0)
