@@ -82,7 +82,7 @@ reachable from the internet.
 
 2. Create the read-only database user:
 
-       cd ~/jawntide-server && MP=$(grep '^MONITOR_DB_PASSWORD=' .env | cut -d= -f2) && docker compose exec -T -e MP="$MP" ace-db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -e "CREATE USER IF NOT EXISTS monitor@\"%\" IDENTIFIED BY \"$MP\"; ALTER USER monitor@\"%\" IDENTIFIED BY \"$MP\"; GRANT SELECT ON ace_auth.account TO monitor@\"%\"; GRANT SELECT ON ace_shard.* TO monitor@\"%\"; GRANT SELECT ON ace_log.character_login_log TO monitor@\"%\"; GRANT SELECT ON ace_world.weenie_properties_d_i_d TO monitor@\"%\"; GRANT SELECT ON ace_world.weenie_properties_string TO monitor@\"%\"; FLUSH PRIVILEGES;"'
+       cd ~/jawntide-server && MP=$(grep '^MONITOR_DB_PASSWORD=' .env | cut -d= -f2) && docker compose exec -T -e MP="$MP" ace-db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -e "CREATE USER IF NOT EXISTS monitor@\"%\" IDENTIFIED BY \"$MP\"; ALTER USER monitor@\"%\" IDENTIFIED BY \"$MP\"; GRANT SELECT ON ace_auth.account TO monitor@\"%\"; GRANT SELECT ON ace_shard.* TO monitor@\"%\"; GRANT SELECT ON ace_log.character_login_log TO monitor@\"%\"; GRANT SELECT ON ace_world.weenie_properties_d_i_d TO monitor@\"%\"; GRANT SELECT ON ace_world.weenie_properties_string TO monitor@\"%\"; GRANT SELECT ON ace_world.weenie TO monitor@\"%\"; GRANT SELECT ON ace_world.landblock_instance TO monitor@\"%\"; GRANT SELECT ON ace_world.landblock_instance_link TO monitor@\"%\"; FLUSH PRIVILEGES;"'
 
    For the PvP damage page (after the game server has started once with the PvP balance tools, which creates the table), let the
    monitor add setting change requests and set its edit password:
