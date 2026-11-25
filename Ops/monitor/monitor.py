@@ -158,13 +158,17 @@ def take_snapshot():
             pass  # no account_mule table yet
 
         # House storage: every storage chest is linked to its house in the world data; the house's owner is a character
-        house_of_chest = {int(c): int(p) for p, c in query(cur, """
-                SELECT l.parent_GUID, l.child_GUID
-                FROM ace_world.landblock_instance_link l
-                JOIN ace_world.landblock_instance hp ON hp.guid = l.parent_GUID
-                JOIN ace_world.weenie hw ON hw.class_Id = hp.weenie_Class_Id AND hw.type = %s
-                JOIN ace_world.landblock_instance sc ON sc.guid = l.child_GUID
-                JOIN ace_world.weenie sw ON sw.class_Id = sc.weenie_Class_Id AND sw.type = %s""", (WEENIE_TYPE_HOUSE, WEENIE_TYPE_STORAGE))}
+        house_of_chest = {}
+        try:
+            house_of_chest = {int(c): int(p) for p, c in query(cur, """
+                    SELECT l.parent_GUID, l.child_GUID
+                    FROM ace_world.landblock_instance_link l
+                    JOIN ace_world.landblock_instance hp ON hp.guid = l.parent_GUID
+                    JOIN ace_world.weenie hw ON hw.class_Id = hp.weenie_Class_Id AND hw.type = %s
+                    JOIN ace_world.landblock_instance sc ON sc.guid = l.child_GUID
+                    JOIN ace_world.weenie sw ON sw.class_Id = sc.weenie_Class_Id AND sw.type = %s""", (WEENIE_TYPE_HOUSE, WEENIE_TYPE_STORAGE))}
+        except pymysql.err.MySQLError:
+            pass  # the monitor user can't read the house links yet (see README: SELECT on ace_world.weenie, landblock_instance, landblock_instance_link)
         house_owner = {int(o): int(v) for o, v in query(cur, "SELECT object_Id, value FROM ace_shard.biota_properties_i_i_d WHERE type = %s", (PROP_IID_HOUSE_OWNER,))}
 
         def house_account(container):
