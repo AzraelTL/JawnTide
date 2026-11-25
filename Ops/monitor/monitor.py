@@ -39,7 +39,8 @@ HISTORY_DAYS = int(os.environ.get("HISTORY_DAYS", "30"))
 # each snapshot, so a vendor given a new currency is picked up automatically). Columns nobody holds are hidden.
 EXTRA_ITEMS = ("273:Pyreals,20630:MMD (Trade Note 250k),1000002:PK Trophy,1000003:Phial of Bloody Tears,"
                "480608:Darkbeat Key,490364:Hera Key,52968:Infused Amber Shard,52969:Corrupted Amber Shard,"
-               "490321:Lum Exchange Token,510000:A Box,30258:Shimmering Skeleton Key")
+               "490321:Lum Exchange Token,510000:A Box,30258:Shimmering Skeleton Key,34276:Empyrean Trinket,"
+               "34277:Falatacot Trinket")
 EXTRA = []
 for part in os.environ.get("EXTRA_ITEMS", EXTRA_ITEMS).split(","):
     if ":" in part:
