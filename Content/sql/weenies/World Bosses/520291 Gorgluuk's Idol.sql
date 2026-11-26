@@ -30,5 +30,5 @@ VALUES (520291,   1, 0x02000E74) /* Setup - the gift box the older world boss to
      , (520291,   3, 0x20000014) /* SoundTable */
      , (520291,   6, 0x04000BEF) /* PaletteBase */
      , (520291,   7, 0x10000178) /* ClothingBase */
-     , (520291,   8, 0x06003497) /* Icon (Ivory Gromnie Tooth) */
+     , (520291,   8, 0x0600334E) /* Icon (Burun Idol) */
      , (520291,  22, 0x3400002B) /* PhysicsEffectTable */;
