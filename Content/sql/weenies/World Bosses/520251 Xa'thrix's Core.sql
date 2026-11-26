@@ -30,5 +30,5 @@ VALUES (520251,   1, 0x02000E74) /* Setup - the gift box the older world boss to
      , (520251,   3, 0x20000014) /* SoundTable */
      , (520251,   6, 0x04000BEF) /* PaletteBase */
      , (520251,   7, 0x10000178) /* ClothingBase */
-     , (520251,   8, 0x06003497) /* Icon (Ivory Gromnie Tooth) */
+     , (520251,   8, 0x06006814) /* Icon (K'nath Core) */
      , (520251,  22, 0x3400002B) /* PhysicsEffectTable */;
