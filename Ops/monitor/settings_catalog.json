@@ -28,6 +28,14 @@
    "area": "World bosses & events"
   },
   {
+   "key": "disable_mid_level_world_bosses",
+   "type": "bool",
+   "default": "true",
+   "jawntide": true,
+   "desc": "disables spawning of the mid-level world bosses tuned for level 250 (Xa'thrix, Carbonek, Gorgluuk)",
+   "area": "World bosses & events"
+  },
+  {
    "key": "disable_world_bosses",
    "type": "bool",
    "default": "true",

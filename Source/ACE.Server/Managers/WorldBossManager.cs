@@ -55,9 +55,10 @@ namespace ACE.Server.Managers
 
             try
             {
-                // JawnTide: two groups, each with its own switch (disable_world_bosses and disable_low_level_world_bosses);
-                // the manager runs while either is on and only spawns from the groups that are on
-                bool isWorldBossesDisabled = PropertyManager.GetBool("disable_world_bosses").Item && PropertyManager.GetBool("disable_low_level_world_bosses").Item;
+                // JawnTide: three groups, each with its own switch (disable_world_bosses, disable_low_level_world_bosses and
+                // disable_mid_level_world_bosses); the manager runs while any is on and only spawns from the groups that are on
+                bool isWorldBossesDisabled = PropertyManager.GetBool("disable_world_bosses").Item && PropertyManager.GetBool("disable_low_level_world_bosses").Item
+                    && PropertyManager.GetBool("disable_mid_level_world_bosses").Item;
                 if (isWorldBossesDisabled)
                 {
                     LastTickDateTime = DateTime.Now;

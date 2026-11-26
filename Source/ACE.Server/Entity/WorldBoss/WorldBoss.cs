@@ -211,6 +211,31 @@ namespace ACE.Server.Entity.WorldBoss
                     death.IsLowLevel = true;
                     _worldBossMap.Add(520220, death);
 
+                    //JawnTide: mid-level town world bosses, balanced for level 250 (disable_mid_level_world_bosses)
+                    var xathrix = new WorldBoss();
+                    xathrix.WeenieID = 520250;
+                    xathrix.Name = "Xa'thrix";
+                    xathrix.SpawnMsg = "The air across Dereth grows heavy and the hair on every arm stands on end. Thunder rolls from a cloudless sky, and from deep beneath the earth comes the clicking of ten thousand legs. Xa'thrix, the K'nath Brood Empress, has risen from her hive with her brood at her side, and the storm walks with her.";
+                    xathrix.SpawnLocations = townSpawnLocations;
+                    xathrix.IsMidLevel = true;
+                    _worldBossMap.Add(520250, xathrix);
+
+                    var carbonek = new WorldBoss();
+                    carbonek.WeenieID = 520270;
+                    carbonek.Name = "Carbonek";
+                    carbonek.SpawnMsg = "A bitter cold sweeps across Dereth, and frost blooms on every window. Far away, something vast and glittering grinds into motion, each step ringing like a struck bell. Carbonek, the Diamond Colossus, has awoken from the deep places, and the golems of the land march in its shadow.";
+                    carbonek.SpawnLocations = townSpawnLocations;
+                    carbonek.IsMidLevel = true;
+                    _worldBossMap.Add(520270, carbonek);
+
+                    var gorgluuk = new WorldBoss();
+                    gorgluuk.WeenieID = 520290;
+                    gorgluuk.Name = "Gorgluuk";
+                    gorgluuk.SpawnMsg = "War drums boom out of the marshes, and the stench of acid drifts on the wind. Every burun tribe in Dereth howls the same name as its warriors gather. Gorgluuk, the Burun Warking, has come out of the swamps at the head of his warband, and he means to take a town for his own.";
+                    gorgluuk.SpawnLocations = townSpawnLocations;
+                    gorgluuk.IsMidLevel = true;
+                    _worldBossMap.Add(520290, gorgluuk);
+
                     //Aerbax in Lesser Battle Dungeon
                     var aerbax = new WorldBoss();
                     aerbax.WeenieID = 49009000;
@@ -392,7 +417,10 @@ namespace ACE.Server.Entity.WorldBoss
                         520201, // Moloch's Fang
                         520211, // Khaz's Knucklebone
                         520221, // Death's Shroud
-                        520231  // Goop Scoop's Ichor
+                        520231, // Goop Scoop's Ichor
+                        520251, // Xa'thrix's Core
+                        520271, // Carbonek's Heart
+                        520291  // Gorgluuk's Idol
                     };
                 }
 
@@ -407,13 +435,16 @@ namespace ACE.Server.Entity.WorldBoss
 
         /// <summary>
         /// JawnTide: true when the boss's group is switched on: disable_low_level_world_bosses for the
-        /// lower-level bosses (IsLowLevel), disable_world_bosses for all the others.
+        /// lower-level bosses (IsLowLevel), disable_mid_level_world_bosses for the mid-level ones (IsMidLevel),
+        /// disable_world_bosses for all the others.
         /// </summary>
         public static bool IsEnabled(WorldBoss boss)
         {
-            return boss.IsLowLevel
-                ? !PropertyManager.GetBool("disable_low_level_world_bosses").Item
-                : !PropertyManager.GetBool("disable_world_bosses").Item;
+            if (boss.IsLowLevel)
+                return !PropertyManager.GetBool("disable_low_level_world_bosses").Item;
+            if (boss.IsMidLevel)
+                return !PropertyManager.GetBool("disable_mid_level_world_bosses").Item;
+            return !PropertyManager.GetBool("disable_world_bosses").Item;
         }
 
         /// <summary>
@@ -482,6 +513,9 @@ namespace ACE.Server.Entity.WorldBoss
 
         /// <summary>JawnTide: lower-level boss, switched on and off by disable_low_level_world_bosses</summary>
         public bool IsLowLevel { get; set; }
+
+        /// <summary>JawnTide: mid-level boss (level 250), switched on and off by disable_mid_level_world_bosses</summary>
+        public bool IsMidLevel { get; set; }
 
         public WorldObject StatueWorldObject { get; set; }
 

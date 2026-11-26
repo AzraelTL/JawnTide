@@ -1,9 +1,10 @@
 # World bosses
 
-The world bosses are in two groups, each with its own switch (a live setting, no restart):
+The world bosses are in three groups, each with its own switch (a live setting, no restart):
 
 * `disable_world_bosses` (default true) covers Bael'Zharon, Martine, the Olthoi King, Goop Scoop, Aerbax and the Tusker Queen. Turn them on with `@modifybool disable_world_bosses false`.
 * `disable_low_level_world_bosses` (default true) covers Moloch, Khaz' and Death. Turn them on with `@modifybool disable_low_level_world_bosses false`.
+* `disable_mid_level_world_bosses` (default true) covers Xa'thrix, Carbonek and Gorgluuk. Turn them on with `@modifybool disable_mid_level_world_bosses false`.
 
 While either group is on, the manager spawns one boss at a time, every 3 to 11 hours, picked only from the groups that are on. 60% of picks are an indoor boss with a statue and 40% a roaming town boss; when the groups that are on have only one kind (for example only the low-level group, which is all town bosses), it always picks that kind.
 `@worldbossspawn <wcid>` spawns that boss right away, even when its group is switched off; with no wcid it picks from the groups that are on, or from every boss when both are off. `@worldbossinfo` shows the active boss.
@@ -17,6 +18,9 @@ While either group is on, the manager spawns one boss at a time, every 3 to 11 h
 | Moloch (Drudge Warlord) | 520200 | Town | Levels 100-120 | Moloch's Fang 520201 | 520202 | WorldBossCompleted4 |
 | Khaz' (Lugian Titan) | 520210 | Town | Levels 100-120 | Khaz's Knucklebone 520211 | 520212 | WorldBossCompleted5 |
 | Death (Umbris Shadow) | 520220 | Town | Levels 100-120 | Death's Shroud 520221 | 520222 | WorldBossCompleted6 |
+| Xa'thrix (K'nath Brood Empress) | 520250 | Town | Level 250 | Xa'thrix's Core 520251 | 520252 | WorldBossCompleted8 |
+| Carbonek (Diamond Colossus) | 520270 | Town | Level 250 | Carbonek's Heart 520271 | 520272 | WorldBossCompleted9 |
+| Gorgluuk (Burun Warking) | 520290 | Town | Level 250 | Gorgluuk's Idol 520291 | 520292 | WorldBossCompleted10 |
 | Aerbax | 49009000 | Indoor | | | | |
 | Tusker Queen | 49009300 | Indoor | | | | |
 
@@ -75,3 +79,28 @@ Helpers (21, regenerate on death like the Olthoi King's): each is the stock crea
 | 520244 | Slimed Ice Crystal | 45748 | 2 | 15,000 | Frost Bolt, Frost Streak (VIII) |
 
 All seven town boss tokens use the gift box model the original three always had (Setup 0x02000E74, scale 0.33) since Nov 19; each keeps its own icon, name and glow. Moloch's Fang, Khaz's Knucklebone and Goop Scoop's Ichor used other models before. Tokens already in players' packs keep their old look.
+
+## Xa'thrix, Carbonek and Gorgluuk (Nov 26, 2026)
+
+Mid-level town bosses tuned for level 250, between Moloch's group and the level-cap bosses. Same rewards, loot generator layout, token rules and town spawning as the other town bosses; the Aidoneus turn-ins (WorldBossCompleted8-10) are in both Aidoneus files. Their own switch is `disable_mid_level_world_bosses` (default true). Stats are a first pass, to tune on JawnTest.
+Effective skill = the init value in the file + the attribute bonus.
+
+| | Xa'thrix | Carbonek | Gorgluuk |
+|---|---|---|---|
+| Look | K'nath Mother (38012), scale 4.5 | Diamond Golem Suzerain (19543), scale 3.0 | Morgluuk (27661), scale 3.0 |
+| Title | K'nath Brood Empress | Diamond Colossus | Burun Warking |
+| Level shown | 250 | 250 | 250 |
+| Creature type | Energy (94) | Statue (63) | Harvest (93) |
+| Health | 300,000 | 400,000 | 350,000 |
+| Attributes | Str/End 520, Quick 440, Coord 500, Focus/Self 460 | same | same |
+| Attack (effective) | ~820 melee, ~670 war | same | same |
+| Melee / missile / magic defense (effective) | ~533 / ~573 / ~607 | same | same |
+| Armor | 550 base | 550 base | 550 base |
+| Element | Lightning (melee 110 / 95) | Frost (melee 110 / 95) | Acid (melee 110 / 95) |
+| Weak to | Acid (resist 0.85) | Bludgeon (0.8) | Fire (0.85) |
+| Spells (Incantation, no volleys) | Lightning Bolt, Arc, Streak, Lightning Vuln, Imperil | Frost Bolt, Arc, Streak, Cold Vuln, Weakness | Acid Stream, Arc, Streak, Acid Vuln, Fester |
+| Specials (per boss attack) | Call the Brood 4% (refills minions), Lightning Barrage 3% (1837), Storm Ring 5% (Eye of the Storm 1788) | Shield shifts like Khaz', 3% each: Diamond Hide (melee), Crystal Wall (missile), Prismatic Ward (magic), Fracture (drops all); Call the Constructs 4%; Avalanche 3% (1836); Frost Ring 5% (Halo of Frost 1787) | Call the Warband 4%; Torrential Acid 3% (1832); Acid Ring 5% (3805) |
+| Minions (9) | 3 each Brood K'nath B'orret, C'ire, Y'bot (520253-520255) | 2 each Diamondbound Magma, Aqueous, Crystal Golem, 1 each Mud, Sandstone, Platinum (520273-520278) | 3 Warband Burun Savage, 2 each Shaman, Soothsayer, Fiend (520293-520296) |
+
+Minions are the stock creatures (look, creature type, armor shape, attacks) at level 250 strength: 10,000 health (golems 12,000), attributes 360-380, about 700 effective attack, 500 base armor keeping the stock creature's armor ratios, hardest hit 110, stock spells upgraded to their Incantation versions (volleys swapped for arcs), XpOverride 2,000,000 and the Royal Olthoi helpers' loot (2111). They regenerate while the boss lives.
+Token looks: the gift box like the other town tokens, with icons from the K'nath Core, the Glacial Golem Heart and the Burun Idol, and glows Lightning, Frost and Acid.

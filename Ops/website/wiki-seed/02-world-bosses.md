@@ -11,6 +11,9 @@ World bosses spawn one at a time, every few hours. There are two kinds: **town b
 | Moloch (Drudge Warlord) | Levels 100-120 | Moloch's Fang |
 | Khaz' (Lugian Titan) | Levels 100-120 | Khaz's Knucklebone |
 | Death (Umbris Shadow) | Levels 100-120 | Death's Shroud |
+| Xa'thrix (K'nath Brood Empress) | Level 250 | Xa'thrix's Core |
+| Carbonek (Diamond Colossus) | Level 250 | Carbonek's Heart |
+| Gorgluuk (Burun Warking) | Level 250 | Gorgluuk's Idol |
 
 ### Finding them
 - When a town boss spawns, a second line hints at the part of the world it's in, by Town Network wing: north (Aluvian towns), east (Sho towns), west (Gharu'ndim towns), or "a town accessible from the southern doors of the Town Network".
@@ -40,6 +43,15 @@ A giant lugian. Bludgeoning melee and shock waves. Shifts shields like the Oltho
 
 ### Death
 A shadow emperor. Nether and fire. Hellfire (Fire Vulnerability, then Flame Chain on its target), Call the Shades (refills its phantom and spectre minions), and a Nether Ring.
+
+### Xa'thrix
+A giant K'nath matriarch. Lightning melee and spells. Calls her brood (three kinds of Brood K'nath), Lightning Barrage, and a Storm Ring.
+
+### Carbonek
+A colossal diamond golem. Frost melee and spells. Shifts shields like Khaz': Diamond Hide (melee), Crystal Wall (missile), Prismatic Ward (magic), or Fracture (drops all three). Calls six kinds of Diamondbound golems, Avalanche, and a Frost Ring.
+
+### Gorgluuk
+The burun warking. Acid melee and spells. Calls his warband (Burun Savages, Shamans, Soothsayers and Fiends), Torrential Acid, and an Acid Ring.
 
 ## Indoor bosses
 Aerbax and the Tusker Queen live in their own dungeons. Their entry idols remove rare-item buffs when you enter.
