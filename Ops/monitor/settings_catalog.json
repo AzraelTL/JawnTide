@@ -2156,6 +2156,14 @@
    "area": "PvP & player killers"
   },
   {
+   "key": "enlightenment_enabled",
+   "type": "bool",
+   "default": "false",
+   "jawntide": true,
+   "desc": "Players can enlighten. Off for now; @modifybool enlightenment_enabled true to allow it",
+   "area": "XP, levels & luminance"
+  },
+  {
    "key": "advocate_fane_auto_bestow_level",
    "type": "double",
    "default": "1",

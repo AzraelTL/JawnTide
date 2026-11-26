@@ -62,6 +62,13 @@ namespace ACE.Server.Entity
 
         public static bool VerifyRequirements(Player player)
         {
+            // JawnTide: enlightenment can be switched off (enlightenment_enabled)
+            if (!PropertyManager.GetBool("enlightenment_enabled").Item)
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat("Enlightenment is not available at this time.", ChatMessageType.Broadcast));
+                return false;
+            }
+
             if (player.Level < 275)
             {
                 player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You must be level 275 for enlightenment.", ChatMessageType.Broadcast));
