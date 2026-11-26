@@ -87,7 +87,7 @@ Effective skill = the init value in the file + the attribute bonus.
 
 | | Xa'thrix | Carbonek | Gorgluuk |
 |---|---|---|---|
-| Look | K'nath Mother (38012), scale 4.5 | Diamond Golem Suzerain (19543), scale 3.0 | Morgluuk (27661), scale 3.0 |
+| Look | K'nath Mother (38012), scale 4.5 | Diamond Golem Suzerain (19543), scale 3.0 | Burun King Keerik (29010), scale 2.0 |
 | Title | K'nath Brood Empress | Diamond Colossus | Burun Warking |
 | Level shown | 250 | 250 | 250 |
 | Creature type | Energy (94) | Statue (63) | Harvest (93) |
