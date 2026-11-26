@@ -180,8 +180,8 @@ VALUES (600055, 2,  2594,  0, 6, 0.9, False) /* Create Tunic (2594) for Wield */
      , (600055, 2, 29514,  0, 93, 0.9, False) /* Create Noble Coat (29514) for Wield */
      , (600055, 2, 29521,  0, 93, 0.9, False) /* Create Noble Gauntlets (29521) for Wield */
      , (600055, 2, 29535,  0, 93, 0.9, False) /* Create Noble Leggings (29535) for Wield */
-     , (600055, 2, 29545,  0, 93, 0.9, False) /* Create Noble Sollerets (29545) for Wield */
-	 , (600055, 4, 600056,  0, 0, 0, False) /* Crate of Empyrean Death Totem */;
+     , (600055, 2, 29545,  0, 93, 0.9, False) /* Create Noble Sollerets (29545) for Wield */;
+/* JawnTide (Nov 26, 2026): no longer sells the Crate of Empyrean Death Totems (600056) */
 	 
 /* Lifestoned Changelog:
 {
